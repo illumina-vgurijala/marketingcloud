@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckNoEditOnClosedOpportunity</fullName>
+    <active>true</active>
+    <description>Lock Record when opportunity had stage as Closed Won/Lost/Abandoned for Direct &amp; Indirect Opportunities.</description>
+    <errorConditionFormula>AND (
+    NOT (
+        OR (
+            ISCHANGED (  Closed_Won_Not_In_Finalize__c ),
+            ISCHANGED (  Recipient_Email__c ),
+            ISCHANGED ( ByPass_LockSentProposalDate__c  ),
+            ISCHANGED ( Quote_Generated_Qualify_or_Develop__c ), 
+            ISCHANGED (  Conversion_Rate_On_Closed__c ),
+			AND( 
+                OR (
+                    ISCHANGED ( Loss_Reason__c ),
+                    ISCHANGED ( Abandon_Reason__c ),
+                    ISCHANGED ( Close_Reason_Other__c ),
+                    ISCHANGED ( Abandoned_Reason_Details__c ),
+                    ISCHANGED ( Core_Lab__c ),
+                    ISCHANGED ( Core_Lab_Other__c )
+                ),
+				OR (
+					ISPICKVAL ( PRIORVALUE ( StageName ) , &quot;Closed Lost&quot; ),
+					ISPICKVAL ( PRIORVALUE ( StageName ) , &quot;Closed Abandoned&quot; )
+                )
+            ),
+            AND(
+                ISCHANGED(Opportunity_Forecast_Category__c),
+                OR(
+                    ISPICKVAL(StageName, &quot;Closed Lost&quot;),
+                    ISPICKVAL(StageName, &quot;Closed Abandoned&quot;)
+                )
+            )
+        )
+    ),
+    OR (
+        ISPICKVAL ( PRIORVALUE ( StageName ) , &quot;Closed Won&quot; ),
+        ISPICKVAL ( PRIORVALUE ( StageName ) , &quot;Closed Lost&quot; ),
+        ISPICKVAL ( PRIORVALUE ( StageName ) , &quot;Closed Abandoned&quot; )
+    ),
+    !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileIntegrationSalesSnapLogic,
+            $Profile.Name =  $Label.ProfileDataSteward,
+            ISCHANGED ( Primary_Contact__c)
+        )
+    )    
+)</errorConditionFormula>
+    <errorMessage>You cannot edit a Closed opportunity.</errorMessage>
+</ValidationRule>

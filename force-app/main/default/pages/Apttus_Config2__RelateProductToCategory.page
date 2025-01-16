@@ -1,0 +1,409 @@
+<!-- 
+    Apttus Config & Pricing
+    RelateProductToCategory
+      
+    @2012-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page controller="Apttus_Config2.RelateProductToCategoryController"
+		   sidebar="{!ShowAdminSidebar}" >
+
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+
+		j$(document).ready(function() {
+			j$("#tabs").tabs();
+		})
+		
+		function loadingNextPage(className,tabId) {
+       		var tabPosition = j$('#'+tabId).position();
+       		var tabOffset = j$('#'+tabId).offset();
+		    var position = j$('.'+className).offset();
+		    j$('.aptLoadingOverlay').css( { position: 'absolute', left: position.left - tabOffset.left + tabPosition.left, top: position.top - tabOffset.top + tabPosition.top });
+		    j$('.aptLoadingOverlay').width(j$('.'+className).width());
+		    j$('.aptLoadingOverlay').height(j$('.'+className).height());
+		    j$('.aptLoadingOverlay').show();
+        }
+	</script>
+
+	<style>
+		.aptRoundedDiv {
+			padding-bottom: 5px;
+			background-color: white;
+			border: 1px solid #DDD;
+			-webkit-border-radius: 6px; /* Safari 3-4, iOS 1-3.2, Android ≤1.6 */
+			border-radius: 6px;
+			/* Opera 10.5, IE9+, Safari 5, Chrome, Firefox 4+, iOS 4, Android 2.1+ */
+			/* useful if you don't want a bg color from leaking outside the border: */
+			/* -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box; */
+			/*-webkit-box-shadow: 0px 0px 4px 0px #000;  Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+			/*box-shadow: 0px 0px 4px 0px #000; /* Opera 10.5, IE9+, Firefox 4+, Chrome 6+, iOS 5 */
+			display: table;
+			width: 100%;
+		}
+		
+		.aptGroupHeader {
+			background: -moz-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(211,
+				211, 211, 0.65) ), color-stop(100%, rgba(255, 255, 255, 0) ) );
+			background: -webkit-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: -o-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: -ms-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: linear-gradient(to bottom, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			height: 40px;
+			padding-top: 10px;
+			padding-left: 10px;
+		}
+		
+		.aptLoadingOverlay {
+			background-color: rgba(240, 240, 240, 0.9);
+			background-image: url('{!URLFOR($Resource.Image_LoadingBar)}');
+			background-repeat: no-repeat;
+			background-position: center center;
+			display: none;
+			z-index: 10000;
+			opacity: 0.7;
+			filter:alpha(opacity=50);
+		    -moz-opacity:0.5;
+		    -khtml-opacity: 0.5;
+		}
+		
+		.categoryList,.associatedCategoryList {
+			list-style-type: none;
+			padding-left: 0px;
+			margin-left:0px;
+		}
+		
+		.formee .formee-txt,.formee input[type="text"],.formee input[type="password"],.formee input[type="file"],.formee textarea {
+			line-height: 0.7em;
+			height: 1.0em;
+			width: 75%;
+			padding: 10px;
+			
+		}
+		
+		.formee select {
+			line-height: 0.7em;
+			padding: 2px;
+			height: 2.0em;
+			width: 95%;
+		}
+		
+		.formee legend {
+			font-size: 1.5em;
+			font-weight: bold;
+			margin-left: 3%;
+			width: 20%;
+		}
+		
+		.formee-button,.formee input[type="submit"],.formee input[type="button"],.formee input[type="reset"] {
+			font-size: 1.2em;
+			padding: 4px 12px 4px 12px;
+			text-transform: none;
+		}
+		
+		ul li,ol li {
+			margin-left: 0em;
+			margin-right: 1.5em;
+			padding-left: 0;
+			border-bottom: 1px solid aliceblue;
+		}
+		
+		 ul.categoryList li, ul.associatedCategoryList li{
+			width:100%;
+		}
+		
+		.fullWidth {
+			margin:0px;
+			padding:0px;
+			width:100%;
+		}
+		
+		h2 {
+			display: block;
+			margin-left: 0px !important;
+			font: bold 14px/1.1em Arial, Sans-Serif;
+		}
+		
+		.alignRight {
+			text-align: right;
+		}
+		
+		.formee input[type="text"]{
+			height: 20px;
+			padding-bottom: 0;
+			padding-top: 0;
+			width: 15%;
+		}
+		
+	</style>
+	<!--[if IE]>
+		<style>
+			.formee input[type="text"]{
+				 padding-top: 6px;
+				 padding-bottom: 12px;
+				 padding-right: 10px;
+				 padding-left: 10px;
+				 width:15%;
+			}
+		</style>
+	<![endif]-->
+	<!--[if IE 7]>
+		<style>
+			.formee input[type="text"]{
+				 padding-top: 10px;
+				 padding-bottom: 10px;
+				 padding-right: 10px;
+				 padding-left: 10px;
+				 height: 7px;
+				 width:5%;
+			}
+		</style>
+	<![endif]-->
+	
+	<apex:form id="idForm" styleClass="formee">
+		<apex:pageMessages />
+		
+		<apex:outputPanel >
+			<div style="height: 40px; padding-top: 10px; padding-left: 0px;" id="idManageAssociation">
+				<div class="grid-12-12" style="padding: 0px; margin-left: 0px; margin-bottom: 10px;">
+					<apex:commandButton value="{!$Label.apttus_config2__back}" 
+										action="{!doDone}" 
+										immediate="true"/>
+					<apex:outputPanel rendered="{!NOT(ISBLANK(productSO))}"  >
+						<h2 style="margin-left: 1em; display: inline;">{!$Label.apttus_config2__managecategoryassociation} for {!productSO.Name}</h2>
+					</apex:outputPanel>
+				</div>
+			</div>
+			<div id="tabs">
+				<ul>
+					<li><a href="#tabs-1">{!$Label.AvailableCategories}</a></li>
+					<li><a href="#tabs-2">{!$Label.AssociatedCategories}</a></li>
+				</ul>
+				<div id="tabs-1">
+					<apex:outputPanel id="idAvailableCategoriesSet" layout="block"
+						styleClass="aptRoundedDiv"
+						style="margin-top:10px;">
+						<div class="aptGroupHeader" id="idAvailableCatSetHeader">
+								<h2 style="margin-left: 1em;">{!$Label.AvailableCategories}</h2>
+						</div>
+						<div class="grid-5-12"></div>
+						<div class="grid-2-12" style="text-align: center ;padding-top: 0px;padding-bottom: 0px;">
+							<apex:actionStatus id="idStatus5">
+								<apex:facet name="start">
+									<img src="/img/loading.gif" />
+								</apex:facet>
+								<apex:facet name="stop">
+			
+								</apex:facet>
+							</apex:actionStatus>
+							<apex:commandButton action="{!doAssociateProductToCategory}"
+								value="Associate"
+								reRender="idAssociatedCategories,idAvailableCategories,idAvailableCategoriesSet"
+								status="idStatus5" />
+						</div>
+						<div class="grid-5-12" style="padding-top: 0px; padding-bottom: 0px;">
+							<apex:outputPanel styleClass="aptsPaginator" 
+					                                      layout="block" 
+					                                      id="idCategoriesTablePaginator"
+					                                      style="float:right; width:100%; text-align:right;"
+					                                      rendered="{!HasCategoriesItems}">            
+								<apex:outputText value="{!CategoriesStartRecordNumber}-{!CategoriesEndRecordNumber} {!$Label.apttus_config2__outof} {!CategoriesTotalRecordCount}" />
+								&nbsp; 
+								    <apex:outputPanel rendered="{!NOT(CategoriesHasPreviousPage)}"
+								                  styleClass="greyedLink">&lt;{!$Label.Previous}</apex:outputPanel>
+								    <apex:commandLink action="{!CategoriesPreviousPage}"
+								                      	rendered="{!CategoriesHasPreviousPage}" 
+								                      	onclick="loadingNextPage('availableCategoriesTable','tabs-1');"
+														oncomplete="j$('.aptLoadingOverlay').hide(); "
+								                      	reRender="idAvailableCategoriesSet, idCategoriesTablePaginator" >&lt;{!$Label.Previous}</apex:commandLink>
+								                      
+								   <span> | </span>
+								   <apex:outputPanel layout="inline"
+								                      style="text-align: right; width: 100%;" >
+								    <apex:outputText value="{!$Label.apttus_config2__page}" />
+								        <apex:inputText value="{!CategoriesCurrentPageNumber}" 
+								                        styleClass="aptsPageInput" 
+								                        style="width: 15%; font-size: 1.0em;" >
+								            <apex:actionSupport event="onchange"
+								            					onsubmit="loadingNextPage('availableCategoriesTable','tabs-1');"
+								                        		oncomplete="j$('.aptLoadingOverlay').hide(); "
+								            					rerender="idAvailableCategoriesSet, idCategoriesTablePaginator" />
+								            					<!--  -->
+								                                
+								       </apex:inputText>
+								       <apex:outputText value="{!$Label.apttus_config2__outof} {!CategoriesTotalPages}" />
+								   </apex:outputPanel>                  
+								<span> | </span>
+								<apex:outputPanel rendered="{!NOT(CategoriesHasNextPage)}" 
+								                  styleClass="greyedLink">{!$Label.Next}&gt;</apex:outputPanel>
+								<apex:commandLink action="{!CategoriesNextPage}"
+											      rendered="{!CategoriesHasNextPage}" 
+											      onclick="loadingNextPage('availableCategoriesTable','tabs-1');"
+											      oncomplete="j$('.aptLoadingOverlay').hide();"
+							                      reRender="idAvailableCategoriesSet, idCategoriesTablePaginator" >{!$Label.Next}&gt;</apex:commandLink>
+								
+								</apex:outputPanel>
+						</div>
+						
+						<apex:outputPanel id="idAvailableCategoriesDataSet" 
+											styleClass="availableCategoriesTable"
+											layout="block"
+											style="">
+							<div class="aptLoadingOverlay">
+								&nbsp;
+							</div>
+							<div class="grid-12-12 fullWidth"
+								style="font-weight: bold; background: rgb(212, 239, 248);">
+								<div class="grid-1-12" style="padding-bottom: 0px;">
+									<apex:outputLabel value="{!$Label.apttus_config2__select}" />
+								</div>
+								<div class="grid-3-12" style="padding-bottom: 0px;">
+									<apex:outputLabel value="{!$Label.apttus_config2__category}" />
+								</div>
+								<div class="grid-3-12" style="padding-bottom: 0px;">
+									<apex:outputLabel value="{!$Label.apttus_config2__hierarchy}" />
+								</div>
+								<div class="grid-3-12" style="padding-bottom: 0px;">
+									<apex:outputLabel value="{!$Label.apttus_config2__icon}" />
+								</div>
+							</div>
+							<apex:dataList value="{!ListofAvailableCategories}" var="category"
+									styleClass="categoryList">
+								<div class="grid-12-12 fullWidth">
+									<div class="grid-1-12">
+										<apex:inputCheckbox value="{!category.selected}" />
+									</div>
+				
+									<div class="grid-3-12">
+										<apex:outputLabel value="{!category.classificationHierarchySO.Apttus_Config2__Label__c}" />
+									</div>
+									<div class="grid-3-12">
+										<apex:outputLabel value="{!category.classificationHierarchySO.HierarchyId__r.Name}" />
+									</div>
+									<div class="grid-3-12"
+										style="padding-top: 2px; padding-bottom: 2px;">
+										<apex:image id="idImage"
+											rendered="{!NOT(category.classificationHierarchySO.Apttus_Config2__IconId__c == NULL)}"
+											value="{!URLFOR($Action.Attachment.Download, category.classificationHierarchySO.Apttus_Config2__IconId__c)}"
+											width="50" height="50" />
+									</div>
+								</div>
+				
+							</apex:dataList>
+							<div class="grid-12-12" style="text-align: center">
+								<apex:actionStatus id="idStatus">
+									<apex:facet name="start">
+										<img src="/img/loading.gif" />
+									</apex:facet>
+									<apex:facet name="stop">
+				
+									</apex:facet>
+								</apex:actionStatus>
+								<apex:commandButton action="{!doAssociateProductToCategory}"
+									value="Associate"
+									reRender="idAssociatedCategories,idAvailableCategories,idAvailableCategoriesSet"
+									status="idStatus" />
+							</div>
+						</apex:outputPanel>
+					</apex:outputPanel> 
+				</div>
+				<div id="tabs-2">
+
+					<apex:outputPanel id="idAssociatedCategories" 
+										layout="block"
+										styleClass="aptRoundedDiv"
+										style="margin-right:10px; margin-top:10px;">
+						<div class="aptGroupHeader" id="idAssociatedCatHeader">
+							<h2 style="margin-left: 1em;">{!$Label.AssociatedCategories}</h2>
+						</div>
+						<div class="grid-12-12" style="text-align: center;padding-top: 0px; padding-bottom: 0px;">
+							<apex:actionStatus id="idStatus3">
+								<apex:facet name="start">
+									<img src="/img/loading.gif" />
+								</apex:facet>
+								<apex:facet name="stop">
+			
+								</apex:facet>
+							</apex:actionStatus>
+							<apex:commandButton action="{!doDisassociateCategories}"
+								value="Remove"
+								reRender="idAssociatedCategories,idAvailableCategories,idAvailableCategoriesSet"
+								status="idStatus3" />
+						</div>
+			
+						<div class="grid-12-12 fullWidth"
+							style="font-weight: bold; background:rgb(212, 239, 248);">
+							<div class="grid-1-12 " style="padding-bottom: 0px;">
+								<apex:outputLabel value="{!$Label.apttus_config2__select}" />
+							</div>
+							<div class="grid-3-12 " style="padding-bottom: 0px;">
+								<apex:outputLabel value="{!$Label.apttus_config2__category}" />
+							</div>
+							<div class="grid-3-12 " style="padding-bottom: 0px;">
+								<apex:outputLabel value="{!$Label.apttus_config2__hierarchy}" />
+							</div>
+							<div class="grid-3-12" style="padding-bottom: 0px;">
+									<apex:outputLabel value="{!$Label.apttus_config2__icon}" />
+							</div>
+						</div>
+						<div class="grid-12-12 fullWidth">
+							<apex:dataList value="{!ListofAssociatedCategories}"
+								var="associatedCategory" styleClass="associatedCategoryList">
+								<div class="grid-12-12 fullWidth">
+									<div class="grid-1-12">
+										<apex:inputCheckbox value="{!associatedCategory.selected}" />
+									</div>
+									<div class="grid-3-12">
+										<apex:outputLabel value="{!associatedCategory.productClassificationSO.ClassificationId__r.Apttus_Config2__Label__c}" />
+									</div>
+									<div class="grid-3-12">
+										<apex:outputLabel value="{!associatedCategory.productClassificationSO.ClassificationId__r.HierarchyId__r.Name}" />
+									</div>
+									<div class="grid-3-12"
+										style="padding-top: 2px; padding-bottom: 2px;">
+										<apex:image id="idImage"
+											rendered="{!NOT(associatedCategory.productClassificationSO.ClassificationId__r.Apttus_Config2__IconId__c == NULL)}"
+											value="{!URLFOR($Action.Attachment.Download, associatedCategory.productClassificationSO.ClassificationId__r.Apttus_Config2__IconId__c)}"
+											width="50" height="50" />
+									</div>
+								</div>
+			
+							</apex:dataList>
+						</div>
+						<div class="grid-12-12" style="text-align: center">
+							<apex:actionStatus id="idStatus2">
+								<apex:facet name="start">
+									<img src="/img/loading.gif" />
+								</apex:facet>
+								<apex:facet name="stop">
+			
+								</apex:facet>
+							</apex:actionStatus>
+							<apex:commandButton action="{!doDisassociateCategories}"
+								value="Remove"
+								reRender="idAssociatedCategories,idAvailableCategories,idAvailableCategoriesSet"
+								status="idStatus2" />
+						</div>
+					</apex:outputPanel>
+				</div>
+			</div>
+		</apex:outputPanel>
+		<div class="grid-12-12" style="text-align: center">
+			<apex:commandButton action="{!doDone}" value="{!$Label.apttus_config2__done}" />
+		</div>
+	</apex:form>
+
+
+</apex:page>

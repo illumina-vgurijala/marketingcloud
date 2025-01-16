@@ -1,0 +1,1203 @@
+<!--
+    Apttus Config & Pricing
+    ManageProduct
+
+    @2014-2015 Apttus Inc. All rights reserved.
+ -->
+<apex:page controller="Apttus_Config2.ManageProductController"
+           sidebar="showAdminSidebar"
+           cache="false"
+           tabStyle="Product2">
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__AdminCSS)}" />
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JSTreeLibrary, 'jstree-v.pre1.0/jquery.jstree.js')}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__JQueryUITouch0_2_2}"/>
+
+    <script type="text/javascript">
+    var j$ = jQuery.noConflict();
+
+    j$.APTTUS = {
+      spinnerId: '',
+      loadingTitle: '',
+      loadingMessage: '',
+      newOptionGroupName: '',
+      isOptionsLoaded: false,
+      isConstraintRulesLoaded: false,
+      isHeaderAction: false,
+      accordionIndex: false,
+      inlineDelay: 100,
+      optionGroupIds: []
+    }
+
+    j$(function() {
+        bindEvents();
+    });
+
+    /**
+     * Popup functions 
+     * ToDo: combine into single function with option selection parameter
+     * ===================================================================
+     */
+    function openPriceListPopup(selectedValue) {
+        //Only open popup if picklist value matches addnewpricelist string
+        if(selectedValue == '{!JSENCODE(addNewPriceList)}') {
+            j$("#idNewPriceListPopup").dialog({
+                autoOpen: true,
+                title: '{!JSENCODE($Label.CreatePriceList)}',
+                modal: true,
+                resizable:false,
+                width:450,
+                open: function(event, ui) {
+                },
+                close: function(event, ui) {
+                     // rerender PriceList DropDown
+                    doUpdatePriceLists();
+
+                }
+            });
+        }
+    }
+
+    function openPriceMatrixPopup() {
+        j$("#idPriceMatrixPopup").dialog({
+            autoOpen: true,
+            title: '{!JSENCODE($Label.AdvancedPricing)}',
+            modal: true,
+            width: 760,
+            minWidth:760,
+            maxWidth:960,
+            height: 400,
+            resizable: true,
+            open: function(event, ui) {
+            },
+            close: function(event, ui) {
+                doClosePriceMatrix();
+
+            }
+        });
+    }
+
+    //Open Popup to create New Option Groups
+    function openOptionGroupPopup() {
+        j$("#idNewOptionGroupPopup").dialog({
+            autoOpen: true,
+            title: '{!JSENCODE($Label.CreateNewOptionGroup)}',
+            modal: true,
+            resizable:false,
+            width:450,
+            open: function(event, ui) {
+              j$.APTTUS.newOptionGroupName = j$('[id$=idOptionSearchText]').prop("value");
+            },
+            close: function(event, ui) {
+                // rerender Option Group Panel
+                var searchBox = j$(j$('[id$=idOptionSearchText]')[0]);
+                if (searchBox.prop("value") != j$.APTTUS.newOptionGroupName) {
+                  searchBox.prop("value", j$.APTTUS.newOptionGroupName);
+                  rerenderOptionGroups(j$.APTTUS.newOptionGroupName);
+
+                }
+            }
+        });
+    }
+
+    //Open Constraint rule
+    function openConstraintRule(constraintRuleType, constraintRuleId) {
+        //set loading info
+        setLoadingInfo('{!JSENCODE($Label.Loading)}','{!JSENCODE($Label.LoadingPage)}');
+         //create jSon from Inputfields
+        GenerateJson(constraintRuleType, constraintRuleId);
+       
+    }
+    
+    //Open Popup to create / Update Constraint Rules
+    function openConstraintRuleDialog(constraintRuleType) {
+    	 j$("#idConstraintRulePopup").dialog({
+         autoOpen: true,
+         title: constraintRuleType + ' ' + '{!JSENCODE($Label.Rule)}',          
+         modal: true,
+         resizable:false,          
+         width:700,          
+         open: function(event, ui) {
+            
+         },
+         close: function(event, ui) {
+            // rerender ConfigRule tab
+           doClearPredicates();
+           RerenderConstraintRules();    
+         }
+                  
+       });
+    }
+
+    /*
+     * End of Popups
+      *===========================*
+      */
+
+    function addNewOptionGroup(optionGroupName) {
+        setLoadingInfo('{!JSENCODE($Label.AssociatingOptionGroups)}', '');
+        associateOptionGroup(optionGroupName);
+
+    }
+
+    function invokeLoadOptions() {
+        if (!j$.APTTUS.isOptionsLoaded) {
+            setLoadingInfo('{!JSENCODE($Label.Options)}','');
+            doLoadOptions();
+            j$.APTTUS.isOptionsLoaded = true;
+        }
+    }
+
+    function invokeLoadConstraintRules() {
+        if (!j$.APTTUS.isConstraintRulesLoaded) {
+            setLoadingInfo('{!JSENCODE($Label.ConstraintRules)}','');
+            doLoadConstraintRules();
+            j$.APTTUS.isConstraintRulesLoaded = true;
+        }
+    }
+
+    /**
+     * close spinner after save is complete.
+     */
+    function closeSpinner() {
+        j$("img[title=" + j$.APTTUS.spinnerId  + "]").css("visibility", "hidden");
+        return false;
+    }
+
+    function bindAccordion() {
+        j$.APTTUS.isHeaderAction = false;
+        j$(".accordion")
+          .accordion({
+            header: "> div > h2",
+            active: j$.APTTUS.accordionIndex,
+            collapsible: true,
+            heightStyle: "content",
+            beforeActivate: function(event, ui) {
+              return !j$.APTTUS.isHeaderAction;
+            },
+            activate: function(event, ui) {
+              j$.APTTUS.accordionIndex = j$(this).accordion("option", "active");
+            }
+          })
+          .sortable({
+            axis: "y",
+            handle: "h2",
+            distance: 5,
+            create: function(event, ui) {
+              /* Establish sorting of optiongroups*/
+              j$.APTTUS.optionGroupIds = j$(this).sortable("toArray");
+            },
+            stop: function(event, ui) {
+              /* Maintain sorting of optiongroups*/
+              j$.APTTUS.optionGroupIds = j$(this).sortable("toArray");
+              /* Manually remove focus for IE compatability*/
+              ui.item.children("h2").triggerHandler("focusout");
+              j$(this).accordion("refresh");
+            }
+          });
+    }
+
+    function bindEvents() {
+        j$(".draggableOptionGroups").draggable({
+            appendTo : "body",
+            helper : "clone",
+            revert : "invalid",
+            containment : "#idOptionsTab",
+            drag: function(event, ui){
+                j$("#idOptionGroupDropContent").addClass("highlight");
+            },
+            stop: function(event, ui){
+                j$("#idOptionGroupDropContent").removeClass("highlight");
+            }
+        });
+
+        j$(".draggableProducts").draggable({
+            appendTo : "body",
+            helper : "clone",
+            revert : "invalid",
+            containment : "#idOptionsTab",
+            drag: function(event, ui){
+                j$(".drop-content-product").addClass("highlight");
+            },
+            stop: function(event, ui){
+                j$(".drop-content-product").removeClass("highlight");
+            }
+        });
+
+        j$("#idOptionGroupDropContent").droppable({
+            //revert : "invalid",
+            accept: "#draggableOptionGroups",
+            drop: function(event, ui){
+                var optionGroupId = j$(ui.draggable.children()[0]).text();
+                addNewOptionGroup(optionGroupId);
+
+            }
+        });
+    }
+
+    /**
+     * open spinner
+     */
+    function openSpinner() {
+        j$("img[title="+ j$.APTTUS.spinnerId  + "]").css("visibility", "visible");
+        return false;
+
+    }
+
+    /**
+     * Disable save button
+     */
+    function disableSaveButton() {
+        j$("[id$=idSaveButton]").attr("disabled", "disabled");
+        j$("[id$=idSaveButton]").attr("class", "btnDisabled");
+    }
+
+    /**
+     * Function that executes necessary operations on save
+     */
+    function invokeDoSave() {
+      // Setup UI changes
+      disableSaveButton();
+      setLoadingInfo('{!JSENCODE($Label.Saving)}','{!JSENCODE($Label.Saving)}');
+      
+      //Run save after short delay to ensure inline editing has finished
+      setTimeout(function(){
+        //Make option group components save
+        j$(".save-event").trigger("saveEvent");
+
+        // Make CSV of sorted option group ids
+        var sortedIds = j$.APTTUS.optionGroupIds.join(',');
+        
+        //Call save action function
+        doSave(sortedIds);
+      }, j$.APTTUS.inlineDelay);
+
+      return false;
+    }
+    
+    /**
+     * Assign the title and message of the loading dialog
+     * @param actionType will be the title
+     * @param actionMessage will be text next to spinner
+     */
+    function setLoadingInfo(actionType, actionMessage) {
+      j$.APTTUS.loadingTitle = actionType;
+      j$.APTTUS.loadingMessage = actionMessage;
+      return false;
+
+    }
+
+    // Open Loading Dialog for various actions.
+    function openLoadingDialog(actionType, actionMessage) {
+      var message = j$.APTTUS.loadingMessage;
+      if (!message || message.size < 1) {
+        message = '{!JSENCODE($Label.Loading)}';
+      }
+      j$("#idLoadingMessage").html(message);
+      
+      j$("#idLoadingDialog").dialog({
+        autoOpen: true,          
+        modal: true,
+        resizable: false,
+        width: 400,
+        height: 150,
+        dialogClass: "dialog-loading",
+        title: j$.APTTUS.loadingTitle                  
+      });
+      return false;
+        	
+  	}
+  	
+  	// Close Loading Dialog after Constraint Rule Copy or Delete is completed.
+  	function closeLoadingDialog() {
+  		j$("#idLoadingDialog").dialog('close');
+  	
+  	}
+
+    //Make 'enter' button event click button
+    function textSubmit(ev, buttonId) {
+        if (ev.which == 13 || (window.event && window.event.keyCode == 13)) {
+            var buttonElem = j$("[id$='" + buttonId + "']");
+            buttonElem.click();  
+            return false;
+
+        } 
+        return true;
+
+    }
+
+    </script>
+
+    <!-- Section header -->
+    <apex:sectionHeader title="{!$Label.apttus_config2__sprintcpq}" subtitle="{!pageTitle}"/>
+
+    <!-- Chatter Feed -->
+    <apex:outputPanel layout="block">
+        <chatter:feedWithFollowers entityId="{!productId}" showHeader="true"/>
+    </apex:outputPanel>
+
+    <!-- Manage Product -->
+    <apex:form id="idForm">
+        <apex:outputPanel id="idMessages">
+          <apex:pageMessages />
+        </apex:outputPanel>
+
+        <apex:PageBlock mode="detail"
+        				title="{!$Label.apttus_config2__manageproduct}"
+        				id="idManageProductPageBlock">
+            <apex:PageBlockButtons id="idButtonBlock" >
+                <apex:commandButton id="idDoneButton"
+                                    value="{!$Label.apttus_config2__done}"
+                          					action="{!doDone}"
+                                    rendered="{!isCancelActive}"
+                          					reRender="idMessages" />
+                <apex:commandButton id="idSaveButton"
+                                    value="{!$Label.apttus_config2__save}"
+                                    onclick="invokeDoSave(); return false;"
+                                    reRender="idMessages" />
+                <apex:commandButton id="idCancelButton"
+                                    value="{!$Label.apttus_config2__cancel}"
+                                    action="{!doCancel}"
+                                    rendered="{!isCancelActive}"
+                                    immediate="true" />
+            </apex:PageBlockButtons>
+            <apex:tabPanel id="idTabPanel"
+                           switchType="client"
+                  			   selectedTab="ProductSummary"
+                  			   activeTabClass="tab tab-active"
+                  			   inactiveTabClass="tab tab-default"
+                           disabledTabClass="tab tab-disabled">
+                <apex:tab id="idProductSummary"
+                          label="{!$Label.apttus_config2__productsummary}"
+                		  name="ProductSummary">
+                    <apex:PageBlockSection id="idProductDetailSection"
+                    					   columns="2"
+                    					   title="{!$Label.apttus_config2__productinfo}">
+                        <!-- Field set input fields -->
+                        <apex:repeat value="{!productFields}" 
+                                     var="productField">
+                            <apex:inputField value="{!productSO[productField.fieldName]}"/>
+                        </apex:repeat>
+
+                    </apex:PageBlockSection>
+                    <apex:PageBlockSection id="idPricingDetailSection"
+                    					   columns="1"
+                    					   title="{!$Label.apttus_config2__pricinginfo}">
+                        <apex:variable value="{!0}" var="rowNumber" />
+                        <apex:pageBlockTable id="idPricingtable"
+                        					 value="{!priceListItemInfoList}"
+                                             rowClasses="oddRow,evenRow"
+                        					 var="item"
+                        					 columns="9"
+                        					 columnswidth="100px, 20opx, 150px, 100px, 100px, 100px, 100px, 100px, 20px">
+
+                             <!-- Action column -->
+                            <apex:column headerValue="{!$Label.apttus_config2__action}" styleClass="actionsColumn">
+                                <apex:variable var="rowNumber" value="{!rowNumber + 1}" />
+                                <apex:outputPanel rendered="{!NOT(item.isPlaceholder)}">
+                                    <apex:commandLink id="idDeleteLink"
+                                                      type="image/png"
+                                                      value="{!$Label.apttus_config2__del}"
+                                    				  action="{!doDeletePriceListItem}"
+                                                      onclick="j$.APTTUS.spinnerId  = '{!JSENCODE(item.PriceListItem.Id)}_spinner';"
+                                                      status="idSpinnerStatus"
+                                    				  rerender="idPricingDetailSection,idMessages" >
+                                        <apex:param value="{!rowNumber}"
+                                        			assignTo="{!rowNum}"
+                                        			id="idRowNum"
+                                        			name="rowNum"/>
+                                    </apex:commandLink>&nbsp;|&nbsp;
+                                    <apex:commandLink id="idMoreLink" 
+                                                      action="{!doAdvancedPricing}"
+                                                      value="{!$Label.apttus_config2__advanced}"
+                                                      status="idLoadingStatus"
+                                                      rerender="idPriceMatrixPanel,idMessages">
+                                        <apex:param id="priceListItemIdParam"
+                                                    value="{!item.PriceListItem.Id}"
+                                                    assignTo="{!selectedPriceListItemId}"
+                                                    name="priceListItemIdParam"/>
+                                    </apex:commandLink>
+                                </apex:outputPanel>
+                                  <!-- New row -->
+                                <apex:commandLink id="idAdd"
+                                                  action="{!doAddNewPriceListItem}"
+                                                  status="idSpinnerStatus"
+                                                  onclick="j$.APTTUS.spinnerId  = '{!JSENCODE(item.PriceListItem.Id)}_spinner';"
+                                                  rendered="{!item.IsPlaceholder}"
+                                                  rerender="idPricingDetailSection, idMessages">
+                                    <apex:image value="{!URLFOR($Resource.Apttus_Config2__Image_Plus)}"
+                                                title="{!$Label.apttus_config2__add}"
+                                                alt="{!$Label.apttus_config2__add}" />
+                                </apex:commandLink>
+                                <div style="display: inline;">
+                                    <apex:image title="{!JSENCODE(item.PriceListItem.Id)}_spinner" 
+                                                value="/img/loading.gif" 
+                                                style="visibility: hidden;" />
+                                </div>
+                            </apex:column>
+
+                            <!-- Price list name column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceList__c.Label}">
+                                <apex:outputField rendered="{!NOT(item.IsPlaceholder)}" 
+                                                  value="{!item.PriceListItem.Apttus_Config2__PriceListId__c}" />
+                                <!-- new row -->
+                                <apex:selectList id="idDrpPriceList"
+                                				 value="{!item.PriceListItem.Apttus_Config2__PriceListId__c}"
+                                                 onchange="openPriceListPopup(this.value); return false;"
+                                                 size="1"
+                                                 rendered="{!item.IsPlaceholder}">
+                                    <apex:selectOptions value="{!priceListSelectItems}"></apex:selectOptions>
+                                    </apex:selectList>
+                            </apex:column>
+
+                            <!-- Price list charge type column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__ChargeType__c.Label}">
+                                <apex:outputField value="{!item.PriceListItem.Apttus_Config2__ChargeType__c}"
+                                                  rendered="{!NOT(item.IsPlaceholder)}">
+                                    <apex:inlineEditSupport event="ondblClick"/>
+                                </apex:outputField>
+                                <!-- new row -->
+                                <apex:inputField id="idNewFeeType"
+                                				 value="{!item.PriceListItem.Apttus_Config2__ChargeType__c}"
+                                                 rendered="{!item.IsPlaceholder}"
+                                				 style="width:150px;"/>
+                            </apex:column>
+
+                            <!-- List price column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__ListPrice__c.Label}">
+                                <apex:outputField value="{!item.PriceListItem.Apttus_Config2__ListPrice__c}" 
+		                                          rendered="{!NOT(item.IsPlaceholder)}">
+                                    <apex:inlineEditSupport event="ondblClick"/>
+                                </apex:outputField>
+                                <!-- new row -->
+                                <apex:inputField id="idNewListPrice"
+                                				 value="{!item.PriceListItem.Apttus_Config2__ListPrice__c}"
+                                                 rendered="{!item.IsPlaceholder}"
+                                				 style="width:90px;"/>
+                            </apex:column>
+
+                            <!-- Cost column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__Cost__c.Label}">
+                                <apex:outputField value="{!item.PriceListItem.Apttus_Config2__Cost__c}" 
+                                		          rendered="{!NOT(item.IsPlaceholder)}">
+                                    <apex:inlineEditSupport event="ondblClick"/>
+                                </apex:outputField>
+                                <!-- new row -->
+                                <apex:inputField id="idNewCost"
+                                				 value="{!item.PriceListItem.Apttus_Config2__Cost__c}"
+                                                 rendered="{!item.IsPlaceholder}"
+                                				 style="width:90px;"/>
+                            </apex:column>
+
+                                <apex:inputHidden value="{!item.PriceListItem.Apttus_Config2__PriceType__c}"/>
+                            <!-- Price type column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__PriceType__c.Label}">
+                                <apex:outputField value="{!item.PriceListItem.Apttus_Config2__PriceType__c}" 
+                                		          rendered="{!NOT(item.IsPlaceholder)}">
+                                    <apex:inlineEditSupport event="ondblClick"/>
+                                </apex:outputField>
+                                <!-- new row -->
+                                <apex:inputField id="idNewPriceType"
+                                                 value="{!item.PriceListItem.Apttus_Config2__PriceType__c}"
+                                                 rendered="{!item.IsPlaceholder}"
+                                                 style="width:100px;"/>
+                            </apex:column>
+
+                            <!-- Frequency column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__Frequency__c.Label}">
+                                <apex:outputField value="{!item.PriceListItem.Apttus_Config2__Frequency__c}" 
+                                		          rendered="{!NOT(item.IsPlaceholder)}">
+                                    <apex:inlineEditSupport event="ondblClick"/>
+                                </apex:outputField>
+                                <!-- new row -->
+                                <apex:inputField id="idNewFrequency"
+                                				 value="{!item.PriceListItem.Apttus_Config2__Frequency__c}"
+                                                 rendered="{!item.IsPlaceholder}"
+                                				 style="width:100px;"/>
+                            </apex:column>
+
+                            <!-- Price UOM column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__PriceUom__c.Label}">
+                                <apex:outputField value="{!item.PriceListItem.Apttus_Config2__PriceUom__c}" 
+                                		          rendered="{!NOT(item.IsPlaceholder)}">
+                                    <apex:inlineEditSupport event="ondblClick"/>
+                                </apex:outputField>
+                                <!-- new row -->
+                                <apex:inputField id="idNewPriceUom"
+                                                 value="{!item.PriceListItem.Apttus_Config2__PriceUom__c}"
+                                                 rendered="{!item.IsPlaceholder}"
+                                                 style="width:100px;"/>
+                            </apex:column>
+
+                            <!-- Active column -->
+                            <apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__Active__c.Label}" 
+                                         style="text-align:left;">
+
+                                <apex:outputField value="{!item.PriceListItem.Apttus_Config2__Active__c}" 
+                                		 rendered="{!NOT(item.IsPlaceholder)}">
+                                    <apex:inlineEditSupport event="ondblClick"/>
+                                </apex:outputField>
+                                <!-- new row -->
+                                <apex:inputField id="idNewActive"
+                                				 value="{!item.PriceListItem.Apttus_Config2__Active__c}"
+                                                 rendered="{!item.IsPlaceholder}"
+                                				 style="width:20px;"/>
+                            </apex:column>
+
+                        </apex:PageBlockTable>
+                    </apex:PageBlockSection>
+                </apex:tab>
+                <apex:tab id="idOptions" 
+                          label="{!$Label.apttus_config2__options}" 
+                          name="Options" 
+                          style="width:100%;"
+                          disabled="{!isNewProduct}"
+                          ontabenter="invokeLoadOptions();">
+                    <!-- Panel used to rerender for loading options -->
+                    <apex:outputPanel id="idOptionsPanel">
+                        <apex:outputPanel id="idOptionsLoadedPanel" rendered="{!isOptionsLoaded}">
+                            <table id="idOptionsTab" style="width:100%;">
+                                <tr>
+                                  <td style="width:300px; vertical-align:top;">
+                                    <div class="search-panel">
+                                        <apex:outputPanel id="idSearchPanel" >
+                                            <!-- option group/product inner tab -->
+                                            <apex:outputPanel layout="block" styleClass="tab-link" >
+                                                <apex:outputLabel rendered="{!isDisplayLabelMode}" >
+                                                    &lt;{!$Label.OptionGroup}
+                                                </apex:outputLabel>
+                                                <apex:commandLink action="{!doToggleMode}"
+                                                                  rendered="{!isDisplayLinkMode}" 
+                                                                  reRender="idSearchPanel">
+                                                    &lt;{!$Label.OptionGroup}
+                                                </apex:commandLink>
+                                                <span> | </span>
+                                                <apex:outputLabel rendered="{!isDisplayLinkMode}" >
+                                                    {!$Label.Products}&gt;
+                                                </apex:outputLabel>
+                                                <apex:commandLink action="{!doToggleMode}"
+                                                                  rendered="{!isDisplayLabelMode}" 
+                                                                  reRender="idSearchPanel">
+                                                    {!$Label.Products}&gt;
+                                                </apex:commandLink>
+                                            </apex:outputPanel><br />
+
+                                             <!-- Option groups search panel -->
+                                            <apex:outputPanel id="idOptionSearchPanel"
+                                                              rendered="{!isDisplayLabelMode}">
+                                                <apex:inputText id="idOptionSearchText" 
+                                                                label="Search" 
+                                                                value="{!optionGroupSearchString}"
+                                                                styleClass="input-text-search"
+                                                                onkeypress="return textSubmit(event,'idOptionGroupSearchButton');"
+                                                                html-placeholder="{!JSENCODE($Label.apttus_config2__search &' '& $Label.apttus_config2__for &' '& $Label.apttus_config2__optiongroups)}"/>
+                                                <apex:commandButton id="idOptionGroupSearchButton"
+                                                                    value="{!$Label.apttus_config2__search}"
+                                                                    action="{!doSearchOptionGroup}"
+                                                                    status="idSpinnerStatus"
+                                                                    onclick="j$.APTTUS.spinnerId = 'idOptionSearchPanel_spinner';"
+                                                                    rerender="idOptionGroupPanel"/>
+                                                <br />
+                                                <apex:commandLink id="idCreateNewOptionGroup" 
+                                                                  value="{!$Label.apttus_config2__createnewoptiongroup}"
+                                                                  styleClass="tab-link" 
+                                                                  onclick="openOptionGroupPopup(); return false;" />
+                                                <br /><br />
+                                            </apex:outputPanel>
+
+                                             <!-- Option groups panel -->
+                                            <apex:outputPanel id="idOptionGroupPanel" 
+                                                              rendered="{!isDisplayLabelMode}">
+                                              <apex:image title="idOptionSearchPanel_spinner" 
+                                                            value="/img/loading.gif" 
+                                                            style="visibility: hidden; float: right;" />
+                                              <apex:outputPanel rendered="{!isOptionSearched}">
+                                                <apex:outputLabel value="{!$Label.apttus_config2__availableoptiongroups}"
+                                                                  styleClass="aptGroupHeader" />
+                                                <br/>
+                                                <apex:outputPanel rendered="{!OR(NOT(previousOptionGroupStatus), NOT(nextOptionGroupStatus))}">
+                                                  <!-- Pagination Buttons -->
+                                                  <apex:outputPanel rendered="{!PreviousOptionGroupStatus}" 
+                                                                    styleClass="greyedLink">
+                                                      &lt;{!$Label.PreviousPage}
+                                                  </apex:outputPanel>
+                                                  <apex:commandLink action="{!previousOptionGroupPage}" 
+                                                                      rendered="{!NOT(PreviousOptionGroupStatus)}"
+                                                                      status="idSpinnerStatus"
+                                                                      onclick="j$.APTTUS.spinnerId = 'idOptionSearchPanel_spinner';"
+                                                                      reRender="idOptionGroupPanel">
+                                                      &lt;{!$Label.PreviousPage}
+                                                  </apex:commandLink>
+                                                  <span> | </span>
+                                                  <apex:outputPanel rendered="{!NextOptionGroupStatus}" 
+                                                                    styleClass="greyedLink">
+                                                      {!$Label.NextPage}&gt;
+                                                  </apex:outputPanel>
+                                                  <apex:commandLink action="{!nextOptionGroupPage}" 
+                                                                      rendered="{!NOT(NextOptionGroupStatus)}"
+                                                                      status="idSpinnerStatus"
+                                                                      onclick="j$.APTTUS.spinnerId = 'idOptionSearchPanel_spinner';"
+                                                                      reRender="idOptionGroupPanel">
+                                                      {!$Label.NextPage}&gt;
+                                                  </apex:commandLink>
+                                                  <br /><br />
+                                                </apex:outputPanel> 
+                                                <!-- Search Results -->
+                                                <apex:outputPanel rendered="{!availableOptionGroupInfoList.size == 0 }">
+                                                  <h2> {!JSENCODE($Label.NoRecordsToDisplay)} </h2>
+                                                  <br/><br/>
+                                                </apex:outputPanel>
+                                                <apex:repeat value="{!availableOptionGroupInfoList}" var="optionInfo">
+                                                    <apex:outputPanel id="idAvailableOptionGroup" 
+                                                                      rendered="{!NOT(optionInfo.isAssociated)}">
+                                                        <div id="draggableOptionGroups" class="draggableOptionGroups draggable available">
+                                                            <apex:outputLabel id="idOptionGroupId" 
+                                                                              value="{!optionInfo.optionGroupSO.Id}" 
+                                                                              style="display:none;" />
+                                                            <apex:outputLabel id="idOptionGroupsLabel" 
+                                                                              value="{!optionInfo.optionGroupSO.Name}" />
+                                                            <span class="ui-icon ui-icon-grip-dotted-vertical" 
+                                                                  style="float: right;" />
+                                                        </div> <br />
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel id="idAssociatedOptionGroup" 
+                                                                      rendered="{!optionInfo.isAssociated}">
+                                                        <div class="draggable associated">
+                                                            <apex:outputLabel id="idAssociatedOptionGroupsLabel" 
+                                                                              value="{!optionInfo.optionGroupSO.Name}" />
+                                                        </div> <br />
+                                                    </apex:outputPanel>
+                                                </apex:repeat>
+                                                <br /><br />
+                                                <!-- Lower option paging buttons -->
+                                                <apex:outputPanel rendered="{!OR(NOT(previousOptionGroupStatus), NOT(nextOptionGroupStatus))}">
+                                                  <apex:outputPanel rendered="{!PreviousOptionGroupStatus}" 
+                                                                    styleClass="greyedLink">&lt;{!$Label.PreviousPage}</apex:outputPanel>
+                                                    <apex:commandLink action="{!previousOptionGroupPage}" 
+                                                                        rendered="{!NOT(PreviousOptionGroupStatus)}"
+                                                                        status="idSpinnerStatus"
+                                                                        onclick="j$.APTTUS.spinnerId = 'idOptionSearchPanel_spinner';"
+                                                                        reRender="idOptionGroupPanel">
+                                                        &lt;{!$Label.PreviousPage}
+                                                    </apex:commandLink>
+                                                    <span> | </span>
+                                                    <apex:outputPanel rendered="{!NextOptionGroupStatus}" 
+                                                                      styleClass="greyedLink">
+                                                        {!$Label.NextPage}&gt;
+                                                  </apex:outputPanel>
+                                                  <apex:commandLink action="{!nextOptionGroupPage}" 
+                                                                      rendered="{!NOT(NextOptionGroupStatus)}"
+                                                                      status="idSpinnerStatus"
+                                                                      onclick="j$.APTTUS.spinnerId = 'idOptionSearchPanel_spinner';"
+                                                                      reRender="idOptionGroupPanel">
+                                                      {!$Label.NextPage}&gt;
+
+                                                  </apex:commandLink>
+                                                </apex:outputPanel>
+                                              </apex:outputPanel>
+                                              <!-- Bind events on load -->
+                                              <script type="text/javascript">
+                                              bindEvents();
+                                              </script>
+                                            </apex:outputPanel>
+
+                                            <!-- Products search panel -->
+                                            <apex:outputPanel id="idProductSearchPanel"
+                                                              rendered="{!isDisplayLinkMode}">
+                                                <apex:inputText id="idProductSearchText" 
+                                                                label="Search"
+                                                                value="{!productSearchString}"
+                                                                styleClass="input-text-search"
+                                                                onkeypress="return textSubmit(event, 'idProductSearchButton');"
+                                                                html-placeholder="{!JSENCODE($Label.apttus_config2__search &' '& $Label.apttus_config2__for &' '& $Label.apttus_config2__products)}"/>
+                                                <br />
+                                                <apex:selectList id="idDrpSearchOption" 
+                                                                 value="{!selectedSearchOption}"
+                                                                 size="1">
+                                                    <apex:selectOption itemValue="{!$ObjectType.Product2.Fields.Name.localName}" 
+                                                                       itemLabel="{!$ObjectType.Product2.Fields.Name.Label}" />
+                                                    <apex:selectOption itemValue="{!$ObjectType.Product2.Fields.ProductCode.localName}"
+                                                                       itemLabel="{!$ObjectType.Product2.Fields.ProductCode.Label}" />
+                                                    <apex:selectOption itemValue="{!$ObjectType.Product2.Fields.Family.localName}" 
+                                                                       itemLabel="{!$ObjectType.Product2.Fields.Family.Label}" />
+                                                    <apex:selectOption itemValue="{!$ObjectType.Product2.Fields.Description.localName}"
+                                                                       itemLabel="{!$ObjectType.Product2.Fields.Description.Label}" />
+                                                </apex:selectList>
+                                                <apex:commandButton id="idProductSearchButton"
+                                                                    value="{!$Label.apttus_config2__search}" 
+                                                                    action="{!doSearchProduct}"
+                                                                    status="idSpinnerStatus"
+                                                                    onclick="j$.APTTUS.spinnerId = 'idProductSearchPanel_spinner';"
+                                                                    rerender="idProductPanel">
+                                                </apex:commandButton><br />
+                                            </apex:outputPanel>
+                                            <br /><br />
+                                            <apex:outputPanel id="idProductPanel"
+                                                              rendered="{!isDisplayLinkMode}">
+                                              <apex:image title="idProductSearchPanel_spinner" 
+                                                            value="/img/loading.gif" 
+                                                            style="visibility: hidden; float: right;" />
+                                              <apex:outputPanel rendered="{!isProductSearched}">
+                                                <apex:outputLabel value="{!$Label.apttus_config2__availableproducts}"
+                                                                  styleClass="aptGroupHeader"/>
+                                                <br/>
+                                                <!-- Product paging buttons -->
+                                                <apex:outputPanel rendered="{!OR(NOT(previousProductStatus), NOT(nextProductStatus))}">
+                                                  <apex:outputPanel rendered="{!PreviousProductStatus}" 
+                                                                    styleClass="greyedLink">&lt;{!$Label.PreviousPage}
+                                                  </apex:outputPanel>
+                                                  <apex:commandLink action="{!previousProductPage}" 
+                                                                      rendered="{!NOT(PreviousProductStatus)}"
+                                                                      status="idSpinnerStatus"
+                                                                      onclick="j$.APTTUS.spinnerId = 'idProductSearchPanel_spinner';"
+                                                                      reRender="idProductPanel">&lt;{!$Label.PreviousPage}
+                                                  </apex:commandLink>
+                                                  <span> | </span>
+                                                  <apex:outputPanel rendered="{!NextProductStatus}" 
+                                                                    styleClass="greyedLink">{!$Label.NextPage}&gt;
+                                                  </apex:outputPanel>
+                                                  <apex:commandLink action="{!nextProductPage}" 
+                                                                      rendered="{!NOT(NextProductStatus)}"
+                                                                      status="idSpinnerStatus"
+                                                                      onclick="j$.APTTUS.spinnerId = 'idProductSearchPanel_spinner';"
+                                                                      reRender="idProductPanel">{!$Label.NextPage}&gt;
+                                                  </apex:commandLink>
+                                                  <br /><br />
+                                                </apex:outputPanel> 
+                                                <!-- Product results -->
+                                                <apex:outputPanel rendered="{!searchedProductList.size == 0}">
+                                                  <h2> {!JSENCODE($Label.NoRecordsToDisplay)} </h2>
+                                                  <br/><br/>
+                                                </apex:outputPanel>
+                                                <apex:repeat value="{!searchedProductList}" var="searchedProduct">
+                                                    <div id="draggableProducts" class="draggableProducts draggable available">
+                                                        <apex:outputLabel id="idProductId"
+                                                                          value="{!searchedProduct.Id}"
+                                                                          style="display:none;" />
+                                                        <apex:outputLabel id="idProductLabel"
+                                                                          value="{!searchedProduct.Name}" />
+                                                        <span class="ui-icon ui-icon-grip-dotted-vertical" 
+                                                                  style="float: right;" />
+                                                    </div><br />
+                                                </apex:repeat>
+                                                <!-- Lower product paging buttons -->
+                                                <apex:outputPanel rendered="OR(NOT(previousProductStatus), NOT(nextProductStatus))">
+                                                  <apex:outputPanel rendered="{!PreviousProductStatus}" 
+                                                                    styleClass="greyedLink">&lt;{!$Label.PreviousPage}
+                                                  </apex:outputPanel>
+                                                  <apex:commandLink action="{!previousProductPage}" 
+                                                                      rendered="{!NOT(PreviousProductStatus)}"
+                                                                      status="idSpinnerStatus"
+                                                                      onclick="j$.APTTUS.spinnerId = 'idProductSearchPanel_spinner';"
+                                                                      reRender="idProductPanel">&lt;{!$Label.PreviousPage}
+                                                  </apex:commandLink>
+                                                  <span> | </span>
+                                                  <apex:outputPanel rendered="{!NextProductStatus}" 
+                                                                    styleClass="greyedLink">{!$Label.NextPage}&gt;
+                                                  </apex:outputPanel>
+                                                  <apex:commandLink action="{!nextProductPage}" 
+                                                                      rendered="{!NOT(NextProductStatus)}"
+                                                                      status="idSpinnerStatus"
+                                                                      onclick="j$.APTTUS.spinnerId = 'idProductSearchPanel_spinner';"
+                                                                      reRender="idProductPanel">{!$Label.NextPage}&gt;
+                                                  </apex:commandLink>
+                                                </apex:outputPanel>
+                                              </apex:outputPanel>
+                                              <!-- Bind events on load -->
+                                              <script type="text/javascript">
+                                              bindEvents();
+                                              </script>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                      </div>
+                                    </td>
+                                    <td style="vertical-align:top; padding-left:40px">
+                                        <apex:outputPanel id="idOptionGroupDropPanel" 
+                                                          styleClass="aptRoundedDiv">
+                                            <div id="idOptionGroupDropContent" 
+                                                  class="drop-content-option">
+                                              <div class="aptGroupHeader ">
+                                                {!JSENCODE($Label.DragOptionGroup)}
+                                              </div>
+                                              <apex:outputPanel id="idOptionGroupSection" 
+                                                                styleClass="accordion">
+                                                <apex:repeat id="idAssociatedOptionGroupList"
+                                                            value="{!associatedOptionGroupList}" 
+                                                            var="list">
+                                                  <!-- Div for specifying accordion/sortable container -->
+                                                  <div id="{!list.Id}" class="save-event"> 
+                                                    <!-- Header for accordion -->
+                                                    <h2>
+                                                      <span class="option-name"> {!JSENCODE(list.OptionGroupId__r.Name)} </span>
+                                                      <span class="option-buttons">
+                                                      <!-- value="{!$Label.Remove}" -->
+                                                      <apex:commandLink action="{!doRemoveOptionGroupAssociation}"
+                                                                        status="idLoadingStatus"
+                                                                        onclick="j$.APTTUS.isHeaderAction=true; setLoadingInfo('{!JSENCODE($Label.apttus_config2__removeoptiongroup)}', '');" 
+                                                                        onComplete="bindEvents(); bindAccordion();"
+                                                                        rerender="idOptionsLoadedPanel">
+                                                        <apex:param id="optionId"
+                                                                    value="{!list.Id}" 
+                                                                    name="optionId"  
+                                                                    assignTo="{!selectedOptionGroupStr}" />
+                                                        <apex:image value="{!URLFOR($Resource.Apttus_Config2__Image_RemoveBlack)}"
+                                                                    title="{!$Label.apttus_config2__del}"
+                                                                    alt="{!$Label.apttus_config2__del}"
+                                                                    width="20"/>
+                                                      </apex:commandLink>
+                                                      </span>
+                                                    </h2>
+
+                                                    <!-- Accordion contents -->
+                                                    <div id="idOptionsGroupSectionBlock">
+                                                        <c:RelateProductToBundle2 ProductId="{!productId}" 
+                                                                                  OptionGroupId="{!list.Id}" />
+                                                    </div>
+
+                                                    <!-- Script that assigns this div an event listener to call save on the component -->
+                                                    <script type="text/javascript">
+                                                    j$("#{!list.Id}").on("saveEvent", function(ev) {
+                                                      doUpdateOptionGroup{!list.Id}();
+                                                    });
+                                                    </script>
+                                                  </div>
+                                                </apex:repeat>
+                                              </apex:outputPanel>
+                                            </div>
+                                        </apex:outputPanel>
+                                    </td>
+                                </tr>
+                            </table>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+
+                </apex:tab>
+                <apex:tab id="idConstraintRules"
+                          label="{!$ObjectType.Apttus_Config2__ConstraintRule__c.LabelPlural}" 
+                          name="constraintRules"
+                          disabled="{!isNewProduct}" 
+                          ontabenter="invokeLoadConstraintRules();">
+                    <!-- Panel used to rerender for loading options -->
+                    <apex:outputPanel id="idConstraintRulesPanel">
+                        <apex:outputPanel id="idConstraintRulesLoadedPanel" rendered="{!isConstraintRulesLoaded}">
+                            <apex:pageBlockSection id="idInclusionConstraintRuleSection" 
+                                                   title="{!$Label.apttus_config2__inclusionrules}" 
+                                                   columns="1">
+                                <apex:pageBlockTable id="idInclusionConstraintRuleTable" 
+                                                     value="{!associatedConstraintRuleMap[ActionTypeInclusion]}" 
+                                                     var="constraintRule" 
+                                                     columns="3" 
+                                                     rowClasses="oddRow,evenRow" 
+                                                     columnsWidth="10%, 80%, 10%">                            
+                                    <apex:column headerValue="{!$Label.apttus_config2__action}">
+                                        <apex:outputPanel >
+                                            <apex:commandLink id="idEditInclusionConstraint" 
+                                                              value="{!$Label.apttus_config2__edit}" 
+                                                              onClick="openConstraintRule('{!constraintRule.ActionType__c}', '{!constraintRule.ConstraintRuleId__c}'); return false;">
+                                            </apex:commandLink>
+                                            &nbsp;|&nbsp;
+                                            <apex:commandLink id="idCopyInclusionConstraint" 
+                                                              value="{!$Label.apttus_config2__copy}" 
+                                                              action="{!doCopyConstraintRule}" 
+                                                              rerender="idInclusionConstraintRuleTable"
+                                                              onClick="setLoadingInfo('{!JSENCODE($Label.apttus_config2__copy)}', '{!JSENCODE($Label.apttus_config2__copyofconstraintrule)}');"
+                                                              status="idLoadingStatus">
+                                                <apex:param id="idCopyInclusionConstraintId" 
+                                                            value="{!constraintRule.ConstraintRuleId__c}"
+                                                            name="CopyInclusionConstraintId"
+                                                            assignTo="{!selectedConstraintRuleId}"/>
+                                            </apex:commandLink>
+                                            &nbsp;|&nbsp;
+                                            <apex:commandLink id="idDeleteInclusionConstraint" 
+                                                              value="{!$Label.apttus_config2__del}" 
+                                                              action="{!doDeleteConstraintRule}" 
+                                                              rerender="idInclusionConstraintRuleTable" 
+                                                              onClick="setLoadingInfo('{!JSENCODE($Label.apttus_config2__delete)}', '{!JSENCODE($Label.apttus_config2__deletingconstraintrule)}');"
+                                                              status="idLoadingStatus">
+                                                <apex:param id="idDelInclusionConstraintId"
+                                                            value="{!constraintRule.ConstraintRuleId__c}" 
+                                                            name="DelInclusionConstraintId"
+                                                            assignTo="{!selectedConstraintRuleId}" />
+                                            </apex:commandLink>                                 
+                                        </apex:outputPanel>
+                                    </apex:column>
+                                    <apex:column headerValue="{!$ObjectType.Apttus_Config2__ConstraintRule__c.Fields.Name.Label}">
+                                    	<apex:commandLink onClick="openConstraintRule('{!constraintRule.ActionType__c}', '{!constraintRule.ConstraintRuleId__c}'); return false;">                                  
+                                        	<apex:outputText value="{!constraintRule.ConstraintRuleId__r.Name}" />
+                                        </apex:commandLink>	
+                                    </apex:column>
+                                    <apex:column value="{!constraintRule.ConstraintRuleId__r.Active__c}" 
+                                                 headerValue="{!$ObjectType.Apttus_Config2__ConstraintRule__c.Fields.Apttus_Config2__Active__c.Label}" />
+                                    
+                                </apex:pageBlockTable>
+                                <apex:commandLink id="idAddNewInclusionRule" 
+                                                  value="{!$Label.apttus_config2__addnew}"
+                                                  onClick="openConstraintRule('{!ActionTypeInclusion}', ''); return false;"
+                                                  rerender="idConstraintRuleTable"  />                        
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection id="idExcludeConstraintRuleSection" 
+                                                   title="{!$Label.apttus_config2__exclusionrules}" 
+                                                   columns="1">
+                                <apex:pageBlockTable id="idExcludeConstraintRuleTable" 
+                                                     value="{!associatedConstraintRuleMap[ActionTypeExclusion]}" 
+                                                     var="constraintRule" 
+                                                     columns="3" 
+                                                     rowClasses="oddRow,evenRow" 
+                                                     columnsWidth="10%, 80%, 10%">
+                                    <apex:column headerValue="{!$Label.apttus_config2__action}">
+                                        <apex:outputPanel >
+                                            <apex:commandLink id="idEditExcludeConstraint" 
+                                                              value="{!$Label.apttus_config2__edit}" 
+                                                              onClick="openConstraintRule('{!constraintRule.ActionType__c}', '{!constraintRule.ConstraintRuleId__c}'); return false;">
+                                            </apex:commandLink>
+                                            &nbsp;|&nbsp;
+                                            <apex:commandLink id="idCopyExcludeConstraint" 
+                                                              value="{!$Label.apttus_config2__copy}"
+                                                              action="{!doCopyConstraintRule}" 
+                                                              rerender="idExcludeConstraintRuleTable"
+                                                              onClick="setLoadingInfo('{!JSENCODE($Label.apttus_config2__copy)}', '{!JSENCODE($Label.apttus_config2__copyofconstraintrule)}');"
+                                                              status="idLoadingStatus">
+                                                <apex:param id="idCopyExcludeConstraintId"
+                                                            name="CopyExcludeConstraintId"
+                                                            value="{!constraintRule.ConstraintRuleId__c}"
+                                                            assignTo="{!selectedConstraintRuleId}" />
+                                            </apex:commandLink>
+                                            &nbsp;|&nbsp;
+                                            <apex:commandLink id="idDeleteExcludeConstraint" 
+                                                              value="{!$Label.apttus_config2__del}" 
+                                                              action="{!doDeleteConstraintRule}" 
+                                                              rerender="idExcludeConstraintRuleTable" 
+                                                              onClick="setLoadingInfo('{!JSENCODE($Label.apttus_config2__delete)}','{!JSENCODE($Label.apttus_config2__deletingconstraintrule)}');"
+                                                              status="idLoadingStatus">
+                                                <apex:param id="idDelExcludeConstraintId" 
+                                                            name="DelExcludeConstraintId"
+                                                            value="{!constraintRule.ConstraintRuleId__c}" 
+                                                            assignTo="{!selectedConstraintRuleId}" />
+                                            </apex:commandLink>                                 
+                                        </apex:outputPanel>
+                                    </apex:column>
+                                    <apex:column headerValue="{!$ObjectType.Apttus_Config2__ConstraintRule__c.Fields.Name.Label}">                                  
+                                    	<apex:commandLink onClick="openConstraintRule('{!constraintRule.ActionType__c}', '{!constraintRule.ConstraintRuleId__c}'); return false;">                                  
+                                        	<apex:outputText value="{!constraintRule.ConstraintRuleId__r.Name}" />
+                                        </apex:commandLink>	
+                                    </apex:column>
+                                    <apex:column value="{!constraintRule.ConstraintRuleId__r.Active__c}" 
+                                                headerValue="{!$ObjectType.Apttus_Config2__ConstraintRule__c.Fields.Apttus_Config2__Active__c.Label}" />
+                                    
+                                </apex:pageBlockTable>
+                                <apex:commandLink id="idAddNewExclusionRule" 
+                                                  value="{!$Label.apttus_config2__addnew}"
+                                                  onClick="openConstraintRule('{!ActionTypeExclusion}', ''); return false;" 
+                                                  rerender="idExcludeConstraintRuleTable" />                        
+                            </apex:pageBlockSection>
+                            <apex:pageBlockSection id="idValidationConstraintRuleSection" 
+                                                   title="{!$Label.apttus_config2__validationrules}" 
+                                                   columns="1">
+                                <apex:pageBlockTable id="idValidationConstraintRuleTable" 
+                                                     value="{!associatedConstraintRuleMap[ActionTypeValidation]}" 
+                                                     var="constraintRule" 
+                                                     columns="3" 
+                                                     rowClasses="oddRow,evenRow" 
+                                                     columnsWidth="10%, 80%, 10%">
+                                    <apex:column headerValue="{!$Label.apttus_config2__action}">
+                                        <apex:outputPanel >
+                                            <apex:commandLink id="idEditValidationConstraint" 
+                                                              value="{!$Label.apttus_config2__edit}" 
+                                                              onClick="openConstraintRule('{!constraintRule.ActionType__c}', '{!constraintRule.ConstraintRuleId__c}'); return false;">
+                                            </apex:commandLink>&nbsp;|&nbsp;
+                                            <apex:commandLink id="idCopyValidationConstraint" 
+                                                              value="{!$Label.apttus_config2__copy}" 
+                                                              action="{!doCopyConstraintRule}" 
+                                                              rerender="idValidationConstraintRuleTable"
+                                                              onClick="setLoadingInfo('{!JSENCODE($Label.apttus_config2__copy)}', '{!JSENCODE($Label.apttus_config2__copyofconstraintrule)}');"
+                                                              status="idLoadingStatus">
+                                                <apex:param id="idCopyValidationConstraintId" 
+                                                            name="CopyValidationConstraintId"
+                                                            value="{!constraintRule.ConstraintRuleId__c}" 
+                                                            assignTo="{!selectedConstraintRuleId}" />
+                                            </apex:commandLink>&nbsp;|&nbsp;
+                                            <apex:commandLink id="idDeleteValidationConstraint" 
+                                                              value="{!$Label.apttus_config2__del}" 
+                                                              action="{!doDeleteConstraintRule}" 
+                                                              rerender="idValidationConstraintRuleTable"
+                                                              onClick="setLoadingInfo('{!JSENCODE($Label.apttus_config2__delete)}', '{!JSENCODE($Label.apttus_config2__deletingconstraintrule)}');"
+                                                              status="idLoadingStatus">
+                                                <apex:param id="idDelValidationConstraintId"
+                                                            name="DelValidationConstraintId"
+                                                            value="{!constraintRule.ConstraintRuleId__c}"
+                                                            assignTo="{!selectedConstraintRuleId}" />
+                                            </apex:commandLink>                                 
+                                        </apex:outputPanel>
+                                    </apex:column>
+                                    <apex:column headerValue="{!$ObjectType.Apttus_Config2__ConstraintRule__c.Fields.Name.Label}">                                  
+                                        <apex:commandLink onClick="openConstraintRule('{!constraintRule.ActionType__c}', '{!constraintRule.ConstraintRuleId__c}'); return false;">                                  
+                                        	<apex:outputText value="{!constraintRule.ConstraintRuleId__r.Name}" />
+                                        </apex:commandLink>	
+                                    </apex:column>
+                                    <apex:column value="{!constraintRule.ConstraintRuleId__r.Active__c}" 
+                                                 headerValue="{!$ObjectType.Apttus_Config2__ConstraintRule__c.Fields.Apttus_Config2__Active__c.Label}" />
+                                    
+                                </apex:pageBlockTable>
+                                <apex:commandLink id="idAddNewValidationRule" 
+                                                  value="{!$Label.apttus_config2__addnew}" 
+                                                  onClick="openConstraintRule('{!ActionTypeValidation}', ''); return false;" 
+                                                  rerender="idValidationConstraintRuleTable"/>                        
+                            </apex:pageBlockSection>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:tab>
+            </apex:tabPanel>
+
+        </apex:PageBlock>
+
+        <!-- Loading status for showing spinners -->
+        <apex:actionStatus onstart="return openSpinner();"
+                           id="idSpinnerStatus"
+                           onstop="return closeSpinner();" />
+        
+        <apex:actionStatus onstart="return openLoadingDialog();"
+                           id="idLoadingStatus"
+                           onstop="return closeLoadingDialog();" />
+        
+        <!-- Action functions -->
+        <apex:actionFunction id="idDoSave"
+                            name="doSave"
+                            action="{!doSave}"
+                            status="idLoadingStatus"
+                            oncomplete="bindEvents(); bindAccordion();"
+                            rerender="idManageProductPageBlock, idMessages, idConstraintRulePopupPanel">
+            <apex:param id="idSortedOptionGroupIds"
+                        value=""
+                        name="sortedOptionGroupIds"
+                        assignTo="{!selectedOptionGroupStr}"/>
+        </apex:actionFunction>
+
+        <apex:actionFunction id="idDoUpdatePriceLists"
+                             action="{!doUpdatePriceLists}"
+                             name="doUpdatePriceLists"
+                             immediate="true"
+                             reRender="idDrpPriceList" />
+
+        <apex:actionFunction id="idLoadOptions"
+                             name="doLoadOptions"
+                             action="{!loadOptionGroupData}"
+                             status="idLoadingStatus"
+                             immediate="true"
+                             oncomplete="bindEvents(); bindAccordion();"
+                             reRender="idOptionsPanel" />
+        
+        <apex:actionFunction id="idLoadConstraintRules"
+                             name="doLoadConstraintRules"
+                             action="{!doLoadConstraintRules}"
+                             status="idLoadingStatus"
+                             immediate="true"
+                             reRender="idConstraintRulesPanel" />
+
+        <apex:actionFunction id="idRerenderOptionGroups"
+                             name="rerenderOptionGroups"
+                             action="{!doSearchOptionGroup}"
+                             immediate="true"
+                             reRender="idOptionGroupPanel, idOptionGroupPopupPanel">
+            <apex:param id="idNewOptionGroup"
+                        value=""
+                        name="newOptionGroup"
+                        assignTo="{!optionGroupSearchString}" />
+        </apex:actionFunction>
+
+        <apex:actionFunction id="idAssociateOptionGroup"
+                             action="{!doAssociateNewOptionGroup}"
+                             name="associateOptionGroup"
+                             status="idLoadingStatus"
+                             oncomplete="bindAccordion();"
+                             rerender="idSearchPanel, idOptionGroupSection, idOptionGroupPanel">
+            <apex:param id="idSelectedOptionGroup"
+                        value=""
+                        name="selectedOptionGroup"
+                        assignTo="{!selectedOptionGroupStr}" />
+        </apex:actionFunction>
+
+        <apex:actionFunction action="{!doClosePriceMatrix}" 
+                            id="doClosePriceMatrix" 
+                            name="doClosePriceMatrix" 
+                            immediate="true"
+                            reRender="idPriceMatrixPanel" />
+        
+        <apex:actionFunction id="idRerenderConstraintRules" 
+                            name="RerenderConstraintRules" 
+                            immediate="true"
+                            reRender="idInclusionConstraintRuleSection, idExcludeConstraintRuleSection, idValidationConstraintRuleSection" />
+        
+        <apex:actionFunction action="{!generatejSonforConstraintRule}" 
+                            id="idGenerateJson" 
+                            name="GenerateJson" 
+                            rerender="idConstraintRulePopupPanel"
+                            status="idLoadingStatus"
+                            onComplete="openConstraintRuleDialog('{!constraintRuleType}');">
+            <apex:param value="" 
+                        name="ConfigurationType" 
+                        id="idConfigurationType" 
+                        assignTo="{!constraintRuleType}" />
+            <apex:param value="" 
+                        name="ConfigurationId" 
+                        id="idConfigurationId" 
+                        assignTo="{!constraintRuleId}" />
+        </apex:actionFunction> 
+
+    </apex:form>
+
+    <!-- Price List, Option Group, Constraint Rule, and Matrix Pricing modals -->
+    <div id="idNewPriceListPopup" 
+            title="{!JSENCODE($Label.NewPriceList)}" 
+            style="display:none">
+        <c:PriceList />
+    </div>
+
+    <div id="idNewOptionGroupPopup" 
+            title="{!$Label.apttus_config2__createnewoptiongroup}"
+            style="display:none">
+        <apex:outputPanel id="idOptionGroupPopupPanel">
+            <c:OptionGroup />
+        </apex:outputPanel> 
+    </div>
+
+    <div id="idConstraintRulePopup"
+            title="{!$Label.ConstraintRules}"
+            style="display:none;">
+        <apex:outputPanel id="idConstraintRulePopupPanel">
+            <c:ConstraintRuleConfig id="idConstraintRuleConfig" 
+                                    ProductId="{!productId}" 
+                                    rootFields="{!rootFieldsJSON}"  />
+        </apex:outputPanel>        
+    </div>
+
+    <!-- Price matrix handled as an iframe to utilize existing controller -->
+    <div id="idPriceMatrixPopup" 
+            title="{!JSENCODE($Label.AddPriceMatrix)}"
+            style="display:none;">
+        <apex:outputPanel id="idPriceMatrixPanel">
+            <apex:iframe id="idPriceMatrixFrame" 
+                        rendered="{!isAddPriceMatrix}" 
+                        src="{!addPriceMatrixUrl}" 
+                        height="100%"
+                        scrolling="true"/>
+        </apex:outputPanel>
+
+    </div>
+  
+  <div id="idLoadingDialog" style="display:none;">
+		<span class="loading-image">
+      <img id="theImage" src="/img/loading.gif" width="20" height="20"/>
+		</span>
+    <span id="idLoadingMessage" class="loading-message">
+			
+		</span>
+	</div>
+
+</apex:page>

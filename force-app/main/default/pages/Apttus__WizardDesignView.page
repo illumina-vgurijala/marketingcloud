@@ -1,0 +1,231 @@
+<!-- 
+    Apttus Contract Management
+    wizardDesignView
+    @2014-2016 Apttus Inc. All rights reserved.    
+ -->
+<apex:page standardController="Apttus__WizardDesign__c" 
+           showHeader="true"
+           sidebar="false" 
+           tabStyle="Apttus__WizardDesign__c"
+           recordSetVar="WizardDesigns"
+           extensions="Apttus.WizardDesignViewController">
+
+
+<link type="text/css" href="{!URLFOR($Resource.FontAwesome,'css/font-awesome.min.css')}" rel="stylesheet" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.12.1.min.css')}"/>
+    <link type="text/css" href="{!URLFOR($Resource.WizardDesigner,'css/style.css')}" rel="stylesheet" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.WizardComponentLibraryUI,'/css/WizardStep/style.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.WizardComponentLibraryUI,'/css/WizardDesign/style.css')}" />
+    <style>
+        /* FIX OVERRIDE OF SF CSS */
+        body {
+            font-size: 75%;
+        }
+
+        input, select {
+            text-indent: 0;
+        }
+        
+    </style>
+    <script>
+        function getCustomLabels() {
+            return {
+                DefaultRule: '{!$Label.DefaultRule}',
+                RuleFor: '{!$Label.RuleFor}',
+                FailedToSaveRuleset: '{!$Label.FailedToSaveRuleset}',
+                DefaultInput: '{!$Label.DefaultInput}',
+                WantToActivateWizard: '{!$Label.WantToActivateWizard}',
+                New: '{!$Label.New}',
+                Edit: '{!$Label.apttus__edit}',
+                Delete: '{!$Label.Delete}',
+                Retire: '{!$Label.apttus__retire}',
+                View: '{!$Label.View}',
+                WarnWizardLibraryItemAdd: '{!$Label.WarnWizardLibraryItemAdd}',
+                Ok: '{!$Label.Ok}',
+                Cancel: '{!$Label.Cancel}',
+                Activate: '{!$Label.Activate}'
+            };
+        }
+    </script>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'js/jquery-ui-1.12.1.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/wizard-designer.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/jquery.blockUI.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__WizardComponentLibraryUI, 'js/wizard-design.js')}" />
+	
+    <script type="text/javascript">
+        function resetStepFocus(field) { 
+            if(document.getElementById(field) != null) {
+                var length = document.getElementById(field).value.length;            
+                document.getElementById(field).focus();
+                document.getElementById(field).setSelectionRange(length, length);
+            }                       
+        };
+
+        var wait = (function() {
+            var timer = 0;
+            return function(callback, ms){
+                clearTimeout (timer);
+                timer = setTimeout(callback, ms);
+            };
+        })();    
+        $(document).on("keyup", ".searchText", function() {
+            wait(function(){                
+                invokeSearchSteps();
+            }, 1000 );
+        });
+        
+        var deletePrompt = function(deleteLnkId, isActive, wizardId) {
+            if(isActive) {
+                promptSimpleAlert({
+                    onOkay: function() {
+                    },
+                    alertMessage: '{!$Label.DeleteActiveWizard}',
+                    buttons: [
+                        { text: "{!$Label.Ok}" }
+                    ]
+                });
+            } else {
+                promptConfirmDialog({
+                    onConfirm: function() {
+                        deletewizardDesign(wizardId);
+                    },
+                    promptMessageText: "{!$Label.DeleteConfirmation}",
+                    alert: "{!$Label.Alert}",
+                    buttons: [
+                        { text: "{!$Label.Delete}" },
+                        { text: "{!$Label.Cancel}" }
+                    ]
+                });
+            }
+            return false;
+        }
+        
+        var retirePrompt = function(retireId, isDeactivated , wizardId) {
+                promptConfirmDialog({
+                    onConfirm: function() {
+                        retireWizardDesign(wizardId);
+                    },
+                    promptMessageText: "{!$Label.WantToRetireWizard}",
+                    alert: "{!$Label.Alert}",
+                    buttons: [
+                        { text: "{!$Label.apttus__retire}" },
+                        { text: "{!$Label.Cancel}" }
+                    ]
+                });
+            return false;
+        }        
+    </script> 
+    <apex:sectionHeader title="{!$Label.apttus__wizarddesigns}" subtitle="{!$Label.apttus__home}" help=""/>
+    <apex:form styleClass="wizard-step-container" id="wizardDesignViewForm"> 
+        <apex:pageblock id="idwizardDesignPageBlock">               
+            <apex:outputLabel styleClass="wizard-step">{!$Label.apttus__wizarddesigns}</apex:outputLabel>                          
+            <apex:commandButton styleClass="wizard-btn-new" action="{!navigateToWizardDesign}" value="{!$Label.apttus__newwizarddesign}" style="width:130px;"/>  
+            
+            <apex:inputText styleClass="searchText" value="{!searchText}" id="idwizardDesignSearchText" html-placeholder="{!$Label.apttus__searchplaceholder}"/>
+            <apex:actionFunction name="invokeSearchSteps" action="{!search}" reRender="idwizardDesignPageBlock" oncomplete="resetStepFocus('{!$Component.idwizardDesignSearchText}')"/>
+            
+            <apex:pageblockTable styleClass="wizard-step-listview" value="{!wizardDesigns}" var="wizardDesign" id="wizardStepList" rendered="{!displayRecords}">
+                <apex:column headerValue="{!$Label.apttus__actions}" width="160px;">                    
+                    <apex:commandLink action="{!navigateToWizardDesign}" value="{!$Label.apttus__edit}">
+                        <apex:param value="{!wizardDesign.Id}" name="param" assignTo="{!selectedWizardId}"/>
+                    </apex:commandLink>
+                    
+                    <apex:outputLabel > &nbsp;|&nbsp;&nbsp;</apex:outputLabel>
+                    <apex:commandLink id="lnkCloneWizardDesign" value="{!$Label.apttus__clone}" onclick="openWizardDesignModal('{!wizardDesign.Id}'); return false;">                        
+                    </apex:commandLink>
+                    
+                    <apex:outputLabel > &nbsp;|&nbsp;&nbsp;</apex:outputLabel>
+                    <apex:commandLink id="lnkConfigureWizardDesign" value="{!$Label.apttus__config}" action="{!navigateToWizardDesignMetaPropertyConfiguration}">
+						 <apex:param value="{!wizardDesign.Id}" name="param" assignTo="{!selectedWizardId}"/>                       
+                    </apex:commandLink>
+                    
+                    <apex:outputLabel rendered="{!wizardDesign.Status__c=='Draft' }"  >&nbsp;|&nbsp;&nbsp;</apex:outputLabel>
+                    <apex:commandLink rendered="{!wizardDesign.Status__c=='Draft' }" id="lnkDeleteWizardDesign" value="{!$Label.apttus__del}" onclick="return deletePrompt('{!$Component.wizardDesignViewForm.idwizardDesignPageBlock.wizardStepList.lnkDeleteWizardDesign}', {!wizardDesign.Apttus__Status__c == 'Activated'}, '{!wizardDesign.Id}');">
+                    </apex:commandLink> 
+                    <apex:outputLabel style="display: {! if( wizardDesign.Status__c == 'Deactivated','inline','none')}">&nbsp;|&nbsp;&nbsp;</apex:outputLabel>
+                    <apex:commandLink id="lnkRetireWizardDesign" value="{!$Label.apttus__retire}" style="display: {! if( wizardDesign.Status__c == 'Deactivated','inline','none')}" onclick="return retirePrompt('{!$Component.wizardDesignViewForm.idwizardDesignPageBlock.wizardStepList.lnkDeleteWizardDesign}', {! wizardDesign.Apttus__Status__c != 'Deactivate'}, '{!wizardDesign.Id}');">
+                    </apex:commandLink>
+                </apex:column>
+                <apex:repeat value="{!$ObjectType.Apttus__WizardDesign__c.FieldSets.Apttus__WizardDesignViewFieldset}" var="wizardDesignFields" >               
+                    <apex:column value="{!wizardDesign[wizardDesignFields.fieldPath]}"/>                    
+                </apex:repeat>          
+            </apex:pageblockTable>        
+            <apex:panelGrid columns="3" styleClass="wizard-step-pagination" rendered="{!displayRecords}">
+                <apex:outputPanel >
+                    <apex:outputText value="{!$Label.apttus__page} {!PageNumber} {!$Label.apttus__of} {!CEILING(ResultSize/PageSize)}" />
+                </apex:outputPanel>
+                <apex:outputPanel style="margin-left:250px;">
+                    <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!HasPrevious}" action="{!Previous}" reRender="idwizardDesignPageBlock"/>
+                    <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(HasPrevious)}" style="color: #ccc;"/>
+                    <apex:outputText value="  "/>
+                    <apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!HasNext}" action="{!Next}" reRender="idwizardDesignPageBlock"/>                    
+                    <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(HasNext)}" style="color: #ccc;"/>
+                </apex:outputPanel>
+                <apex:outputPanel style="float:right;">
+                    <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                    <apex:selectList value="{!PageSize}" size="1" >
+                        <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                        <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                        <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                        <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                        <apex:actionSupport event="onchange" reRender="idwizardDesignPageBlock"/>
+                    </apex:selectList>
+                </apex:outputPanel>                
+            </apex:panelGrid>
+            <apex:outputPanel >
+                <apex:pageblockSection rendered="{!!displayRecords}">
+                    <apex:outputLabel style="font-weight:bold;margin-left:0px;">{!$Label.apttus__norecordstodisplay}</apex:outputLabel>
+                </apex:pageblockSection>
+            </apex:outputPanel>
+            <apex:inputHidden id="designId" value="{!cloneWizardDesignName}">                                   
+            </apex:inputHidden>
+        </apex:pageblock>
+        <apex:actionFunction name="deletewizardDesign" action="{!deletewizardDesign}" reRender="idwizardDesignPageBlock">
+            <apex:param value="" name="param" assignTo="{!selectedWizardId}" />
+        </apex:actionFunction>
+        <apex:actionFunction name="retireWizardDesign" action="{!retireWizardDesign}" reRender="idwizardDesignPageBlock">
+            <apex:param value="" name="param" assignTo="{!selectedWizardId }" />
+        </apex:actionFunction>
+        <apex:actionFunction name="performUniqueWizardDesignCheck" action="{!checkUniqueDesign}" reRender="wizardDesignCloneModalID" oncomplete="onComplete()">               
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="cleanWizardDesignModalPopup" action="{!closeWizardDesignModalPopup}" reRender="wizardDesignCloneModalID"> 
+            <apex:param value="" name="param" assignTo="{!wizardDesignIdToClone }" />
+        </apex:actionFunction>
+        	    
+        <!-- Wizard design clone - start -->
+        <div id="wizardDesignModal" class="modal fade" role="dialog">            	            	
+                <div class="wizard-design-modal-dialog">                                        
+                    <div class="">
+	                    <apex:outputPanel id="wizardDesignCloneModalID">
+                        <div class="wizard-design-modal-header">                            
+                            <h4 class="wizard-design-modal-title" style="display:inline-block">{!$Label.CloneWizardDesign}</h4>                                                        
+                            	<apex:commandLink styleClass="fa fa-close modalClose" action="{!closeWizardDesignModalPopup}" oncomplete="closeWizardDesignModal()" />                            
+                        </div> 
+                        <div class="wizard-design-modal-body"  style="clear:both">    
+                            <span class="ui-helper-hidden-accessible"><input type="text"/></span>
+                            
+                            <apex:outputPanel layout="block" id="errorMessages">
+                				<apex:pageMessages />
+            				</apex:outputPanel>
+                            <apex:outputPanel id="viewWizardDesignTextBlockId">                                
+                                <apex:outputLabel value="{!$Label.apttus__wizarddesignname}" styleClass="popupWizardDesignLabel"/>                                
+                                <apex:inputText id="wid1" value="{!cloneWizardDesignName}" html-placeholder="{!$Label.apttus__enterwizarddesignname}" styleClass="popupWizardDesignText" onchange="captureValue();" >			                      
+			                    </apex:inputText>                                  
+                            </apex:outputPanel>
+                        </div>                            
+                        <div class="wizard-design-modal-footer">	
+                            <apex:commandlink id="lnkCloneBtn" styleClass="saveCloneWizardDesign primary" action="{!cloneWizardDesign}"  value="{!$Label.apttus__clone}" reRender="wizardDesignCloneModalID" />                            
+                            <!--<apex:commandlink id="lnkCloneBtn" styleClass="saveCloneWizardDesign primary" action="{!cloneWizardDesign}"  value="{!$Label.apttus__clone}" rendered="{!isUniqueWizardDesign}" reRender="idwizardDesignPageBlock" />
+                            <apex:outputText id="txtCloneBtn" styleClass="saveCloneWizardDesignDisable primary" value="{!$Label.apttus__clone}" rendered="{!not(isUniqueWizardDesign)}"/>
+                            <apex:outputText id="txtCloneBtnDefault" style="display:none;" styleClass="saveCloneWizardDesignDisable primary" value="{!$Label.apttus__clone}" /> -->
+                        </div>
+                        </apex:outputPanel>
+                    </div>                                            
+                </div>                
+        </div>
+        <!-- Wizard design clone - end -->
+                
+    </apex:form>     
+</apex:page>

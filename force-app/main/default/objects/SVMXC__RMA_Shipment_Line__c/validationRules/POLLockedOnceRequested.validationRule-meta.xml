@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>POLLockedOnceRequested</fullName>
+    <active>true</active>
+    <description>Locking Parts Order Line Record Requested Status.</description>
+    <errorConditionFormula>AND(
+        OR(
+            AND(ISCHANGED(SVMXC__Line_Status__c),
+                ISPICKVAL(PRIORVALUE(SVMXC__Line_Status__c),&quot;Requested&quot;)
+                ),
+            AND(NOT(ISCHANGED(SVMXC__Line_Status__c)),
+                TEXT(SVMXC__Line_Status__c) = &quot;Requested&quot;
+                )
+        ),
+	    SVMXC__RMA_Shipment_Order__r.Integration_Status__c = &apos;S&apos;,
+        NOT($User.FirstName ==$Label.Automated_Process_User),
+		NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)),
+        NOT($Profile.Name =$Label.Integration_SAP_Service),
+        NOT( 
+                    OR(
+                       SVMXC__RMA_Shipment_Order__r.Submit_to_SAP__c ,  
+               SVMXC__RMA_Shipment_Order__r.Request_All_Part_Order_Lines__c
+                       )
+                ),
+        NOT($Profile.Name=$Label.ProfileCustomerService),
+        NOT($Profile.Name == $Label.ProfileSystemAdmin) 
+        )</errorConditionFormula>
+    <errorMessage>Record cannot be edited once requested.  If changes are needed, contact Customer Care.</errorMessage>
+</ValidationRule>

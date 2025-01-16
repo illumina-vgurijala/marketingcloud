@@ -1,0 +1,612 @@
+<!-- 
+    Apttus Contract Management
+    TemplateFinder
+     
+    @2011-2020 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus.TemplateFinderController" 
+           showHeader="{!IF(isSalesforceMode, true, false)}" 
+           sidebar="{!IF(isSalesforceMode, true, false)}" 
+           cache="false" 
+           title="{!$Label.apttus__templatefinder}"
+           standardStylesheets="true"
+           tabStyle="Apttus__SearchFilter__c"
+           action="{!loadTemplateVersion}">  
+    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'js/jquery-ui-1.12.1.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__DocumentFinderUI, 'js/jquery.blockUI.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__TemplateFinderUI, 'js/templateFinder.js')}"/>
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.12.1.min.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__TemplateFinderUI, 'css/style.css')}"/>
+
+    <script>
+        window.onload = function() { 
+            if (('{!templateVersionId}' != '' || '{!templateId}' != '') && '{!isSalesforceMode}' == 'false') {
+              doInit();
+            }
+
+            try {
+              window.external.MakeVisible();
+            } catch(ex) {
+              // object not available
+            }
+              
+        };
+
+
+        var j$ = jQuery.noConflict();
+        function onAjaxStart() {
+          j$.blockUI({ message: '<img src="{!URLFOR($Resource.Image_LoadingPage)}"/><div>{!$Label.LoadingPage}</div>' });
+        }
+
+        function onAjaxStart2() {
+          j$.blockUI({ message: '<img src="{!URLFOR($Resource.Image_LoadingPage)}"/><div>{!$Label.ActivatingTemplate}</div>' });
+        }
+          
+        function onAjaxStop() {
+          j$.unblockUI();
+        }
+
+       /**
+       * Gets the text content and display it in a modal dialog
+       * @param templateId the template id 
+       */
+      function getTextContent(templateId){
+          document.getElementById('idTemplateName').innerHTML = "{!JSINHTMLENCODE($Label.LoadingPage)}";
+            document.getElementById('idTextContent').innerHTML = '';
+                
+          Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.TemplateFinderController.getTextContent}', templateId, function(result, event) {
+              // check response status
+              if (event.status) {
+                  // ok response (check the result)
+                  document.getElementById('idTemplateName').innerHTML = result.templateName;
+                  if (result && result.textContent) {
+                    document.getElementById('idTextContent').innerHTML = result.textContent;
+                    
+              }
+            } else {
+                document.getElementById('idTextContent').innerHTML = event.message;
+                
+            }
+            
+              }, {escape:true});
+          
+          // show the modal panel
+          showTextContent();
+        
+        }
+    </script>
+
+    <style>
+        .headerStyle {
+            width:100%;padding:5px;background-color:#79b4cd;color:white;margin-bottom: 2px;
+        }
+    </style>
+
+    <apex:form id="idBrowseTemplates" style="min-width:1000px;">
+        
+        <apex:actionFunction name="doInit" 
+                             action="{!doActivate}" 
+                             status="idSearchStatus2" 
+                             reRender="idBrowseTemplates"/>
+
+        <apex:pageBlock id="idTemplateSearchBlock" title="{!PageTitle}" mode="detail" rendered="{!NOT(proceedToConfirmation)}">
+            <apex:pageMessages />
+             <apex:outputPanel layout="block" rendered="{!NOT(isSalesforceMode)}">
+                <apex:inputText value="{!templateSO.Name}" id="idSearchTemplate"
+                                styleClass="searchField" 
+                                style="width:400px;"
+                                onkeypress="return noenter(event);" 
+                                html-placeholder="{!$Label.apttus__searchtemplateinstruction}"/>
+                <apex:commandButton action="{!doSearchTemplates}" 
+                                    reRender="idTemplateSearchBlock" 
+                                    status="idSearchStatus" 
+                                    onclick="setupDialog();"
+                                    style="line-height:0;font-size:0;text-indent:-999px;color: transparent;background-color:#4d90fe;background-image:url({!URLFOR($Resource.Apttus__GraphicsLib, 'small/search.png')});height:31px;width:70px;border-width:0px;background-repeat:no-repeat;background-position:center;border: 1px solid #3079ED;cursor:pointer;"/>
+    
+            </apex:outputPanel>
+            
+            <apex:outputPanel id="nullPanel"/>
+            <apex:actionStatus id="idSearchStatus" onstart="onAjaxStart()" onstop="afterPageUpdate()" />
+            <apex:actionStatus id="idSearchStatus2" onstart="onAjaxStart2()" onstop="afterPageUpdate()" />
+            <apex:actionStatus id="idSearchStatus3" onstart="onAjaxStart()" onstop="onAjaxStop()" />
+            <br></br>
+            <apex:commandLink action="{!doToggleSearchFilter}" 
+                              reRender="idTemplateSearchBlock" 
+                              value="{!SearchFilterToggleLabel}" 
+                              style="color:#015BA7;font-size: 11px;" />
+                              
+            <apex:outputPanel rendered="{!NOT(versionNotExistError)}">
+              <apex:outputPanel rendered="{!NOT(isTemplateVersion) && IsSearchFilterEnabled}">     
+                  <div style="width:650px; margin-bottom:20px;">
+                      <apex:pageBlockSection columns="3">
+                          
+                              <apex:selectList id="idTemplateType"
+                                               size="1" 
+                                               value="{!templateSO.Apttus__Type__c}" 
+                                               multiselect="false" >
+                                  <apex:selectOptions value="{!templateTypeItems}"></apex:selectOptions>
+                                  <apex:actionSupport event="onchange" 
+                                                      action="{!doSearchTemplates}" 
+                                                      status="idSearchStatus"
+                                                      oncomplete="afterPageUpdate()"
+                                                      reRender="idTemplateSearchBlock" />
+                              </apex:selectList>
+
+                              <apex:inputField id="idCategory" value="{!templateSO.Apttus__Category__c}" required="false">
+                                  <apex:actionSupport event="onchange" 
+                                                          action="{!doSearchTemplates}" 
+                                                          status="idSearchStatus"
+                                                          oncomplete="afterPageUpdate()"
+                                                          reRender="idTemplateSearchBlock" />
+                              </apex:inputField>  
+
+                              <apex:inputField Id="idSubcategory" value="{!templateSO.Apttus__Subcategory__c}" required="false">
+                                  <apex:actionSupport event="onchange" 
+                                                          action="{!doSearchTemplates}" 
+                                                          status="idSearchStatus"
+                                                          oncomplete="afterPageUpdate()"
+                                                          reRender="idTemplateSearchBlock" />
+                              </apex:inputField>
+
+
+                         <!-- <apex:inputField Id="idLocale" value="{!templateSO.Apttus__Locale__c}" required="false">-->
+                             <apex:selectList id="localeId" multiselect="false" size="1" value="{!templateSO.Apttus__Locale__c}">
+                                <apex:selectOption itemValue="" itemLabel="{!$Label.apttus__noneselectoption}"/>
+                                <apex:selectOptions value="{!availableLocales}"/>
+                             </apex:selectList>
+                              <apex:actionSupport event="onchange" 
+                                                      action="{!doSearchTemplates}" 
+                                                      status="idSearchStatus"
+                                                      oncomplete="afterPageUpdate()"
+                                                      reRender="idTemplateSearchBlock" />
+                          <!--</apex:inputField>-->  
+                      
+                          <apex:inputField Id="idLanguage" value="{!templateSO.Apttus__Language__c}" required="false">
+                              <apex:actionSupport event="onchange" 
+                                                      action="{!doSearchTemplates}" 
+                                                      status="idSearchStatus"
+                                                      oncomplete="afterPageUpdate()"
+                                                      reRender="idTemplateSearchBlock" />
+                          </apex:inputField>
+
+                      
+                          <apex:selectList id="idBusinessObject" 
+                                           value="{!templateSO.Apttus__BusinessObject__c}" 
+                                           rendered="{!IsBusinessObjectEnabled}"
+                                           multiselect="false"  
+                                           size="1" >
+                              <apex:selectOptions value="{!businessObjectItems}"></apex:selectOptions>
+                              <apex:actionSupport event="onchange" 
+                                                  action="{!doSearchTemplates}" 
+                                                  status="idSearchStatus"
+                                                  oncomplete="afterPageUpdate()"
+                                                  reRender="idTemplateSearchBlock" />
+                          </apex:selectList>
+
+                      </apex:pageBlockSection>
+                  </div>
+              </apex:outputPanel>
+
+            <apex:outputPanel rendered="{!isTemplateVersion}">
+                <div style="width:650px; margin-bottom:20px;">
+                    <apex:pageBlockSection columns="2">
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="{!$Label.apttus__version}"/>
+                            <apex:inputField value="{!templateVersionSO.Name}">
+                                <apex:actionSupport event="onchange" 
+                                                action="{!doSearchTemplateVersions}" 
+                                                status="idSearchStatus"
+                                                oncomplete="afterPageUpdate()"
+                                                reRender="idTemplateSearchBlock" />
+                            </apex:inputField>
+                        </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="{!$Label.apttus__modifiedby}"/>
+                            <apex:inputField value="{!templateSO.OwnerId}" required="false">
+                                <apex:actionSupport event="onchange" 
+                                                action="{!doSearchTemplateVersions}" 
+                                                status="idSearchStatus"
+                                                oncomplete="afterPageUpdate()"
+                                                reRender="idTemplateSearchBlock" />
+                            </apex:inputField>
+                        </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="{!$Label.apttus__lastmodifiedafter}"/>
+                            <apex:inputField value="{!dateFilters.Apttus__Contract_Start_Date__c}">
+                                <apex:actionSupport event="onchange" 
+                                                action="{!doSearchTemplateVersions}" 
+                                                status="idSearchStatus"
+                                                oncomplete="afterPageUpdate()"
+                                                reRender="idTemplateSearchBlock" />
+                            </apex:inputField>
+                        </apex:pageBlockSectionItem>
+
+                        <apex:pageBlockSectionItem >
+                            <apex:outputLabel value="{!$Label.apttus__lastmodifiedbefore}"/>
+                            <apex:inputField value="{!dateFilters.Apttus__Contract_End_Date__c}">
+                                <apex:actionSupport event="onchange" 
+                                                action="{!doSearchTemplateVersions}" 
+                                                status="idSearchStatus"
+                                                oncomplete="afterPageUpdate()"
+                                                reRender="idTemplateSearchBlock" />
+                            </apex:inputField>
+                        </apex:pageBlockSectionItem>
+                        
+                    </apex:pageBlockSection>
+                </div>
+            </apex:outputPanel>
+
+                
+            
+            <apex:outputPanel rendered="{!NOT(isTemplateVersion)}" styleClass="brandTertiaryBgr first tertiaryPalette" >
+                <div class="headerStyle">                
+                    <h3>{!$Label.Templates}</h3>
+                </div>            
+            </apex:outputPanel> 
+            <apex:outputPanel rendered="{!isTemplateVersion}" styleClass="brandTertiaryBgr first tertiaryPalette" >
+                <div class="headerStyle">                
+                    <h3>{!$Label.Template} {!$Label.apttus__version}s</h3>
+                </div>
+            </apex:outputPanel> 
+            <apex:outputPanel id="idResultSetPanel" rendered="{!NOT(isTemplateVersion)}">
+                <apex:outputPanel >
+        
+                <apex:pageBlockSection columns="2" />
+                        <apex:outputPanel id="idRecordSetPanel">
+                            <apex:outputText value="{!$Label.apttus__norecordstodisplay}" rendered="{!NOT(hasTemplates)}" style="font-color:‎#FF0000"/>
+                            <apex:outputPanel id="navigationControlPanel" rendered="{!hasTemplates}">
+                                  <apex:outputText value="{!$Label.apttus__page} {!currentPageNumber} {!$Label.apttus__of} {!totalPages}" />
+
+                                  <apex:outputPanel style="margin-left:calc(50% - 150px)">
+                                      <apex:commandLink value="{!$Label.apttus__previouspagination}" status="idSearchStatus" rendered="{!hasPreviousPage}" action="{!previousPage}" reRender="idResultSetPanel"/>              
+                                      <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(hasPreviousPage)}" style="color: #ccc;"/>
+                                      <apex:outputText value="  "/>
+                                      <apex:commandLink value="{!$Label.apttus__nextpagination}" status="idSearchStatus" rendered="{!hasNextPage}" action="{!nextPage}" reRender="idResultSetPanel"/>                    
+                                      <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(hasNextPage)}" style="color: #ccc;"/>
+                                  </apex:outputPanel>
+
+                                  <apex:outputPanel style="float:right; margin-bottom:5px;">
+                                    <apex:outputText value="{!$Label.apttus__recordsperpage} " />
+                                    <apex:selectList value="{!pageSize}" size="1" >
+                                        <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                                        <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                                          <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                                          <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                                            <apex:actionSupport event="onchange" action="{!doSearchTemplates}" status="idSearchStatus" reRender="idResultSetPanel"/>
+                                    </apex:selectList>
+                                  </apex:outputPanel>
+                             </apex:outputPanel>
+
+                            <div style="overflow-y:scroll;height:500px;width:100%;">
+                                <apex:pageBlockTable value="{!templates}" 
+                                                     var="versionInfo" 
+                                                     rowClasses="oddRow,evenRow" 
+                                                     width="100%" 
+                                                     rendered="{!hasTemplates}" >
+                                    <apex:column headerValue="{!$Label.apttus__action}" >
+                                        <apex:commandButton action="{!doSelectTemplate}" 
+                                                            value="{!$Label.apttus__select}" 
+                                                            status="idSearchStatus"
+                                                            reRender="idTemplateSearchBlock, templateVersionDisplay" >
+                                            <apex:param name="templateIdChosen" value="{!versionInfo.templateSO.Id}" />
+                                        </apex:commandButton>
+                                    </apex:column>
+                                    
+                                    <!-- Name column -->
+                                    <apex:column >
+                                        <apex:facet name="header">
+                                                <apex:outputPanel > 
+                                                    <apex:commandLink value="{!$ObjectType.Apttus__APTS_Template__c.Fields.Name.Label}" 
+                                                                      action="{!doSortTemplates}" 
+                                                                      status="idSearchStatus"
+                                                                      reRender="idResultSetPanel">        
+                                                        <apex:param name="sortFieldName" value="Name" />    
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+                                                                    title="{!$Label.apttus__sortedascending}" 
+                                                                    alt="{!$Label.apttus__sortedascending}" 
+                                                                    rendered="{!sortTemplateFieldName == 'Name' && sortTemplateOrder != 'DESC'}" />                                             
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+                                                                    title="{!$Label.apttus__sorteddescending}" 
+                                                                    alt="{!$Label.apttus__sorteddescending}" 
+                                                                    rendered="{!sortTemplateFieldName == 'Name' && sortTemplateOrder == 'DESC'}" />
+                                                    </apex:commandLink>
+                                                </apex:outputPanel>
+                                            </apex:facet>
+                                            <div title="{!versionInfo.templateSO.Name}">
+                                                <apex:commandLink value="{!LEFT(versionInfo.templateSO.Name,80)}" 
+                                                          title="{!$Label.apttus__textcontentviewinstruction}"
+                                                          onclick="getTextContent('{!versionInfo.templateSO.Id}');"
+                                                          rerender="dummy" />
+                                            </div>
+                                    </apex:column>
+                                                    
+                                    <!--  Browse Templates Result Field Set  -->
+                                    <apex:repeat value="{!TemplateResultFields}" 
+                                                 var="fd">
+                                        <apex:column style="max-width:150px;height:50px;" rendered="{!fd.member.Label != 'Name'}">
+                                            <apex:facet name="header">
+                                                <apex:outputPanel > 
+                                                    <apex:commandLink value="{!IF(fd.member.Label == 'Owner ID', $Label.Owner, 
+                                                                                IF(fd.member.Label == 'Last Modified By ID', $Label.LastModifiedBy,
+                                                                                    IF(fd.member.Label == 'Created By ID', $Label.CreatedBy, fd.member.label)
+                                                                                )
+                                                                            )}" 
+                                                                      action="{!doSelectTemplate}" 
+                                                                      status="idSearchStatus"
+                                                                      rendered="{!fd.isSortable}"
+                                                                      reRender="idResultSetPanel">        
+                                                        <apex:param name="sortFieldName" value="{!fd.member.FieldPath}" />  
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+                                                                    title="{!$Label.apttus__sortedascending}" 
+                                                                    alt="{!$Label.apttus__sortedascending}" 
+                                                                    rendered="{!sortTemplateFieldName == fd.member.FieldPath && sortTemplateOrder != 'DESC'}" />                                            
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+                                                                    title="{!$Label.apttus__sorteddescending}" 
+                                                                    alt="{!$Label.apttus__sorteddescending}" 
+                                                                    rendered="{!sortTemplateFieldName == fd.member.FieldPath && sortTemplateOrder == 'DESC'}" />
+                                                    </apex:commandLink>
+
+                                                    <apex:outputText value="{!fd.member.Label}" 
+                                                                     rendered="{!NOT(fd.isSortable)}" />             
+                                                </apex:outputPanel>
+                                            </apex:facet>
+
+                                            <apex:outputPanel layout="block" 
+                                                        title="{!versionInfo.templateSO[fd.member.FieldPath]}"
+                                                        rendered="{!versionInfo.templateSO[fd.member.FieldPath]!=null && fd.member.Label != 'Guidance'}">
+                                                <apex:outputField value="{!versionInfo.templateSO[fd.member.FieldPath]}" 
+                                                            style="word-wrap: break-word;"/>
+                                            </apex:outputPanel>
+
+                                            <apex:outputPanel layout="block" 
+                                                        title="{!versionInfo.templateSO[fd.member.FieldPath]}"
+                                                        rendered="{!versionInfo.templateSO[fd.member.FieldPath]!=null && fd.member.Label == 'Guidance'}">
+                                                <apex:outputField value="{!versionInfo.templateSO[fd.member.FieldPath]}" 
+                                                            style="word-wrap: break-word;"/>
+                                            </apex:outputPanel>
+                                        </apex:column>
+                                    </apex:repeat>     
+                                    
+                                </apex:pageBlockTable> <!-- comment -->
+                            </div>
+                        </apex:outputPanel>
+                </apex:outputPanel>
+            </apex:outputPanel>
+
+            <apex:outputPanel id="templateVersionDisplay" rendered="{!isTemplateVersion}">
+                <apex:outputText value="{!$Label.apttus__norecordstodisplay}" rendered="{!NOT(hasTemplateVersions)}" style="font-color:‎#FF0000"/>
+                <apex:outputPanel rendered="{!hasTemplateVersions}">
+                    <apex:outputPanel id="idRecordSetPanel2">
+                        <apex:outputPanel id="navigationControlPanel2">
+                              <apex:outputText value="{!$Label.apttus__page} {!templateVersionPaginator.pageNumber} {!$Label.apttus__of} {!templateVersionPaginator.totalPages}" />
+
+                              <apex:outputPanel style="margin-left:calc(50% - 150px)">
+                                  <apex:commandLink value="{!$Label.apttus__previouspagination}" status="idSearchStatus" rendered="{!templateVersionPaginator.hasPrevious}" action="{!templateVersionPaginator.previousPage}" reRender="templateVersionDisplay"/>              
+                                  <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(templateVersionPaginator.hasPrevious)}" style="color: #ccc;"/>
+                                  <apex:outputText value="  "/>
+                                  <apex:commandLink value="{!$Label.apttus__nextpagination}" status="idSearchStatus" rendered="{!templateVersionPaginator.hasNext}" action="{!templateVersionPaginator.nextPage}" reRender="templateVersionDisplay"/>                    
+                                  <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(templateVersionPaginator.hasNext)}" style="color: #ccc;"/>
+                              </apex:outputPanel>
+
+                              <apex:outputPanel style="float:right; margin-bottom:5px;">
+                                <apex:outputText value="{!$Label.apttus__recordsperpage} " />
+                                <apex:selectList value="{!pageSize}" size="1" >
+                                    <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                                    <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                                      <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                                      <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                                        <apex:actionSupport event="onchange" action="{!paginateTemplateVersion}" status="idSearchStatus" reRender="templateVersionDisplay"/>
+                                </apex:selectList>
+                              </apex:outputPanel>
+                         </apex:outputPanel>
+                     </apex:outputPanel>
+
+                    <div style="overflow-y:scroll;height:500px;width:100%;">
+                        <apex:pageBlockTable value="{!templateVersionPaginator.records}" 
+                                             var="versionInfo" 
+                                             rowClasses="oddRow,evenRow" 
+                                             width="100%"
+                                             rendered="{!hasTemplateVersions}">
+                            <apex:column headerValue="{!$Label.apttus__action}" >
+                                <apex:commandButton action="{!doSelectTemplateVersion}" 
+                                                    value="{!$Label.apttus__open}" 
+                                                    rendered="{!IsCheckoutMode}"
+                                                    status="idSearchStatus3"
+                                                    reRender="idBrowseTemplates" >
+                                    <apex:param name="templateVersionIdChosen" value="{!versionInfo['Id']}" />
+                                    <apex:param name="action" value="Open" />
+                                </apex:commandButton>
+                                <apex:commandButton action="{!doSelectTemplateVersion}" 
+                                                    value="{!$Label.apttus__activate}" 
+                                                    rendered="{!IsActivationMode}"
+                                                    reRender="idBrowseTemplates" >
+                                    <apex:param name="templateVersionIdChosen" value="{!versionInfo['Id']}" />
+                                    <apex:param name="action" value="Activate" />
+                                </apex:commandButton>
+                                <apex:outputPanel rendered="{!IsAgreementPlaybookMode}" >
+                                  <apex:commandButton action="{!doSelectTemplateVersion}" 
+                                                      value="{!$Label.apttus__inserttext}"                                                       
+                                                       status="idSearchStatus3"
+                                                      reRender="idBrowseTemplates" >
+                                      <apex:param name="templateVersionIdChosen" value="{!versionInfo['Id']}" />
+                                      <apex:param name="action" value="InsertText" />
+                                  </apex:commandButton>
+                                  <br></br>
+                                </apex:outputPanel>
+                                <apex:commandButton action="{!doSelectTemplateVersion}" 
+                                                    value="{!insertButtonText}" 
+                                                    rendered="{!IsPlaybookMode}"
+                                                     status="idSearchStatus3"
+                                                    reRender="idBrowseTemplates" >
+                                    <apex:param name="templateVersionIdChosen" value="{!versionInfo['Id']}" />
+                                    <apex:param name="action" value="Insert" />
+                                </apex:commandButton>
+                                <apex:outputPanel rendered="{!IsInsertRefEnabled}" >
+                                    <br></br>
+                                    <apex:commandButton action="{!doSelectTemplateVersion}" 
+                                                     value="{!$Label.apttus__insertreference}" 
+                                                 reRender="idBrowseTemplates" >
+                                     <apex:param name="templateVersionIdChosen" value="{!versionInfo['Id']}" />
+                                     <apex:param name="action" value="Insert Reference" />
+                                   </apex:commandButton>
+                                   </apex:outputPanel>
+                                <apex:outputPanel rendered="{!IsAgreementPlaybookMode}" >
+                                        <br></br>
+                                    <apex:commandButton action="{!doSelectTemplateVersion}" 
+                                                        value="{!$Label.apttus__swapclause}" 
+                                                         reRender="idBrowseTemplates">
+                                        <apex:param name="templateVersionIdChosen" value="{!versionInfo['Id']}" />
+                                        <apex:param name="action" value="SwapClause" />
+                                    </apex:commandButton>
+                                </apex:outputPanel>
+                            </apex:column>
+                    
+                            <!--  Browse Templates Result Field Set  -->
+                            <apex:repeat value="{!TemplateVersionResultFields}" 
+                                         var="fd">
+                                <apex:column style="max-width:150px;height:50px">
+                                    <apex:facet name="header">
+                                        <apex:outputPanel > 
+                                            <apex:commandLink value="{!IF(fd.member.Label == 'Owner ID', $Label.Owner, 
+                                                                        IF(fd.member.Label == 'Last Modified By ID', $Label.LastModifiedBy,
+                                                                            IF(fd.member.Label == 'Created By ID', $Label.CreatedBy, fd.member.label)
+                                                                        )
+                                                                    )}" 
+                                                              action="{!doSortTemplateVersions}" 
+                                                              rendered="{!fd.isSortable}"
+                                                              status="idSearchStatus"
+                                                              reRender="idTemplateSearchBlock">        
+                                                <apex:param name="sortVersionFieldName" value="{!fd.member.FieldPath}" />   
+                                                <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+                                                            title="{!$Label.apttus__sortedascending}" 
+                                                            alt="{!$Label.apttus__sortedascending}" 
+                                                            rendered="{!sortVersionFieldName == fd.member.FieldPath && sortVersionOrder != 'DESC'}" />                                          
+                                                <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+                                                            title="{!$Label.apttus__sorteddescending}" 
+                                                            alt="{!$Label.apttus__sorteddescending}" 
+                                                            rendered="{!sortVersionFieldName == fd.member.FieldPath && sortVersionOrder == 'DESC'}" />
+                                            </apex:commandLink>
+
+                                            <apex:outputText value="{!fd.member.Label}" 
+                                                             rendered="{!NOT(fd.isSortable)}" />             
+                                        </apex:outputPanel>
+                                    </apex:facet>
+
+                                    <apex:outputPanel layout="block" 
+                                                title="{!versionInfo[fd.member.FieldPath]}"
+                                                rendered="{!versionInfo[fd.member.FieldPath]!=null && fd.member.Label != 'Guidance'}">
+                                        <apex:outputField value="{!versionInfo[fd.member.FieldPath]}" 
+                                                    style="word-wrap: break-word;"/>
+                                    </apex:outputPanel>
+
+                                    <apex:outputPanel layout="block" 
+                                                title="{!versionInfo[fd.member.FieldPath]}"
+                                                rendered="{!versionInfo[fd.member.FieldPath]!=null && fd.member.Label == 'Guidance'}">
+                                         <apex:outputField value="{!versionInfo[fd.member.FieldPath]}"  
+                                                    style="word-wrap: break-word;"/>
+                                    </apex:outputPanel>
+                                </apex:column>
+                            </apex:repeat>     
+                            
+                        </apex:pageBlockTable> <!-- comment -->
+                    </div>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="backPanel" layout="block">
+                        <apex:commandLink value="{!$Label.apttus__back}" 
+                                            action="{!back}" 
+                                            style="color: #006295;"
+                                            onclick="setupDialog();"
+                                            status="idSearchStatus"
+                                            rerender="idTemplateSearchBlock"
+                                            rendered="{!NOT(isSalesforceMode)}"/>
+                        </apex:outputPanel>
+                    <apex:outputPanel id="idResponsePanel">
+                        <script>
+                            try {
+                                // get the response xml
+                                var responseXml = "{!JSENCODE(responseXml)}";
+                                if ("{!isTestMode}" == 'true' && responseXml.length > 0)
+                                    alert(responseXml);
+                                
+                                // set the response xml
+                                if (responseXml.length > 0) {
+                                  window.external.SetResponse(responseXml);
+                                }
+                                
+                                
+                            } catch(ex) {
+                                // object not available
+                            } 
+                        </script>
+
+                    </apex:outputPanel>
+                </apex:outputPanel>
+          </apex:outputPanel>
+        </apex:pageBlock>
+        
+         <apex:outputPanel rendered="{!proceedToConfirmation}" >
+            <apex:pageBlock >
+              <apex:pageBlockButtons location="bottom">
+                <apex:commandButton value="{!$Label.apttus__return}" 
+                          action="{!back}"
+                          immediate="true" />
+                </apex:pageBlockButtons>
+                <apex:outputText style="font-size: 12px; font-weight: bold;" 
+                     value="{!$Label.apttus__activationsuccess}" />
+                <p/>
+                <apex:pageBlockSection title="{!$Label.apttus__template} {!$Label.apttus__information}" columns="1">
+                  <apex:pageBlockSectionItem >
+                    <apex:outputLabel style="font-weight: bold;" 
+                              value="{!$Label.apttus__template} {!$Label.apttus__name}" 
+                              for="idFileName" />
+                      <apex:outputText id="idFileName" value="{!TemplateName}" />
+                    </apex:pageBlockSectionItem>
+
+                    <apex:pageBlockSectionItem >
+                    <apex:outputLabel style="font-weight: bold;" 
+                              value="{!$Label.apttus__template} {!$Label.apttus__version} {!$Label.apttus__name}" 
+                              for="idFileName" />
+                      <apex:outputText id="idFileName" value="{!templateVersionName}" />
+                    </apex:pageBlockSectionItem>
+                    
+                  </apex:pageBlockSection>
+              </apex:pageBlock>
+            
+          </apex:outputPanel> 
+
+        <!-- text content dialog -->
+        <apex:outputPanel >
+            <div id="idTextContentPanel" style="display: none">
+                <apex:outputPanel >
+                    <div class="hd">
+                        <apex:outputPanel >
+                            <span id="idTemplateName"/>
+                        </apex:outputPanel> 
+                    </div> 
+                    <div class="bd">
+                        <apex:pageBlock >
+                            <apex:pageBlockSection columns="1">
+                                <apex:pageBlockSectionItem >
+                                    <span id="idTextContent"/>
+                                </apex:pageBlockSectionItem>
+                            </apex:pageBlockSection>
+                        </apex:pageBlock>
+                    </div> 
+                </apex:outputPanel> 
+            </div>
+        </apex:outputPanel>                 
+        
+        <apex:actionFunction name="doSearchTemplates" 
+                             action="{!doSearchTemplates}" 
+                             reRender="idTemplateSearchBlock" 
+                             status="idSearchStatus" />
+                             
+    </apex:form>
+
+</apex:page>

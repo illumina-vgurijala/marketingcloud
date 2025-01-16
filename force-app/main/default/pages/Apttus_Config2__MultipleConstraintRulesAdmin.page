@@ -1,0 +1,1021 @@
+<!-- 
+    Apttus Config & Pricing
+    MultipleConstraintRulesAdmin
+     
+    @201-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page controller="Apttus_Config2.MultipleConstraintRulesAdminController" 
+		   tabstyle="Product2" 
+		   sidebar="{!ShowAdminSidebar}" > 
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/> 
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+	
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+		j$.APTTUS = {};
+		j$.APTTUS.conditionDeleteCheckboxesCount = 0;
+		j$.APTTUS.actionDeleteCheckboxesCount = 0;
+		j$(document).ready(function(){
+			toggleTabs();
+			
+			//disable delete buttons at startup 
+			j$('.conditionBLockDeleteButton').attr("disabled", true);
+			j$('.conditionBLockDeleteButton').addClass("aptButtonDisabled");
+			j$('.actionBLockDeleteButton').attr("disabled", true);
+			j$('.actionBLockDeleteButton').addClass("aptButtonDisabled");
+			j$(document).on('click', '.aptConditionDeleteCheckBox', function(){
+				if (j$(this).attr("checked")) {
+					j$.APTTUS.conditionDeleteCheckboxesCount += 1;
+				} else {
+					j$.APTTUS.conditionDeleteCheckboxesCount -= 1;
+				}
+				toggleConditionDeleteButtonAccess();
+				
+			});
+			
+			j$(document).on('click', '.aptActionDeleteCheckBox', function(){
+				if (j$(this).attr("checked")) {
+					j$.APTTUS.actionDeleteCheckboxesCount += 1;
+				} else {
+					j$.APTTUS.actionDeleteCheckboxesCount -= 1;
+				}
+				
+				toggleActionDeleteButtonAccess();
+		
+			});
+		})
+		
+		
+		function toggleConditionDeleteButtonAccess(){
+			if (j$.APTTUS.conditionDeleteCheckboxesCount == 0 ){
+				j$('.conditionBLockDeleteButton').attr("disabled", true);
+				j$('.conditionBLockDeleteButton').addClass("aptButtonDisabled");
+				
+			} else {
+				j$('.conditionBLockDeleteButton').attr("disabled", false);
+				j$('.conditionBLockDeleteButton').removeClass("aptButtonDisabled");
+			
+			}
+		
+		}
+		
+		function toggleActionDeleteButtonAccess(){
+			if (j$.APTTUS.actionDeleteCheckboxesCount == 0 ){
+				j$('.actionBLockDeleteButton').attr("disabled", true);
+				j$('.actionBLockDeleteButton').addClass("aptButtonDisabled");
+			} else {
+				j$('.actionBLockDeleteButton').attr("disabled", false);
+				j$('.actionBLockDeleteButton').removeClass("aptButtonDisabled");
+			}
+		}
+		
+		function toggleTabs(){
+			var showActionBlock = {!showActionBlock};
+			if (showActionBlock){
+				j$("#tabs").tabs();
+				
+			} else {
+				j$("#tabLinks").hide();
+				
+			}
+			
+		}
+		
+		function displayDeleteConfirmationBox(block){
+			j$( "#deletionConfirmationBox" ).dialog({
+				modal: true,
+				buttons: {
+				  Yes: function() {
+				  	if (block == 'conditionBlock'){
+				  		j$.APTTUS.conditionDeleteCheckboxesCount = 0;
+				  		invokeDeleteConditionRules();
+				  		j$(this).dialog( "close" );
+				  	} else if (block == 'actionBlock') {
+				  		j$.APTTUS.actionDeleteCheckboxesCount = 0;
+				  		invokeDeleteActionRules();
+				  		j$(this).dialog( "close" );
+				  	}
+				    
+				  },
+				  No: function() {
+				    j$(this).dialog( "close" );
+				  }
+				}
+		    });
+		}
+		
+		function loadingNextPage(className,tabId,divClass) {
+       		var tabPosition = j$('#'+tabId).position();
+       		var tabOffset = j$('#'+tabId).offset();
+		    var position = j$('.'+className).offset();
+		    j$('.'+divClass).css( { position: 'absolute', left: position.left - tabOffset.left + tabPosition.left, top: position.top - tabOffset.top + tabPosition.top });
+		    j$('.'+divClass).width(j$('.'+className).width());
+		    j$('.'+divClass).height(j$('.'+className).height());
+		    j$('.'+divClass).show();
+		    
+        }
+
+        /**
+		 * show the field expression dialog		 
+		 * @param 	inputField
+		 *			context expression field
+		 */
+        function showExpressionDialog(inputField) {       
+	        j$("#idExpressionPopup").dialog({
+	          autoOpen: true,
+	          title: 'Edit Expression',          
+	          modal: true,
+	          resizable:true,          
+	          width:350,
+	          height:425,         
+	          open: function( event, ui ) {
+
+	            // set calculated formula value to focus field
+	            j$('.CalculatedFormula').val(j$(inputField).val());
+	          },
+	          close: function( event, ui ) {
+	             // update focus field value
+	            j$(inputField).val(j$('.CalculatedFormula').val());
+
+	          },
+	          buttons: {
+	            'Ok' : function() {
+	              j$( this ).dialog( "close" );
+
+	            }
+	          },
+	          position: {
+			     my: "left top",
+			     of: inputField
+			   }
+	        });
+      	}
+
+      	/**
+		 * show the action expressions for action
+		 * @param 	actionExpressionsDiv
+		 *			the action expressions div
+		 */
+      	function showActionExpressions(actionExpressionsDiv) {
+      		j$(actionExpressionsDiv).dialog({
+	          autoOpen: true,
+	          title: '{!$Label.EditFieldCriteria}',          
+	          modal: true,
+	          resizable:true,          
+	          width:450,
+	          close: function( event, ui ) {
+	             //destroy dialog
+	            j$(actionExpressionsDiv).dialog('destroy');
+
+	          },
+	          buttons: {
+	            'Ok' : function() {
+	              j$( this ).dialog( "close" );
+
+	            }	          
+	          }      
+	        });
+      	}
+
+      	/**
+		 * unhide next field expression
+		 * @param 	button
+		 *			the 'add' button
+		 * @param 	actionExpressionBlock
+		 *			action expressions block
+		 */
+      	function doAddExpression(button, actionExpressionBlock) {	
+      		var expressionList = j$(actionExpressionBlock).find('.actionExpressionLine:hidden');
+      		if(typeof(expressionList) === 'undefined'
+      			|| expressionList.length == 0) {
+      			j$(button).hide();
+      			return;
+      		}
+
+      		j$(expressionList[0]).show();
+
+      	}
+
+	</script>
+
+
+	<style>
+		.aptRoundedDiv {
+				padding-bottom: 5px;
+				background-color: white;
+				border: 1px solid #DDD;
+				-webkit-border-radius: 6px; /* Safari 3-4, iOS 1-3.2, Android ≤1.6 */
+		         border-radius: 6px; /* Opera 10.5, IE9+, Safari 5, Chrome, Firefox 4+, iOS 4, Android 2.1+ */
+			  	/* useful if you don't want a bg color from leaking outside the border: */
+				/* -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box; */
+				/*-webkit-box-shadow: 0px 0px 4px 0px #000;  Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+		        /*box-shadow: 0px 0px 4px 0px #000; /* Opera 10.5, IE9+, Firefox 4+, Chrome 6+, iOS 5 */
+				
+				/* IE Stuff */		
+			 	zoom: 1; 
+				display:table;
+				width:100%;
+		         
+		}
+		
+		.aptGroupHeader {
+			background: -moz-linear-gradient(top, rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0)));
+			background: -webkit-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: -o-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: -ms-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: linear-gradient(to bottom, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			height: 40px;
+			padding-top: 10px;
+			padding-left: 10px;
+		}
+		
+		.aptConditionRulesLoadingOverlay, .aptActionRulesLoadingOverlay  {
+			background-color: rgba(240, 240, 240, 0.9);
+			background-image: url('{!URLFOR($Resource.Image_LoadingBar)}');
+			background-repeat: no-repeat;
+			background-position: center center;
+			display: none;
+			z-index: 10000;
+			opacity: 0.7;
+			filter:alpha(opacity=50);
+		    -moz-opacity:0.5;
+		    -khtml-opacity: 0.5;
+		}
+		 
+		.actionsList, .conditionsList{
+			list-style-type: none;
+			padding-left: 0px;
+			margin-top: 0px;
+			margin-bottom: 0px;
+		}
+		
+		.formee .formee-txt, .formee input[type="text"], .formee input[type="password"], .formee input[type="file"], .formee textarea{
+			line-height: 0.7em;
+			padding: 5px;
+			height: 2.0em;
+			width:75%;
+		} 
+		
+		.formee select {
+			line-height: 0.7em;
+			padding: 2px;
+			height: 2.0em;
+			width:95%;
+		}
+		
+		.formee legend{
+			font-size: 1.5em;
+			font-weight: bold;
+			margin-left: 3%;
+			width: 20%;
+		}
+
+		.formee-button, .formee input[type="submit"], .formee input[type="button"], .formee input[type="reset"] {
+			font-size: 1.2em;
+			padding: 4px 12px 4px 12px;
+			text-transform:none;
+		}
+		
+		ul li, ol li {
+			margin-left: 0em;
+			margin-right: 1.5em;
+			padding-left: 0;
+		}
+		
+		ul.actionsList li, ul.conditionsList li{
+			width:100%;
+		}
+		
+		.fullWidth {
+			margin:0px;
+			padding:0px;
+			width:100%;
+		}
+		
+		h2{
+			display: block;
+			margin-left:0px !important;
+			font: bold 14px/1.1em Arial,Sans-Serif;
+		}
+		
+		.alignRight{
+			text-align:right;
+		}
+		
+		.ui-widget {
+			font-family: inherit;
+			font-size: inherit;
+		}
+		
+		.errorIndicator {
+			border-left: 2px solid red;
+		}
+		
+		.aptButtonDisabled {
+			background: gray !important;
+		}
+
+		.actionExpressionLine {
+			display: none;
+		}
+
+		.fieldTreeSelect {
+			height:150px;
+		}
+
+  	 
+	</style>
+
+	<div id="dialog-message" title="Warning" style = "display:none;">
+	  <p>{!$Label.WarningUnsavedRules}</p> 
+	</div>
+	<apex:outputPanel id="idErrorBox">
+		<apex:pageMessages />
+	</apex:outputPanel>
+	<apex:form id="idForm" styleClass="formee" >
+		
+		<div id="tabs">
+			<ul id= "tabLinks">
+				<li><a href="#tabs-1">{!RuleListTitle}</a></li>
+				<li><a href="#tabs-2">{!RuleListTitleForAction}</a></li>
+			</ul>
+			<div id="tabs-1">
+				<apex:outputPanel id="idConditionRulesBlock" 
+									rendered="{!showConditionBlock}" 
+									layout="block" 
+									styleClass="aptRoundedDiv" 
+									style=" margin-top:10px;">
+					<div class="aptGroupHeader" id = "idProductManagementHeader">
+						<h2 style="margin-left: 1em;">{!RuleListTitle}</h2>
+					</div>
+				  	<apex:outputPanel styleClass="aptsPaginator" 
+		                          		layout="block" 
+		                         		id="idconditionRulesPaginator"
+		                         		style="float:right; width:100%; text-align:right;"
+		                            	rendered="{!HasConditionRules}">            
+						<apex:outputText value="{!ConditionRulesStartRecordNumber}-{!ConditionRulesEndRecordNumber} {!$Label.apttus_config2__outof} {!ConditionRulesTotalRecordCount}" />
+						&nbsp; 
+						    <apex:outputPanel rendered="{!NOT(ConditionRulesHasPreviousPage)}"
+						                  styleClass="greyedLink">&lt;{!$Label.Previous}</apex:outputPanel>
+						    <apex:commandLink action="{!ConditionRulesPreviousPage}"
+						                      	rendered="{!ConditionRulesHasPreviousPage}" 
+						                      	onclick="loadingNextPage('conditionsList','tabs-1','aptConditionRulesLoadingOverlay');"
+												oncomplete="j$('.aptConditionRulesLoadingOverlay').hide(); "
+						                      	reRender="idConditionRulesBlock, idErrorBox" >&lt;{!$Label.Previous}</apex:commandLink>
+						                      
+						   <span> | </span>
+						   
+						   <apex:outputPanel layout="inline"
+						                      style="text-align: right; width: 100%;" >
+						    <apex:outputText value="{!$Label.apttus_config2__page}" />
+						        <apex:inputText value="{!ConditionRulesCurrentPageNumber}" 
+						                        styleClass="aptsPageInput" 
+						                        style="width: 2%; font-size: 1.0em;" >
+						            <apex:actionSupport event="onchange"
+						            					onsubmit="loadingNextPage('conditionsList','tabs-1','aptConditionRulesLoadingOverlay');"
+														oncomplete="j$('.aptConditionRulesLoadingOverlay').hide(); "
+						            					rerender="idConditionRulesBlock" />
+						                                
+						       </apex:inputText>
+						       <apex:outputText value="{!$Label.apttus_config2__outof} {!ConditionRulesTotalPages}" />
+						   </apex:outputPanel>                  
+						<span> | </span>
+						<apex:outputPanel rendered="{!NOT(ConditionRulesHasNextPage)}" 
+						                  styleClass="greyedLink">{!$Label.Next}&gt;</apex:outputPanel>
+						<apex:commandLink action="{!ConditionRulesNextPage}"
+									      rendered="{!ConditionRulesHasNextPage}" 
+									      onclick="loadingNextPage('conditionsList','tabs-1','aptConditionRulesLoadingOverlay');"
+										  oncomplete="j$('.aptConditionRulesLoadingOverlay').hide(); "
+					                      reRender="idConditionRulesBlock, idErrorBox" >{!$Label.Next}&gt;</apex:commandLink>
+						
+					</apex:outputPanel>
+					<div class="aptConditionRulesLoadingOverlay">
+								&nbsp;
+					</div>
+					<div class = "grid-12-12 fullWidth" style = "font-weight:bold;">
+						<div class="grid-1-12" style = "padding-bottom:0px; text-align: center;" ><apex:outputLabel value="{!$ObjectType.Apttus_Config2__ConstraintRule__c.fields.Apttus_Config2__Active__c.Label}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$Label.apttus_config2__conditionproduct}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$ObjectType.Apttus_Config2__ConstraintRuleAction__c.fields.Apttus_Config2__ActionType__c.Label}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$ObjectType.Apttus_Config2__ConstraintRuleAction__c.fields.Apttus_Config2__ActionIntent__c.Label}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$Label.apttus_config2__actionproduct}" /></div>
+						<div class="grid-1-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$Label.apttus_config2__message}" /></div>
+						<div class="grid-1-12" style = "text-align:center;"></div>
+						<div class="grid-1-12" style = "text-align:center;font-weight:bold;" ><apex:outputLabel value="{!$Label.apttus_config2__delete}" /></div>
+					</div> 
+					
+					<apex:dataList value="{!ListofConditionRules}" var="rule" styleClass="conditionsList">
+						<div class="grid-12-12 fullWidth">
+							<div class="grid-1-12" style="text-align: center">
+								<apex:inputField value="{!rule.ruleSO.Apttus_Config2__Active__c}"/>
+							</div>
+							
+							<apex:outputPanel rendered="{!(rule.ActionsCount == 1) && (rule.ConditionsCount == 1)  }">
+								<div class="grid-2-12 ">
+									
+									<div class="grid-12-12 conditionLookupField fullWidth" style = "padding: 0 0 3px 0;">
+										<apex:inputField value="{!rule.ruleConditionSOList[0].ProductId__c}" styleClass="conditionProductField"/>
+									</div>
+									<div class="grid-12-12 fullWidth" style = "padding-bottom:0px;padding-top:0px">
+										<apex:outputLink rendered="{!NOT(rule.ruleConditionSOList[0].Id == NULL)}" value="{!$Page.Apttus_Config2__ConstraintRuleConditionCriteriaEdit}?id={!rule.ruleConditionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</div>
+									<script>  
+										if({!disableConditionlookup}){
+											j$('input[class^="conditionProductField"]').attr('disabled','disabled');				
+											j$('.conditionLookupField').find('a').css('display','none');	
+										}
+													
+									</script>
+								</div>
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionType__c}" styleClass="conditionActionTypeField"/>									
+									<script>
+										if({!disableActionTypeSelection}){
+											j$('.conditionActionTypeField').attr('disabled','disabled');
+										}
+													
+									</script>									
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionIntent__c}"/>
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:outputPanel rendered="{!NOT(rule.ruleActionSOList[0].ActionType__c == ValidationType)}">
+										<apex:inputField value="{!rule.ruleActionSOList[0].ProductId__c}"/>
+									</apex:outputPanel>
+									<apex:outputPanel rendered="{!(rule.ruleActionSOList[0].ActionType__c == ValidationType) && (NOT(rule.ruleActionSOList[0].Id == NULL))}">
+										<apex:outputLink value="{!$Page.Apttus_Config2__ConstraintRuleActionCriteriaEdit}?id={!rule.ruleActionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</apex:outputPanel>
+								</div>
+								
+								<div class="grid-1-12">
+									<apex:outputField value="{!rule.ruleActionSOList[0].Message__c}">
+										<apex:inlineEditSupport event="ondblclick" 
+			                        		changedStyleClass="myBoldClass"/>
+			                        </apex:outputField>		
+									
+								</div>
+								<div class="grid-1-12">
+									<apex:outputPanel styleClass="grid-12-12 fullWidth" style="padding-bottom:5px;padding-top:0px;text-decoration: underline;cursor:pointer;white-space: nowrap;" onclick="showActionExpressions(j$(document.getElementById('{!$Component.idActionExpressions}')));" rendered="{!IsFieldExpressionEnabled && rule.ruleActionSOList[0].ActionType__c == InclusionType}">
+											{!$Label.apttus_config2__editfieldcriteria}										
+									</apex:outputPanel>
+									<apex:outputLink value="/{!rule.ruleSO.Id}" rendered="{!NOT(rule.ruleSO.Id == null)}">{!$Label.apttus_config2__advanced}</apex:outputLink>
+								</div>
+								<div class="grid-1-12" style = "text-align: center" >
+									<apex:inputCheckbox styleClass="aptConditionDeleteCheckBox" value="{!rule.deleteItem}"/>
+								</div>
+								<apex:outputPanel id="idActionExpressions" layout="block" styleClass="formee" style="height:99%;overflow-scroll;display:none;">
+									<div class="grid-12-12 fullWidth" style="font-weight:bold;height: 25px;">
+										<div class="grid-6-12" ><apex:outputLabel value="{!$Label.apttus_config2__field}" /></div>
+										<div class="grid-6-12"><apex:outputLabel value="{!$Label.apttus_config2__expression}" /></div>
+									</div> 
+									<apex:outputPanel id="idActionRepeat" styleClass="actionExpressionRepeat" >
+										<apex:repeat var="actionExpression" value="{!rule.actionExpressions}">
+											<div class="grid-12-12 fullWidth actionExpressionLine" style="font-weight:bold;height: 25px;padding-bottom: 15px;{!IF(ISNULL(actionExpression.FieldExpressionId__r.Expression__c), '', 'display:block;')}">
+												<div class="grid-6-12">
+													<apex:selectList id="idExpressionField" value="{!actionExpression.FieldExpressionId__r.Apttus_Config2__UpdateField__c}"
+									                                 size="1">
+									                    <apex:selectOptions value="{!FieldItems}" />
+									                </apex:selectList>
+												</div>
+												<div class="grid-6-12">
+													<apex:inputText style="max-width: 100%;max-height: 100%;min-width: 100%;min-height: 100%;text-overflow:ellipsis;" value="{!actionExpression.FieldExpressionId__r.Apttus_Config2__Expression__c}" onclick="showExpressionDialog(this);"/>
+												</div>
+											</div>
+										</apex:repeat>
+									</apex:outputPanel>
+									<div class="grid-12-12" style="height:25px; text-align: right;padding-top: 0px;padding-bottom: 0px;">										
+										<apex:commandButton onclick="doAddExpression(this, j$(document.getElementById('{!$Component.idActionExpressions}'))); return false;"
+															value="{!$Label.apttus_config2__addnew}"/>
+									</div>	
+								</apex:outputPanel> 					
+								 
+							</apex:outputPanel> 
+							<apex:outputPanel rendered="{!(rule.ActionsCount > 1) || (rule.ConditionsCount > 1) }">
+								<div class="grid-2-12 ">
+									
+									<div class="grid-12-12 conditionLookupField fullWidth" style = "padding: 0;">
+										<apex:outputLabel value="{!rule.ConditionsCount}"> {!$Label.apttus_config2__conditionproducts}</apex:outputLabel>
+									</div>
+								</div>
+								<div class="grid-2-12">
+									<apex:outputLabel value="{!rule.ActionsCount}"> {!$Label.apttus_config2__actiontypes}</apex:outputLabel>
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:outputLabel value="{!rule.ActionsCount}"> {!$Label.apttus_config2__actionintents}</apex:outputLabel>
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:outputLabel value="{!rule.ActionsCount}"> {!$Label.apttus_config2__actionproducts}</apex:outputLabel>
+									
+								</div>
+								
+								<div class="grid-1-12"></div>
+								
+								
+								<div class="grid-1-12" style="text-align: center" >									
+									<apex:outputLink value="/{!rule.ruleSO.Id}" rendered="{!NOT(rule.ruleSO.Id == null)}">{!$Label.apttus_config2__advanced}</apex:outputLink>
+								</div>
+								<div class="grid-1-12" style = "text-align: center" >
+									<apex:inputCheckbox styleClass="aptConditionDeleteCheckBox" value="{!rule.deleteItem}"/>
+								</div>					
+								
+							</apex:outputPanel>
+						</div>
+					</apex:dataList>
+					
+					<apex:dataList value="{!ListofDynamicConditionRules}" var="rule" styleClass="conditionsList" rendered="{!ConditionRulesCurrentPageNumber == ConditionRulesTotalPages}">
+						<apex:outputPanel styleClass="{!rule.index}" style="background: rgb(226, 226, 226);" layout="block" rendered="{!(rule.ruleActionSOList[0].ConstraintRuleId__c == null)}">
+							<div class="grid-12-12 fullWidth">
+								<div class="grid-1-12" style="text-align: center">
+									<apex:outputPanel > 
+										<apex:inputField value="{!rule.ruleSO.Apttus_Config2__Active__c}"/>
+									</apex:outputPanel>
+								</div>
+								<div class="grid-2-12 ">
+									<div class="grid-12-12 conditionLookupField fullWidth" style = "padding: 0 0 3px 0;">
+										<apex:inputField value="{!rule.ruleConditionSOList[0].ProductId__c}" styleClass="conditionProductField"/>
+									</div>
+									<div class="grid-12-12 fullWidth" style = "padding-bottom:0px;padding-top:0px">
+										<apex:outputLink rendered="{!NOT(rule.ruleConditionSOList[0].Id == NULL)}" value="{!$Page.Apttus_Config2__ConstraintRuleConditionCriteriaEdit}?id={!rule.ruleConditionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</div>
+									<script>  
+										if({!disableConditionlookup}){
+											j$('input[class^="conditionProductField"]').attr('disabled','disabled');				
+											j$('.conditionLookupField').find('a').css('display','none');	
+										}
+													
+									</script>
+								</div>
+			
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionType__c}" styleClass="conditionActionTypeField"/>
+									<script>
+										if({!disableActionTypeSelection}){
+											j$('.conditionActionTypeField').attr('disabled','disabled');
+										}
+													
+									</script>
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionIntent__c}"/>
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:outputPanel rendered="{!NOT(rule.ruleActionSOList[0].ActionType__c == ValidationType)}">
+										<apex:inputField value="{!rule.ruleActionSOList[0].ProductId__c}"/>
+									</apex:outputPanel>
+									<apex:outputPanel rendered="{!(rule.ruleActionSOList[0].ActionType__c == ValidationType) && (NOT(rule.ruleActionSOList[0].Id == NULL))}">
+										<apex:outputLink value="{!$Page.Apttus_Config2__ConstraintRuleActionCriteriaEdit}?id={!rule.ruleActionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</apex:outputPanel>
+								</div>
+								
+								<div class="grid-1-12">
+									<apex:outputField value="{!rule.ruleActionSOList[0].Message__c}">
+										<apex:inlineEditSupport event="ondblclick" 
+			                        		changedStyleClass="myBoldClass"/>
+			                        </apex:outputField>		
+									
+								</div>
+								
+								<div class="grid-1-12" style = "text-align: center" >
+									<apex:outputLink value="/{!rule.ruleSO.Id}" rendered="{!NOT(rule.ruleSO.Id == null)}">{!$Label.apttus_config2__advanced}</apex:outputLink>
+								</div>
+								<div class="grid-1-12" style = "text-align: center" >
+									<apex:inputCheckbox styleClass="aptConditionDeleteCheckBox" value="{!rule.deleteItem}"/>
+								</div>
+							</div> 
+							
+						</apex:outputPanel>  
+						<script>
+							j$(function(){
+								if ({!rule.hasErrors}) {
+									var index = "{!rule.index}";;
+									var line = j$(j$(this).find('div[class='+index+']')[0]);
+									line.addClass('errorIndicator');
+										
+								} 
+								
+							})
+						</script>
+					</apex:dataList> 
+					
+					
+					<div class="grid-12-12" style="text-align: right; padding-top: 0px;padding-bottom: 5px;">
+						<apex:actionStatus id="deleteConditionRuleStatus" >
+					          <apex:facet name="start">
+		                         <img src="/img/loading.gif"/>
+		                      </apex:facet>
+		                      <apex:facet name="stop">
+		                         
+		                      </apex:facet>
+						</apex:actionStatus>
+						<apex:commandButton onclick="displayDeleteConfirmationBox('conditionBlock'); return false;"
+											value="{!$Label.apttus_config2__delete}"
+											styleClass="conditionBLockDeleteButton" />
+		
+					</div>
+				
+					<div class="grid-12-12" style="text-align: right;padding-top: 0px;padding-bottom: 0px;">
+						<apex:actionStatus id="addNewConditionRuleStatus" >
+					          <apex:facet name="start">
+		                         <img src="/img/loading.gif"/>
+		                      </apex:facet>
+		                      <apex:facet name="stop">
+		                         
+		                      </apex:facet>
+						</apex:actionStatus>
+						<apex:commandButton action="{!doAddNewConditionRule}" 
+											value="{!$Label.apttus_config2__addnew}" 
+											reRender="idConditionRulesBlock,idErrorBox"
+											status="addNewConditionRuleStatus"/>
+					</div>	
+					
+					
+					<div class = "grid-12-12" style="text-align:center">
+						<apex:actionStatus id="saveConditionRuleStatus" >
+					          <apex:facet name="start">
+		                         <img src="/img/loading.gif"/>
+		                      </apex:facet>
+		                      <apex:facet name="stop">
+		                         
+		                      </apex:facet>
+						</apex:actionStatus>
+						<apex:commandButton action="{!doCreateConditionConstraintRules}" 
+											value="{!$Label.apttus_config2__save}"
+											reRender="idConditionRulesBlock, idErrorBox"
+											status="saveConditionRuleStatus"/>
+						<apex:commandButton action="{!doCancel}" 
+											value="{!$Label.apttus_config2__back}"
+											reRender="idRedirectScript, idErrorBox" />
+					</div>
+					<script>
+						toggleConditionDeleteButtonAccess();
+					</script>
+					
+				</apex:outputPanel>
+			</div>
+			<div id="tabs-2">	
+				<apex:outputPanel id="idActionRulesBlock" 
+									rendered="{!showActionBlock}" 
+									layout="block" 
+									styleClass="aptRoundedDiv" 
+									style="margin-right:10px; margin-top:10px;">
+					<div class="aptGroupHeader" id = "idProductManagementHeader">
+						<h2 style="margin-left: 1em;">{!RuleListTitleForAction}</h2>
+					</div>
+					<apex:outputPanel styleClass="aptsPaginator" 
+		                          		layout="block" 
+		                         		id="idActionlRulesPaginator"
+		                         		style="float:right; width:100%; text-align:right;"
+		                            	rendered="{!HasActionRules}">            
+						<apex:outputText value="{!ActionRulesStartRecordNumber}-{!ActionRulesEndRecordNumber} {!$Label.apttus_config2__outof} {!ActionRulesTotalRecordCount}" />
+						&nbsp; 
+						    <apex:outputPanel rendered="{!NOT(ActionRulesHasPreviousPage)}"
+						                  styleClass="greyedLink">&lt;{!$Label.Previous}</apex:outputPanel>
+						    <apex:commandLink action="{!ActionRulesPreviousPage}"
+						                      	rendered="{!ActionRulesHasPreviousPage}" 
+						                      	onclick="loadingNextPage('actionsList','tabs-2','aptActionRulesLoadingOverlay');"
+												oncomplete="j$('.aptActionRulesLoadingOverlay').hide(); "
+						                      	reRender="idActionRulesBlock, idErrorBox" >&lt;{!$Label.Previous}</apex:commandLink>
+						                      
+						   <span> | </span>
+						   <apex:outputPanel layout="inline"
+						                      style="text-align: right; width: 100%;" >
+						    <apex:outputText value="{!$Label.apttus_config2__page}" />
+						        <apex:inputText value="{!ActionRulesCurrentPageNumber}" 
+						                        styleClass="aptsPageInput" 
+						                        style="width: 2%; font-size: 1.0em;" >
+						            <apex:actionSupport event="onchange"
+						            					onsubmit="loadingNextPage('actionsList','tabs-2','aptActionRulesLoadingOverlay');"
+														oncomplete="j$('.aptActionRulesLoadingOverlay').hide(); "
+						            					rerender="idActionRulesBlock" />
+						                                
+						       </apex:inputText>
+						       <apex:outputText value="{!$Label.apttus_config2__outof} {!ActionRulesTotalPages}" />
+						   </apex:outputPanel>                  
+						<span> | </span>
+						<apex:outputPanel rendered="{!NOT(ActionRulesHasNextPage)}" 
+						                  styleClass="greyedLink">{!$Label.Next}&gt;</apex:outputPanel>
+						<apex:commandLink action="{!ActionRulesNextPage}"
+									      rendered="{!ActionRulesHasNextPage}" 
+									      onclick="loadingNextPage('actionsList','tabs-2','aptActionRulesLoadingOverlay');"
+										  oncomplete="j$('.aptActionRulesLoadingOverlay').hide(); "
+					                      reRender="idActionRulesBlock, idErrorBox" >{!$Label.Next}&gt;</apex:commandLink>
+						
+					</apex:outputPanel>
+				  	<div class="aptActionRulesLoadingOverlay">
+								&nbsp;
+					</div>		
+					<div class = "grid-12-12 fullWidth" style = "font-weight:bold;">
+						<div class="grid-1-12" style = "padding-bottom:0px; text-align: center;" ><apex:outputLabel value="{!$ObjectType.Apttus_Config2__ConstraintRule__c.fields.Apttus_Config2__Active__c.Label}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$Label.apttus_config2__conditionproduct}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$ObjectType.Apttus_Config2__ConstraintRuleAction__c.fields.Apttus_Config2__ActionType__c.Label}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$ObjectType.Apttus_Config2__ConstraintRuleAction__c.fields.Apttus_Config2__ActionIntent__c.Label}" /></div>
+						<div class="grid-2-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$Label.apttus_config2__actionproduct}" /></div>
+						<div class="grid-1-12" style = "padding-bottom:0px;" ><apex:outputLabel value="{!$Label.apttus_config2__message}" /></div>
+						<div class="grid-1-12" style = "text-align:center;"></div>
+						<div class="grid-1-12" style = "text-align:center;font-weight:bold;" ><apex:outputLabel value="{!$Label.apttus_config2__delete}" /></div>
+					</div> 
+					
+					
+					<apex:dataList value="{!ListofActionRules}" var="rule" styleClass="actionsList">
+						<div class="grid-12-12 fullWidth">
+							
+							<div class="grid-1-12" style="text-align: center"> 
+								<apex:inputField value="{!rule.ruleSO.Apttus_Config2__Active__c}"/>
+							</div>
+							<apex:outputPanel rendered="{!(rule.ActionsCount == 1) && (rule.ConditionsCount == 1)  }">		  
+								<div class="grid-2-12">
+									<div class="grid-12-12 fullWidth" style = "padding: 0 0 3px 0;">
+										<apex:inputField value="{!rule.ruleConditionSOList[0].ProductId__c}"/>
+									</div>
+									<div class="grid-12-12" style = "padding-bottom:0px;padding-top:0px">
+										<apex:outputLink rendered="{!NOT(rule.ruleConditionSOList[0].Id == NULL)}" value="{!$Page.Apttus_Config2__ConstraintRuleConditionCriteriaEdit}?id={!rule.ruleConditionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</div>
+								</div>
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionType__c}" styleClass="actionActionTypeField"/>
+									<script>
+										if({!disableActionTypeSelection}){
+											j$('.actionActionTypeField').attr('disabled','disabled');
+										}
+													
+									</script>									
+								</div>
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionIntent__c}"/>
+								</div>
+								<div class="grid-2-12 actionLookupField">
+								
+									<apex:outputPanel rendered="{!NOT(rule.ruleActionSOList[0].ActionType__c == ValidationType)}"> 
+									   
+										<apex:inputField value="{!rule.ruleActionSOList[0].ProductId__c}" styleClass="actionProductField"/>
+										<script>
+											if({!disableActionlookup}){
+												j$('input[class^="actionProductField"]').attr('disabled','disabled');				
+												j$('.actionLookupField').find('a').css('display','none');	
+											}				
+										</script>
+									</apex:outputPanel>
+									<apex:outputPanel rendered="{!(rule.ruleActionSOList[0].ActionType__c == ValidationType)} && (NOT(rule.ruleActionSOList[0].Id == NULL))}">
+										<apex:outputLink value="{!$Page.Apttus_Config2__ConstraintRuleActionCriteriaEdit}?id={!rule.ruleActionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</apex:outputPanel>
+								</div>
+								<div class="grid-1-12">
+									<apex:outputField value="{!rule.ruleActionSOList[0].Message__c}">
+										<apex:inlineEditSupport event="ondblclick" 
+			                        		changedStyleClass="myBoldClass"/>
+									</apex:outputField>
+								</div>
+								
+								<div class="grid-1-12" >
+									<apex:outputPanel styleClass="grid-12-12 fullWidth" style="padding-bottom:5px;padding-top:0px;text-decoration: underline;cursor:pointer;white-space: nowrap;" onclick="showActionExpressions(j$(document.getElementById('{!$Component.idActionExpressions}')));" rendered="{!IsFieldExpressionEnabled && rule.ruleActionSOList[0].ActionType__c == InclusionType}">
+													{!$Label.apttus_config2__editfieldcriteria}										
+											</apex:outputPanel>
+									<apex:outputLink value="/{!rule.ruleSO.Id}" rendered="{!NOT(rule.ruleSO.Id == null)}">{!$Label.apttus_config2__advanced}</apex:outputLink>
+								</div>
+								<div class="grid-1-12" style = "text-align:center;" >
+									<apex:inputCheckbox styleClass="aptActionDeleteCheckBox" value="{!rule.deleteItem}"/>
+								</div>
+								<apex:outputPanel id="idActionExpressions" layout="block" styleClass="formee" style="height:99%;overflow-scroll;display:none;">
+									<div class="grid-12-12 fullWidth" style="font-weight:bold;height: 25px;">
+										<div class="grid-6-12" ><apex:outputLabel value="{!$Label.apttus_config2__field}" /></div>
+										<div class="grid-6-12"><apex:outputLabel value="{!$Label.apttus_config2__expression}" /></div>
+									</div> 
+									<apex:outputPanel id="idActionRepeat" styleClass="actionExpressionRepeat" >
+										<apex:repeat var="actionExpression" value="{!rule.actionExpressions}">
+											<div class="grid-12-12 fullWidth actionExpressionLine" style="font-weight:bold;height: 25px;padding-bottom: 15px;{!IF(ISNULL(actionExpression.FieldExpressionId__r.Expression__c), '', 'display:block;')}">
+												<div class="grid-6-12">
+													<apex:selectList id="idExpressionField" value="{!actionExpression.FieldExpressionId__r.Apttus_Config2__UpdateField__c}"
+									                                 size="1">
+									                    <apex:selectOptions value="{!FieldItems}" />
+									                </apex:selectList>
+												</div>
+												<div class="grid-6-12">
+													<apex:inputText style="max-width: 100%;max-height: 100%;min-width: 100%;min-height: 100%;text-overflow:ellipsis;" value="{!actionExpression.FieldExpressionId__r.Apttus_Config2__Expression__c}" onclick="showExpressionDialog(this);"/>
+												</div>
+											</div>
+										</apex:repeat>
+									</apex:outputPanel>
+									<div class="grid-12-12" style="height:25px; text-align: right;padding-top: 0px;padding-bottom: 0px;">										
+										<apex:commandButton onclick="doAddExpression(this, j$(document.getElementById('{!$Component.idActionExpressions}'))); return false;"
+															value="{!$Label.apttus_config2__addnew}"/>
+									</div>	
+								</apex:outputPanel>														
+							</apex:outputPanel>
+							<apex:outputPanel rendered="{!(rule.ActionsCount > 1) || (rule.ConditionsCount > 1) }">
+								<div class="grid-2-12 ">
+									
+									<div class="grid-12-12 fullWidth" style = "padding: 0;">
+										<apex:outputLabel value="{!rule.ConditionsCount}"> {!$Label.apttus_config2__conditionproducts}</apex:outputLabel>
+									</div>
+								</div>
+								<div class="grid-2-12">
+									<apex:outputLabel value="{!rule.ActionsCount}"> {!$Label.apttus_config2__actiontypes}</apex:outputLabel>
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:outputLabel value="{!rule.ActionsCount}"> {!$Label.apttus_config2__actionintents}</apex:outputLabel>
+								</div>
+								
+								<div class="grid-2-12">
+									<apex:outputLabel value="{!rule.ActionsCount}"> {!$Label.apttus_config2__actionproducts}</apex:outputLabel>
+									
+								</div>
+								
+								<div class="grid-1-12"></div>
+								
+								<div class="grid-1-12" style="text-align: center" >
+									<apex:outputLink value="/{!rule.ruleSO.Id}" rendered="{!NOT(rule.ruleSO.Id == null)}">{!$Label.apttus_config2__advanced}</apex:outputLink>
+									
+								</div>
+								<div class="grid-1-12" style = "text-align: center" >
+									<apex:inputCheckbox styleClass="aptActionDeleteCheckBox" value="{!rule.deleteItem}"/>
+								</div>					
+								
+							</apex:outputPanel>
+						</div>   
+						
+					</apex:dataList>
+					<apex:dataList value="{!ListofDynamicActionRules}" var="rule" styleClass="actionsList" rendered="{!ActionRulesCurrentPageNumber == ActionRulesTotalPages}">
+						<apex:outputPanel styleClass="{!rule.index}" style="background: rgb(226, 226, 226);" layout="block" rendered="{!(rule.ruleActionSOList[0].ConstraintRuleId__c == null)}">
+							<div class="grid-12-12 fullWidth">
+								<div class="grid-1-12" style="text-align: center">
+									<apex:outputPanel > 
+										<apex:inputField value="{!rule.ruleSO.Apttus_Config2__Active__c}"/>
+									</apex:outputPanel>
+								</div>
+										  
+								<div class="grid-2-12">
+									<div class="grid-12-12 fullWidth" style = "padding: 0 0 3px 0;">
+										<apex:inputField value="{!rule.ruleConditionSOList[0].ProductId__c}"/>
+									</div>
+									<div class="grid-12-12 fullWidth" style = "padding-bottom:0px;padding-top:0px">
+										<apex:outputLink rendered="{!NOT(rule.ruleConditionSOList[0].Id == NULL)}" value="{!$Page.Apttus_Config2__ConstraintRuleConditionCriteriaEdit}?id={!rule.ruleConditionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</div>
+								</div>
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionType__c}" styleClass="actionActionTypeField"/>
+									<script>
+										if({!disableActionTypeSelection}){
+											j$('.actionActionTypeField').attr('disabled','disabled');
+										}
+													
+									</script>
+								</div>
+								<div class="grid-2-12">
+									<apex:inputField value="{!rule.ruleActionSOList[0].ActionIntent__c}"/>
+								</div>
+								<div class="grid-2-12 actionLookupField">
+								
+									<apex:outputPanel rendered="{!NOT(rule.ruleActionSOList[0].ActionType__c == ValidationType)}"> 
+									   
+										<apex:inputField value="{!rule.ruleActionSOList[0].ProductId__c}" styleClass="actionProductField"/>
+										<script>
+											if({!disableActionlookup}){
+												j$('input[class^="actionProductField"]').attr('disabled','disabled');				
+												j$('.actionLookupField').find('a').css('display','none');	
+											}				
+										</script>
+									</apex:outputPanel>
+									<apex:outputPanel rendered="{!(rule.ruleActionSOList[0].ActionType__c == ValidationType)} && (NOT(rule.ruleActionSOList[0].Id == NULL))}">
+										<apex:outputLink value="{!$Page.Apttus_Config2__ConstraintRuleActionCriteriaEdit}?id={!rule.ruleActionSOList[0].Id}&ActionType={!ActionType}&ProductId={!ProductId}">{!$Label.apttus_config2__editcriteria}</apex:outputLink>
+									</apex:outputPanel>
+								</div>
+								<div class="grid-1-12">
+									<apex:outputField value="{!rule.ruleActionSOList[0].Message__c}">
+										<apex:inlineEditSupport event="ondblclick" 
+			                        		changedStyleClass="myBoldClass"/>
+									</apex:outputField>
+								</div>
+								<div class="grid-1-12" style = "text-align:center;" >
+									<apex:outputLink value="/{!rule.ruleSO.Id}" rendered="{!NOT(rule.ruleSO.Id == null)}">{!$Label.apttus_config2__advanced}</apex:outputLink>
+								</div>
+								<div class="grid-1-12" style = "text-align:center;" >
+									<apex:inputCheckbox styleClass="aptActionDeleteCheckBox" value="{!rule.deleteItem}"/>
+								</div>					
+								
+							</div> 
+						</apex:outputPanel> 
+						<script>
+							j$(function(){
+								if ({!rule.hasErrors}) {
+									var index = "{!rule.index}";;
+									var line = j$(j$(this).find('div[class='+index+']')[0]);
+									line.addClass('errorIndicator');
+										
+								} 
+								
+							})
+						</script> 						
+					</apex:dataList>
+					
+					<div class="grid-12-12" style="padding-top: 0px; padding-bottom: 5px; text-align: right ">
+						<apex:actionStatus id="deleteNewActionRuleStatus" >
+					          <apex:facet name="start">
+		                         <img src="/img/loading.gif"/>
+		                      </apex:facet>
+		                      <apex:facet name="stop">
+		                         
+		                      </apex:facet>
+						</apex:actionStatus>
+						<apex:commandButton onclick="displayDeleteConfirmationBox('actionBlock'); return false;"
+											value="{!$Label.apttus_config2__delete}" 
+											styleClass="actionBLockDeleteButton"/>
+					</div>	
+				
+			
+					<div class="grid-12-12" style="text-align: right;padding-top: 0px;padding-bottom: 0px;">
+						<apex:actionStatus id="addNewActionRuleStatus" >
+					          <apex:facet name="start">
+		                         <img src="/img/loading.gif"/>
+		                      </apex:facet>
+		                      <apex:facet name="stop">
+		                         
+		                      </apex:facet>
+						</apex:actionStatus>
+						<apex:commandButton action="{!doAddNewActionRule}" 
+											value="{!$Label.apttus_config2__addnew}" 
+											reRender="idActionRulesBlock, idErrorBox"
+											status="addNewActionRuleStatus"/>
+					</div>	
+				
+					<div class = "grid-12-12" style="text-align: center">
+						<apex:actionStatus id="saveActionRuleStatus" >
+					          <apex:facet name="start">
+		                         <img src="/img/loading.gif"/>
+		                      </apex:facet>
+		                      <apex:facet name="stop">
+		                         
+		                      </apex:facet>
+						</apex:actionStatus>
+						<apex:commandButton action="{!doCreateActionConstraintRules}"
+											reRender="idActionRulesBlock, idErrorBox" 
+											value="{!$Label.apttus_config2__save}"
+											status="saveActionRuleStatus"/>
+						<apex:commandButton action="{!doCancel}" 
+											value="{!$Label.apttus_config2__back}"
+											reRender="idRedirectScript, idErrorBox" />
+					</div>   
+					<script>
+						toggleActionDeleteButtonAccess();
+					</script>
+				</apex:outputPanel>
+			</div> 
+		</div>
+		<div id="deletionConfirmationBox" title="{!$Label.Warning}" style = "display:none;">
+			<p>{!$Label.RuleDeletionConfirmation}</p>
+		</div>		
+		<apex:actionFunction name="invokeDeleteConditionRules" 
+        					 action="{!doDeleteConditionConstraintRules}"
+                             reRender="idConditionRulesBlock, idErrorBox"
+							 status="deleteConditionRuleStatus">
+							 
+        </apex:actionFunction>
+        <apex:actionFunction name="invokeDeleteActionRules" 
+        					 action="{!doDeleteActionConstraintRules}"
+                             reRender="idActionRulesBlock, idErrorBox"
+							 status="deleteNewActionRuleStatus">
+							 
+        </apex:actionFunction>
+    </apex:form>
+    <div id="idExpressionPopup" style="display:none; background: #f8f8f8 none;">
+      <c:ExpressionBuilder />    <!-- businessObjects="{!RefTypes}" -->
+    </div>
+	<apex:outputPanel id="idRedirectScript">
+		<script>
+			var showBackPrompt = {!displayBackPrompt};
+			var backPressed = {!backButtonPressed};
+			var pageRef = "{!backPageRef}";
+			if (showBackPrompt){
+				j$( "#dialog-message" ).dialog({
+					modal: true,
+					buttons: {
+					  Yes: function() {
+					    window.location.href = pageRef;
+					  },
+					  No: function() {
+					    j$(this).dialog( "close" );
+					  }
+					}
+			    });
+				  
+			} else {
+				if (backPressed){
+					window.location.href = pageRef;
+				}
+			}
+		</script>
+	</apex:outputPanel>
+	
+	
+</apex:page>

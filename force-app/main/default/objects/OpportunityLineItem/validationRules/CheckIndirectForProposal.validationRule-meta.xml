@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckIndirectForProposal</fullName>
+    <active>true</active>
+    <description>Validation rule to check if Opportunity has Proposal then Products cannot be added to it.</description>
+    <errorConditionFormula>OR
+(
+    /** partner users always prohibited from editing **/
+    AND
+    (
+        OR
+        (
+            ISPICKVAL($User.UserType, &quot;PowerPartner&quot;),
+            ISPICKVAL($User.UserType, &quot;Partner&quot;)
+        ),
+        NOT(ISBLANK(Opportunity.First_Proposal_Id__c))
+    ),
+
+    AND
+    (
+        /** Not a partner user **/
+        NOT(OR
+        (
+            ISPICKVAL($User.UserType, &quot;PowerPartner&quot;),
+            ISPICKVAL($User.UserType, &quot;Partner&quot;)
+        )),
+
+        /** not an integration user **/
+        NOT($Permission.Sales_Integration_User),
+
+        /** not a system update **/
+        NOT
+        (
+            OR
+            (
+                By_Pass_Sync_To_Opportunity__c, 
+                ISCHANGED(By_Pass_Sync_To_Opportunity__c)
+            )
+        ),
+
+        /** prohibited fields edited **/
+        AND
+        (
+            NOT(ISBLANK(Opportunity.First_Proposal_Id__c)),
+            OR
+            (
+                ISCHANGED(Proposal__c),
+                ISCHANGED(UnitPrice),
+                ISCHANGED(Quantity)
+            )
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>Products cannot be added or modified once a quote has been generated. Please contact your Partner Account Manager or Sales Operations.</errorMessage>
+</ValidationRule>

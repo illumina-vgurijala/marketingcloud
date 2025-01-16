@@ -1,0 +1,136 @@
+<apex:page id="thePage" controller="XactlyCorp.XactlyTabController" action="{!getTeamRankingPod}" showHeader="false" sidebar="false" docType="html-5.0" wizard="true">
+
+    <apex:outputPanel id="headerDiv">
+    <apex:outputPanel rendered="{!(!isError)}"> 
+        <c:XactlyTabHeader />
+    </apex:outputPanel>     
+    </apex:outputPanel>
+    <apex:outputPanel id="msgDiv">
+    <apex:outputPanel rendered="{!message!=''}" styleClass="msg-panel" style="display: inline-block;width: 100%;">
+        <div class="alert" style="width:90%;margin-left:auto;margin-right:auto;margin-top: 10px;">
+           <apex:outputText value="{!message}"/>
+        </div>
+        <apex:outputPanel rendered="{!isError}" styleClass="error-component">
+           <c:xactly_error /> 
+        </apex:outputPanel>
+    </apex:outputPanel>
+    </apex:outputPanel>
+     
+     <div class="content">
+     <apex:outputPanel id="linksDiv" styleClass="main-container ranking-link-tabs">
+     <apex:outputPanel rendered="{!loggedIn && !isError}">
+     <div id="pageLoader" style="display:none;" class="pageLoader">
+            <img src="{!URLFOR($Resource.XactlyTabResource, 'images/progressBar.gif')}"/>
+        </div> 
+      </apex:outputPanel>    
+    </apex:outputPanel>
+  <apex:outputPanel id="hiddenFieldsDiv">
+        <input type="hidden" id="isLoggedIn" value="{!loggedIn}"/>
+        <input type="hidden" id="isShowRanking" value="{!showRanking}"/>     
+  </apex:outputPanel>
+  <apex:form id="theForm">  
+    <div id="ranking-div">
+    <apex:outputPanel rendered="{!loggedIn && !isError}" layout="block" styleClass="rank-slider-panel">
+    <div id="sliderMenu" class="rank-slider">
+            <div id="contentSlider-2">
+            <ul>
+               <apex:repeat value="{!teamRankingPod.rankingGroups}" var="group">
+                   <li class="{!IF(group.isSelected,'selected','')}">
+                        <div class="rankingGroupSelect">
+                           <input type="hidden" value="{!group.detailRankingUrl}" />
+                               <span title="{!group.groupName}">{!group.groupName}</span>
+                               <label class="individual-rank">
+                                   {!group.rankWithinTheGroup}
+                               </label>
+                               <div class="bottom-border-div"></div>
+                           </div>
+                   </li>
+                </apex:repeat>
+            </ul>
+        </div>
+        <input type="hidden" value="{!teamRankingPod.attainmentCount}" id="attainmentCount"/>
+        </div>
+        </apex:outputPanel>                    
+        <apex:outputPanel id="RenderIt">
+        <apex:outputPanel rendered="{!loggedIn && !isError}"> 
+        <div class="xtab-table-container">
+            <apex:repeat value="{!rankingDetail}" var="rankdetail" first="{!first}" rows="{!rowsToDisplay}">
+                <div class="xtab-table-row{!IF(rankDetail.isLoggedinUser,' xtab-row-highlight','')}" >
+                    <div class="{!IF(rankDetail.isLoggedinUser,'highlight-rank','incent-rank')}">
+                        <span>{!rankdetail.rank}</span>
+                    </div>
+                    <div class="rep_image rounded-corners">
+                        <apex:image url="{!IF(rankDetail.photoUrl!=null, rankDetail.photoUrl, URLFOR($Resource.XactlyCorp__XactlyTabResource, 'images/quota.png'))}"/>
+                    </div>                       
+                    <div class="rep-name">
+                        {!rankdetail.personName}
+                    </div>
+                    <div class="rep-title">
+                        {!rankdetail.title}
+                    </div>
+                    <div class="repui-progressbar" title="Attainment:{!rankdetail.attainmentPercent}%" style="border-radius:0px;-webkit-border-radius:0px">                     
+                    </div>
+                    <div class="attainment">{!rankdetail.attainmentPercent}%</div>
+                </div>
+            </apex:repeat>           
+          </div>
+          </apex:outputPanel>                          
+        </apex:outputPanel>
+ <div id="pageLoaderBottom" style="display:none;" class="pageLoader">
+        <img src="{!URLFOR($Resource.XactlyTabResource, 'images/progressBar.gif')}"/>            
+        </div>
+        <apex:outputPanel id="bottomPanel">
+ <apex:outputPanel rendered="{!loggedIn && !isError}">
+  <div class="xtab-table-bottom">
+  <div style="width:33%;text-align:right;display:inline-block"></div>
+  <apex:outputPanel id="paginatorPanel" styleClass="paginator-panel" rendered="{!message==''}" layout="block" style="width:33%;text-align:center;display:inline-block">
+                 <div id="paginator" class="paginator" style="background-color: #f3f3f3;">
+                    <span class="prevNextLinks">
+                        <span class="prevNext" onClick="{!IF(hasPrev,'first();','return false;')}" style="cursor:{!IF(hasPrev,'pointer','default')}; cursor:{!IF(hasPrev,'hand','default')};">
+                            <img src="/s.gif" class="firstoff" alt="First Page" style="background-position:{!IF(hasPrev, '0px 1px;', '0px -10px;')}"/>
+                        </span>
+                        <span class="prevNext" onClick="{!IF(hasPrev,'prev();','return false;')}" style="cursor:{!IF(hasPrev,'pointer','default')}; cursor:{!IF(hasPrev,'hand','default')};">
+                            <img src="/s.gif" class="prevoff" alt="Previous" style="background-position:{!IF(hasPrev, '-10px 1px;', '-10px -10px;')}"/>
+                            <a class="prevText" style="color: {!IF(hasPrev,'#333','#a8a8a8')}">Previous</a>
+                        </span>
+                        <span class="prevNext" onClick="{!IF(hasNext,'next();','return false;')}" style="cursor:{!IF(hasNext,'pointer','default')}; cursor:{!IF(hasNext,'hand','default')};">
+                            <a class="nextText" style="color: {!IF(hasNext,'#333','#a8a8a8')}">Next</a>
+                            <img src="/s.gif" class="nextoff" alt="Next" style="background-position:{!IF(hasNext, '-17px 1px;', '-17px -10px;')}"/>
+                        </span>
+                        <span class="prevNext" onClick="{!IF(hasNext,'last();','return false;')}" style="cursor:{!IF(hasNext,'pointer','default')}; cursor:{!IF(hasNext,'hand','default')};">
+                            <img src="/s.gif" class="lastoff" alt="Last Page" style="background-position:{!IF(hasNext, '-27px 1px;', '-27px -10px;')}"/>
+                        </span>
+                    </span>
+                </div>
+            </apex:outputPanel>
+            <div class="period-upto" style="width:33%;text-align:right;display:inline-block;float: right;margin-right: 10px;margin-top: 10px;">
+                {!teamRankingPod.rankingPeriod}
+            </div>
+  </div>
+            <div class="horizontal-separator" style="margin-bottom: 0px">
+            </div> 
+   </apex:outputPanel>           
+   </apex:outputPanel>          
+    </div> 
+   <apex:actionFunction name="reloadRankingData" action="{!getTeamRanking}" reRender="headerDiv,msgDiv,linksDiv,hiddenFieldsDiv,RenderIt,bottomPanel" oncomplete="ajaxComplete();initProgressBar();enableTrophyIcon();">
+            <apex:param name="endPointUrl" value=""/>
+  </apex:actionFunction>
+   <apex:actionFunction name="next" action="{!next}" rerender="RenderIt,paginatorPanel" onbeforedomupdate="waitBottom();"  oncomplete="ajaxCompleteBottom();initProgressBar();"/>       
+        <apex:actionFunction name="prev" action="{!prev}" rerender="RenderIt, paginatorPanel" onbeforedomupdate="waitBottom();" oncomplete="ajaxCompleteBottom();initProgressBar();"/>
+        <apex:actionFunction name="first" action="{!goToFirst}" rerender="RenderIt, paginatorPanel" onbeforedomupdate="waitBottom();" oncomplete="ajaxCompleteBottom();initProgressBar();"/>       
+        <apex:actionFunction name="last" action="{!goToLast}" rerender="RenderIt,paginatorPanel" onbeforedomupdate="waitBottom();" oncomplete="ajaxCompleteBottom();initProgressBar();"/>
+ </apex:form>
+ </div>
+ <link rel="stylesheet"  href="{!URLFOR($Resource.XactlyTabResource,'bootstrap-3.3.5/css/bootstrap.min.css')}"/>
+ <link href="{!URLFOR($Resource.XactlyTabResource,'jquery-coverflow-slider/jquery.coverflow.slider.css')}" type="text/css" rel="stylesheet" media="screen and (min-width:481px)"/>
+    <link href="{!URLFOR($Resource.XactlyTabResource,'jquery-coverflow-slider/jquery.coverflow.slider-mini.css')}" type="text/css" rel="stylesheet" media="only screen and (min-width:320px) and (max-width:480px), only screen and (min-device-width:320px) and (max-device-width:568px)"/>
+    <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource, 'jquery-ui-1.9.2/js/jquery-1.8.3.min.js')}"></script>
+    <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource, 'jquery-coverflow-slider/jquery.coverflow.slider.js')}"></script>
+    <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource, 'jquery-ui-1.9.2/js/jquery-ui-1.9.2.custom.min.js')}"></script>
+    <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource, 'jquery-blockUI/jquery.blockUI.min.js')}"></script>
+    <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource, 'js/xtab.js')}"></script>    
+    <apex:stylesheet value="{!URLFOR($Resource.XactlyCorp__XactlyTabResource,'jquery-ui-1.9.2/css/ui-lightness/jquery-ui-1.9.2.custom.min.css')}"/>
+    <link media="only screen and (min-width:481px)" href="{!URLFOR($Resource.XactlyTabResource,'css/xtab.css')}" rel="stylesheet"/>
+    <link rel="stylesheet" media="only screen and (min-width:20px) and (max-width:480px), only screen and (min-device-width:320px) and (max-device-width:568px)" href="{!URLFOR($Resource.XactlyTabResource,'css/xtab-mobile.css')}" />
+    <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource, 'gauge-plugin/gauge.js')}"></script> 
+ </apex:page>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckClinicalType</fullName>
+    <active>true</active>
+    <description>Validation rules enforce proper Clinical Type selection based on user region, triggering error messages if violated.</description>
+    <errorConditionFormula>AND(
+/*Check if clinical type is valid*/
+OR(
+AND(ISPICKVAL(Clinical_Type__c,&quot;Healthcare Prime&quot;),TEXT($User.Region__c)!=$Label.TerritoryRegionAMR),
+AND(OR(ISPICKVAL(Clinical_Type__c,&quot;IVD Partner&quot;),ISPICKVAL(Clinical_Type__c,&quot;Platform Distributor&quot;)),TEXT($User.Region__c)!=$Label.TerritoryRegionChina)
+),
+/*Fire validation rule on record creation and update*/
+OR(ISCHANGED(Clinical_Type__c),ISNEW()),
+/*Bypass criteria*/
+NOT(
+OR(
+$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+$Profile.Name = $Label.ProfileSystemAdmin,
+$Profile.Name = $Label.ProfileDataSteward,
+$Profile.Name = $Label.Profile_SNAP_Integration
+)
+)
+)</errorConditionFormula>
+    <errorDisplayField>Clinical_Type__c</errorDisplayField>
+    <errorMessage>The clinical type value you selected for this account is not allowed in your region.</errorMessage>
+</ValidationRule>

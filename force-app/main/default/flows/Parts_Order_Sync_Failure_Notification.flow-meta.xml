@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <processMetadataValues>
+            <name>emailAlertSelection</name>
+            <value>
+                <stringValue>Parts_Order_SAP_Sync_Failure_Notification</stringValue>
+            </value>
+        </processMetadataValues>
+        <name>myRule_1_A1</name>
+        <label>Parts Orders Sync Failure Notification</label>
+        <locationX>100</locationX>
+        <locationY>200</locationY>
+        <actionName>SVMXC__RMA_Shipment_Order__c.Parts_Order_SAP_Sync_Failure_Notification</actionName>
+        <actionType>emailAlert</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>myVariable_current.Id</elementReference>
+            </value>
+        </inputParameters>
+    </actionCalls>
+    <apiVersion>49.0</apiVersion>
+    <decisions>
+        <processMetadataValues>
+            <name>index</name>
+            <value>
+                <numberValue>0.0</numberValue>
+            </value>
+        </processMetadataValues>
+        <name>myDecision</name>
+        <label>myDecision</label>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <defaultConnectorLabel>default</defaultConnectorLabel>
+        <rules>
+            <name>myRule_1</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>formula_myRule_1</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myRule_1_pmetdec</targetReference>
+            </connector>
+            <label>Parts Order SAP Sync Failure</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>myRule_1_pmetdec</name>
+        <label>Previously Met Decision</label>
+        <locationX>100</locationX>
+        <locationY>100</locationY>
+        <defaultConnector>
+            <targetReference>myRule_1_A1</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Not Previously Met</defaultConnectorLabel>
+        <rules>
+            <name>myRule_1_pmetnullrule</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>myVariable_old</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myRule_1_A1</targetReference>
+            </connector>
+            <label>Previously Met - Null</label>
+        </rules>
+        <rules>
+            <name>myRule_1_pmetrule</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>formula_myRule_1_pmetrule</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <label>Previously Met - Prev</label>
+        </rules>
+    </decisions>
+    <description>DCP-25280 - When Work Order sync fails in SAP then a notification should be sent to work order owner</description>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>AND(
+
+[SVMXC__RMA_Shipment_Order__c].Requested_By__c &lt;&gt; Null,
+
+OR
+
+(
+
+[SVMXC__RMA_Shipment_Order__c].Integration_Status__c  = &quot;E&quot;,
+[SVMXC__RMA_Shipment_Order__c].Integration_Status__c  = &quot;X&quot;
+
+),
+
+ISCHANGED([SVMXC__RMA_Shipment_Order__c].Integration_Status__c ) , 
+
+
+[SVMXC__RMA_Shipment_Order__c].Requested_By__c.Profile.Name   &lt;&gt; &apos;Customer Service&apos;
+
+
+)  </stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_myRule_1</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+
+{!myVariable_current.Requested_By__c} &lt;&gt; Null,
+
+OR
+
+(
+
+{!myVariable_current.Integration_Status__c}  = &quot;E&quot;,
+{!myVariable_current.Integration_Status__c}  = &quot;X&quot;
+
+),
+
+ISCHANGED({!myVariable_current.Integration_Status__c} ) , 
+
+
+{!myVariable_current.Requested_By__r.Profile.Name}   &lt;&gt; &apos;Customer Service&apos;
+
+
+)</expression>
+    </formulas>
+    <formulas>
+        <processMetadataValues>
+            <name>originalFormula</name>
+            <value>
+                <stringValue>AND(
+
+[SVMXC__RMA_Shipment_Order__c].Requested_By__c &lt;&gt; Null,
+
+OR
+
+(
+
+[SVMXC__RMA_Shipment_Order__c].Integration_Status__c  = &quot;E&quot;,
+[SVMXC__RMA_Shipment_Order__c].Integration_Status__c  = &quot;X&quot;
+
+),
+
+ISCHANGED([SVMXC__RMA_Shipment_Order__c].Integration_Status__c ) , 
+
+
+[SVMXC__RMA_Shipment_Order__c].Requested_By__c.Profile.Name   &lt;&gt; &apos;Customer Service&apos;
+
+
+)  </stringValue>
+            </value>
+        </processMetadataValues>
+        <name>formula_myRule_1_pmetrule</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+
+{!myVariable_old.Requested_By__c} &lt;&gt; Null,
+
+OR
+
+(
+
+{!myVariable_old.Integration_Status__c}  = &quot;E&quot;,
+{!myVariable_old.Integration_Status__c}  = &quot;X&quot;
+
+),
+
+ISCHANGED({!myVariable_old.Integration_Status__c} ) , 
+
+
+{!myVariable_old.Requested_By__r.Profile.Name}   &lt;&gt; &apos;Customer Service&apos;
+
+
+)</expression>
+    </formulas>
+    <interviewLabel>Parts_Order_Sync_Failure_Notification-12_InterviewLabel</interviewLabel>
+    <label>Parts Order Sync Failure Notification</label>
+    <processMetadataValues>
+        <name>ObjectType</name>
+        <value>
+            <stringValue>SVMXC__RMA_Shipment_Order__c</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>ObjectVariable</name>
+        <value>
+            <elementReference>myVariable_current</elementReference>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OldObjectVariable</name>
+        <value>
+            <elementReference>myVariable_old</elementReference>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>TriggerType</name>
+        <value>
+            <stringValue>onAllChanges</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Workflow</processType>
+    <startElementReference>myDecision</startElementReference>
+    <status>Obsolete</status>
+    <variables>
+        <name>myVariable_current</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>SVMXC__RMA_Shipment_Order__c</objectType>
+    </variables>
+    <variables>
+        <name>myVariable_old</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <objectType>SVMXC__RMA_Shipment_Order__c</objectType>
+    </variables>
+</Flow>

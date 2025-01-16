@@ -1,0 +1,269 @@
+<!-- 
+    Apttus Approvals Management
+    TermExApproval
+     
+    @2010-2019 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Term_Exception_Approval__c"
+           extensions="Apttus_Approval.TermExApprovalController"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                   $User.UIThemeDisplayed == 'Theme4u'}">
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+    <apex:sectionHeader title="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Label}"
+                        subtitle="{!Apttus_Approval__Term_Exception_Approval__c.Name}" />
+
+    <apex:form id="idTermExApprovalForm">
+        <!-- required fields -->
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Active__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Assignee_Type__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Assignee_User__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Assignee_Value__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Assignee_Id__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Assignee_Description__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__AutoEscalate__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__DependsOn__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__EscalateToType__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__EscalateToName__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__EscalateToId__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__ExpectedDaysToComplete__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__ExpectedHoursToComplete__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__ExpectedMinutesToComplete__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__FilterLogic__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Sequence__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Name}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Notify_Only__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__SkipUnresolvedAssignee__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Send_Email__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Term_Exception__c}" rendered="false"/>
+        
+        <apex:pageBlock id="idPageBlock"
+                        title="{!$Label.apttus_approval__edittermexceptionapproval}"
+                        mode="edit"
+                        rendered="{!NOT(inSearchMode)}">
+
+            <apex:pageMessages />
+
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!doSave}" value="{!$Label.apttus_approval__save}" rendered="{!hasCreatePermissions || hasUpdatePermissions}" />
+                <apex:commandButton action="{!doCancel}" value="{!$Label.apttus_approval__cancel}" immediate="true" />
+                <b>
+                <apex:actionStatus id="idStatusWait" startText="{!$Label.apttus_approval__statuspleasewait}..." />
+                </b>
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockSection id="idPageBlockSection"
+                                   title="{!$Label.apttus_approval__information}"
+                                   columns="1">
+
+                <!-- term exception -->
+                <apex:pageBlockSectionItem id="idTermExAppTermExItem"
+                                           helpText="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__Term_Exception__c.inlineHelpText}" >
+                    <apex:outputLabel for="idTermExAppTermEx"
+                                      value="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__Term_Exception__c.Label}" />
+                    <apex:outputPanel id="idTermExAppTermEx">
+                        <apex:inputField value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Term_Exception__c}"
+                                         required="true"
+                                         rendered="{!enableTEInput}" />
+                        <apex:outputField value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Term_Exception__c}" 
+                                          rendered="{!NOT(enableTEInput)}" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <!-- filter logic -->
+                <apex:pageBlockSectionItem id="idTermExAppFilterLogicItem"
+                                           helpText="{!$Label.apttus_approval__filterlogichelp}">
+                    <apex:outputLabel for="idTermExAppFilterLogic"
+                                      value="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__FilterLogic__c.Label}" />
+                    <apex:outputPanel id="idTermExAppFilterLogic" >
+                        <apex:inputField value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__FilterLogic__c}" style="width:300px" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!-- sequence -->
+                <!--<apex:pageBlockSectionItem id="idTermExAppSequenceItem"
+                                           helpText="Add help text">
+                    <apex:outputLabel for="idTermExAppSequence"
+                                      value="{!$ObjectType.Term_Exception_Approval__c.Fields.Sequence__c.Label}" />
+                    <apex:outputPanel id="idTermExAppSequence" >
+                        <apex:inputField value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__Sequence__c}" style="width:60px"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>-->
+                
+            </apex:pageBlockSection>
+
+            <!-- Select Dependencies -->
+            <c:UIDependsOn id="idDependsOn" 
+                           pageControllerAttr="{!this}"
+                           contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                           contextSOFieldAttr="DependsOn__c"
+                           contextSOLabelAttr="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Label}"
+                           isReadOnlyAttr="false"
+                           itemValuesAttr="{!dependsOnValues}" />
+ 
+            <!-- Select Assigned Approvers -->
+            <c:UIAssignee id="idAssigneeType" 
+                          pageControllerAttr="{!this}"
+                          contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                          contextSOLabelAttr="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Label}"
+                          isReadOnlyAttr="false"
+                          businessObjTypeAttr="{!termExApprovalSObjectTypeName}"
+                          assigneeTypeFieldAttr="Assignee_Type__c"
+                          assigneeValueFieldAttr="Assignee_Value__c"
+                          assigneeIdFieldAttr="Assignee_Id__c"
+                          assigneeDescFieldAttr="Assignee_Description__c"
+                          assigneeSendEmailFieldAttr="Send_Email__c"
+                          assigneeNotifyOnlyFieldAttr="Notify_Only__c"
+                          assigneeSkipUnresolvedAssigneeFieldAttr="SkipUnresolvedAssignee__c"
+                          assigneeActiveFieldAttr="Active__c"
+                          assigneeAttr="{!assignee}"
+                          supportedAssigneeTypesAttr="{!supportedAssigneeTypes}"
+                          parentReRenderIdAttr="idTermExApprovalForm" />
+
+            <!-- Select Escalation Approvers -->
+            <apex:pageBlockSection id="idEscalationApproverSection"
+                                   columns="1"
+                                   collapsible="false"
+                                   title="{!$Label.apttus_approval__approvalprocessescalationapproversettings}">
+
+                <apex:pageBlockSectionItem id="idEscalationAutoEscalate"
+                                           helpText="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__AutoEscalate__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__AutoEscalate__c.Label}" />
+                    <apex:inputCheckbox value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__AutoEscalate__c}"/>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idEscalationExpectedDaysToComplete"
+                                           helpText="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__ExpectedDaysToComplete__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__ExpectedDaysToComplete__c.Label}" />
+                    <apex:inputField value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__ExpectedDaysToComplete__c}"/>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idEscalationExpectedHoursToComplete"
+                                           helpText="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__ExpectedHoursToComplete__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Fields.Apttus_Approval__ExpectedHoursToComplete__c.Label}" />
+                    <apex:inputField value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__ExpectedHoursToComplete__c}"/>
+                </apex:pageBlockSectionItem>
+
+                <!--<apex:pageBlockSectionItem id="iEscalationExpectedMinutesToComplete"
+                                           helpText="{!$ObjectType.Term_Exception_Approval__c.Fields.ExpectedMinutesToComplete__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Term_Exception_Approval__c.Fields.ExpectedMinutesToComplete__c.Label}" />
+                    <apex:inputField value="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__ExpectedMinutesToComplete__c}"/>
+                </apex:pageBlockSectionItem>-->
+
+            </apex:pageBlockSection>
+            <apex:pageBlockSection id="idStepEscalationApproverSectionEdit" 
+                                   columns="1" 
+                                   collapsible="false" >
+                
+                <c:UIEscalationAssignee id="idEscalationAssigneeType" 
+                                        pageControllerAttr="{!this}"
+                                        contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                                        contextSOLabelAttr="{!$ObjectType.Apttus_Approval__Term_Exception_Approval__c.Label}"
+                                        isReadOnlyAttr="false"
+                                        businessObjTypeAttr="{!$ObjectType.Apttus__Agreement_Term_Exception__c.Name}"
+                                        isAutoEscalateEnabledAttr="{!Apttus_Approval__Term_Exception_Approval__c.Apttus_Approval__AutoEscalate__c}"
+                                        assigneeTypeFieldAttr="EscalateToType__c"
+                                        assigneeValueFieldAttr="EscalateToName__c"
+                                        assigneeIdFieldAttr="EscalateToId__c"
+                                        supportedAssigneeTypesAttr="{!supportedEscalationAssigneeTypes}"
+                                        parentReRenderIdAttr="idTermExApprovalForm" />
+                
+            </apex:pageBlockSection>
+
+        </apex:pageBlock>
+        
+        <!-- Term Exception Approval Assignee Search Components -->
+        <apex:pageBlock id="idPageBlockSearch"
+                        title="{!$Label.apttus_approval__edittermexceptionapproval}"
+                        rendered="{!inSearchMode && searchModeContext == 'ASSIGNEE'}">
+
+            <c:UISearchQueue id="idQueueSearch" 
+                             pageControllerAttr="{!this}"
+                             contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                             contextSOFieldAttr="Assignee_Value__c" 
+                             contextSOFieldIdAttr="Assignee_Id__c" 
+                             parentReRenderIdAttr="idTermExApprovalForm"
+                             rendered="{!isAssigneeTypeQueue}" />
+    
+            <c:UISearchRole id="idRoleSearch" 
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                            contextSOFieldAttr="Assignee_Value__c" 
+                            contextSOFieldIdAttr="Assignee_Id__c"
+                            parentReRenderIdAttr="idTermExApprovalForm"
+                            rendered="{!isAssigneeTypeRole}" />
+    
+            <c:UISearchRule id="idRuleSearch" 
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                            contextSOFieldAttr="Assignee_Value__c"
+                            contextSOFieldIdAttr="Assignee_Id__c" 
+                            businessObjTypeAttr="{!$ObjectType.Apttus__Agreement_Term_Exception__c.Name}"
+                            parentReRenderIdAttr="idTermExApprovalForm"
+                            rendered="{!isAssigneeTypeRule}" />
+                            
+            <c:UISearchUser id="idUserSearch" 
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                            contextSOFieldAttr="Assignee_Value__c" 
+                            contextSOFieldIdAttr="Assignee_Id__c"
+                            parentReRenderIdAttr="idTermExApprovalForm"
+                            rendered="{!isAssigneeTypeUser}" />
+
+        </apex:pageBlock>
+
+        <!-- Term Exception Approval Escalation Assignee Search Components -->
+        <apex:pageBlock id="idPageBlockSearchEscalationAssignee"
+                        title="{!$Label.apttus_approval__edittermexceptionapproval}"
+                        rendered="{!inSearchMode && searchModeContext == 'ESCALATION_ASSIGNEE'}">
+
+            <c:UISearchQueue id="idEscalationQueueSearch" 
+                             pageControllerAttr="{!this}"
+                             contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                             contextSOFieldAttr="EscalateToName__c"
+                             contextSOFieldIdAttr="EscalateToId__c"
+                             parentReRenderIdAttr="idTermExApprovalForm"
+                             rendered="{!isEscalationAssigneeTypeQueue}" />
+    
+            <c:UISearchRole id="idEscalationRoleSearch" 
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                            contextSOFieldAttr="EscalateToName__c"
+                            contextSOFieldIdAttr="EscalateToId__c"
+                            parentReRenderIdAttr="idTermExApprovalForm"
+                            rendered="{!isEscalationAssigneeTypeRole}" />
+    
+            <c:UISearchRule id="idEscalationRuleSearch" 
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                            contextSOFieldAttr="EscalateToName__c"
+                            contextSOFieldIdAttr="EscalateToId__c"
+                            businessObjTypeAttr="{!$ObjectType.Apttus__Agreement_Term_Exception__c.Name}"
+                            parentReRenderIdAttr="idTermExApprovalForm"
+                            rendered="{!isEscalationAssigneeTypeRule}" />
+                            
+            <c:UISearchUser id="idEscalationUserSearch" 
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!Apttus_Approval__Term_Exception_Approval__c}"
+                            contextSOFieldAttr="EscalateToName__c"
+                            contextSOFieldIdAttr="EscalateToId__c"
+                            parentReRenderIdAttr="idTermExApprovalForm"
+                            rendered="{!isEscalationAssigneeTypeUser}" />
+
+        </apex:pageBlock>
+
+    </apex:form>
+</apex:page>

@@ -1,0 +1,230 @@
+<!-- 
+    Apttus Config & Pricing
+    GLAccountMapEntry
+     
+    @2013-2014 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Config2__GLAccountMapEntry__c" 
+           extensions="Apttus_Config2.GLAccountMapEntryController" 
+           showHeader="true" 
+           sidebar="true" 
+           tabStyle="Apttus_Config2__GLAccountMapRule__c">  
+    
+    <apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+   
+    <style>
+        textarea {
+            width: 70%;
+        }
+        
+    </style>
+    
+    <apex:sectionHeader title="{!$ObjectType.Apttus_Config2__GLAccountMapEntry__c.Label & ' ' & $Label.apttus_config2__edit}" />
+                    
+    <apex:form id="idGLAccountMapRuleSO">
+        
+        <!--  required fields -->
+        
+        <apex:pageBlock id="idGLAccountMapRuleBlock" >
+            <apex:pageMessages />
+            
+            <apex:pageBlockButtons location="both" >
+                <apex:commandButton value="{!$Label.apttus_config2__save}" action="{!doSave}" />
+                <apex:commandButton value="{!$Label.apttus_config2__cancel}" action="{!doCancel}" immediate="true" />
+            </apex:pageBlockButtons>
+                    
+            <apex:pageBlockSection id="idGLAccountMapRuleDetailSection" 
+                                   title="{!$Label.apttus_config2__ruleinformation}"  
+                                   columns="2" 
+                                   collapsible="true" >
+                
+                <apex:outputField value="{!ruleSO.Name}" />
+                <apex:pageBlockSectionItem />
+                
+                <apex:outputField value="{!ruleSO.Apttus_Config2__GLAccountType__c}" />
+                <apex:pageBlockSectionItem />
+                
+                <apex:outputField value="{!ruleSO.Apttus_Config2__Description__c}" />
+                <apex:pageBlockSectionItem />
+                
+                <apex:outputField value="{!ruleSO.Apttus_Config2__BaseGLAccountName__c}" />
+                <apex:pageBlockSectionItem />
+                
+                <apex:outputField value="{!ruleSO.Apttus_Config2__BaseGLAccountNumber__c}" />
+                <apex:pageBlockSectionItem />
+                
+                <apex:outputField value="{!ruleSO.Apttus_Config2__BaseGLAccountId__c}" />
+                <apex:pageBlockSectionItem />
+                
+                <apex:outputField value="{!ruleSO.Apttus_Config2__Dimension1Id__c}" />
+                <apex:outputField value="{!ruleSO.Apttus_Config2__Dimension1ValueType__c}" />
+                                  
+                <apex:outputField value="{!ruleSO.Apttus_Config2__Dimension2Id__c}" 
+                                  rendered="{!NOT(ISBLANK(ruleSO.Apttus_Config2__Dimension2Id__c))}" />
+                <apex:outputField value="{!ruleSO.Apttus_Config2__Dimension2ValueType__c}" 
+                                  rendered="{!NOT(ISBLANK(ruleSO.Apttus_Config2__Dimension2Id__c))}" /> 
+                                  
+                <apex:outputField value="{!ruleSO.Apttus_Config2__Dimension3Id__c}" 
+                                  rendered="{!NOT(ISBLANK(ruleSO.Apttus_Config2__Dimension3Id__c))}" />
+                <apex:outputField value="{!ruleSO.Apttus_Config2__Dimension3ValueType__c}" 
+                                  rendered="{!NOT(ISBLANK(ruleSO.Apttus_Config2__Dimension3Id__c))}" />
+                                  
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection id="idGLAccountMapEntriesSection" 
+                                   title="{!$Label.apttus_config2__mapentries}"  
+                                   columns="2" 
+                                   collapsible="false" >
+                                   
+                <apex:pageBlockTable id="idGLAccountMapEntriesTable" 
+                                     value="{!ruleEntries}" 
+                                     var="entryInfo" 
+                                     columns="11"   
+                                     width="100%" 
+                                     rowClasses="oddRow,evenRow"  
+                                     rendered="{!isDimension1Enabled}" >
+                    
+                    <!-- 1 -->
+                    <apex:column headerValue="{!$ObjectType.Apttus_Config2__GLAccountMapEntry__c.Fields.Apttus_Config2__Sequence__c.Label}" 
+                                 width="5%" >
+                        <apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+                    </apex:column>
+                    <!-- 2 -->
+                    <apex:column headerValue="{!dimension1Label}" 
+                                 width="10%" >
+                        <apex:outputPanel styleClass="{!IF(entryInfo.Dim1InError, 'errorRow', '')}" layout="block" >
+                            <apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension1Value__c}" 
+                                             rendered="{!NOT(isDimension1Picklist)}" />
+                            <apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension1Value__c}" 
+                                             multiselect="false" 
+                                             required="false" 
+                                             size="1" 
+                                             rendered="{!isDimension1Picklist && NOT(isDimension1MultiPicklist)}" >
+                                <apex:selectOptions value="{!dimension1PicklistItems}" />
+                            </apex:selectList>
+                            <apex:selectList value="{!entryInfo.Dimension1Values}" 
+                                             multiselect="true" 
+                                             required="false" 
+                                             size="5" 
+                                             rendered="{!isDimension1Picklist && isDimension1MultiPicklist}" >
+                                <apex:selectOptions value="{!dimension1PicklistItems}" />
+                            </apex:selectList>
+                        </apex:outputPanel>
+                    </apex:column>
+                    <!-- 3 -->
+                    <apex:column headerValue="{!dimension2Label}" 
+                                 width="10%" 
+                                 rendered="{!isDimension2Enabled}" >
+                        <apex:outputPanel styleClass="{!IF(entryInfo.Dim2InError, 'errorRow', '')}" layout="block" >
+                            <apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension2Value__c}" 
+                                             rendered="{!NOT(isDimension2Picklist)}" />
+                            <apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension2Value__c}" 
+                                             multiselect="false"   
+                                             required="false" 
+                                             size="1" 
+                                             rendered="{!isDimension2Picklist && NOT(isDimension2MultiPicklist)}" >
+                                <apex:selectOptions value="{!dimension2PicklistItems}" />
+                            </apex:selectList>
+                            <apex:selectList value="{!entryInfo.Dimension2Values}" 
+                                             multiselect="true"  
+                                             required="false" 
+                                             size="5" 
+                                             rendered="{!isDimension2Picklist && isDimension2MultiPicklist}" >
+                                <apex:selectOptions value="{!dimension2PicklistItems}" />
+                            </apex:selectList>
+                        </apex:outputPanel>
+                    </apex:column>
+                    <!-- 4 -->
+                    <apex:column headerValue="{!dimension3Label}" 
+                                 width="10%" 
+                                 rendered="{!isDimension3Enabled}" >
+                        <apex:outputPanel styleClass="{!IF(entryInfo.Dim3InError, 'errorRow', '')}" layout="block" >
+                            <apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension3Value__c}" 
+                                             rendered="{!NOT(isDimension3Picklist)}" />
+                            <apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension3Value__c}" 
+                                             multiselect="false"  
+                                             required="false" 
+                                             size="1" 
+                                             rendered="{!isDimension3Picklist && NOT(isDimension3MultiPicklist)}" >
+                                <apex:selectOptions value="{!dimension3PicklistItems}" />
+                            </apex:selectList>
+                            <apex:selectList value="{!entryInfo.Dimension3Values}" 
+                                             multiselect="true"  
+                                             required="false" 
+                                             size="5" 
+                                             rendered="{!isDimension3Picklist && isDimension3MultiPicklist}" >
+                                <apex:selectOptions value="{!dimension3PicklistItems}" />
+                            </apex:selectList>
+                        </apex:outputPanel>
+                    </apex:column>
+                    <!-- 5 -->
+                    <apex:column headerValue="{!$ObjectType.Apttus_Config2__GLAccountMapEntry__c.Fields.Apttus_Config2__GLAccountName__c.Label}" 
+                                 width="20%" >
+                        <apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__GLAccountName__c}" />
+                    </apex:column>
+                    <!-- 6 -->
+                   	<apex:column headerValue="{!$ObjectType.Apttus_Config2__GLAccountMapEntry__c.Fields.Apttus_Config2__GLAccountNumber__c.Label}" 
+                                 width="15%" >
+                        <apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__GLAccountNumber__c}" />
+                    </apex:column>
+                    <!-- 7 -->
+                    <apex:column headerValue="{!$ObjectType.Apttus_Config2__GLAccountMapEntry__c.Fields.Apttus_Config2__GLAccountId__c.Label}" 
+                                 width="10%" >
+                        <apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__GLAccountId__c}" />
+                    </apex:column>
+                    <!-- 8 -->
+                    <apex:column width="5%" >
+                        <apex:commandLink action="{!doAddRow}" 
+                                          reRender="idGLAccountMapEntriesTable" >
+                            <apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Config2__Image_Plus2}" 
+                                        title="{!$Label.apttus_config2__add}" 
+                                        alt="{!$Label.apttus_config2__add}" />                
+                        </apex:commandLink>
+                    </apex:column>
+                    <!-- 9 -->
+                    <apex:column width="5%" >
+                        <apex:commandLink action="{!doDeleteRow}" 
+                                          reRender="idGLAccountMapEntriesTable" 
+                                          rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+                            <apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+                                        title="{!$Label.apttus_config2__remove}" 
+                                        alt="{!$Label.apttus_config2__remove}" />         
+                        </apex:commandLink>
+                    </apex:column>
+                    <!-- 10 -->
+                    <apex:column width="5%" >
+                        <apex:commandLink action="{!doMoveUpRow}" 
+                                          reRender="idGLAccountMapEntriesTable" 
+                                          rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+                            <apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Config2__Image_MoveUp}" 
+                                        title="{!$Label.apttus_config2__moveup}" 
+                                        alt="{!$Label.apttus_config2__moveup}" />
+                        </apex:commandLink>
+                        <apex:commandLink action="{!doMoveDownRow}" 
+                                          reRender="idGLAccountMapEntriesTable" 
+                                          rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c < lastRowSequence}" >
+                            <apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Config2__Image_MoveDown}" 
+                                        title="{!$Label.apttus_config2__movedown}" 
+                                        alt="{!$Label.apttus_config2__movedown}" />
+                        </apex:commandLink>
+                    </apex:column>
+                    <!-- 11 -->
+                    <apex:column width="5%" >
+                        <apex:outputText value="{!entryInfo.ErrorMsg}" style="color:red;" />
+                    </apex:column>
+                   
+                </apex:pageBlockTable>
+                
+                <apex:outputText value="{!$Label.apttus_config2__nodimensionstodisplay}" rendered="{!NOT(isDimension1Enabled)}" />
+            </apex:pageBlockSection>
+            
+        </apex:pageBlock>
+  
+    </apex:form>
+
+</apex:page>

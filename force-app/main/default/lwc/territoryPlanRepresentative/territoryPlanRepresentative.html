@@ -1,0 +1,81 @@
+<template>
+  <lightning-card variant="Narrow" title={cardTitle} icon-name="standard:user">
+    <template if:true={planRepView}>
+      <template if:true={accordionOpen}>
+        <!-- DCP-39621 description: to check loggedIn user's profile  -->
+        <template if:false={isChannelPartnerProfile}>
+          <lightning-button
+            label="Manage Users"
+            slot="actions"
+            onclick={manageUser}
+          >
+          </lightning-button>
+        </template>
+      </template>
+      <lightning-accordion
+        allow-multiple-sections-open
+        onsectiontoggle={handleSectionToggle}
+        active-section-name={activeSections}
+      >
+        <lightning-accordion-section name="PlanRep" label="Representatives">
+          <div>
+            <template if:true={booLoading}>
+              <lightning-spinner
+                alternative-text="Loading"
+                variant="brand"
+              ></lightning-spinner>
+            </template>
+          </div>
+          <template if:true={hasData}>
+            <!-- DCP-40041 -->
+            <c-data-table-lazy-load
+              column={column}
+              table-data-records={planRepresentatives}
+              off-set="10"
+              apex-pagination="No"
+              hide-column=true
+              oncustomrowaction = {handleRowAction}
+            >
+            </c-data-table-lazy-load>
+          </template>
+          <template if:false={hasData}>
+            {errorMessage}
+          </template>
+        </lightning-accordion-section>
+      </lightning-accordion>
+    </template>
+    <template if:false={planRepView}>
+      <lightning-button-icon
+        icon-name="action:back"
+        slot="actions"
+        alternative-text=""
+        title="Back"
+        onclick={reset}
+        class="slds-float--right bordermarginclass"
+      ></lightning-button-icon>
+      <lightning-button
+        label={buttonLabel}
+        slot="actions"
+        onclick={switchScreen}
+        class="slds-float--right bordermarginclass"
+      >
+      </lightning-button>
+      <template if:true={removeRepView}>
+        <!-- Plan rep removal screen -->
+        <c-territory-plan-representative-remove
+          plan-id={recordId}
+          onshowplanrepview={cancel}
+          plan-reps={planRepresentatives}
+        ></c-territory-plan-representative-remove>
+      </template>
+      <template if:false={removeRepView}>
+        <!-- Plan rep addition screen -->
+        <c-territory-plan-representative-add
+          plan-id={recordId}
+          onshowplanrepview={cancel}
+        >
+        </c-territory-plan-representative-add>
+      </template>
+    </template>
+  </lightning-card>
+</template>

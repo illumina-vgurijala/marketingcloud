@@ -1,0 +1,32 @@
+(function(){
+
+    var impl = SVMX.Package("com.servicemax.client.sal.pmplantemplate.model.impl");
+
+    impl.Class("Module", com.servicemax.client.lib.api.ModuleActivator, {
+
+        __constructor : function(){
+            this.__base();
+        },
+
+        beforeInitialize: function() {
+
+        },
+
+        initialize: function() {
+            com.servicemax.client.sal.pmplantemplate.model.operations.init();
+        },
+
+        afterInitialize: function() {
+
+        }
+
+    }, {});
+
+    impl.Class("PlatformSpecifics", com.servicemax.client.lib.api.Object, {
+        __constructor : function(){
+
+        }
+
+
+    }, {});
+})();

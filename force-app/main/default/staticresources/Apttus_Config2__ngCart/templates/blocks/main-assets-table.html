@@ -1,0 +1,142 @@
+<div main-asset="main-asset" class="main-cart-wrapper main-cart-wrapper--overflow">
+	<asset-header></asset-header>
+	<div class="main-cart-container--positioning">
+		<div class="main-cart-container">
+			<table>
+				<!-- column heading -->
+				<thead class="cart-label-row">
+					<th ng-repeat="column in mainAssetController.tableColumns" ng-class="{'is--editable' : column.IsEditable}" class="main-cart-col main-cart-col--{{column.columnClassName}} {{column.StyleClass}}">
+						<div>
+							<!-- <label>{{column.Label}} {{column.FieldType}}</label> -->
+							<label>{{column.Label}}</label>
+						</div>
+						<!-- <div >
+							<label>{{column.Label}}
+						</div> -->
+					</th>
+				</thead>
+				<tbody ng-sortable="{ handle: '.line-item-row--draggable', group: 'lineItem'}">
+					<!-- top level asset line items -->
+					<tr item="lineItem" dir-paginate="lineItem in mainAssetController.assetLineItems | itemsPerPage: 10" class="line-item-row">
+						<td ng-repeat="column in mainAssetController.tableColumns" ng-class="{'is--editable' : column.IsEditable}" class="main-cart-col main-cart-col--{{column.columnClassName}} {{column.StyleClass}}">
+							<div class="fieldtype-wrapper fieldtype-wrapper--{{column.FieldType}} {{column.StyleClass}}">
+								<div ng-include="'fieldType'+ column.FieldType"></div>
+              </div>
+              <!--Top level option lines-->
+              <ul ng-if="lineItem.optionLines.length &amp;&amp; column.FieldType !== 'DETAIL'" class=" submenu submenu--optionlines">
+                <li ng-repeat="optionLine in lineItem.optionLines" class="option-line-col">
+                  <div class="fieldtype-wrapper">
+                    <div ng-include="'fieldType'+ column.FieldType"></div>
+                  </div>
+                  <!--Secondary Level option and charge lines-->
+                  <!-- <ul ng-if="optionLine.optionLines" class="submenu submenu--optionlines  option-{{optionLine.lineItemSO.OptionId__r.Id}}">
+                    <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionAssetLineCol'" class="option-line-col"></li>
+                  </ul> -->
+                </li>
+              </ul>
+            </td>
+					</tr>
+				</tbody>
+			</table>
+			<!-- <span>Main Asset Line Items data would go here</span> -->
+		</div>
+	</div>
+</div>
+
+<!-- subOptions -->
+<script type="text/ng-template" id="subOptionAssetLineDetail">
+  <div class="line-item-name">
+    <div class="checkbox-override">
+      <input type="checkbox" id="{{optionLine.assetLineItemSO.OptionId__r.Id}}"/>
+      <label for="{{optionLine.assetLineItemSO.OptionId__r.Id}}"></label>
+    </div><i toggle-class="is--open" parent="option-line-col" ng-if="optionLine.optionLines.length" toggle-all-class="option-{{optionLine.assetLineItemSO.OptionId__r.Id}}" toggle-all-class-with="is--visible" class="line-item--expandable"></i>
+    <h3>{{optionLine.lineItemSO.OptionId__r.Name}}</h3>
+  </div>
+  <ul ng-if="optionLine.optionLines.length" class="submenu submenu--optionlines">
+    <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionAssetLineDetail'" class="option-line-col">
+      <p>{{optionLine.assetLineItemSO.OptionId__r.Name}}</p>
+    </li>
+  </ul>
+</script>
+<!--All beneath top level. Not in left DETAIL column-->
+<script type="text/ng-template" id="subOptionAssetLineCol">
+  <div class="fieldtype-wrapper">
+    <div ng-include="'fieldType'+ column.FieldType"></div>
+  </div>
+  <ul ng-if="optionLine.chargeLines.length" class="submenu submenu--chargelines chargelines-{{optionLine.lineItemSO.OptionId__r.Id}}">
+    <li ng-repeat="chargeLine in optionLine.chargeLines" class="charge-line-col">
+      <div class="fieldtype-wrapper">
+        <div ng-include="'fieldType'+ column.FieldType"></div>
+      </div>
+    </li>
+  </ul>
+  <ul ng-if="optionLine.optionLines" class="submenu submenu--optionlines option-{{optionLine.lineItemSO.OptionId__r.Id}}">
+    <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionAssetLineCol'" class="option-line-col"></li>
+  </ul>
+</script>
+<!--All detail beneath top level-->
+<script type="text/ng-template" id="fieldTypeDETAIL">
+  <div class="line-item-name">
+    <!-- <div class="line-item-row--draggable is--draggable"></div> -->
+    <div class="checkbox-override">
+      <input type="checkbox" id="{{lineItem.assetLineItemSO.Id}}"/>
+      <label for="{{lineItem.assetLineItemSO.Id}}"></label>
+    </div><i toggle-class="is--open" parent="line-item-row" ng-if="lineItem.optionLines.length" class="line-item--expandable"></i>
+    <h3><span class="line-item--name">{{lineItem.assetLineItemSO[column.FieldName].Name}}</span></h3>
+  </div>
+  <!-- Include all options that belong to this asset (this might be recursive) -->
+  <ul ng-if="lineItem.optionLines.length">
+  	<li ng-repeat="optionLine in lineItem.optionLines" class="option-line-col">
+  		<div class="option-line-name">
+  			<div class="checkbox-override">
+  				<input type="checkbox" id="{{optionLine.assetLineItemSO.OptionId__r.Id}}"/>
+  				<label for="{{optionLine.assetLineItemSO.OptionId__r.Id}}"></label>
+  			</div>
+  			<i toggle-class="is--open" parent="option-line-col" toggle-all-class="option-{{optionLine.assetLineItemSO.OptionId__r.Id}}" toggle-all-class-with="is--visible" ng-if="optionLine.optionLines.length" class="line-item--expandable"></i>
+  			<h3>{{optionLine.assetLineItemSO.OptionId__r.Name}}</h3>
+  		</div>
+  		<ul ng-if="optionLine.optionLines.length" class="submenu submenu--optionlines option-{{optionLine.lineItemSO.OptionId__r.Id}}">
+        <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionAssetLineDetail'" class="option-line-col"></li>
+      </ul>
+  	</li>
+  </ul>
+</script>
+<!--UNDEFINED-->
+<script type="text/ng-template" id="fieldTypeUNDEFINED">
+  <p>UNDEFINED</p>
+</script>
+<!--STRING-->
+<script type="text/ng-template" id="fieldTypeSTRING">
+  <p>{{lineItem.assetLineItemSO[column.FieldName]}}</p>
+</script>
+<!--REFERENCE-->
+<script type="text/ng-template" id="fieldTypeREFERENCE">
+  <p>reference</p>
+</script>
+<!--PERCENT-->
+<script type="text/ng-template" id="fieldTypePERCENT">
+  <p>percent</p>
+</script>
+<!--DATE-->
+<script type="text/ng-template" id="fieldTypeDATE">
+<p ng-if="lineItem.assetLineItemSO[column.FieldName]">{{lineItem.assetLineItemSO[column.FieldName] | date : 'shortDate'}}</p>
+</script>
+<!--DOUBLE-->
+<script type="text/ng-template" id="fieldTypeDOUBLE">
+  <input type="text" value="{{lineItem.assetLineItemSO[column.FieldName]}}" ng-if="column.IsEditable &amp;&amp; lineItem.assetLineItemSO[column.FieldName]"/>
+  <p ng-if="!column.IsEditable">{{lineItem.assetLineItemSO[column.FieldName]}}</p>
+</script>
+<!--QUANTITY-->
+<script type="text/ng-template" id="fieldTypeQUANTITY">
+  <input type="text" value="{{lineItem.assetLineItemSO.Quantity__c}}" ng-if="column.IsEditable &amp;&amp; lineItem.assetLineItemSO.Quantity__c"/>
+  <p ng-if="!column.IsEditable &amp;&amp; lineItem.assetLineItemSO[column.FieldName]">{{lineItem.assetLineItemSO.Quantity__c}}</p>
+</script>
+<!--CURRENCY-->
+<script type="text/ng-template" id="fieldTypeCURRENCY">
+  <p>{{lineItem.assetLineItemSO[column.FieldName] | currency}}</p>
+</script>
+<!--PICKLIST-->
+<script type="text/ng-template" id="fieldTypePICKLIST">
+  <div ng-if="!column.IsEditable &amp;&amp; lineItem.assetLineItemSO[column.FieldName]">{{lineItem.assetLineItemSO[column.FieldName]}}</div>
+  <dropdown-list options="column.pickListEntries" model="column.pickListEntries[0].value" ng-if="column.IsEditable &amp;&amp; lineItem.assetLineItemSO[column.FieldName]"></dropdown-list>
+</script>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Prevent_To_Address_For_Returns</fullName>
+    <active>true</active>
+    <description>If Order Type = Return, and logged in user is not one of the exceptions, then destination address should not be populated.</description>
+    <errorConditionFormula>AND( 
+TEXT(SVMXC__Order_Type__c)=&apos;Return&apos;, 
+NOT(LEN(SVMXC__Destination_Location__c)=0), 
+NOT($Profile.Name==$Label.ProfileIntegrationSAP), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT($Profile.Name==$Label.Integration_SAP_Service), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User),
+NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)), 
+NOT($Profile.Name==$Label.ProfileSystemAdmin), 
+NOT($Permission.SS_Bypass_Work_Order_Lock) 
+)</errorConditionFormula>
+    <errorDisplayField>SVMXC__Destination_Location__c</errorDisplayField>
+    <errorMessage>For this Return Order, there is information in the &quot;To Location&quot; field.  Remove the entry in the &quot;To Location&quot; field.</errorMessage>
+</ValidationRule>

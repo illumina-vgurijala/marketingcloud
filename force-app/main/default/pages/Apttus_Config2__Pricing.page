@@ -1,0 +1,306 @@
+<!-- 
+    Apttus Config & Pricing
+    Pricing
+     
+    @2010-2014 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__ProductConfiguration__c"
+		   extensions="Apttus_Config2.PricingController" 
+		   showHeader="{!ShowHeader}"
+           sidebar="true"
+           standardStylesheets="true"
+		   cache="false" 
+		   tabstyle="Product2" >
+	
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+ 	
+ 	<apex:include pageName="Apttus_Config2__ConfigJSLibInclude" />
+ 	
+	<script type="text/javascript">
+		
+		// This to make sure jQuery doesn't conflict with any other JS libraries
+    	var j$ = jQuery.noConflict();
+ 		
+ 		j$(document).ready(function(){
+			
+			// setup namespace
+			j$.APTTUS = {};			
+		
+			j$.APTTUS.PricingController = {};
+			j$.APTTUS.PricingController.doUpdatePriceForCart = '{!$RemoteAction.PricingController.doUpdatePriceForCart}';			
+			j$.APTTUS.ConfigurationId = "{!JSENCODE(configurationId)}";
+			j$.APTTUS.LineNumbersAwaitingPrice = {!LineNumbersAwaitingPrice};
+			
+			// check and price pending line items
+    		doCheckAndUpdatePriceForCart();
+    		// start scrolling text underneath progress bar
+    		scrollText();
+    	});
+
+		/**
+		 * Calculates price for all pending line items
+		 */
+		function doCheckAndUpdatePriceForCart() {
+		    // get parameters
+		    // current configuration id
+		    var configId = j$.APTTUS.ConfigurationId;
+		    //console.log('start doCheckAndComputePriceForCart configId = ' + configId);
+			// register to invoke the function after the page load
+            var isPricePending = "{!IsPricePending}";
+        
+		    try {
+		        var pendingLineNumbers = j$.APTTUS.LineNumbersAwaitingPrice;
+				if ((isPricePending.toLowerCase() == 'true') || 
+					(pendingLineNumbers.length > 0)) {					
+					// update price
+					doUpdatePriceForCart(configId);
+					
+		        } else {		        	
+		        	// Update pricing progress
+					updatePricingProgress(100);
+			    	// go to finish page
+			    	goToFinishPage();
+			    	
+		        }
+		
+		    } catch(ex) {
+		        // display the error
+		        cp_erroralert(cp_cERROR_UNKNOWN, ex);
+		    	// go to finish page
+			    goToFinishPage();
+		        
+		    } 
+		    
+		}
+
+		/**
+		 * Updates the price for items in the given product configuration
+		 * Only line items in pending status are updated.
+	 	 * Total price is always computed
+		 * @param configId the product configuration id to update the price for
+		 */
+		function doUpdatePriceForCart(configId) {
+			//console.log('doUpdatePriceForCart configId = ' + configId);
+		    try {
+		          
+	            Visualforce.remoting.Manager.invokeAction(j$.APTTUS.PricingController.doUpdatePriceForCart, configId, function(result, event) {
+	        	    try {
+	                    // check response status
+	                    if (event.status) {
+	                        // ok response, check if done
+                			//if (result.IsPricePending.toLowerCase() == 'true') {
+                			if (result.IsPricePending == true) {
+	                            // more to go
+	                            doUpdatePriceForCart(configId);	                            
+	                            // calculate percentage complete
+	                            var percentComplete = ((j$.APTTUS.LineNumbersAwaitingPrice.length - result.PendingLineNumbers.length)/j$.APTTUS.LineNumbersAwaitingPrice.length)*100;
+	                            percentComplete = percentComplete > 0 ? (percentComplete < 100 ? percentComplete : 100) : 0;
+	                            // update progress bar
+	                            updatePricingProgress(percentComplete);	    
+
+	                        } else {
+	                            // go to finish page
+	                            updatePricingProgress(100);
+			    				goToFinishPage();
+	                        
+	                        }
+	                        
+	                    } else {
+	                        // throw exception
+	                        alert(event.message);
+	                        // go to finish page
+		            		goToFinishPage();
+	                    
+	                    }
+	                    
+	                } catch(ex) {
+	                    // display the error
+	                    cp_erroralert(cp_cERROR_UNKNOWN, ex);
+	                    // go to finish page
+		            	goToFinishPage();
+	                      
+	                } 
+	                
+	            }, {buffer:false, escape:true, timeout:120000 });
+		           
+		    } catch(ex) {
+		        // display the error
+		        cp_erroralert(cp_cERROR_UNKNOWN, ex);
+		        // go to finish page
+			    goToFinishPage();
+					            
+		    } 
+		    
+		}
+
+		/**
+		 * Navigate to the cart page		 
+		 */
+		function goToFinishPage(){
+			if (typeof sforce != "undefined" && sforce && sforce.one) {
+				sforce.one.navigateToURL('{!FinishPage}');
+			} else {
+				window.location.replace('{!FinishPage}');
+			}
+		}
+
+		/**
+		 * Updates the scroll text shown underneath the progress bar
+		 * to the user, during pricing.
+		 * @param scrollParams params used to set text
+		 */
+		function scrollText(scrollParams) {
+			if(scrollParams === undefined) {
+				var messages = [];
+	    		<apex:repeat value="{!ProgressBarMessages}" var="message" >
+	    			var messageStr = '<apex:outputText value="{!JSENCODE($Label[message.source])}"><apex:param value="{!JSENCODE($User.FirstName)}"/></apex:outputText>';
+	    			messages.push(messageStr);
+	    		</apex:repeat>
+
+	    		if(!messages.length) return;
+	    		scrollParams = { labels: messages,
+								 scrolling:0,
+								 position:0
+							   };
+			}
+
+			var ctxText = scrollParams.labels[scrollParams.scrolling];
+		 	if (ctxText != '') { 
+		 		//Starting from the begining
+		 		if(scrollParams.position == 0) {
+		 			j$('.apt-progress-message').html('');
+		 		}
+
+		 		// Determine length between characters in message. Total message time ( 8 seconds )		 		
+		 		var timeOut = 8000/ctxText.length;
+		 		if (scrollParams.position < ctxText.length) {
+		 			// append the next character
+		 			j$('.apt-progress-message').append(ctxText[scrollParams.position++]);
+
+		 		} else if(++scrollParams.scrolling > (scrollParams.labels.length -1)) {	
+		 			// start over after some delay ( 5 seconds )	 			
+		 			timeOut = 5000;
+		 			scrollParams.position = 0;
+		 			scrollParams.scrolling = 0;
+
+		 		} else {	// pause between lines (2 seconds )
+		 			timeOut = 2000;
+		 			scrollParams.position = 0; 
+
+		 		}
+
+		 		// append next character 
+		 		setTimeout(scrollText, timeOut, scrollParams);
+		 	}
+
+		 }
+
+		 /**
+		 * Updatesthe pricing progress bar
+		 * @param percentComplete percentage of completion to update to
+		 */
+		 function updatePricingProgress(percentComplete) {
+		 	j$('.apt-progress-bar').html('&nbsp;');
+	        j$('.apt-progress-bar').css('width', percentComplete + '%');
+
+		 }
+		
+	</script>
+	<style >
+		body {
+			background-color:#f9fbfc;
+		}
+
+		.apt-progress-container {
+			height: 7px;
+			margin: 200px 0 10px;
+			padding:3px;
+			overflow: hidden;
+			background-color: #fff;
+			border:1px solid #dfe0e1;
+			border-radius: 8px;			
+			box-shadow: inset inset 0 3px 10px rgba(0,0,0,.2);			
+		}
+
+		.apt-progress-bar {			
+			width: 0;			
+			min-width: 12px;
+			height: 7px;	
+			border-radius: 5px;			
+			background-color: #2a94d6;
+			transition: width .6s ease;			
+		}
+
+		.apt-main-content {			
+			width: 320px;
+			margin: 0 auto;
+		}
+
+		.apt-progress-message {
+			font-family: Verdana;
+			font-style: italic;
+			font-size: 12px;
+			color: #344a5f;
+			height:120px;
+			width: 320px;
+			padding: 0;
+			margin: 0;
+		}
+
+		.apt-banner-container {
+			margin: 100px 0 0 -140px;			
+			width: 600px;
+			height: 200px;
+			vertical-align: middle;
+			
+			font-family: Verdana;
+			font-style: italic;
+			font-size: 16px;
+			color: #344a5f;
+		}
+
+		.apt-banner-container > div {
+			margin:0 auto;
+		}
+
+		.apt-banner-container > div > img {
+			margin: 0 auto;
+			display: block;
+		}
+
+	</style>
+	<apex:form id="idLineItemSO" >
+		
+		<!--  required fields -->
+		<apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Name}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__Status__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__IsPricePending__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__LineItemsAwaitingPrice__c}" rendered="false" />		
+    	<apex:actionFunction name="refreshBannerAdvertisement" 
+    						 rerender="idBannerContainer" 
+    						 immediate="true" /> 
+
+    	<div class="apt-main-content">
+	    	<div class="apt-progress-container"><div class="apt-progress-bar" /></div> <!-- Status Bar -->
+		    <div class="apt-progress-message"/>	<!-- Text underneath status bar -->		    
+		    <apex:outputPanel id="idBannerContainer" layout="none" >
+			    <apex:outputPanel styleClass="apt-banner-container" layout="block" >			    	
+			    	<apex:outputPanel layout="block" rendered="{!MarketingBanner.type == 'ImageURL'}">
+			    		<img src="{!MarketingBanner.source}" />
+			    	</apex:outputPanel>
+
+			    	<apex:outputPanel layout="block" rendered="{!MarketingBanner.type == 'CustomLabel'}">
+			    		{!$Label[MarketingBanner.source]}
+			    	</apex:outputPanel>
+
+			    	<script>
+			    		//cycle through banner messages every 30 seconds.
+			    		//TODO: Add-fade in/ fade out
+			    		setTimeout(refreshBannerAdvertisement, 30000);
+			    	</script>
+			    </apex:outputPanel>
+			</apex:outputPanel>
+		</div>
+	</apex:form>
+
+</apex:page>

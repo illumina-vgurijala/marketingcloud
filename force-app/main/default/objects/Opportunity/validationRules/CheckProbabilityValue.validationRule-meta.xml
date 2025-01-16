@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckProbabilityValue</fullName>
+    <active>true</active>
+    <description>To check the probability value. It should not be less than 1 and greater than 99. Also it should not be modifiable for closed opportunity.</description>
+    <errorConditionFormula>AND (
+    OR (
+       Probability &lt;0.01,
+       Probability &gt;0.99
+       ),
+    NOT (
+         ISPICKVAL ( StageName, &apos;Closed Lost&apos; )
+        ),
+    NOT (
+         ISPICKVAL ( StageName, &apos;Closed Abandoned&apos; )
+        ),
+    NOT (
+         ISPICKVAL ( StageName, &apos;Closed Won&apos; ) 
+        ),
+    !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Probability</errorDisplayField>
+    <errorMessage>&quot;Probability&quot; value cannot be less than 1% or greater than 99%. Please revise your Probability value (Opportunity Details section).</errorMessage>
+</ValidationRule>

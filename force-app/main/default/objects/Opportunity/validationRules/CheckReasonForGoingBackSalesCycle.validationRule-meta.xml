@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckReasonForGoingBackSalesCycle</fullName>
+    <active>true</active>
+    <description>Validation rule to check if the Reason for Moving Backwards field is filled before going backwards in sales cycle.</description>
+    <errorConditionFormula>AND (		
+    OR ( 
+        AND (		
+            OR (    
+                RecordType.DeveloperName = $Label.OpportunityRTDirectStandard, 
+                RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard
+            ),
+            OR ( 
+                ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Finalize&apos; ), 
+                AND (
+                    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Negotiate &amp; Resolve&apos; ),
+                    NOT (
+                        ISPICKVAL ( StageName  ,&apos;Finalize&apos; )
+                    )
+                ),
+                AND (
+                    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Prove&apos; ),
+                    NOT (
+                        OR(
+                            ISPICKVAL ( StageName, &apos;Finalize&apos; ),
+                            ISPICKVAL ( StageName, &apos;Negotiate &amp; Resolve&apos; )
+                        )
+                    )
+                ),
+                AND (
+                    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Develop&apos; ),
+                    NOT (
+                        OR (
+                            ISPICKVAL ( StageName ,&apos;Prove&apos; ),
+                            ISPICKVAL ( StageName ,&apos;Negotiate &amp; Resolve&apos; ) ,
+                            ISPICKVAL ( StageName ,&apos;Finalize&apos; )
+                        )
+                    )
+                ),
+                AND (  
+                    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Qualify&apos; ), 
+                    NOT (		
+                        OR (
+                            ISPICKVAL ( StageName ,&apos;Develop&apos; ),   
+                            ISPICKVAL ( StageName ,&apos;Prove&apos; ),
+                            ISPICKVAL ( StageName ,&apos;Negotiate &amp; Resolve&apos; ),
+                            ISPICKVAL ( StageName ,&apos;Finalize&apos; )
+                        )
+                    )
+                )             
+            ),
+            NOT ( 
+                ISPICKVAL ( StageName ,&apos;Create&apos; ) 
+            )
+        ),
+        AND ( 			
+            OR (			
+	        RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+                RecordType.DeveloperName = $Label.IndirectReOrder, 
+                RecordType.DeveloperName = $Label.FieldServices, 
+                RecordType.DeveloperName = $Label.IndirectFieldServices 
+            ),
+            OR (
+                ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Finalize&apos; ), 
+                AND (
+		    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Develop&apos; ),
+		    NOT (
+		        ISPICKVAL ( StageName  ,&apos;Finalize&apos; )
+                    )
+                )
+            )
+        )
+    ),
+    ISBLANK ( Reason_for_Moving_Backwards__c ),
+    ISCHANGED ( StageName ),
+    NOT (
+        OR(
+	    ISPICKVAL ( StageName  ,&apos;Closed Won&apos; ),
+	    ISPICKVAL ( StageName  ,&apos;Closed Lost&apos; ),
+	    ISPICKVAL ( StageName  ,&apos;Closed Abandoned&apos; )
+        )
+    ),			
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Reason_for_Moving_Backwards__c</errorDisplayField>
+    <errorMessage>Please provide a &quot;Reason for Moving Backwards&quot; (System Information section).</errorMessage>
+</ValidationRule>

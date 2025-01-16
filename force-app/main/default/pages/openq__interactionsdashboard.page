@@ -1,0 +1,625 @@
+<apex:page sidebar="false" standardStylesheets="true" docType="html-5.0" tabStyle="openq__Interaction__c" extensions="openq.CreateInteractionForm" standardController="openq__Interaction__c">   
+            
+<apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/interactionDashboard.css')}"/>       
+<apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/defineCreateInteraction.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/f-numberControl.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'bootstrap/css/bootstrap.css')}"/> 
+<link href="{!URLFOR($Resource.SearchMirfs, 'css/SearchMirfs.css')}" type="text/css" rel="stylesheet"></link>
+    
+    <apex:composition template="openq__interactionsTabbedTemplate">
+        <!-- Interaction Dashboard -->
+        <apex:define name="dashboard">
+            <div id="wrapper1" class="clearFix order-mm layout-order interactions">
+                <div id="body" class="layout-order-first">                  
+                    <c:MyRecentInteractions rendered="{!$Objecttype.openq__Interaction__c.Accessible}"/>
+                    <c:MyInteractionsByProduct rendered="{!$Objecttype.openq__Interaction__c.fields.openq__Product__c.Accessible}"/>
+                </div>
+                <div id="side">
+                    <c:MyFollowUpPlanTasks rendered="{!$Objecttype.Task.Accessible}"/>
+                    <c:MyInteractionsByQuarter rendered="{!$Objecttype.openq__Interaction__c.fields.openq__Date__c.Accessible}"/>
+                </div>
+                <div id="footer-wrapper">
+                    <div id="footer" class="clearFix">
+                        <ul class="pipe nav">
+                            <li><a href="http://openq.com/" >OpenQ.com</a></li>
+                        </ul>
+                        <div style="color:#245C8A" class="copyright">{!YEAR(TODAY())} OpenQ, Inc.</div>
+                    </div>
+                </div>
+                
+            </div>
+        </apex:define>
+        
+        <!-- Create Interaction From -->
+        <apex:define name="create">
+            <style>     
+             #createTab{
+                margin-top: -10px;
+             }
+             
+             .attendeeNameText{
+                color: #245c8a;
+                font-weight: bold;
+                font-size: 11px;
+                font-family: Arial,Helvetica,sans-serif;
+             }
+                
+                .requiredFieldRelatedList {
+                    border-left: 3px solid #CC0000;
+                    padding-left: 3px;
+                }
+                
+                .required {
+                    color: red; 
+                    margin-left: -10px;
+                    float:left;
+                }
+                
+                .lookupIconOn{
+                    position:absolute !important;
+                }
+            </style>
+            <apex:outputPanel id="pageMessageBlock">
+                <apex:pageMessages />
+            </apex:outputPanel>
+            <apex:outputPanel layout="block"  id="mainInteractionFormWrapper">
+                <apex:outputPanel id="PagelayoutSelectedID" rendered="{!isPageLAyoutSelected}">
+                <div id="stick-footer">
+               
+                <div id="wrapper" class="default clearFix order-sm layout-order">       
+                    <div id="body2" class="layout-order-first"> 
+                        <apex:outputPanel id="all2" >
+                            <div>
+                                <div style="float: right;">
+                                    <table class="f-width elements-to-row create-button-panel">
+                                        <tr>
+                                            <td style="padding-right: 0;">
+                                                <div class="wi-gen blank gr" style="float: right;">
+                                                    <div class="marged" id="actionButtons">
+                                                        <apex:commandLink action="{!cancel}" value="Cancel" styleClass="btnCustom default narrow t2 gr btnOverride btnCancelCustom"></apex:commandLink>
+                                                        &nbsp;
+                                                        <a href="#" onclick="return createNew();" class="btnCustom default narrow t2 gr btnOverride">Create New</a>
+                                                        <apex:outputPanel rendered="{!hasPermission}">
+                                                            &nbsp;
+                                                            <a href="#" onclick="return save();" class="btnCustom default narrow t2 gr btnOverride">Save</a>
+                                                            &nbsp;
+                                                            <a href="#" onclick="return saveAndNew();" class="btnCustom default narrow t2 gr btnOverride">Save &amp; New</a>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </div>                      
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>          
+                            <div style="clear: both;"></div> 
+                        </div>
+                        <div class="" id="attrSection">
+                            <div class="marged" style="margin-top: 19px;margin-right:0px !important;margin-left: 0px  !important;">
+                                <!-- Interaction Dynamic Header-->
+                                <div class="bootstrapPrefix cfix wi-gen">
+                                 <c:PageLayoutsAttributesComponent id="pageLayoutComp" importStaticResource="true" pgController="{!plaController}" readOnly="false" initFunctionName="startComponent" showOnLoad="{!loadPLC}" /> 
+                                </div>
+                                <div id="section1" class="{!IF(OR(iSttgs.Display_Attendees__c,iSttgs.Display_Attendees_Type__c),'wi-gen','')}" style="  padding-left: 16px;padding-right: 16px;">
+                                    <apex:outputPanel id="attendeesBlock" rendered="{!loadPLC}">
+                                        <apex:outputpanel layout="none">
+                                            <div class="ver header-specific-wrap">
+                                                <h1 class="header specific" style="font-weight:normal;border-bottom: none;padding-left: 0px;"><span style="padding:10px 0 0 0; font-size: 16px; font-weight:bold; background-color:#fafafa" >{!$Label.Interaction_attendees_section_title}</span></h1>
+                                                <apex:outputLink rendered="{!iSttgs.openq__Display_Create_New_Contact_Button__c}" onclick="return newContact();" styleClass="btnCustom default narrow gr btnOverride" style="float: right; text-align: center;" >Create New<br/>Contact</apex:outputLink>
+                                            </div>
+                                            <apex:outputPanel layout="none" rendered="{!iSttgs.openq__Display_Attendees__c}">
+                                                <div>
+                                                    <apex:outputText value="*" styleClass="required" rendered="{!iSttgs.openq__Make_Attendees_Required__c}"/>
+                                                    <div class="attendeeNameText">
+                                                        Enter Name of Attendee(s)
+                                                    </div>
+                                                </div>                                                                                  
+                                                <div class="ver" id="attendees_list_field_container">
+                                                    <input type="text" name="attendees_list" id="attendees_list_field" />
+                                                </div> 
+                                            </apex:outputPanel>
+                                            <apex:outputPanel id="attendeeAsRelatedList" rendered="{!iSttgs.openq__Show_Attendees_as_Related_List__c}">
+                                                <apex:outputPanel layout="none" >
+                                                    <a name="anchor{!attendeeRelatedList.labelObject}"></a>                                                                                                           
+                                                    <div class="wi-gen blank gr">
+                                                        <div class="wbhc clearFix">
+                                                            <h1 class="header-color">{!attendeeRelatedList.labelObject}</h1>                                                                                 
+                                                            <apex:outputPanel >
+                                                                <apex:commandLink immediate="true" styleClass="newObject easyAdd" action="{!addRow}" oncomplete="bindImagesToFixIe(); disableDateFields();" rerender="attendeeAsRelatedList" >
+                                                                    <apex:param name="param1" value="{!attendeeRelatedList.nameObject}" assignTo="{!rowType}"/>
+                                                                </apex:commandLink>
+                                                            </apex:outputPanel>                                                                              
+                                                        </div>
+                                                        
+                                                        <div class="marged ver">
+                                                            <table class="ul-list f-width">                                         
+                                                                <apex:outputPanel rendered="{!attendeeRelatedList.records.size == 0}" layout="none" >
+                                                                    <tr><td><span> No records to display</span> </td></tr>
+                                                                </apex:outputPanel>                                         
+                                                                <apex:outputPanel rendered="{!attendeeRelatedList.records.size > 0}" layout="none">
+                                                                   
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <apex:repeat value="{!attendeeRelatedList.fieldsInfo}" var="field">                                
+                                                                                <apex:variable var="helpTextRelList" value="{!$ObjectType[attendeeRelatedList.nameObject].fields[field.apiName].inlineHelpText}" />                                                           
+                                                                                <th>
+                                                                                    <div style="position: relative;">
+                                                                                        <div class="fleft">{!field.label}</div>
+                                                                                        <c:HelpText rendered="{!AND(helpTextRelList != null, helpTextRelList != '')}" helpText="{!helpTextRelList}" uniqueText="{!attendeeRelatedList.nameObject}{!field.apiName}"/>                                                                
+                                                                                    </div>
+                                                                                </th>
+                                                                            </apex:repeat>
+                                                                            <apex:outputPanel layout="none">
+                                                                                <th><div class="fright">Actions</div></th>
+                                                                            </apex:outputPanel>
+                                                                            
+                                                                        </tr>
+                                                                    </thead> 
+                                                                    <tbody>    
+                                                                        
+                                                                        <apex:repeat value="{!attendeeRelatedList.records}" var="rec">
+                                                                            <tr>
+                                                                                <apex:repeat value="{!attendeeRelatedList.fieldsInfo}" var="field">                                                
+                                                                                    <td>   
+                                                                                        <div class="ver">
+                                                                                            <div class="wide-2">
+                                                                                                <div class="fleft {!IF(field.required, 'requiredFieldRelatedList', '')}" style="white-space: nowrap;{!IF(field.required, 'border-left:3px solid #CC0000;padding-left: 3px;', '')}" > <!-- {!IF(field.dtype == 'PICKLIST', 'ui-combobox-container gr', '')} --> 
+                                                                                                    <apex:inputField required="false" value="{!rec.sobj[field.apiname]}" />
+                                                                                                </div>    
+                                                                                            </div>
+                                                                                        </div>     
+                                                                                    </td>
+                                                                                </apex:repeat>
+                                                                                <apex:outputPanel layout="none">
+                                                                                    <td>
+                                                                                        <div class="fright">                                                                                            
+                                                                                            <apex:commandLink immediate="true" value="{!IF(rec.newObj, 'Remove', 'Delete')}" action="{!removeRow}" oncomplete="bindImagesToFixIe();"  rerender="attendeeAsRelatedList" >                                                                    
+                                                                                                <apex:param name="param1" value="{!attendeeRelatedList.nameObject}" assignTo="{!rowType}"/>
+                                                                                                <apex:param name="param2" value="{!rec.id}" assignTo="{!rowToRemove}"/>                                                                     
+                                                                                            </apex:commandLink>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                </apex:outputPanel>
+                                                                            </tr>
+                                                                        </apex:repeat>
+                                                                    </tbody>
+                                                                </apex:outputPanel>                                             
+                                                            </table>
+                                                        </div>                                  
+                                                    </div>          
+                                                </apex:outputPanel> 
+                                            </apex:outputPanel>
+                                        </apex:outputpanel>
+                                        <apex:outputpanel layout="none" rendered="{!iSttgs.openq__Display_Attendees_Type__c}" >
+                                            <h2>Other Attendees</h2>                
+                                            <div>
+                                                <apex:repeat value="{!attendeeTypes}" var="at">
+                                                    <div style="float:left; margin-right: 20px; margin-top: 3px;">
+                                                        <apex:outputLabel style="margin-right: 5px;" value="{!at.label}"></apex:outputLabel>
+                                                        <input type="text" data-name="{!at.value}" onchange="attendeNumChanged();" class="numbers" value="{!at.num}"/>
+                                                    </div>
+                                                </apex:repeat>
+                                            </div>
+                                            <div style="clear:left;"></div>                             
+                                        </apex:outputpanel>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel layout="block" style="margin-top: 15px; font-style:italic;" rendered="{!AND(NOT(displayAttendeesCount),OR(iSttgs.openq__Display_Attendees__c, iSttgs.openq__Display_Attendees_Type__c))}">
+                                        Total # of Attendees:&nbsp;<span id="attendee_num"></span>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel layout="block" rendered="{!displayAttendeesCount}">
+                                        Total # of Attendees:&nbsp;
+                                        <apex:input value="{!freeAttendeesCount}" type="number"/>
+                                    </apex:outputPanel> 
+                                </div>                      
+                            </div>
+                        </div>  
+                        <div id="relListSection">
+                        <apex:outputPanel id="refresh">
+                            <div class="wi-gen blank gr tit" style="margin-top:20px;">  
+                                <apex:repeat value="{!relatedLists}" var="relList" > 
+                                    <apex:outputPanel layout="none" rendered="{!OR(!iSttgs.openq__Show_Attendees_as_Related_List__c, relList.nameObject != namespace+'Attendee__c')}" >
+                                        <a name="anchor{!relList.labelObject}"></a>                         
+                                                                      
+                                        <div class="wi-gen blank gr">
+                                            <div class="wbhc clearFix">
+                                                <h1 class="header-color">{!relList.labelObject}</h1>                                                                                 
+                                                <apex:outputPanel rendered="{!IF(AND(relList.nameObject != 'Attachment', relList.nameObject != namespace+'Empower_Presented_Material__c'), true, false)}">
+                                                    <apex:commandLink immediate="true" styleClass="newObject easyAdd" action="{!addRow}" oncomplete="bindImagesToFixIe(); disableDateFields();" rerender="refresh" > <!-- .ui-combobox:not(:hidden) -->
+                                                        <apex:param name="param1" value="{!relList.nameObject}" assignTo="{!rowType}"/>
+                                                    </apex:commandLink>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel rendered="{!IF(relList.nameObject == 'Attachment', true, false)}">
+                                                    <a onclick="return newAttachment();">
+                                                        <span class="newObject easyAdd"></span>
+                                                    </a>
+                                                </apex:outputPanel>                      
+                                            </div>
+                                            
+                                            <div class="marged ver">
+                                                <table class="ul-list f-width">                                         
+                                                    <apex:outputPanel rendered="{!relList.records.size == 0}" layout="none" >
+                                                        <tr><td><span> No records to display</span> </td></tr>
+                                                    </apex:outputPanel>                                         
+                                                    <apex:outputPanel id="relListsContent" rendered="{!relList.records.size > 0}" layout="none">
+                                                       
+                                                        <thead>
+                                                            <tr>
+                                                                <apex:repeat value="{!relList.fieldsInfo}" var="field">                                
+                                                                    <apex:variable var="helpTextRelList" value="{!$ObjectType[relList.nameObject].fields[field.apiName].inlineHelpText}" />                                                           
+                                                                    <th>
+                                                                        <div style="position: relative;">
+                                                                            <div class="fleft">{!field.label}</div>
+                                                                            <c:HelpText rendered="{!AND(helpTextRelList != null, helpTextRelList != '')}" helpText="{!helpTextRelList}" uniqueText="{!relList.nameObject}{!field.apiName}"/>                                                                
+                                                                        </div>
+                                                                    </th>
+                                                                </apex:repeat>
+                                                                <apex:outputPanel layout="none" rendered="{!relList.nameObject != namespace+'Empower_Presented_Material__c'}">
+                                                                    <th><div class="fright">Actions</div></th>
+                                                                </apex:outputPanel>
+                                                                
+                                                            </tr>
+                                                        </thead> 
+                                                        <tbody>    
+                                                            
+                                                            <apex:repeat value="{!relList.records}" var="rec">
+                                                                <tr>
+                                                                    <apex:repeat value="{!relList.fieldsInfo}" var="field">                                                
+                                                                        <td>   
+                                                                            <div class="ver">
+                                                                                <div class="wide-2">
+                                                                                    <div class="fleft {!IF(field.required, 'requiredFieldRelatedList', '')}" style="white-space: nowrap;{!IF(field.required, 'border-left:3px solid #CC0000;padding-left: 3px;', '')}" > <!-- {!IF(field.dtype == 'PICKLIST', 'ui-combobox-container gr', '')} --> 
+                                                                                        <apex:inputField rendered="{!OR(relList.nameObject != namespace+'Empower_Presented_Material__c', field.apiname == namespace+'Selected__c')}" required="false" value="{!rec.sobj[field.apiname]}" onchange="return checkStatusJs('{!relList.nameObject}', {!rec.id}, '{!field.apiname}' ,'{!namespace}');"  />  <!--  {!IF(field.dtype == 'PICKLIST', 'ui-combobox', '')} -->
+                                                                                        <apex:outputField rendered="{!AND(relList.nameObject == namespace+'Empower_Presented_Material__c', field.apiname != namespace+'Selected__c')}" value="{!rec.sobj[field.apiname]}" />  
+                                                                                    </div>    
+                                                                                </div>
+                                                                            </div>     
+                                                                        </td>
+                                                                    </apex:repeat>
+                                                                    <apex:outputPanel layout="none" rendered="{!relList.nameObject != namespace+'Empower_Presented_Material__c'}">
+                                                                        <td>
+                                                                            <div class="fright">
+                                                                                <apex:outputPanel rendered="{!IF(AND(!rec.newObj, relList.nameObject == 'Attachment'), true, false)}">
+                                                                                    <apex:commandLink immediate="true" value="View" action="{!viewRecord}" rerender="">
+                                                                                        <apex:param value="{!rec.sobj.Id}" assignTo="{!recordToView}" name="recordToView"/>
+                                                                                    </apex:commandLink>
+                                                                                    &nbsp;|&nbsp;
+                                                                                    <apex:commandLink immediate="true" value="Edit" action="{!editRecord}" rerender="">
+                                                                                        <apex:param value="{!rec.sobj.Id}" assignTo="{!recordToEdit}" name="recordToEdit"/>
+                                                                                    </apex:commandLink>
+                                                                                    &nbsp;|&nbsp;
+                                                                                </apex:outputPanel>
+                                                                                <apex:commandLink immediate="true" value="{!IF(rec.newObj, 'Remove', 'Delete')}" action="{!removeRow}" oncomplete="bindImagesToFixIe();"  rerender="refresh" >                                                                    
+                                                                                    <apex:param name="param1" value="{!relList.nameObject}" assignTo="{!rowType}"/>
+                                                                                    <apex:param name="param2" value="{!rec.id}" assignTo="{!rowToRemove}"/>                                                                     
+                                                                                </apex:commandLink>
+                                                                            </div>
+                                                                        </td>
+                                                                    </apex:outputPanel>
+                                                                </tr>
+                                                            </apex:repeat>
+                                                        </tbody>
+                                                    </apex:outputPanel>                                             
+                                                </table>
+                                            </div>                                  
+                                        </div>          
+                                    </apex:outputPanel>  
+                                 </apex:repeat>                          
+                            </div>                                        
+                        </apex:outputPanel>
+                        <div style="float: right;">
+                            <table class="f-width elements-to-row create-button-panel">
+                                <tr>
+                                    <td style="padding-right: 0;">
+                                        <div class="wi-gen blank gr" style="float: right;">
+                                            <div class="marged" id="actionButtons">
+                                                    <apex:commandLink action="{!cancel}" value="Cancel" styleClass="btnCustom default narrow t2 gr btnOverride btnCancelCustom"></apex:commandLink>
+                                                    &nbsp;
+                                                    <a href="#" onclick="return createNew();" class="btnCustom default narrow t2 gr btnOverride">Create New</a>
+                                                    <apex:outputPanel rendered="{!hasPermission}">
+                                                        &nbsp;
+                                                        <a href="#" onclick="return save();" class="btnCustom default narrow t2 gr btnOverride">Save</a>
+                                                        &nbsp;
+                                                        <a href="#" onclick="return saveAndNew();" class="btnCustom default narrow t2 gr btnOverride">Save &amp; New</a>
+                                                    </apex:outputPanel>
+                                            </div>
+                                        </div>                      
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>          
+                        <div style="clear: both;"></div>
+                        </div>
+                        
+                        <apex:actionFunction immediate="true" name="attendeeChangedApex" action="{!attendeeChanged}" oncomplete="bindImagesToFixIe();" rerender="refresh, casesLayout"  >
+                            <apex:param name="param1" assignTo="{!selectedAttendeeIds}" value=""/> 
+                        </apex:actionFunction>              
+                        
+                        <apex:actionFunction name="checkStatusApex" action="{!checkStatus}" oncomplete="bindImagesToFixIe();" rerender="refresh, openTasksLayout, casesLayout"  >
+                            <apex:param name="param1" assignTo="{!taskToCheck}" value=""/> 
+                            <apex:param name="param2" assignTo="{!taskFieldToCheck}" value=""/>
+                        </apex:actionFunction>                  
+                        
+                        <apex:actionFunction name="saveInteractionApex" action="{!saveInteraction}" rerender="pageMessageBlock" oncomplete="bindImagesToFixIe();waitOff();" >
+                            <apex:param name="param1" assignTo="{!selectedAttendeeIds}" value=""/>  
+                            <apex:param name="param3" assignTo="{!interactionDateStr}" value=""/>
+                            <apex:param name="selectedAttendeeTypes" assignTo="{!attendeeTypeNumbers}" value=""/>
+                            <apex:param name="param8" assignTo="{!saveAndNew}" value=""/>
+                            <apex:param name="param9" assignTo="{!newAttachment}" value=""/>
+                            <apex:param name="param10" assignTo="{!newContact}" value=""/>
+                        </apex:actionFunction>
+                        
+                        <apex:actionFunction name="refreshAdvocacies" action="{!refreshAdvocacies}" oncomplete="bindImagesToFixIe();" rerender="pageMessageBlock"  >                    
+                            <apex:param name="param1" assignTo="{!interactionDateStr}" value=""/>                   
+                        </apex:actionFunction>      
+                        
+                        
+                        </apex:outputPanel>    
+                    </div>          
+                </div>       
+                    
+                
+                </div>
+                
+                <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/CreateInteractionForm.js')}"/>
+                <script src="{!URLFOR($Resource.StylesScriptsImages,'scripts/CreateInteractionFnc.js')}" type="text/javascript" /> 
+                
+            </apex:outputPanel>
+        </apex:outputPanel>
+                    <script>
+                    jQuery(document).ready(function(){
+                        jQuery('.newObject').css('background-image','url({!URLFOR($Resource.openq__StylesScriptsImages,'img/plus.png')})');
+                        jQuery('.settings').css('background-image','url({!URLFOR($Resource.openq__StandaloneCommonImages,'img/cogsprite.png')})');
+                        jQuery('.settings').css('width','16px');
+                        jQuery('.arrowSortIcon').css('background-image','url({!URLFOR($Resource.openq__StandaloneCommonImages,'img/arrowUpDown.png')})');
+                    });
+                    var startExecuted=true;
+                    
+                    function attendeeCheck(){
+                    
+                        var attendeeMandatory = {!AND(iSttgs != null, iSttgs.openq__Make_Attendees_Required__c)};
+                        
+                        if(attendeeMandatory === true){
+                        
+                            if(jQuery('#as-values-attendees').val() == '' || jQuery('#as-values-attendees').val() == ','){
+                            
+                                alert('You must specify one or more Attendees');
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    }
+                      
+                    function save(){
+                        
+                        if(attendeeCheck()){
+                            waitOn();
+                            attrComp.setCallBack(callBackRemoteActionSave);
+                            attrComp.save();
+                        }
+                    }
+                        
+                    function callBackRemoteActionSave(){
+                        saveInteraction(false,false);   
+                    }
+
+                    function saveAndNew(){  
+                        if(attendeeCheck()){
+                            waitOn();   
+                            attrComp.setCallBack(callBackRemoteActionSaveAndNew);
+                            attrComp.save();
+                        }
+                    }
+                        
+                    function callBackRemoteActionSaveAndNew(){
+                        saveInteraction(true,false);    
+                    }
+
+                    function createNew(){
+                        waitOn();
+                        window.location.search='?tabIndex=1';
+                    }
+                    
+                    function startComponent(){
+                        if( currentTab == '1'){ 
+                            startExecuted = false;
+                            attrComp=new  AttributesComponent(jQuery('[id$="PageLayoutAttributes"]'));
+                            attrComp.setCallBack(callBackRemoteActionSave);
+                            attrComp.setFields(fields{!JSENCODE(plaController.objectName)},fieldsTP{!JSENCODE(plaController.objectName)});
+                            attrComp.init();
+                            //**hack internet explorer 
+                            jQuery('img.ui-datepicker-trigger').css({'margin-left': '-16px', 'cursor': 'pointer', 'position': 'absolute' ,'margin-top': '8px' });                           
+                        } 
+                        jQuery('.requiredField').css({'width':'1px','position':'absolute','margin-top':'8px','margin-left':'-5px'});
+                    }
+                </script>
+            
+            <apex:outputPanel id="addAttendeejs" >
+                <script>
+                    var pref = eval("{!JSENCODE(preFill)}");
+                    console.log(pref);
+                    var getData = function(query, next){
+                        Visualforce.remoting.Manager.invokeAction(
+                            '{!$RemoteAction.CreateInteractionForm.getContacts}',
+                            query,
+                            '{!JSENCODE(pageLayoutId)}',
+                            function(result, event){
+                                var res = [];
+                                for(i=0;  i < result.length; i++){
+                                    var name = result[i].Name.replace(/&#39;/g, "\'");
+                                    res.push(result[i]);  
+                                }
+                                next(res, query);
+                                if(event.type === 'exception'){
+                                    console.log("exception");
+                                    console.log(event);
+                                }
+                            },
+                            {buffer: true, escape: true, timeout: 120000}
+                        );
+                    }
+                    function initAttendees(){
+                        
+                        if('{!JSENCODE(pageLayoutId)}' != null && pref){                                                
+                            jQuery('.ui-datepicker-trigger').attr("src",jQuery('#datepickerID').val());
+                         
+                            jQuery('#attendees_list_field')
+                                .autoSuggest(getData, {asHtmlID : "attendees", selectedValuesProp : "Id", 
+                                                selectedItemProp: "{!namespace}Contact_Full_Name__c", searchObjProps: "FirstName, {!namespace}OPENQ_Middle_Name__c, LastName", 
+                                                minChars: "2", startText: "", selectionAdded : attendeeAdded,
+                                                selectionRemoved : attendeeRemoved, preFill : pref });
+                            numAtt = pref.length;       
+                            attendeNumChanged();
+                        }                       
+                    }
+                    function resetAutoSuggest() {
+                    
+                        jQuery('#attendees_list_field_container').html('');
+                        jQuery('#attendees_list_field_container').html('<input type="text" id="search_term" />');
+                      
+                            
+                        jQuery('#search_term').autoSuggest(getData, {asHtmlID : "attendees", selectedValuesProp : "Id", 
+                                                selectedItemProp: "{!namespace}Contact_Full_Name__c", searchObjProps: "FirstName, {!namespace}OPENQ_Middle_Name__c, LastName",
+                                                minChars: "2", startText: "", selectionAdded : attendeeAdded,
+                                                selectionRemoved : attendeeRemoved, preFill : pref });
+                                            
+                        numAtt = pref.length;                   
+                        
+                        attendeNumChanged();
+                    }
+                    
+                    
+                    function bindImagesToFixIe(){
+                        jQuery('.lookupIcon').css('position','absolute');
+                        jQuery('.newObject').css('background-image','url({!URLFOR($Resource.StylesScriptsImages,'img/plus.png')})');
+                                jQuery('.settings').css('background-image','url({!URLFOR($Resource.StandaloneCommonImages,'img/cogsprite.png')})');
+                                jQuery('.settings').css('width','16px');
+                                jQuery('.arrowSortIcon').css('background-image','url({!URLFOR($Resource.StandaloneCommonImages,'img/arrowUpDown.png')})');
+                                jQuery('.requiredField').css({'width':'1px','position':'absolute','margin-top':'8px','margin-left':'-5px'});
+                    }
+                    function disableDateFields(){
+                    
+                        jQuery('.dateInput.dateOnlyInput input').attr('readonly', 'readonly');
+                    }
+                </script>
+                </apex:outputPanel>
+        <apex:outputPanel layout="block" id="selectPageLayoutPopUp" rendered="{!!isPageLAyoutSelected}">
+        <style>
+                .popUpBkg {
+                
+                    top: 0;
+                    left: 0;
+                    height: 100%; 
+                    width: 100%; 
+                    display: none; 
+                    background-color: black;            
+                    position: fixed;
+                    z-index: 1000;
+                    
+                    opacity: 0.6;
+                    filter: alpha(opacity=60); /* For IE8 and earlier */
+                }
+                
+                .popUpDiv {
+                
+                    position: absolute;
+                    left: 50%; 
+                    top: 30%; 
+                    width: 200px; 
+                    height: 200px;      
+                    display: none;      
+                    
+                    margin-left: -100px;
+                    margin-top: -100px;
+                    
+                    z-index: 1100;  
+                }
+                
+        
+        #newEventDiv {
+            margin-left: -150px;
+            width: 400px;
+        }
+        #groupByDiv, #innerDiv, #newEventDiv, #usersdiv {
+            background-color: #FFFFFF;
+            border-radius: 5px;
+            border-style: solid;
+            border-width: 2px;
+            left: 50%;
+            padding: 10px;
+            position: fixed;
+            top: 30%;
+            z-index: 9999;
+        }
+        
+        .popUpContainers { 
+            padding-bottom: 10px;
+            padding-top: 10px;
+        }
+        
+        .widgetHeader {
+            font-weight: bold;
+            padding-bottom: 10px;
+        }       
+        </style>
+    
+        <div id="popUpBkg" class="popUpBkg" ></div>
+        <div id="popUpPageLayout" class="popUpDiv">
+            <div id="newEventDiv">
+                <div> 
+                    <apex:outputPanel styleClass="popUpContainers">
+                        <div class="widgetHeader">
+                            Select Interaction Page Layout
+                        </div>
+                         
+                        <div>
+                            Page Layout: &nbsp;
+                            <apex:selectList value="{!pageLayoutID}" multiselect="false" size="1">
+                                <apex:selectOptions value="{!pageLayoutListSO}"/>
+                            </apex:selectList>
+                        </div>                          
+                    </apex:outputPanel> 
+                </div>
+                <div>
+                    <div style="float: right;">                     
+                        <input type="button" value="Load" onclick="waitOn();loadPageLayout();"/>    
+                        <!-- <input type="button" value="Cancel" onclick="clearInteractionFn();closePageLayoutPopUp();waitOff();jQuery('#tabs').tabs({active: parseInt(0)});"/> -->                                             
+                    </div>              
+                </div>
+            </div>
+        </div>
+            <script>
+         
+            function openPageLayoutPopUp(){
+            
+                jQuery('#popUpBkg').css('display', 'block');
+                jQuery('#popUpPageLayout').css('display', 'block');
+                waitOff();
+                 
+            }
+            function closePageLayoutPopUp(){
+            
+                jQuery('#popUpBkg').css('display', 'none');
+                jQuery('#popUpPageLayout').css('display', 'none');
+                 
+            }
+            </script>
+        </apex:outputPanel>
+        <apex:outputPanel id="apexVars">
+            <input type="hidden" value="{!newInteraction.id}" id="urlID" />
+            <input type="hidden" value="{!!isPageLAyoutSelected}" id="selectPagelayoutId" />
+            <input type="hidden" value="{!HTMLENCODE(interactionName)}" id="newInteractionName" />
+            <input type="hidden" value="{!URLFOR($Resource.StylesScriptsImages,'img/datepicker-ico.png')}" id="datepickerID" />
+            <input type="hidden" value="{!MONTH(DATEVALUE(newInteraction.Date__c))}/{!DAY(DATEVALUE(newInteraction.Date__c))}/{!YEAR(DATEVALUE(newInteraction.Date__c))}" id="InteractionDateID" />
+            <apex:repeat value="{!attendeeTypes}" var="aty">
+                <input type="hidden" class="openQHiddenAttendeeTypes" value="{!aty.num}" data-name="{!aty.value}" id="{!aty.value}"/>            
+            </apex:repeat>  
+        </apex:outputPanel>
+        <!-- vv addAttendeejs was removed from rerender-->
+        <apex:actionFunction name="displayPL" action="{!displayLoadPLC}" rerender="PagelayoutSelectedID,apexVars,AttendeesBlock,pageLayoutComp,refresh" oncomplete="bindImagesToFixIe();initInteractionFormComp();" />
+        <apex:actionFunction name="clearInteractionFn" action="{!clearInteraction}" oncomplete="bindImagesToFixIe();waitOff();" rerender="mainInteractionFormWrapper,PagelayoutSelectedID,apexVars,AttendeesBlock,pageLayoutComp,refresh" />
+        <apex:actionFunction name="loadPageLayout" action="{!initFunctionInteractionForm}"  rerender="mainInteractionFormWrapper,apexVars,AttendeesBlock,pageLayoutComp,refresh" oncomplete="bindImagesToFixIe();closePageLayoutPopUp();initInteractionFormComp();startExecuted=true;jQuery('#attendee_num').html('0');" />
+        <!-- End -->
+        </apex:define>
+    </apex:composition>
+    <script type="text/javascript" src="{!URLFOR($Resource.SearchMirfs,'js/SearchMirfs.js')}" />
+</apex:page>

@@ -1,0 +1,964 @@
+<apex:page controller="ApttusSubmitForApprovalController" sidebar="false" showHeader="false" action="{!previewQuotations}" lightningStylesheets="true" standardStyleSheets="false">
+    <apex:stylesheet value="{!$Resource.quoteApproverSummary}" />    
+<head>
+        <!-- Begin DGP-41 -->
+        <!--<apex:stylesheet value="{!URLFOR($Resource.style_resources, 'quoteApproverSummary.css')}"/>-->
+            <style type="text/css">
+
+            .button-spacer {
+                    margin: 20px 0px 20px 20px;
+                }
+
+            .cancel-btn {
+                color: #F00 !important;
+                height: 37px !important;
+                text-align: center !important;
+                font-family: Calibri !important;
+                font-size: 16px !important;
+                font-style: normal !important;
+                font-weight: 700 !important;
+                border-radius: 5px !important;
+                border: 1px solid #F00 !important;
+                background: #FFF !important;
+            }
+
+            .submit-btn {
+                color: #FFF !important;
+                height: 37px !important;
+                text-align: center !important;
+                font-family: Calibri !important;
+                font-size: 16px !important;
+                font-style: normal !important;
+                font-weight: 700 !important;
+                border-radius: 5px !important;
+                border: 1px solid #049F42 !important;
+                background: #049F42 !important;
+            }
+
+            .submit-with-att-btn {
+                color: #049F42 !important;
+                height: 37px !important;
+                text-align: center !important;
+                font-family: Calibri !important;
+                font-size: 16px !important;
+                font-style: normal !important;
+                font-weight: 700 !important;
+                border-radius: 5px !important;
+                border: 1px solid #049F42 !important;
+                background: #FFF !important;
+            }
+
+            .message-spacing {
+                padding : 10px 0px;
+                border-radius: 5px
+            }
+
+            .style4{
+                width:55px;
+            }
+            .style3{
+                width: 150%;
+            }
+            .style2{
+                width:5px;
+            }
+
+            </style>
+    </head>
+    
+    <body>        
+        <div class="main-container">
+            <div class="page-title">Quote Approver Summary</div>
+            <!--DGP-499 -->
+             <apex:outputPanel id="MarginAnalysis" rendered="{!boolShowMarginalAnalysisMessage}">
+                <div class="col-container field-set-margin">
+                    <div class="col col-wrapper-right message-spacing">
+                        <span style="margin-left:10px; font-weight:bold;">{!$Label.UI_Text_Please_Click}</span>
+                        <a style="font-weight:bold; text-color:rgb(164, 22, 164);" href="{!strQuoteURL}" target="_blank">{!$Label.UI_Text_Here}</a>
+                        <span style="font-weight:bold;">{!$Label.UI_Text_To_View_MA_Data}</span>
+                    </div>
+                </div>
+            </apex:outputPanel>
+            <!-- Start DGP-373 Lovel  -->
+             <div class="col-container field-set-margin"> 
+                <div class="col col-wrapper-left">
+                    <div class="vertical-text-3 big-text-transform">APPROVE / REJECT REQUEST</div>
+                </div>
+                 <div class="col col-wrapper-right">
+            <table class="approversection text-size">
+                <tbody>
+                    <tr class="commentstext"> 
+                        <td class = "comments">
+                            <strong> <p class="approvecomment"> Approver Comments</p> </strong>                  
+                        </td>
+                        <td class = "tabledata">
+                            <apex:form >
+                                <apex:inputTextarea rows="5" cols="215" value="{!strcomment}" />
+                                <div  class= "commentsection">
+                                    <div class="button-wrapper">
+                                    <div class="button-spacer">
+                                        <apex:commandButton value="CANCEL" styleClass="cancel-btn" action="{!handleCancel}"/>
+                                    </div>
+                                    <div Class="button-spacer">
+                                        <apex:commandButton value="ADD COMMENT" styleClass="submit-with-att-btn" action="{!handleComment}"/>
+                                    </div>
+                                    <div Class="button-spacer">
+                                        <apex:commandButton value="ATTACH FILE" styleClass="submit-with-att-btn" action="{!handleAttachFile}"/>
+                                    </div>
+                                    <div Class="button-spacer">
+                                        <apex:commandButton value="REJECT" styleClass="cancel-btn" action="{!handleReject}"/>
+                                    </div>
+                                    <div Class="button-spacer">
+                                        <apex:commandButton value="APPROVE" styleClass="submit-btn" action="{!handleApprove}"/>
+                                    </div>
+                                </div>
+                                </div>
+                            </apex:form>
+                        </td>
+                    </tr> 
+                </tbody>
+            </table>
+                 </div>
+            </div>
+            <!--End DGP-373 Lovel -->
+            <div class="col-container field-set-margin">
+                <div class="col col-wrapper-left">
+                    <div class="vertical-text style-22">{!$Label.UI_Text_Quote_Details}</div>
+                </div>
+                <apex:repeat value="{!lstQuotation}" var="quotation">
+                    <div class="col col-wrapper-right">
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Sold_To_Account_Quotation}</div>
+                                <div class="info-link"><apex:outputLink value="/{!quotation.Apttus_Proposal__Account__r.Id}" target="_blank">{!quotation.Apttus_Proposal__Account__r.Name}</apex:outputLink></div>
+                            </div>
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Ultimate_Consignee_Quotation}</div>
+                                <div class="info-link"><apex:outputLink value="/{!quotation.Ultimate_Consignee__r.Id}" target="_blank">{!quotation.Ultimate_Consignee__r.Name}</apex:outputLink></div>
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Valid_From_Date}</div>
+                                <div class="info-value"> <apex:outputText value="{0,date,M/dd/yyyy}"> <!--info-value -->
+                                    <apex:param value="{!quotation.Apttus_Proposal__ExpectedStartDate__c}" />
+                                    </apex:outputText></div>
+                            </div>
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Valid_To_Date}</div>
+                                <div class="info-value"> <apex:outputText value="{0,date,M/dd/yyyy}" rendered="{!IF(objQuotation.Apttus_Proposal__ExpectedEndDate__c!=null,true,false)}"> <!--info-value -->
+                                    <apex:param value="{!quotation.Apttus_Proposal__ExpectedEndDate__c}" />
+                                    </apex:outputText>
+                                    <apex:outputText rendered="{!IF(objQuotation.Apttus_Proposal__ExpectedEndDate__c==null && !boolVTDOneDayPriorToAPCD,true,false)}">
+                                        {!$Label.UI_Text_Valid_To_Blank}
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,date,M/dd/yyyy}" rendered="{!IF(objQuotation.Apttus_Proposal__ExpectedEndDate__c==null && boolVTDOneDayPriorToAPCD,true,false)}">
+                                        <apex:param value="{!dtValidToDate}" />
+                                    </apex:outputText></div>
+                            </div>
+                            </div>
+                                <div class="padding10">
+                            </div>
+                    </div>
+                </apex:repeat>
+            </div> 
+            
+            <div class="col-container field-set-margin">
+                <div class="col col-wrapper-left">
+                    <div class="vertical-text big-text-transform">{!$Label.UI_Text_Transaction_Pricing_Details}</div>
+                </div>
+                <apex:repeat value="{!lstQuotation}" var="quotation">
+                    <div class="col col-wrapper-right">
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Quote_Total_Value_Prior_To_Discount}</div>
+                                <div class="info-value"><apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}"> <!--info-value -->
+                                    <apex:param value="{!ROUND(quotation.Quote_Total_Value_Prior_To_Discount__c,2)}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                        <apex:param value="{!FLOOR(quotation.Quote_Total_Value_Prior_To_Discount__c)}"/>
+                                    </apex:outputText></div>
+                            </div>
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Quote_Total_Value_Prior_To_Discount_USD}</div>
+                                <div class="info-value"><apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}"> <!--info-value -->
+                                    <apex:param value="{!ROUND(quotation.Quote_Total_Value_Prior_To_DiscountUSD__c,2)}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                        <apex:param value="{!FLOOR(quotation.Quote_Total_Value_Prior_To_DiscountUSD__c)}"/>
+                                    </apex:outputText></div>
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Total_Discount_Value}</div>
+                                <div class="info-value"><apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}"> <!--info-value -->
+                                    <apex:param value="{!ROUND(quotation.Total_Discount__c,2)}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                        <apex:param value="{!FLOOR(quotation.Total_Discount__c)}"/>
+                                    </apex:outputText></div>
+                            </div>
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Tot_Disc_Value_USD}</div>
+                                <div class="info-value"><apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}"> <!--info-value -->
+                                    <apex:param value="{!ROUND(quotation.Total_Discount_USD__c,2)}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                        <apex:param value="{!FLOOR(quotation.Total_Discount_USD__c)}"/>
+                                    </apex:outputText></div>
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Quote_Total_Value_After_Discount}</div>
+                                <div class="info-value"><apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}"> <!--info-value -->
+                                    <apex:param value="{!quotation.Quote_Total_Value_After_Discount__c}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                        <apex:param value="{!FLOOR(quotation.Quote_Total_Value_After_Discount__c)}"/>
+                                    </apex:outputText></div>
+                            </div>
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Quote_Total_Value_After_Discount_USD}</div>
+                                <div class="info-value"><apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}"> <!--info-value -->
+                                    <apex:param value="{!quotation.Quote_Total_Value_After_Discount_USD__c}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                        <apex:param value="{!FLOOR(quotation.Quote_Total_Value_After_Discount_USD__c)}"/>
+                                    </apex:outputText></div>
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Blended_Discount_Percentage}</div>
+                                <div class="info-value">{!quotation.Blended_Discount_Percentage__c} %</div> <!--info-value -->
+                            </div>
+                            
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Estimated_Tax}</div>
+                                <div class="info-value">
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!NOT(ISBLANK(quotation.Estimated_Tax__c))}">
+                                    <apex:param value="{!quotation.Estimated_Tax__c}"/>
+                                    </apex:outputText>
+                                </div> <!--info-value -->
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Estimated_Freight}</div>
+                                <div class="info-value">
+                                     <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                           <apex:param value="{!ROUND(quotation.Estimated_Freight__c,2)}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                       <apex:param value="{!FLOOR(quotation.Estimated_Freight__c)}"/>
+                                    </apex:outputText>
+                                </div> <!--info-value -->
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Currency}</div>
+                                <div class="info-value">{!quotation.CurrencyIsoCode}</div> <!--info-value -->
+                            </div>
+                        </div>
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Payment_Terms}</div>
+                                <div class="info-value">{!quotation.Apttus_Proposal__Payment_Term__c}: {!quotation.Payment_Term_Description__c}</div> <!--info-value -->
+                            </div>
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Incoterm}</div>
+                                <div class="info-value">{!quotation.Inco_Term_1__c}</div> <!--info-value -->
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Rev_Rec_Terms}</div>
+                                <div class="info-value">{!quotation.Apttus_Proposal__Opportunity__r.Rev_Rec_Terms__c}</div> <!--info-value -->
+                            </div>
+                        </div>
+                        
+                        <div class="display-flex">
+                            <div class="flex-column-100">
+                                <div class="info-label1 flex-column-20">{!$Label.UI_Text_Post_Pricing_Message_Text}</div>
+                                <div class="info-value w-100 style-1">{!quotation.Post_Pricing_Message__c}</div> <!--info-value -->
+                            </div>
+                        </div>
+                        <div class="padding5">
+                        </div>                        
+                    </div>
+                </apex:repeat>
+            </div>
+            
+            <div class="{!IF(lstPreviousApprover != null && lstProposalLineItemApplicableToCurrentApproval != null, 'col-container field-set-margin table-container style-14','col-container field-set-margin table-container style-17')}">
+                <div class="col col-wrapper-left">
+                    <div class="vertical-text big-text-transform style-2 style-23">{!$Label.UI_Text_Line_Item_Approval}</div>
+                </div>
+                <div class="col col-wrapper-right style-20">
+                            
+                                <div class="info-value-note">{!$Label.UI_Text_Line_Item_Header_Note}</div> <!--info-value Value-->
+                        
+                               
+                            <table class="line-items-details">
+       
+                                <thead>
+                                    <tr>
+                                        <th colspan="2" ></th>
+                                        <th colspan="1"></th>
+                                        <th colspan="1"></th>
+                                        <th colspan="1"></th>
+                                        <th colspan="1"></th>
+                                        <apex:outputPanel rendered="{!IF(AND(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),NOT(objQuotation.Direct_Sale_to_Ultimate_Consignee__c)),true,false)}">
+                                            <th colspan="1" ></th>
+                                        </apex:outputPanel>
+                                        <th colspan="4" class="text-center multiple-colspan style-3">
+                                            <div class="style-10">
+                                               {!$Label.UI_Text_Discount_Guidance} 
+                                            </div></th>
+                                    </tr>
+                                    <tr>
+                                        <th class="style-9" colspan="2">
+                                            {!$Label.UI_Text_Product}
+                                        </th>
+                                        <th class="style-4">
+                                            {!$Label.UI_Text_Quantity}
+                                        </th>
+                                        <th class="style-4">
+                                            {!$Label.UI_Text_Total_List_Price}
+                                        </th>
+                                        <th class="style-4">
+                                            {!$Label.UI_Text_Discounted_Price_Per_Unit}
+                                        </th>
+                                        <th class="style-4">
+                                            {!$Label.UI_Text_Total_Discount_Percent}
+                                        </th>
+                                        <apex:outputPanel rendered="{!IF(AND(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),NOT(objQuotation.Direct_Sale_to_Ultimate_Consignee__c)),true,false)}">
+                                            <th class="style-4">
+                                                {!$Label.UI_Text_Applied_Discount}
+                                            </th>
+                                        </apex:outputPanel>
+                                        <th class="multiple-colspan-th multiple-colspan-th-first-cell-border style-4">{!$Label.UI_Text_Sales_Approval_Threshold}</th>
+                                        <th class="multiple-colspan-th style-4">
+                                            {!$Label.UI_Text_Median}
+                                        </th> 
+                                        <th class="multiple-colspan-th style-4">
+                                            {!$Label.UI_Text_Max}
+                                        </th>
+                                        <th class="multiple-colspan-th multiple-colspan-th-last-cell-border style-4 style-6">
+                                            {!$Label.UI_Text_Historic} 
+                                        </th>
+                                    </tr>
+                                   <!-- <tr style="padding:5px">
+                                    </tr> -->
+                                </thead>
+                                <tbody>
+                                    <apex:repeat value="{!lstProposalLineItemApplicableToCurrentApproval}" var="lineItem">
+                                     <!--   <tr style="padding:5px">
+                                        </tr> -->
+                                        <tr class="alignCenter">
+                                            <td class="style-12" colspan="2">
+                                                <apex:outputText rendered="{!ISBLANK(lineItem.Apttus_QPConfig__OptionId__c)}">
+                                                    {!lineItem.Apttus_Proposal__Product__r.Name}
+                                                </apex:outputText>
+                                                <apex:outputText rendered="{!NOT(ISBLANK(lineItem.Apttus_QPConfig__OptionId__c))}">
+                                                    {!lineItem.Apttus_QPConfig__OptionId__r.Name}
+                                                </apex:outputText>
+                                            </td>
+                                            <td class="style-11">
+                                                {!FLOOR(lineItem.Apttus_QPConfig__Quantity2__c)}
+                                            </td>
+                                            <td class="style-11">
+                                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                                    <apex:param value="{!ROUND(lineItem.Total_List_Price__c,2)}"/>
+                                                </apex:outputText>
+                                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                                    <apex:param value="{!FLOOR(lineItem.Total_List_Price__c)}"/>
+                                                </apex:outputText>
+                                            </td>
+                                            <td class="style-11">
+                                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                                    <apex:param value="{!ROUND(lineItem.Discounted_Price_Per_Unit__c,2)}"/>
+                                                </apex:outputText>
+                                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                                    <apex:param value="{!FLOOR(lineItem.Discounted_Price_Per_Unit__c)}"/>
+                                                </apex:outputText>
+                                            </td>
+                                            <td class="style-11">
+                                                <apex:outputPanel>
+                                                    {!IF(lineItem.Total_Discount_Percentage__c!=null && lineItem.Total_Discount_Percentage__c>0,TEXT(ROUND(lineItem.Total_Discount_Percentage__c,2))+' %','')}
+                                                </apex:outputPanel>
+                                                <!-- //Commented as Part of DGP-992
+                                                <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                                    {!IF(lineItem.Total_Discount_Percentage__c!=null && lineItem.Total_Discount_Percentage__c>0,TEXT(ROUND(lineItem.Total_Discount_Percentage__c,2))+' %','')}
+                                                </apex:outputPanel>
+                                                <apex:outputPanel rendered="{!IF(AND(CONTAINS(objQuotation.Quote_Type__c,'Direct'),NOT(boolConsortium)),true,false)}">
+                                                    {!IF(lineItem.Applied_Discount_Percentage__c!=null && lineItem.Applied_Discount_Percentage__c>0,TEXT(ROUND(lineItem.Applied_Discount_Percentage__c,2))+' %','')}
+                                                </apex:outputPanel>
+                                            -->
+                                            </td>
+                                            <apex:outputPanel rendered="{!IF(AND(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),NOT(objQuotation.Direct_Sale_to_Ultimate_Consignee__c)),true,false)}">
+                                                <td class="style-11">
+                                                    <apex:outputPanel>
+                                                        {!IF(lineItem.Applied_Discount_Percentage__c!=null && lineItem.Applied_Discount_Percentage__c>0,TEXT(ROUND(lineItem.Applied_Discount_Percentage__c,2))+' %','')}
+                                                    </apex:outputPanel> 
+                                                </td>
+                                            </apex:outputPanel>
+                                            <td class="style-11">
+                                                {!IF(lineItem.Sales_Approval_Threshold__c!=null && lineItem.Sales_Approval_Threshold__c>0,TEXT(ROUND(lineItem.Sales_Approval_Threshold__c,2))+' %','')}
+                                            </td>
+                                            <td class="style-11">
+                                                {!IF(lineItem.Median_Discount_Guidance__c!=null && lineItem.Median_Discount_Guidance__c>0,TEXT(ROUND(lineItem.Median_Discount_Guidance__c,2))+' %','')}
+                                            </td>
+                                            <td class="style-11">
+                                                {!IF(lineItem.Max_Discount_Guidance__c!=null && lineItem.Max_Discount_Guidance__c>0,TEXT(ROUND(lineItem.Max_Discount_Guidance__c,2))+' %','')}
+                                            </td>
+                                            <td class="style-11">
+                                                {!IF(lineItem.Customer_Historical_Discount__c!=null && lineItem.Customer_Historical_Discount__c>0,TEXT(ROUND(lineItem.Customer_Historical_Discount__c,2))+' %','')}
+                                            </td>
+                                        </tr>
+                                        <tr class="padding5">
+                                        </tr> 
+                                    </apex:repeat>
+                                    
+                                </tbody>
+                                             
+                            </table>
+                            <div class="w-95">
+                                <div class="info-value-note1">{!$Label.UI_Text_Line_Item_Footer}</div> <!--info-value -->
+                            </div>
+                          </div>
+            </div>
+            
+            <div class="col-container field-set-margin">
+                <div class="col col-wrapper-left">
+                    <div class="vertical-text big-text-transform">{!$Label.UI_Text_Submit_Details}</div>
+                </div>
+                <div class="col col-wrapper-right style-18">
+                    
+                    <div>
+                        <div class="info-label3">{!$Label.UI_Text_Discount_Reason}</div>
+                    </div>
+                        <div class="info-value-sub2" colspan="3" id="discountColumn"> 
+                            <apex:outputField id="discountReason_dgp" value="{!objQuotation.Discount_Reason__c}"/>
+                        </div>
+                    <!--/div-->
+                    
+                    <div>
+                        <div class="info-label3">{!$Label.UI_Text_Discount_Reason_Definition}</div>
+                    </div>                        
+                        <div class="info-value-sub2" colspan="3" id="discountColumn">                           
+                            <apex:outputField id="discountReasonDefinition_dgp" value="{!objQuotation.Discount_Reason_Definition__c}"/> 
+                            </div>
+                    
+                    <div>
+                        <div class="info-label3">{!$Label.UI_Text_Discount_Justification}</div>
+                    </div>
+                        <div class="info-value-sub2 style-1">
+                            <apex:outputText id="discountJustificationDGP" value="{!objQuotation.Discount_Justification__c}"/>
+                        </div>
+                    </div>
+                    <!-- <div class="padding10">
+                    </div> -->
+                </div>
+            
+            
+            <div class="col-container field-set-margin table-container">
+                <div class="col col-wrapper-left line-item">
+                    <div class="vertical-text big-text-transform style-2">{!$Label.UI_Text_Full_Line_Item_Details}</div>
+                </div>
+                <div class="col col-wrapper-right style-19">
+                    
+                    <table class="line-items-details">
+                        <thead>
+                            <tr>
+                                <th colspan="2"></th>
+                                <th colspan="1"></th>
+                                <!-- DGP-954 start - Pradeep -->
+                                <apex:outputPanel rendered="{!hasContractTerm}">
+                                    <th colspan="1"></th>
+                                </apex:outputPanel>  
+                                <!-- DGP-954 -->  
+                                <th colspan="1"></th>
+                                <th colspan="1"></th>
+                                <th colspan="1"></th>
+                                <th colspan="1"></th>
+                                <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                <th colspan="1"></th>
+                                <th colspan="1"></th>
+                                <th colspan="1"></th><!--DGP-904 -->
+                                <th colspan="1"></th><!--DGP-904 -->
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!IF(AND(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),objQuotation.Direct_Sale_to_Ultimate_Consignee__c),true,false)}">
+                                    <th colspan="1"></th>
+                                </apex:outputPanel>
+                                <th colspan="4" class="text-center multiple-colspan style-3">
+                                    <div class="style-10">
+                                       {!$Label.UI_Text_Discount_Guidance} 
+                                    </div></th>
+                                <th colspan="1"></th>
+                                <th colspan="1"></th>
+                                <th colspan="1"></th>
+                                <th colspan="1"></th>
+                            </tr>
+                            <tr>
+                                <th class="style-9" colspan="2">
+                                    {!$Label.UI_Text_Product}
+                                </th>
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Qty}
+                                </th>
+                                <!-- DGP-954 start - Pradeep -->
+                                <apex:outputPanel rendered="{!hasContractTerm}">
+                                    <th class="style-4">
+                                        {!$Label.UI_Text_Contract_Term_Months}
+                                    </th>
+                                </apex:outputPanel>
+                                <!-- DGP-954 End -->
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Total_List_Price}
+                                </th>
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Discounted_Price_Per_Unit}
+                                </th>
+                                <!--Start DGP-904 - Pradeep Landge -->
+                                <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                    <th class="style-4">
+                                    {!$Label.UI_Text_Net_Price}
+                                    </th>
+                                </apex:outputPanel>
+                                <!--End DGP-904 -->
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Applied_Discount}
+                                </th>
+                                <!--Start DGP-904 - Pradeep Landge -->
+                                <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                    <th class="style-4">
+                                    {!$Label.UI_Text_Distributor_Specific}
+                                    </th>
+                                </apex:outputPanel>
+                                <!--End DGP-904-->
+                                <th class="style-4">{!$Label.UI_Text_Applied_Amount}
+                                    
+                                </th>
+                                <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Total_Discount_Percent}
+                                </th>
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Total_Discount_Amount}
+                                </th>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!IF(AND(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),objQuotation.Direct_Sale_to_Ultimate_Consignee__c),true,false)}">
+                                    <th class="style-4 style-5">{!$Label.UI_Text_Cust_Premium_Amount}
+                                        
+                                    </th>
+                                </apex:outputPanel>
+                                <th class="multiple-colspan-th multiple-colspan-th-first-cell-border style-4">
+                                    {!$Label.UI_Text_Sales_Approval_Threshold}
+                                    
+                                </th>
+                                <th class="multiple-colspan-th style-4">
+                                    {!$Label.UI_Text_Median}
+                                </th> 
+                                <th class="multiple-colspan-th style-4">
+                                    {!$Label.UI_Text_Max}
+                                </th>
+                                
+                                <th class="multiple-colspan-th multiple-colspan-th-last-cell-border style-4">
+                                    {!$Label.UI_Text_Historical} 
+                                </th>
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Product_Code}
+                                </th>
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Approval_Disc_Details}
+                                </th>
+                                <th class="style-4">
+                                    {!$Label.UI_Text_Approval_Level}
+                                </th>
+                                <th class="style-9">
+                                    {!$Label.UI_Text_Submitter_Notes}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <apex:repeat value="{!lstProposalLineItem}" var="lineItem">
+                              <!--  <tr style="padding:5px">
+                                </tr> -->
+                                    <tr class="alignCenter">
+                                    <td class="style-12" colspan="2">
+                                        <apex:outputText rendered="{!ISBLANK(lineItem.Apttus_QPConfig__OptionId__c)}">
+                                            {!lineItem.Apttus_Proposal__Product__r.Name}
+                                        </apex:outputText>
+                                        <apex:outputText rendered="{!NOT(ISBLANK(lineItem.Apttus_QPConfig__OptionId__c))}">
+                                            {!lineItem.Apttus_QPConfig__OptionId__r.Name}
+                                        </apex:outputText>
+                                    </td>
+                                    <td class="style-11">
+                                        {!FLOOR(lineItem.Apttus_QPConfig__Quantity2__c)}
+                                    </td>
+                                    <!-- DGP-954 start - Pradeep -->
+                                    <apex:outputPanel rendered="{!hasContractTerm}">
+                                        <td class="style-11">
+                                            {!IF(lineItem.Term_Months__c!=null && lineItem.Term_Months__c>0,lineItem.Term_Months__c,' ')}
+                                        </td>
+                                    </apex:outputPanel>
+                                    <!-- DGP-954-->
+                                    <td class="style-11">
+                                        <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                            <apex:param value="{!ROUND(lineItem.Total_List_Price__c,2)}"/>
+                                        </apex:outputText>
+                                        <apex:outputText value="{0,number, #,###}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                            <apex:param value="{!FLOOR(lineItem.Total_List_Price__c)}"/>
+                                        </apex:outputText>
+                                    </td>
+                                    <td class="style-11">
+                                        <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                            <apex:param value="{!ROUND(lineItem.Discounted_Price_Per_Unit__c,2)}"/>
+                                        </apex:outputText>
+                                        <apex:outputText value="{0,number, #,###}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                            <apex:param value="{!FLOOR(lineItem.Discounted_Price_Per_Unit__c)}"/>
+                                        </apex:outputText>
+                                    </td>
+                                    <!--Start DGP-904   - Pradeep Landge -->
+                                    <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                        <td class="style-11">                                                
+                                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                                    <apex:param value="{!ROUND(lineItem.Apttus_QPConfig__NetPrice__c,2)}"/>
+                                                </apex:outputText>
+                                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                                    <apex:param value="{!FLOOR(lineItem.Apttus_QPConfig__NetPrice__c)}"/>
+                                                </apex:outputText>                                                
+                                        </td>
+                                    </apex:outputPanel>
+                                    <!--End DGP-904-->
+                                    <apex:outputPanel >
+                                        <td class="{!IF(IF(CONTAINS(lineItem.Applied_Discount_Details__c,'Sales Discretionary'),true,false) && lineItem.Max_Discount_Guidance__c !=null 
+                                                   &&  lineItem.Applied_Discount_Percentage__c !=null 
+                                                   && lineItem.Applied_Discount_Percentage__c > lineItem.Max_Discount_Guidance__c, 'style-Red',
+                                                   IF( IF(CONTAINS(lineItem.Applied_Discount_Details__c,'Sales Discretionary'),true,false) && lineItem.Max_Discount_Guidance__c !=null
+                                                   &&  lineItem.Applied_Discount_Percentage__c !=null
+                                                   && lineItem.Applied_Discount_Percentage__c <= lineItem.Max_Discount_Guidance__c
+                                                   && lineItem.Applied_Discount_Percentage__c > lineItem.Sales_Approval_Threshold__c,'style-Orange','style-11'))}"> <!--class="text-red style-5"-->
+                                            {!IF(lineItem.Applied_Discount_Percentage__c!=null && lineItem.Applied_Discount_Percentage__c>0,TEXT(ROUND(lineItem.Applied_Discount_Percentage__c,2))+' %','')}<br/>
+                                        </td>
+                                    </apex:outputPanel>
+                                    <!--Start DGP-904 - Pradeep Landge -->
+                                    <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                        <td class="style-11">                                                
+                                            {!IF(lineItem.Distributor_Specific_Discount_Percentage__c!=null &&
+                                                 lineItem.Distributor_Specific_Discount_Percentage__c>0,TEXT(ROUND(lineItem.Distributor_Specific_Discount_Percentage__c,2))+' %','')}<br/>
+                                        </td>
+                                    </apex:outputPanel>
+                                    <!--End DGP-904-->
+                                    <apex:outputPanel >
+                                        <td class="{!IF(IF(CONTAINS(lineItem.Applied_Discount_Details__c,'Sales Discretionary'),true,false) && lineItem.Max_Discount_Guidance__c !=null
+                                                   &&  lineItem.Applied_Discount_Percentage__c !=null 
+                                                   && lineItem.Applied_Discount_Percentage__c > lineItem.Max_Discount_Guidance__c, 'style-Red',
+                                                   IF(IF(CONTAINS(lineItem.Applied_Discount_Details__c,'Sales Discretionary'),true,false) && lineItem.Max_Discount_Guidance__c !=null 
+                                                   &&  lineItem.Applied_Discount_Percentage__c !=null
+                                                   && lineItem.Applied_Discount_Percentage__c <= lineItem.Max_Discount_Guidance__c 
+                                                   && lineItem.Applied_Discount_Percentage__c > lineItem.Sales_Approval_Threshold__c,'style-Orange','style-11'))}"> <!--class="text-red style-5"-->
+                                            <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                                <apex:param value="{!ROUND(lineItem.Applied_Discount_Amount__c,2)}"/>
+                                            </apex:outputText>
+                                            <apex:outputText value="{0,number, #,###}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                                <apex:param value="{!FLOOR(lineItem.Applied_Discount_Amount__c)}"/>
+                                            </apex:outputText>
+                                        </td>
+                                    </apex:outputPanel>
+                                        
+                                        <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                            <td class="style-5 alignCenter">
+                                                {!IF(lineItem.Total_Discount_Percentage__c!=null && lineItem.Total_Discount_Percentage__c>0,TEXT(ROUND(lineItem.Total_Discount_Percentage__c,2))+' %','')}<br/>
+                                            </td>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!IF(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),true,false)}">
+                                            <td class="style-5 alignCenter">
+                                               <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                                  <apex:param value="{!ROUND(lineItem.Total_Discount_Amount__c,2)}"/>
+                                                </apex:outputText>
+                                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                                   <apex:param value="{!FLOOR(lineItem.Total_Discount_Amount__c)}"/>
+                                                 </apex:outputText>
+                                            </td>
+                                        </apex:outputPanel>
+                                        
+                                    <apex:outputPanel rendered="{!IF(AND(CONTAINS(objQuotation.Quote_Type__c,'Indirect'),objQuotation.Direct_Sale_to_Ultimate_Consignee__c),true,false)}">
+                                        <td class="style-11"> <!--class="text-red style-5"-->
+                                            <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                                <apex:param value="{!ROUND(lineItem.Customer_Premium_Amount_Per_Unit__c,2)}"/>
+                                            </apex:outputText>
+                                            <apex:outputText value="{0,number, #,###}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                                <apex:param value="{!FLOOR(lineItem.Customer_Premium_Amount_Per_Unit__c)}"/>
+                                            </apex:outputText>
+                                        </td>
+                                    </apex:outputPanel>
+                                    
+                                    <td class="style-11">
+                                        {!IF(lineItem.Sales_Approval_Threshold__c!=null && lineItem.Sales_Approval_Threshold__c>0,TEXT(ROUND(lineItem.Sales_Approval_Threshold__c,2))+' %','')}
+                                    </td>
+                                    <td class="style-11">
+                                        {!IF(lineItem.Median_Discount_Guidance__c!=null && lineItem.Median_Discount_Guidance__c>0,TEXT(ROUND(lineItem.Median_Discount_Guidance__c,2))+' %','')}
+                                    </td>
+                                    <td class="style-11">
+                                        {!IF(lineItem.Max_Discount_Guidance__c!=null && lineItem.Max_Discount_Guidance__c>0,TEXT(ROUND(lineItem.Max_Discount_Guidance__c,2))+' %','')}
+                                    </td>
+                                    <td class="style-11">
+                                        {!IF(lineItem.Customer_Historical_Discount__c!=null && lineItem.Customer_Historical_Discount__c>0,TEXT(ROUND(lineItem.Customer_Historical_Discount__c,2))+' %','')}
+                                    </td>
+                                    <td class="style-11">
+                                        {!lineItem.Apttus_Proposal__Product__r.ProductCode}
+                                    </td>
+                                    <apex:outputPanel rendered="{!NOT(boolConsortium)}">
+                                        <td class="style-11"> <!-- class="style-5"-->
+                                            {!lineItem.Applied_Discount_Details__c}
+                                        </td>
+                                    </apex:outputPanel>
+                                    
+                                    <td class="style-11">
+                                        <apex:outputText value="{!$Label.UI_Text_Level} {!lineItem.Approval_Level_Record_Owner__c}" rendered="{!NOT(ISBLANK($Label.UI_Text_Level)) && NOT(ISBLANK(lineItem.Approval_Level_Record_Owner__c))}" />
+                                    </td>
+                                    <td class="style-12">
+                                        {!lineItem.Submitter_Notes__c}
+                                    </td>
+                                </tr>
+                            </apex:repeat>
+                        </tbody>
+                    </table>
+                    
+                </div>  
+            </div>
+            <div class="col-container">
+                <div class="col col-wrapper-left">
+                    <div class="vertical-text-2 big-text-transform"> {!$Label.UI_Text_Approver}</div>
+                </div>
+                <table class="col col-wrapper-right style-21">
+                    <tr>
+                        <td class="display-block">
+                            
+                            <apex:outputPanel rendered="{!IF(lstPreviousApprover!=null && lstPreviousApprover.size>0,true,false)}">
+                                <table class="flex-column-100">
+                                </table>
+                                <div class="padding10">
+                                </div>
+                                <div class="horizontal-text">{!$Label.UI_Text_Previous_Approver}</div>
+                                <div class="padding10">
+                                </div>
+                                <table> <!-- class="flex-column-100"-->
+                                    <thead>
+                                        <tr class="padding5">
+                                            <th class="info-label style4">{!$Label.UI_Text_Step}</th> <!-- DGP-982 -->
+                                            <th class="info-label">{!$Label.UI_Text_Approver_Name}</th>
+                                            <th class="info-label">{!$Label.UI_Text_Approval_Name}</th> <!-- DGP-982 -->
+                                            <th class="info-label2">{!$Label.UI_Text_Approval_Level}</th>
+                                            <th class="info-label style3">{!$Label.UI_Text_Approval_Notes}</th>
+                                            <th class="info-label"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>  
+                                        
+                                        <apex:repeat value="{!lstPreviousApprover}" var="approver">
+                                            <tr>
+                                                <td class="info-value-app style2">{!mapPrevApprovalRequestWrap[approver.Id].intStepSequence}</td> <!-- DGP-982 -->
+                                                <td class="info-value-app">{!approver.Apttus_Approval__Assigned_To_Name__c}</td>
+                                                <td class="info-value-app">{!mapPrevApprovalRequestWrap[approver.Id].strApprovalName}</td> <!-- DGP-982 -->
+                                                <!--<td class="info-value-app1">{!$Label.UI_Text_Level} {!approver.Apttus_Approval__Sequence__c}</td>-->
+                                                <td class="info-value-app1">{!approver.Apttus_Approval__StepLabel__c}</td>
+                                                <td class="info-value-app" colspan="2">{!approver.Apttus_Approval__Approver_Comments__c}</td>
+                                            </tr>
+                                        </apex:repeat>
+                                        <tr></tr>
+                                    </tbody>
+                                </table>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!IF(lstNextApprover!=null && lstNextApprover.size>0,true,false)}">
+                                <div class="padding10">
+                                </div>
+                               <div class="col col-wrapper-right1"> 
+                                <div class="horizontal-text">{!$Label.UI_Text_Next_Approver}</div>
+                                <div class="padding10">
+                                </div>
+                                <table> <!--class="flex-column-100" -->
+                                    <thead>
+                                        <tr class="padding5">
+                                            <th class="info-label style4">{!$Label.UI_Text_Step}</th> <!-- DGP-982 -->
+                                            <th class="info-label">{!$Label.UI_Text_Approver_Name}</th>
+                                            <th class="info-label">{!$Label.UI_Text_Approval_Name}</th> <!-- DGP-982 -->
+                                            <th class="info-label2">{!$Label.UI_Text_Approval_Level}</th>
+                                             <th class="info-label style3">{!$Label.UI_Text_Approval_Notes}</th>
+                                            <th class="info-label"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <apex:repeat value="{!lstNextApprover}" var="approver">
+                                            <tr>
+                                                <td class="info-value-app">{!mapNextApprovalRequestWrap[approver.Id].intStepSequence}</td> <!-- DGP-982 -->
+                                                <td class="info-value-app">{!approver.Apttus_Approval__Assigned_To_Name__c}</td>
+                                                <td class="info-value-app">{!mapNextApprovalRequestWrap[approver.Id].strApprovalName}</td> <!-- DGP-982 -->
+                                                <!--<td class="info-value-app1">{!$Label.UI_Text_Level} {!approver.Apttus_Approval__Sequence__c}</td>-->
+                                                <td class="info-value-app1">{!approver.Apttus_Approval__StepLabel__c}</td>
+                                                <td class="info-value-app" colspan ="2">{!approver.Apttus_Approval__Approver_Comments__c}</td>
+                                            </tr>
+                                        </apex:repeat>
+                                        <tr></tr>
+                                    </tbody>
+                                </table>
+                                </div>
+                              <!--  <table style="padding:5px">
+                                </table> -->
+                            </apex:outputPanel>
+                        </td>
+                    </tr>
+                    
+                </table>          
+            </div>
+            <div class="col-container field-set-margin">
+                <div class="col col-wrapper-left">
+                    <div class="vertical-text big-text-transform">{!$Label.UI_Text_Additional_Quote_Details}</div>
+                </div>
+                <apex:repeat value="{!lstQuotation}" var="quotation">
+                <div class="col col-wrapper-right">
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Sold_To_Account_ERP_ID}</div>
+                            <div class="info-value">{!quotation.Sold_To_ERP_Number__c}</div> <!--info-value -->
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Ultimate_Consignee_ERP_ID}</div>
+                            <div class="info-value">{!quotation.Ultimate_Consignee_ERP_Number__c}</div> <!--info-value -->
+                        </div>
+                    </div>
+        
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Sold_To_Account_Owner}</div>
+                            <div class="info-value">{!quotation.Apttus_Proposal__Account__r.Owner_Full_Name__c}</div> <!--info-value -->
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Ultimate_Consignee_Account_Owner}</div>
+                            <div class="info-value">{!quotation.Ultimate_Consignee__r.Owner_Full_Name__c}</div> <!--info-value -->
+                        </div>
+                    </div>
+        
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Sold_To_Account_Region}</div>
+                            <div class="info-value">{!quotation.Apttus_Proposal__Account__r.Territory_Region__c}</div> <!--info-value -->
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Ultimate_Consignee_Account_Region}</div>
+                            <div class="info-value">{!quotation.Ultimate_Consignee__r.Territory_Region__c}</div> <!--info-value -->
+                        </div>
+                    </div>
+        
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Sold_To_Account_Subregion}</div>
+                            <div class="info-value">{!quotation.Apttus_Proposal__Account__r.Subregion__c}</div> <!--info-value -->
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Ultimate_Consignee_Account_Subregion}</div>
+                            <div class="info-value">{!quotation.Ultimate_Consignee__r.Subregion__c}</div> <!--info-value -->
+                        </div>
+                    </div>
+        
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Sold_To_Account_Territory}</div>
+                            <div class="info-value">{!quotation.Apttus_Proposal__Account__r.Territory_Name__c}</div> <!--info-value -->
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Ultimate_Consignee_Account_Territory}</div>
+                            <div class="info-value">{!quotation.Ultimate_Consignee__r.Territory_Name__c}</div> <!--info-value -->
+                        </div>
+                    </div>
+                    <!-- DGP-904 - Pradeep Landge
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Estimated_Tax}</div>
+                            <div class="info-value">
+                               <apex:outputText value="{0,number, #,###.##}" rendered="{!NOT(ISBLANK(quotation.Estimated_Tax__c))}">
+                                  <apex:param value="{!quotation.Estimated_Tax__c}"/>
+                               </apex:outputText>
+                            </div>
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Estimated_Freight}</div>
+                            <div class="info-value">
+                                <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode!='JPY',true,false)}">
+                                           <apex:param value="{!ROUND(quotation.Estimated_Freight__c,2)}"/>
+                                    </apex:outputText>
+                                    <apex:outputText value="{0,number, #,###.##}" rendered="{!IF(objQuotation.CurrencyIsoCode=='JPY',true,false)}">
+                                       <apex:param value="{!FLOOR(quotation.Estimated_Freight__c)}"/>
+                                    </apex:outputText>
+                        </div>
+                    </div>
+                    </div>
+                    -->
+                    <div class="sap-quote-wrapper1 field-set-margin1">
+                        <div class="display-flex sap-quote-wrapper2">
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_SAP_Quote}</div>
+                                <div class="info-value">{!quotation.SAP_Quote__c}</div> <!--info-value -->
+                            </div>
+                            <div class="flex-column-50">
+                                <div class="info-label">{!$Label.UI_Text_Quote_Number}</div>
+                                <div class="info-value">{!quotation.Name}</div> <!--info-value -->
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label"></div>
+                            <div class="info-value"></div> <!--info-value -->
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label"></div>
+                            <div class="info-value"></div> <!--info-value -->
+                        </div>
+                    </div>
+        
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Opportunity}</div>
+                            <div class="info-link"><apex:outputLink value="/{!quotation.Apttus_Proposal__Opportunity__r.Id}" target="_blank">{!quotation.Apttus_Proposal__Opportunity__r.Name}</apex:outputLink></div>
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Opportunity_Owner}</div>
+                            <div class="info-value">{!quotation.Apttus_Proposal__Opportunity__r.Owner.Name}</div> <!--info-value -->
+                        </div>
+                    </div>
+        
+                    <div class="display-flex">
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Opportunity_Stage}</div>
+                            <div class="info-value">{!quotation.Apttus_Proposal__Opportunity__r.StageName}</div> <!--info-value -->
+                        </div>
+                        <div class="flex-column-50">
+                            <div class="info-label">{!$Label.UI_Text_Probability}</div>
+                            <div class="info-value">{!quotation.Apttus_Proposal__Opportunity__r.Probability} %</div> <!--info-value -->
+                        </div>
+                    </div>
+                    <div class="padding5">
+                    </div>                    
+                </div>
+                </apex:repeat>
+            </div>
+    
+            </div>
+</body>
+</apex:page>

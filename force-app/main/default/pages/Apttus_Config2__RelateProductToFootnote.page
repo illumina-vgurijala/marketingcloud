@@ -1,0 +1,236 @@
+<!-- 
+ 	Apttus Config & Pricing
+ 	RelateProductToFootnote
+ 	 
+ 	@2010-2015 Apttus Inc. All rights reserved.
+ -->
+ <apex:page standardController="Product2"
+			extensions="Apttus_Config2.RelateProductToFootnoteController"
+			sidebar="{!ShowAdminSidebar}" >
+			
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JSTreeLibrary, 'jstree-v.pre1.0/jquery.jstree.js')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__GridSystemLibrary, 'text.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__GridSystemLibrary, '960.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<script>
+		var j$ = jQuery.noConflict();
+		//Prompt the user if they are sure they want to delete.  If so call actionfunction.
+		function promptDelete(type,footNoteId){
+			j$( "#dialog-confirm" ).dialog({
+				resizable: false,
+				modal: true,
+				buttons: {
+					"{!JSINHTMLENCODE($Label.Remove)} {!JSINHTMLENCODE($Label.From)} {!JSINHTMLENCODE(product.Name)}": function() {
+						j$( this ).dialog( "close" );
+						removeFootnote(type);
+					},
+					"{!$Label.apttus_config2__remove} {!JSINHTMLENCODE($Label.Everywhere)}": function() {
+						j$( this ).dialog( "close" );
+						deleteFootnoteAndAllJunctions(type);
+					},
+					Cancel: function() {
+						j$( this ).dialog( "close" );
+					
+					}
+				
+				}
+			
+			});
+
+		}
+	</script>
+	<style>
+	.aptRoundedDiv {
+		padding-bottom: 5px;
+		background-color: white;
+		border: 1px solid #aaaaaa;
+		-webkit-border-radius: 4px; /* Safari 3-4, iOS 1-3.2, Android â‰¤1.6 */
+		border-radius: 4px; /* Opera 10.5, IE9+, Safari 5, Chrome, Firefox 4+, iOS 4, Android 2.1+ */
+		/* IE Stuff */		
+		zoom: 1; 
+		width:100%;
+	}
+	.aptGroupHeader {
+		background: -moz-linear-gradient(top, rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%);
+		background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0)));
+		background: -webkit-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+		background: -o-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+		background: -ms-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+		background: linear-gradient(to bottom, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+		filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6d3d3d3', endColorstr='#00ffffff',GradientType=0 );
+		height: 40px;
+		padding-top: 10px;
+		padding-left: 10px;
+	}
+	h2{
+		display: block;
+		margin-left:0px !important;
+		font: bold 14px/1.1em Arial,Sans-Serif;
+	}
+	.main-head{
+		float:left;
+		line-height: 25px;
+	}
+	.formee-button, .formee input[type="submit"], .formee input[type="button"], .formee input[type="reset"] {
+		font-size: 12px;
+		text-transform:none;
+	}
+	.formee-button, .formee input[type="submit"], .formee input[type="button"], .formee input[type="reset"] {
+	    padding: 4px;
+	}
+	.formee-lbl, .formee label {
+		display:inline;
+	}
+	.lookupInput {
+		white-space:normal;
+	}
+	#dialog-confirm{
+		display:none;
+	}
+	.footnote-search{
+		width:300px !important;
+	}
+	.sequence{
+		width:50px !important;
+	}
+	</style>
+	<apex:form id="idForm" styleClass="formee wrapper">
+		<script>
+		j$(document).ready(function() {
+			j$( "#tabs" ).tabs();
+			j$('form *').filter(':input').each(function(){
+				if(j$(this).hasClass('error')){
+					j$("[href='#" + j$(this).closest('.ui-tabs-panel').attr('id') + "']").trigger('click');
+					j$('#tabs').tabs('select', '#' + j$(this).closest('.ui-tabs-panel').attr('id'));
+				}
+			});
+			if({!IF(NOT(ISBLANK(productFootnote)),'true','false')}){
+				    j$('#tabs').tabs('option', 'selected', 1);
+			}
+		}); 
+		</script>
+		<apex:inputText styleClass="hidden product-footnote-id" value="{!productFootNoteId}" />
+		<apex:inputText styleClass="hidden footnote-id" value="{!footNoteId}" />
+		<apex:outputPanel id="idErrorMsg">
+			<apex:pageMessages />
+		</apex:outputPanel>
+		<div id="contentWrap" class="aptRoundedDiv">
+			<div class="aptGroupHeader">
+				<div style="float:left;">
+					<apex:commandButton action="{!cancel}" value="{!$Label.apttus_config2__back}"/>
+				</div>
+				<h2 class="main-head">&nbsp;&nbsp;&nbsp;&nbsp;{!product.name} - {!$Label.Footnote} {!$Label.Manager}</h2>
+				<div class="clear"></div>
+			</div>
+			
+			<div id="tabs">
+				<ul>
+					<li><a href="#tabs-1" >{!$Label.New}</a></li>
+					
+					<li class="edit-tab" style="{!IF(NOT(ISBLANK(productFootnote)),'','display:none;')}">
+						<apex:outputPanel rendered="{!NOT(ISBLANK(productFootnote))}">
+							<a href="#tabs-2" >{!$Label.Edit}</a>
+						</apex:outputPanel>
+					</li>
+					
+					<li style="{!IF(NOT(relatedProductFootnotes.empty),'','display:none;')}">
+						<apex:outputPanel rendered="{!NOT(relatedProductFootnotes.empty)}">
+							<a href="#tabs-3" >{!$Label.Footnote}s</a>
+						</apex:outputPanel>
+					</li>
+					
+					<li><a href="#tabs-4" >{!$Label.apttus_config2__associate}</a></li>
+				</ul>
+				<div id="tabs-1">
+					<apex:pageBlock title="{!$Label.apttus_config2__new} {!$Label.apttus_config2__footnote}" id="newFootNote" mode="edit">
+						<apex:pageBlockButtons location="top" >
+							<apex:commandButton action="{!saveNewFootnote}" 
+												value="{!$Label.apttus_config2__save} {!$Label.apttus_config2__new} {!$Label.apttus_config2__footnote}" />
+						</apex:pageBlockButtons>
+						<apex:pageBlockSection columns="1" >
+							<apex:inputField value="{!newFootnote.Name}" />
+							<apex:inputField value="{!newFootnote.Apttus_Config2__Body__c}" />
+							<apex:inputField styleClass="sequence" value="{!newProductFootnote.Apttus_Config2__Sequence__c}" />
+						</apex:pageBlockSection>
+					</apex:pageBlock>
+				</div>
+				<div id="tabs-2">
+					<apex:pageBlock title="{!$Label.apttus_config2__edit} {!footnotesForSelectedProductLabel}"
+									rendered="{!NOT(ISBLANK(productFootnote))}" 
+									id="currentFootNote"
+									mode="edit">
+						<apex:pageBlockButtons location="top" >
+							<apex:commandButton action="{!save}" value="{!$Label.apttus_config2__save}"/>
+							<apex:commandButton onClick="j$('.product-footnote-id').val('{!productFootnote.Id}');promptDelete('{!productFootnote.Id}');return false;" value="{!$Label.apttus_config2__remove}"/>
+						</apex:pageBlockButtons>
+						<apex:pageBlockSection columns="1" >
+							<apex:inputField value="{!productFootnote.FootnoteId__r.Name}" />
+							<apex:inputField value="{!productFootnote.FootnoteId__r.Apttus_Config2__Body__c}" />
+							<apex:inputField styleClass="sequence" value="{!productFootnote.Apttus_Config2__Sequence__c}" />
+						</apex:pageBlockSection>
+					</apex:pageBlock>
+				</div>
+				<div id="tabs-3">
+					<apex:pageBlock title="{!$Label.apttus_config2__footnote}s {!$Label.apttus_config2__for} {!product.name}"
+									rendered="{!NOT(relatedProductFootnotes.empty)}" 
+									id="footNotes"
+									mode="edit">
+						<apex:pageBlockTable value="{!relatedProductFootnotes}" var="footNote">
+
+				            <apex:column >
+				            	<a class="aptDeleteFootnote" href="#" onclick="j$('.product-footnote-id').val('{!footNote.Id}');j$('.footnote-id').val('{!footNote.FootnoteId__c}');promptDelete();">{!$Label.Delete}</a> |
+								<a class="aptEditFootnote" href="#" onclick="j$('.product-footnote-id').val('{!footNote.Id}'); j$('.footnote-id').val('{!footNote.FootNoteId__c}'); editFootNote();">{!$Label.Edit}</a>
+							</apex:column>
+							
+				            <apex:column headerValue="{!$ObjectType.Apttus_Config2__Footnote__c.Fields.Name.Label}">
+				            	{!footNote.FootnoteId__r.Name}
+				            </apex:column> 
+				            
+				            <apex:column headerValue="{!$ObjectType.Apttus_Config2__Footnote__c.Fields.Apttus_Config2__Body__c.Label}">
+				            	<apex:inputTextarea richText="false" id="footNoteText" value="{!footNote.FootnoteId__r.Apttus_Config2__Body__c}"/>
+				            </apex:column> 
+				            
+				            <apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductFootnote__c.Fields.Apttus_Config2__Sequence__c.Label}">
+				            	<apex:outputField value="{!footNote.Apttus_Config2__Sequence__c}" />
+				            </apex:column> 
+				
+				        </apex:pageBlockTable>
+						
+					</apex:pageBlock>
+				</div>
+				<div id="tabs-4">
+					<apex:pageBlock title="{!$Label.apttus_config2__associate} {!$Label.apttus_config2__existing} {!$Label.apttus_config2__footnote}" id="addFootNote" mode="edit">
+						<apex:pageBlockButtons location="top" >
+							<apex:commandButton action="{!associateFootnote}" value="{!$Label.apttus_config2__associate}"/>
+						</apex:pageBlockButtons>
+						<apex:pageBlockSection columns="1" >
+							<apex:inputField styleClass="footnote-search" value="{!newProductFootnote.Apttus_Config2__FootnoteId__c}" />
+						</apex:pageBlockSection>
+					</apex:pageBlock>
+				</div>
+			</div>
+		</div>
+		
+		<apex:actionFunction name="editFootNote"
+								action="{!editFootnote}"
+								rerender="idForm" >
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="removeFootnote"
+								action="{!removeFootnote}"
+								rerender="idForm" >
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="deleteFootnoteAndAllJunctions"
+								action="{!deleteFootnoteAndAllJunctions}"
+								rerender="idForm" />
+		
+	</apex:form>
+	
+	<div id="dialog-confirm" title="{!$Label.apttus_config2__remove} {!$Label.Confirm}">
+	</div>
+</apex:page>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Charket__HasEmailNotifiedMessages__c</fullName>
+    <deprecated>false</deprecated>
+    <externalId>false</externalId>
+    <formula>AND(
+  Charket__UnreadRollupCount__c &gt; 0,
+  AND(
+     OR(
+        ISBLANK(Charket__EmailNotifiedTime__c),
+        Charket__LastFollowerMessageTime__c &gt; Charket__EmailNotifiedTime__c
+     ),
+     Charket__WeChatAgent__r.Charket__IsEmailNotificationsEnabled__c 
+  ),
+  OR(
+     OR(
+        ISBLANK(Charket__WeChatAgent__r.Charket__DNDEndTime__c),
+        ISBLANK(Charket__WeChatAgent__r.Charket__DNDStartTime__c),
+        !Charket__WeChatAgent__r.Charket__IsDoNotDisturbEnabled__c
+     ),
+     IF(
+       AND(Charket__WeChatAgent__r.Charket__DNDEndTime__c != null, Charket__WeChatAgent__r.Charket__DNDEndTime__c != null),
+       IF(
+          VALUE(LEFT( Charket__WeChatAgent__r.Charket__DNDEndTime__c , 2) + &apos;.&apos; + RIGHT( Charket__WeChatAgent__r.Charket__DNDEndTime__c , 2))
+          &gt;  VALUE(LEFT( Charket__WeChatAgent__r.Charket__DNDStartTime__c , 2) + &apos;.&apos; + RIGHT( Charket__WeChatAgent__r.Charket__DNDStartTime__c , 2)) ,
+          OR(
+              VALUE(MID(TEXT(NOW()), 12,2) + &apos;.&apos; + MID(TEXT(NOW()), 15,2)) &lt;
+                 VALUE(LEFT( Charket__WeChatAgent__r.Charket__DNDStartTime__c , 2) + &apos;.&apos; + RIGHT( Charket__WeChatAgent__r.Charket__DNDStartTime__c , 2)),
+              VALUE(MID(TEXT(NOW()), 12,2) + &apos;.&apos; + MID(TEXT(NOW()), 15,2)) &gt;
+                 VALUE(LEFT( Charket__WeChatAgent__r.Charket__DNDEndTime__c , 2) + &apos;.&apos; + RIGHT( Charket__WeChatAgent__r.Charket__DNDEndTime__c , 2))
+          ),
+          OR(
+              VALUE(MID(TEXT(NOW()), 12,2) + &apos;.&apos; + MID(TEXT(NOW()), 15,2)) &lt;
+                 VALUE(LEFT( Charket__WeChatAgent__r.Charket__DNDStartTime__c , 2) + &apos;.&apos; + RIGHT( Charket__WeChatAgent__r.Charket__DNDStartTime__c , 2)),
+              VALUE(MID(TEXT(NOW()), 12,2) + &apos;.&apos; + MID(TEXT(NOW()), 15,2)) &gt;
+                 (VALUE(LEFT( Charket__WeChatAgent__r.Charket__DNDEndTime__c , 2) + &apos;.&apos; + RIGHT( Charket__WeChatAgent__r.Charket__DNDEndTime__c , 2)) + 1)
+          )
+       ),
+       true
+     )
+  )
+)</formula>
+    <label>Has Email Notified Messages</label>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckActivityTypeForFieldCompliance</fullName>
+    <active>true</active>
+    <description>Validate activity type that could be selected by users other than Field Compliance persona.</description>
+    <errorConditionFormula>AND(
+NOT(TEXT(SVMXC__Line_Status__c)==$Label.Canceled),
+NOT($Permission.SS_Field_Compliance_Review),  
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT($Profile.Name ==$Label.Integration_SAP_Service), 
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),  
+/*Validate if the profile is Field Compliance, only then activity type &apos;Field Compliance review&apos; can be selected*/ 
+NOT(
+        AND(
+                ISNEW(),
+		OR(
+               $Profile.Name == $Label.ProfileQualityAssurance,
+               $Profile.Name ==$Label.ProfileCustomerService,
+		       $Profile.Name ==$Label.ProfileTechnicalSupport,
+		       $Profile.Name ==$Label.ProfileFieldService,
+			   $Profile.Name == &apos;Channel Partner Sales and Read Only Service&apos;,
+               $Profile.Name == &apos;Channel Partner Sales and Read Only Service Login&apos;,
+               $Profile.Name == &apos;Channel Partner Sales and Service&apos;,
+               $Profile.Name == &apos;Channel Partner Service&apos;,
+			   $Profile.Name == $Label.Field_Service_Third_Party
+	           ),
+               OR(
+       CONTAINS(SVMXC__Service_Order__r.SVMXC__Component__r.SVMXC__Product__r.Regulatory_Type__c,$Label.IPRegulatoryTypeDX),
+       CONTAINS(SVMXC__Service_Order__r.SVMXC__Component__r.SVMXC__Product__r.Regulatory_Type__c,$Label.IPRegulatoryTypeEUA)
+               ),
+       NOT(TEXT(SVMXC__Service_Order__r.SVMXC__Case__r.Sub_Type__c)=$Label.CaseSubTypeComplaint)
+	    )
+    ),
+	AND($Profile.Name != $Label.ProfileFieldCompliance,       
+	   $Profile.Name != $Label.ProfileSystemAdmin,
+	   !$Permission.SS_Field_Compliance_Review),
+TEXT( SVMXC__Activity_Type__c) == $Label.WorkDetailActivityFieldComplianceReview 
+)</errorConditionFormula>
+    <errorMessage>Activity Type &quot;Field Compliance&quot; can only be selected by Field Compliance  persona.</errorMessage>
+</ValidationRule>

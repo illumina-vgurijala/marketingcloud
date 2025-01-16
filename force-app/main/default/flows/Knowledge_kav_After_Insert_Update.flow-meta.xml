@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Email_To_Knowledge_Approvers</name>
+        <label>Send Email To Knowledge Approvers</label>
+        <locationX>308</locationX>
+        <locationY>276</locationY>
+        <actionName>KnowledgeArticles</actionName>
+        <actionType>apex</actionType>
+        <faultConnector>
+            <targetReference>Assign_Current_Error_Element</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>lstKnowledgeIds</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>KnowledgeArticles</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Assign_Current_Error_Element</name>
+        <label>Assign Current Error Element</label>
+        <locationX>572</locationX>
+        <locationY>384</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Send Email to Knowledge Approvers</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Logs</targetReference>
+        </connector>
+    </assignments>
+    <description>Migrated from the Knowledge : Send Approval Reminder process using Check Status of Validation &amp; Review criteria.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>FlowandFailureElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Knowledge__kav: After Insert &amp; Update&apos;+{!currentElement}</expression>
+    </formulas>
+    <interviewLabel>Knowledge__kav: After Insert &amp; Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Knowledge__kav: After Insert &amp; Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Review_Status__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Pending Review - Review Not Started</stringValue>
+            </value>
+        </filters>
+        <filters>
+            <field>ValidationStatus</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Pending Review</stringValue>
+            </value>
+        </filters>
+        <object>Knowledge__kav</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>Wait_48_hours_to_call_apex_class</name>
+            <connector>
+                <targetReference>Send_Email_To_Knowledge_Approvers</targetReference>
+            </connector>
+            <label>Wait 48 hours to call apex class</label>
+            <offsetNumber>48</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <timeSource>RecordTriggerEvent</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Exception_Logs</name>
+        <label>Create Exception Logs</label>
+        <locationX>572</locationX>
+        <locationY>492</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.KnowledgeArticleId</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFailureElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Service</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <variables>
+        <name>currentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

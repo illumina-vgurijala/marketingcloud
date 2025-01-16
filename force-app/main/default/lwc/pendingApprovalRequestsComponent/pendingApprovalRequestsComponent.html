@@ -1,0 +1,210 @@
+<template>
+    <template if:true={showSpinner}>
+        <lightning-spinner variant="brand" size="large" alternative-text="Loading"></lightning-spinner>
+    </template>
+    <div class="slds-card" style="margin-bottom: 1rem;">
+        <h3 slot="title" class="backcolor slds-text-heading_medium slds-p-around_large">
+            <lightning-icon icon-name="custom:custom26" size="medium"></lightning-icon>
+            &nbsp; &nbsp; <strong>{label.pendingapprovalrequestheading}</strong>
+        </h3>
+    </div>
+    <div style="background-color:white; overflow:auto; height:auto;">
+<template if:false={noData}>
+    <lightning-card  title={totalReq}> 
+        <div slot="actions">
+            <lightning-layout>
+                <lightning-layout-item><lightning-input class="inputwidth" type="text" variant="label-hidden" value={pageLimit} onchange={setPageLimit}></lightning-input> 
+                </lightning-layout-item>
+                <lightning-layout-item> &nbsp; <lightning-button label={label.setpagelimit} icon-name="standard:lead_list" variant="brand" onclick={changeLimit}></lightning-button> 
+                </lightning-layout-item>
+            </lightning-layout>
+        </div>
+            <div class=" slds-border_right slds-border_left slds-scrollable" style="height:20rem;">
+                <table 
+                    class="slds-table slds-table_bordered slds-table_col-bordered" style="table-layout:fixed;"
+                    aria-describedby="DataTable" id='appreqtable'>
+                    <thead>
+                        <tr class="slds-text-title_caps" >
+                            <th class="slds-cell-shrink" style=" width:2rem;" scope="col">
+                                <template if:true={allSelected}>
+                                <div>
+                                    <lightning-input type="checkbox" checked onchange={unselectAll}></lightning-input>
+                                </div>
+                            </template>
+                            <template if:false={allSelected}>
+                                <div>
+                                    <lightning-input type="checkbox" onchange={selectAll}></lightning-input>
+                                </div>
+                            </template>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:10rem;">
+                                <div 
+                                    title={label.thagreementlink}>{label.thagreementlink}   
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:10rem;">
+                                <div
+                                    title={label.threcordtype}>{label.threcordtype} 
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:10rem;">
+                                <div
+                                    title={label.thagreementprimaryaccount}>{label.thagreementprimaryaccount}  
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:10rem;">
+                                <div
+                                    title={label.thagreementmetricslink}>{label.thagreementmetricslink} 
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:8rem; text-align:center;">
+                                <div
+                                    title={label.threquestdetails}>{label.threquestdetails}
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:8rem; text-align:center;">
+                                <div
+                                    title={label.thagreementnumber}>{label.thagreementnumber}
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:10rem;">
+                                <div
+                                    title={label.thhighestdiscountrequested}>{label.thhighestdiscountrequested}
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:10rem;">
+                                <div
+                                    title={label.thhighestlevelapprovalreqd}>{label.thhighestlevelapprovalreqd}
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:10rem;">
+                                <div
+                                    title={label.thjustification}>{label.thjustification}
+                                </div>
+                            </th>
+                            <th scope="col" style="white-space: pre-wrap; width:14rem;">
+                                <div
+                                    title={label.thapprovereject}>{label.thapprovereject}
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <template for:each={currentDisplayList} for:item='row' for:index='index'>
+                        <tbody key={row.Id}>
+                            <tr class="slds-hint-parent" id={row.Id} style="height:1.2rem;">
+                                <td>
+                                        <div class="slds-truncate">
+                                            <template if:true={row.isChecked}>
+                                            <lightning-input id={row.requestName} type="checkbox" checked onchange={removeCurrent}></lightning-input>
+                                            </template>
+                                            <template if:false={row.isChecked}>
+                                            <lightning-input id={row.requestName} type="checkbox" onchange={selectCurrent}></lightning-input>
+                                            </template>
+                                        </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-left">
+                                        <div class="slds-truncate" title={row.agreementName} style="white-space: pre-wrap;">
+                                            <a href={row.agreementUrl} target="_blank">{row.agreementName}</a>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-left">
+                                        <div class="slds-truncate" title={row.agreementRecordTypeName} style="white-space: pre-wrap;">
+                                            {row.agreementRecordTypeName}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-left" >
+                                        <div class="slds-truncate" title={row.accountName} style="white-space: pre-wrap;">
+                                            {row.accountName}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-left">
+                                        <template if:true={row.isValidRecordType}>
+                                            <div class="slds-truncate" title={row.agreementName} style="white-space: pre-wrap;">
+                                                <a href={row.agreementMetricsLink} target="_blank">{label.metricslink}</a> 
+                                            </div>
+                                        </template>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-center">
+                                        <div class="slds-truncate" title={row.requestName} style="white-space: pre-wrap;">
+                                            <a href={row.requestUrl} target="_blank">{row.requestName}</a>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-center">
+                                        <div class="slds-truncate" title={row.agreementNumber} style="white-space: pre-wrap;">
+                                            {row.agreementNumber}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-center">
+                                        <div class="slds-truncate" title={row.highestDiscount} style="white-space: pre-wrap;">
+                                            {row.highestDiscount} 
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-center">
+                                        <div class="slds-truncate" title={row.highestApproverRequired} style="white-space: pre-wrap;">
+                                            {row.highestApproverRequired}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-left">
+                                        <div class="slds-truncate" title={row.justification} style="white-space: pre-wrap;">
+                                            {row.justification}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="slds-align_absolute-center slds-p-top_none">
+                                        <div class="slds-truncate slds-p-top_none" title={row.comments} style="white-space: pre-wrap;">
+                                            <lightning-layout>
+                                                <lightning-layout-item>
+                                            <lightning-input id={row.requestName} class="slds-p-top-xxx-small" variant="label-hidden" 
+                                                            type="text" value={row.comments} onchange={populateComment}>
+                                        </lightning-input>
+                                        </lightning-layout-item>
+                                        <lightning-layout-item>
+                                        <c-commentmodalbox old-value={row.comments} appreqid={row.requestName} onsendcomment={populateValueFromChild}></c-commentmodalbox>
+                                    </lightning-layout-item>
+                                    </lightning-layout>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </template>
+                </table>
+            </div>
+        </lightning-card>
+        <div style="border:black">
+            <lightning-button class="slds-float_left slds-p-around_small" label={label.buttonprevious} variant="brand" disabled={disablePrevious} onclick={viewPrevious}></lightning-button>
+            <lightning-button class="slds-float_right slds-p-around_small" label={label.buttonnext} variant="brand" disabled={disableNext} onclick={viewNext}></lightning-button>    
+        </div>
+            <br/> <br/> <br/>
+            <div class="slds-float_right slds-p-around_medium">
+            <lightning-button-group>   
+                <lightning-button  label={label.buttonapprove} icon-name="action:approval" variant="success" onclick={approveSelected}></lightning-button>
+            </lightning-button-group>
+            </div>
+            <div style="height:6rem;"></div>
+            </template>
+<template if:true={noData}>
+    <lightning-card
+    title={errorMessage} variant="Narrow" >
+</lightning-card>
+</template>
+    </div>
+</template>

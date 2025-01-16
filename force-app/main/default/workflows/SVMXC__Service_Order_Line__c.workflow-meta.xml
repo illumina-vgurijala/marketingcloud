@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <alerts>
+        <fullName>Work_Detail_Field_Compliance_on_work_Order_Review</fullName>
+        <description>Work Detail Field Compliance on work Order Review</description>
+        <protected>false</protected>
+        <recipients>
+            <type>owner</type>
+        </recipients>
+        <recipients>
+            <field>Owner_s_Manager__c</field>
+            <type>userLookup</type>
+        </recipients>
+        <senderType>CurrentUser</senderType>
+        <template>Work_Detail_Email_Template/work_detail_Awaiting_work_order_owner_update</template>
+    </alerts>
+    <alerts>
+        <fullName>Work_Detail_Goodwill_Approval_Notification</fullName>
+        <description>Work Detail Goodwill Approval Notification</description>
+        <protected>false</protected>
+        <recipients>
+            <field>Owner_s_Manager__c</field>
+            <type>userLookup</type>
+        </recipients>
+        <senderType>DefaultWorkflowUser</senderType>
+        <template>Work_Detail_Email_Template/Work_Detail_Goodwill_Final_Approval</template>
+    </alerts>
+    <alerts>
+        <fullName>Work_Detail_Goodwill_Denial_Notification</fullName>
+        <description>Work Detail Goodwill Denial Notification</description>
+        <protected>false</protected>
+        <recipients>
+            <field>Owner_s_Manager__c</field>
+            <type>userLookup</type>
+        </recipients>
+        <senderType>DefaultWorkflowUser</senderType>
+        <template>Work_Detail_Email_Template/Work_Detail_Goodwill_Final_Rejection</template>
+    </alerts>
+    <alerts>
+        <fullName>Work_Detail_Goodwill_Submission_Notification</fullName>
+        <description>Work Detail: Goodwill Submission Notification</description>
+        <protected>false</protected>
+        <recipients>
+            <field>Owner_s_Manager__c</field>
+            <type>userLookup</type>
+        </recipients>
+        <senderType>DefaultWorkflowUser</senderType>
+        <template>Work_Detail_Email_Template/Work_Detail_Goodwill_Approval_template</template>
+    </alerts>
+    <fieldUpdates>
+        <fullName>Billing_type_Billable</fullName>
+        <field>SVMXC__Billing_Type__c</field>
+        <literalValue>Billable</literalValue>
+        <name>Billing type= Billable</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+        <targetObject>SVMXC__Service_Order__c</targetObject>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>End_DateTime_Start_DateTime_Duration</fullName>
+        <description>Update the End Date/Time for work detail, based on Start Date/Time and Duration</description>
+        <field>SVMXC__End_Date_and_Time__c</field>
+        <formula>SVMXC__Start_Date_and_Time__c + 
+IF( CONTAINS(Duration_in_hours__c, &quot;:&quot;), 
+
+/*If the duration contains : */
+/*Find the hours (part before &apos;:&apos; from start of string )*/
+(((VALUE(LEFT(Duration_in_hours__c ,FIND(&quot;:&quot;, Duration_in_hours__c )-1)) * 60 ) / 1440) + 
+/*Find the minutes (part after &apos;:&apos; till end of string) */
+(VALUE( MID(Duration_in_hours__c, FIND(&quot;:&quot;, Duration_in_hours__c) + 1, LEN(Duration_in_hours__c) - FIND(&quot;:&quot;, Duration_in_hours__c) + 1)) / 1440)), 
+
+/*If the duration does not contain : */
+(VALUE(Duration_in_hours__c) * 60 / 1440))</formula>
+        <name>End DateTime = Start DateTime + Duration</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Formula</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Return_Serial_Number_Return_IP_Serial</fullName>
+        <description>To populate return serial number from return install product</description>
+        <field>SVMX_PS_VS_Return_Serial_Number__c</field>
+        <formula>SVMX_PS_VS_Return_Installed_Product__r.SVMXC__Serial_Lot_Number__c</formula>
+        <name>Return Serial Number = Return IP Serial</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Formula</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Set_Status_To_Complete</fullName>
+        <description>Field update to set  status to coplete</description>
+        <field>SVMXC__Line_Status__c</field>
+        <literalValue>Closed</literalValue>
+        <name>Set Status To Complete</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Set_Status_To_Open</fullName>
+        <description>Field update to set status to open</description>
+        <field>SVMXC__Line_Status__c</field>
+        <literalValue>Open</literalValue>
+        <name>Set Status To Open</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Work_Detail_Set_to_Approved</fullName>
+        <field>Approval_Status__c</field>
+        <literalValue>Approved</literalValue>
+        <name>Work Detail: Set to Approved</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Work_Detail_Set_to_Not_Required</fullName>
+        <description>Update the WD Approval Status field to Not Required on Approval recall</description>
+        <field>Approval_Status__c</field>
+        <literalValue>Not Required</literalValue>
+        <name>Work Detail: Set to Not Required</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Work_Detail_Set_to_Pending_Approval</fullName>
+        <field>Approval_Status__c</field>
+        <literalValue>Pending Approval</literalValue>
+        <name>Work Detail: Set to Pending Approval</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Work_Detail_Set_to_Rejected</fullName>
+        <field>Approval_Status__c</field>
+        <literalValue>Rejected</literalValue>
+        <name>Work Detail: Set to Rejected</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <rules>
+        <fullName>Work Detail %3A Activity End Date Time</fullName>
+        <actions>
+            <name>End_DateTime_Start_DateTime_Duration</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <criteriaItems>
+            <field>SVMXC__Service_Order_Line__c.Duration_in_hours__c</field>
+            <operation>notEqual</operation>
+        </criteriaItems>
+        <criteriaItems>
+            <field>SVMXC__Service_Order_Line__c.SVMXC__Start_Date_and_Time__c</field>
+            <operation>notEqual</operation>
+        </criteriaItems>
+        <description>Update the End Date/Time for the Work Detail, based on the Start Date/Time and Duration.</description>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>Work Detail %3A Default To Complete Status</fullName>
+        <actions>
+            <name>Set_Status_To_Complete</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <criteriaItems>
+            <field>SVMXC__Service_Order_Line__c.SVMXC__Activity_Type__c</field>
+            <operation>equals</operation>
+            <value>Repair/Troubleshooting,Training,Upgrade,Remote Support,Depot Service,Install,Preventative Maintenance,Dedicated Onsite Activities,Account Maintenance,Customer Readiness,Sales Support Activity,Consulting,IT Consult,Workflow Config,Coding</value>
+        </criteriaItems>
+        <description>Workflow to set status to complete for following Activity types - Repair, Training, Upgrade, Remote Support, Install, Planned Maintenance, Depot Service, Consulting, Dedicated onsite activities, Account Maintenance, Customer Readiness, Sales Support etc.</description>
+        <triggerType>onCreateOnly</triggerType>
+    </rules>
+    <rules>
+        <fullName>Work Detail %3A Return Installed Product Is Not Blank</fullName>
+        <actions>
+            <name>Return_Serial_Number_Return_IP_Serial</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <description>To populate the return serial number from the return installed product</description>
+        <formula>NOT(ISBLANK( SVMX_PS_VS_Return_Installed_Product__c ))</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>Work Detail %3ADefault To Open Status</fullName>
+        <actions>
+            <name>Set_Status_To_Open</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <criteriaItems>
+            <field>SVMXC__Service_Order_Line__c.SVMXC__Activity_Type__c</field>
+            <operation>equals</operation>
+            <value>OQ,PQ,Field Compliance Review,IQ/OQ,Letter of Acceptance accepted</value>
+        </criteriaItems>
+        <description>Workflow to set status to open for following Activity types -  IQ/OQ, OQ, PQ, Field Compliance Review, Letter of Acceptance accepted</description>
+        <triggerType>onCreateOnly</triggerType>
+    </rules>
+    <rules>
+        <fullName>Work Detail%3A Reminder for goodwill approval</fullName>
+        <active>true</active>
+        <criteriaItems>
+            <field>SVMXC__Service_Order_Line__c.Approval_Status__c</field>
+            <operation>equals</operation>
+            <value>Pending Approval</value>
+        </criteriaItems>
+        <description>For a Goodwill Work detail Pending Approval for more than 48hrs, a reminder mail is sent to record owner&apos;s manager</description>
+        <triggerType>onCreateOrTriggeringUpdate</triggerType>
+        <workflowTimeTriggers>
+            <actions>
+                <name>Work_Detail_Goodwill_Submission_Notification</name>
+                <type>Alert</type>
+            </actions>
+            <timeLength>48</timeLength>
+            <workflowTimeTriggerUnit>Hours</workflowTimeTriggerUnit>
+        </workflowTimeTriggers>
+    </rules>
+    <rules>
+        <fullName>WorkDetail%3A Update WO Billable Type</fullName>
+        <actions>
+            <name>Billing_type_Billable</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <criteriaItems>
+            <field>SVMXC__Service_Order_Line__c.SVMXC__Is_Billable__c</field>
+            <operation>equals</operation>
+            <value>True</value>
+        </criteriaItems>
+        <description>update billable type of work order to billable if is billable checkbox is checked on work detail.</description>
+        <triggerType>onCreateOrTriggeringUpdate</triggerType>
+    </rules>
+</Workflow>

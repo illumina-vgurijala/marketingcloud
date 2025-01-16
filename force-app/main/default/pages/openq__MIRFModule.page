@@ -1,0 +1,181 @@
+<apex:page controller="openq.MIRFModule" showHeader="true" sidebar="false" standardStylesheets="false">
+    
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></apex:includescript>
+
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/common.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style2.css')}"/>    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/GeneralOpenQForm.css')}"/>
+    <link href="{!URLFOR($Resource.SearchMirfs, 'css/SearchMirfs.css')}" type="text/css" rel="stylesheet"></link>
+    <apex:includeScript value="{!URLFOR($Resource.openq__SearchMirfs,'js/SearchMirfs.js')}"/>
+    <style>
+        
+        *:focus { 
+            outline: none; 
+        }
+    
+        #bodyTable {
+            background-color: #E6E6E5;
+        }   
+        
+        #rightContainer {
+            min-width: 665px;
+            float: none;
+            margin-right: 0px;
+            margin-left: 20px;
+            margin-top: 40px;
+            font-family: Verdana, sans-serif;   
+        }
+        
+        /*  tabs styles */
+        
+        .ui-tabs-nav.ui-helper-reset.ui-helper-clearfix.ui-widget-header.ui-corner-all {
+        
+            position: absolute;
+            margin-top: -51px;
+            background: none;
+            border: none;
+        }
+        
+        .ui-state-default.ui-corner-top {
+            background-color: #fafafa;
+        }
+        
+        #tabs {
+            border: none;
+            background-color: #fafafa;
+            display: none;
+        }
+        
+        .ui-tabs-active.ui-state-active {
+            background-color: #b2ca45;          
+        }
+        
+        .ui-tabs-active.ui-state-active a {
+            color: white;
+        }
+        
+        .ui-widget-content a {
+            text-decoration: none;
+        }
+        .ui-datepicker-next{
+        background-image: url({!URLFOR($Resource.StylesScriptsImages,'/img/datepicker-arrows.png')});
+        background-position: 0 0;
+        cursor: pointer;
+        height: 20px;
+        width: 20px;
+    }
+    .ui-datepicker-prev{
+        background-image: url({!URLFOR($Resource.StylesScriptsImages,'/img/datepicker-arrows.png')});
+        background-position: 0 -16px;
+        cursor: pointer;
+        height: 20px;
+        width: 20px;
+    }
+    .ui-state-active:hover{
+        color:#555555 !important;
+    }
+    .ui-state-hover {
+        color:#555555 !important;
+    }
+    </style>
+    
+    <script type="text/javascript">
+    
+        jQuery(document).ready(function(){
+            prepareTabs();          
+        });
+    
+        function prepareTabs() {
+            var tabIndexElem = document.getElementById("{!$Component.mirfModuleForm.tabIdx}");
+            jQuery( '#tabs' ).tabs({
+                active: jQuery(tabIndexElem).val(),
+                
+                create: function( event, ui ) {
+                    jQuery('#tabs').show();
+                },
+                
+                beforeActivate: function(event, ui){
+                
+                    switch(jQuery(ui.newPanel).attr("id")){
+                        case "myMirfsTab":
+                            
+                            jQuery('#tabs').tabs("option", "disabled", [1, 2]);
+                            break;
+                            
+                        case "searchMirfsTab":
+
+                            jQuery('#tabs').tabs("option", "disabled", [0, 2]);                         
+                            break;
+                    }
+                
+                    
+                },
+                activate: function( event, ui ) {
+                    switch(jQuery(ui.newPanel).attr("id")){
+                        case "myMirfsTab":
+                            
+                            break;
+                            
+                        case "searchMirfsTab":
+
+                            break;
+                            
+                        case "createMirfsTab":
+                            if(jQuery.isFunction(adjustMirfFormPanelsHeight)){
+                                adjustMirfFormPanelsHeight();
+                            }
+                                                                                    
+                            break;
+                    }
+                }               
+            });
+        }
+        
+    </script>
+    
+    <div id="rightContainer" class="wi-gen gr b-card shado conc">
+        <apex:outputPanel id="rightContentPanel">
+            <apex:outputPanel id="tabbedPanel">                     
+                <div id="tabs">
+                    <!-- Tab headers -->
+                    
+                        <ul id="tabHeaders">            
+                            <!-- Fixed tabs -->
+                            <li><a href="#myMirfsTab" onclick="changeTabFnc(0);">My MIRFs</a></li>
+                            <li><a href="#searchMirfsTab" onclick="changeTabFnc(1);">Search MIRFs</a></li>
+                            <li><a href="#createMirfsTab" >Create MIRFs</a></li>
+                        </ul>
+                        <apex:form id="mirfModuleForm">
+                        <!-- Actual tab content -->
+                        <!-- My MIRFs tab content -->
+                                    
+                        <div id="myMirfsTab">
+                            <apex:outputPanel layout="none" id="SearchMirfsOwn">
+                                <c:SearchMirfs id="own" isGlobalSearch="false" objectNameAttr="MIRF__c" detailUrlAttr="{!$Page.openq__MIRF_Detail}" rendered="{!tabIndex==0}" />
+                            </apex:outputPanel>
+                        </div>
+                        
+                        <!-- Search MIRFs tab content -->
+                        <div id="searchMirfsTab">
+                            <apex:outputPanel layout="none" id="SearchMirfsGlobal">
+                                <c:SearchMirfs id="global" isGlobalSearch="true" objectNameAttr="MIRF__c" detailUrlAttr="{!$Page.openq__MIRF_Detail}" rendered="{!tabIndex==1}" />
+                            </apex:outputPanel>
+                        </div>
+                        <apex:inputHidden id="tabIdx" value="{!tabIndex}" />
+                        <apex:actionFunction name="changeTabFnc" action="{!changeTab}" rerender="mirfModuleForm" oncomplete="refreshSearchMirf();">
+                            <apex:param value="" name="tabIndex" assignTo="{!tabIndex}" />
+                        </apex:actionFunction>
+                    </apex:form>
+                    <!-- Create MIRFs tab content -->
+                    <div id="createMirfsTab">                
+                        <c:MIRF_Form id="createMirfsTab" edit_Mode="true" />
+                    </div>
+                </div>
+            </apex:outputPanel>
+        </apex:outputPanel>
+    </div>
+    <c:WaitComponent />
+</apex:page>

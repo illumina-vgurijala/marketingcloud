@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckISDistributCustAccCreaReqOnIsBlank</fullName>
+    <active>true</active>
+    <description>Prevents user from moving from Negotiate and Resolve to subsequent stages when Distributor Record Type is Prospect or Account Group is not Distributor AND Direct Sales to Ultimate Consignee = FALSE AND &quot;Customer Account Creation Requested On&quot; is blank.</description>
+    <errorConditionFormula>AND (
+    RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard,
+    OR (
+        Account.RecordType.Name = $Label.AccountProspect,
+        TEXT ( Account.Account_Group__c ) &lt;&gt; $Label.AccountGroupDistributor
+    ),
+    ISBLANK ( Customer_Account_Creation_Requested_On__c ),
+    Direct_Sale_to_Ultimate_Consignee__c = False,
+    NOT ( CloseDate &lt; TODAY() ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name = $Label.ProfileSystemAdmin, 
+            $Profile.Name = $Label.ProfileDataSteward 
+        )
+    ), 
+    NOT (
+        OR (
+            TEXT ( StageName ) = $Label.OpportunityStageClosedLost, 
+            TEXT ( PRIORVALUE ( StageName )) = $Label.OpportunityStageClosedLost, 
+            TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+            TEXT ( PRIORVALUE ( StageName )) = $Label.OpportunityStageClosedAbandoned,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            TEXT ( PRIORVALUE ( StageName )) = $Label.OpportunityStageClosedWon, 
+            TEXT ( StageName ) = $Label.OpportunityStageCreate, 
+            TEXT ( StageName ) = $Label.OpportunityStageQualify,
+            TEXT ( StageName ) = $Label.OpportunityStageDevelop,
+            TEXT ( StageName ) = $Label.OpportunityStageProve,
+            TEXT ( StageName ) = $Label.OpportunityStageNegotiateResolve
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>AccountId</errorDisplayField>
+    <errorMessage>Please indicate date on which Distributor Account creation was requested. To do so, upgrade Distributor by navigating to account record and clicking &quot;Upgrade Request&quot;.</errorMessage>
+</ValidationRule>

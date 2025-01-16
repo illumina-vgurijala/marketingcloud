@@ -1,0 +1,4345 @@
+{
+	"__IMPORTANT_1": "Add DefaultId__c to all ApplicationFeatures, SettingGroups, ApplicationSettings",
+	"__IMPORTANT_2": "Do not add any ExternalId to all ApplicationFeatures, SettingGroups, ApplicationSettings",
+	"__IMPORTANT_3": "DefaultId__c format of ApplicationFeatures is AF00XX",
+	"__IMPORTANT_4": "DefaultId__c format of SettingGroups is AF00XX-SG00YY, where AF00XX is parent ApplicationFeature DefaultId",
+	"__IMPORTANT_5": "DefaultId__c format of ApplicationSettings is AF00XX-SG00YY-AS00ZZ, where AF00XX is grandparent ApplicationFeature DefaultId and SG00YY is parent SettingGroup DefaultId",
+
+	"ApplicationFeatures": [
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0001",
+			"Sequence__c": 1,
+			"Name": "Catalog Page"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0002",
+			"Sequence__c": 2,
+			"Name": "Config Page"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0003",
+			"Sequence__c": 3,
+			"Name": "Cart Page"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0004",
+			"Sequence__c": 4,
+			"Name": "Installed Products"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0005",
+			"Sequence__c": 5,
+			"Name": "Analyze Deal"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0006",
+			"Sequence__c": 6,
+			"Name": "Collaboration"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0007",
+			"Sequence__c": 7,
+			"Name": "Flow Management"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0008",
+			"Sequence__c": 8,
+			"Name": "Pricing Engine"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0009",
+			"Sequence__c": 9,
+			"Name": "Configuration Engine"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0010",
+			"Sequence__c": 10,
+			"Name": "Proposal Settings"
+		},
+		{
+			"ApplicationName__c": "CPQ",
+			"DefaultId__c": "AF0011",
+			"Sequence__c": 11,
+			"Name": "Developer"
+		}
+	],
+	"SettingGroups": [
+		{
+			"DefaultId__c": "AF0001-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Actions",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"DefaultId__c": "AF0001-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Display Settings"
+		},
+		{
+			"DefaultId__c": "AF0002-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Display Settings"
+		},
+		{
+			"DefaultId__c": "AF0002-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Actions",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Display Settings"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Actions",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "Cart Lines Columns"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0004",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 4,
+			"Name": "Totals Columns"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0005",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 5,
+			"Name": "Price Ramp"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0006",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 6,
+			"Name": "Usage Price Tier"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0007",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 7,
+			"Name": "Tiered Price"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0008",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 8,
+			"Name": "Related Price"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0009",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 9,
+			"Name": "Adjustment Line Item"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0010",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 10,
+			"Name": "Mass Update"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0011",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 11,
+			"Name": "Agreement Price Rule"
+		},
+		{
+			"DefaultId__c": "AF0003-SG0012",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Custom",
+			"IsCustom__c": false,
+			"Sequence__c": 12,
+			"Name": "Cart Views"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Actions",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Columns"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "General Settings"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0004",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 4,
+			"Name": "Renewal"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0005",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 5,
+			"Name": "Miscellaneous"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0006",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 6,
+			"Name": "Cotermination Preferences"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0007",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 7,
+			"Name": "Relate Criteria"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0008",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 8,
+			"Name": "Asset Source"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0009",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 9,
+			"Name": "Mass Edit Criteria"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0010",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 10,
+			"Name": "Purchase Id Criteria"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0011",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 11,
+			"Name": "Split Asset Actions"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0012",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Custom",
+			"IsCustom__c": false,
+			"Sequence__c": 12,
+			"Name": "Asset Views"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0013",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 13,
+			"Name": "Asset Termination Fields"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0014",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 14,
+			"Name": "Merge Action Criteria"
+		},
+		{
+			"DefaultId__c": "AF0004-SG0015",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 15,
+			"Name": "Editable Fields For Cancelled Lines"
+		},
+		{
+			"DefaultId__c": "AF0005-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Actions",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"DefaultId__c": "AF0005-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Cost Line Item"
+		},
+		{
+			"DefaultId__c": "AF0005-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "Line Item Waterfall"
+		},
+		{
+			"DefaultId__c": "AF0005-SG0004",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 4,
+			"Name": "Line Item Metrics"
+		},
+		{
+			"DefaultId__c": "AF0005-SG0005",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 5,
+			"Name": "Summary Metrics"
+		},
+		{
+			"DefaultId__c": "AF0005-SG0006",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 6,
+			"Name": "Summary Waterfall"
+		},
+		{
+			"DefaultId__c": "AF0006-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Parent Line Item Columns"
+		},
+		{
+			"DefaultId__c": "AF0006-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Columns",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "Chid Line Item Columns"
+		},
+		{
+			"DefaultId__c": "AF0007-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "Flow",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Flow Management"
+		},
+		{
+			"DefaultId__c": "AF0008-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Global Pricing"
+		},
+		{
+			"DefaultId__c": "AF0008-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Totaling and Subtotaling"
+		},
+		{
+			"DefaultId__c": "AF0008-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "Advanced Pricing"
+		},
+		{
+			"DefaultId__c": "AF0009-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Constraint Rules"
+		},
+		{
+			"DefaultId__c": "AF0009-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Attributes"
+		},
+		{
+			"DefaultId__c": "AF0009-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "Expressions"
+		},
+		{
+			"DefaultId__c": "AF0010-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "Default"
+		},
+		{
+			"DefaultId__c": "AF0010-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Syncing"
+		},
+		{
+			"DefaultId__c": "AF0010-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "Merge Service"
+		},
+		{
+			"DefaultId__c": "AF0010-SG0004",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 4,
+			"Name": "eSign"
+		},
+		{
+			"DefaultId__c": "AF0010-SG0005",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 5,
+			"Name": "Security"
+		},
+		{
+			"DefaultId__c": "AF0010-SG0006",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 6,
+			"Name": "Other"
+		},
+		{
+			"DefaultId__c": "AF0011-SG0001",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 1,
+			"Name": "System Global"
+		},
+		{
+			"DefaultId__c": "AF0011-SG0002",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 2,
+			"Name": "Field Precision"
+		},
+		{
+			"DefaultId__c": "AF0011-SG0003",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 3,
+			"Name": "Finalization & Approvals"
+		},
+		{
+			"DefaultId__c": "AF0011-SG0004",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 4,
+			"Name": "Lookup Field"
+		},
+		{
+			"DefaultId__c": "AF0011-SG0005",
+			"ConfigFlow__c": "Default",
+			"DisplayType__c": "List",
+			"IsCustom__c": false,
+			"Sequence__c": 5,
+			"Name": "Custom Classes"
+		}
+	],
+	"ApplicationSettings": [
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayActions__c",
+			"RecordKey__c": "Catalog Item",
+			"DefaultId__c": "AF0001-SG0001-AS0001",
+			"Name": "Catalog Actions"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Location",
+			"FieldName__c": "EnableLocation__c",
+			"DefaultId__c": "AF0001-SG0002-AS0001",
+			"Name": "Enable Location"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Compare Products",
+			"FieldName__c": "HideCompareProducts__c",
+			"DefaultId__c": "AF0001-SG0002-AS0002",
+			"Name": "Hide Compare Products"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Help Me Choose",
+			"FieldName__c": "HideHelpMeChoose__c",
+			"DefaultId__c": "AF0001-SG0002-AS0003",
+			"Name": "Hide Help Me Choose"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Disable Add Another",
+			"FieldName__c": "DisableAddAnother__c",
+			"DefaultId__c": "AF0001-SG0002-AS0004",
+			"Name": "Disable Add Another"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Configure Action",
+			"FieldName__c": "HideConfigureAction__c",
+			"DefaultId__c": "AF0001-SG0002-AS0005",
+			"Name": "Hide Configure Action"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Default Options In Description",
+			"FieldName__c": "HideDefaultOptionsInDescription__c",
+			"DefaultId__c": "AF0001-SG0002-AS0006",
+			"Name": "Hide Default Options In Description"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Listed Products Price Column",
+			"FieldName__c": "HideListedProductsPriceColumn__c",
+			"DefaultId__c": "AF0001-SG0002-AS0007",
+			"Name": "Hide Listed Products Price Column"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Listed Products Column2",
+			"FieldName__c": "ListedProductsColumn2__c",
+			"DefaultId__c": "AF0001-SG0002-AS0008",
+			"Name": "Listed Products Column2"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Listed Products Column3",
+			"FieldName__c": "ListedProductsColumn3__c",
+			"DefaultId__c": "AF0001-SG0002-AS0009",
+			"Name": "Listed Products Column3"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Quantity Input",
+			"FieldName__c": "ShowQuantity__c",
+			"DefaultId__c": "AF0001-SG0002-AS0010",
+			"Name": "Show Quantity Input"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Search Category Default",
+			"FieldName__c": "SearchCategoryDefault__c",
+			"DefaultId__c": "AF0001-SG0002-AS0011",
+			"Name": "Search Category Default"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Single Top Category",
+			"FieldName__c": "HideSingleTopCategory__c",
+			"DefaultId__c": "AF0001-SG0002-AS0012",
+			"Name": "Hide Single Top Category"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Category Filter",
+			"FieldName__c": "EnableCategoryFilter__c",
+			"DefaultId__c": "AF0001-SG0002-AS0013",
+			"Name": "Enable Category Filter"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Disabled Options",
+			"FieldName__c": "HideDisabledOptions__c",
+			"DefaultId__c": "AF0002-SG0001-AS0001",
+			"Name": "Hide Disabled Options"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Price Column",
+			"FieldName__c": "HidePriceColumn__c",
+			"DefaultId__c": "AF0002-SG0001-AS0002",
+			"Name": "Hide Price Column"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Listed Options Column 2",
+			"FieldName__c": "ListedOptionsColumn2__c",
+			"DefaultId__c": "AF0002-SG0001-AS0003",
+			"Name": "Listed Options Column 2"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Listed Options Column 3",
+			"FieldName__c": "ListedOptionsColumn3__c",
+			"DefaultId__c": "AF0002-SG0001-AS0004",
+			"Name": "Listed Options Column 3"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Option Quantity",
+			"FieldName__c": "ShowOptionQuantity__c",
+			"DefaultId__c": "AF0002-SG0001-AS0005",
+			"Name": "Show Option Quantity"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Collapse All Leaf Option Groups",
+			"FieldName__c": "CollapseAllLeafOptionGroups__c",
+			"DefaultId__c": "AF0002-SG0001-AS0006",
+			"Name": "Collapse All Leaf Option Groups"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Disable Add To Cart for Option Products",
+			"FieldName__c": "DisableAddToCartForOptionProducts__c",
+			"DefaultId__c": "AF0002-SG0001-AS0007",
+			"Name": "Disable Add To Cart for Option Products"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Tab View",
+			"FieldName__c": "TabViewInConfigureBundle__c",
+			"DefaultId__c": "AF0002-SG0001-AS0008",
+			"Name": "Show Tab View"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Bundle Description Field",
+			"FieldName__c": "BundleDescriptionField__c",
+			"DefaultId__c": "AF0002-SG0001-AS0010",
+			"Name": "Bundle Description Field"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Bundle Detail",
+			"FieldName__c": "ShowBundleDetail__c",
+			"DefaultId__c": "AF0002-SG0001-AS0011",
+			"Name": "Show Bundle Detail"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Option Page Search",
+			"FieldName__c": "EnableOptionPageSearch__c",
+			"DefaultId__c": "AF0002-SG0001-AS0012",
+			"Name": "Enable Option Page Search"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectBundleOptionsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Max Inline Option Attributes",
+			"FieldName__c": "MaxInlineOptionAttributes__c",
+			"DefaultId__c": "AF0002-SG0001-AS0013",
+			"Name": "Max Inline Option Attributes"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayActions__c",
+			"RecordKey__c": "Attribute Item",
+			"DefaultId__c": "AF0002-SG0002-AS0001",
+			"Name": "Config Actions"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Auto Sequencing For Options",
+			"FieldName__c": "EnableAutoSequencingForOptions__c",
+			"DefaultId__c": "AF0003-SG0001-AS0001",
+			"Name": "Enable Auto Sequencing For Options"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Recommended Products Cart View",
+			"FieldName__c": "ShowRecommendedProductsCartView__c",
+			"DefaultId__c": "AF0003-SG0001-AS0002",
+			"Name": "Show Recommended Products Cart View"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Product Display Max Length",
+			"FieldName__c": "ProductDisplayMaxLength__c",
+			"DefaultId__c": "AF0003-SG0001-AS0003",
+			"Name": "Product Display Max Length"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Attributes In Cart",
+			"FieldName__c": "ShowAttributesInCart__c",
+			"DefaultId__c": "AF0003-SG0001-AS0004",
+			"Name": "Show Attributes In Cart"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Expand Bundles In Cart",
+			"FieldName__c": "ExpandBundleLinesByDefault__c",
+			"DefaultId__c": "AF0003-SG0001-AS0005",
+			"Name": "Expand Bundles In Cart"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Copy Action",
+			"FieldName__c": "HideCopyAction__c",
+			"DefaultId__c": "AF0003-SG0001-AS0006",
+			"Name": "Hide Copy Action"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "GroupBy Fields",
+			"FieldName__c": "GroupByFields__c",
+			"DefaultId__c": "AF0003-SG0001-AS0007",
+			"Name": "GroupBy Fields"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Grand Total",
+			"FieldName__c": "HideGrandTotal__c",
+			"DefaultId__c": "AF0003-SG0001-AS0008",
+			"Name": "Hide Grand Total"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Subtotals In Cart",
+			"FieldName__c": "HideSubtotalsInCart__c",
+			"DefaultId__c": "AF0003-SG0001-AS0009",
+			"Name": "Hide Subtotals In Cart"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "View Cart Total Custom Fields",
+			"FieldName__c": "ViewCartTotalCustomFields__c",
+			"DefaultId__c": "AF0003-SG0001-AS0010",
+			"Name": "View Cart Total Custom Fields"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayActions__c",
+			"RecordKey__c": "Cart Line Item",
+			"DefaultId__c": "AF0003-SG0002-AS0001",
+			"Name": "Cart Actions"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "LineItem__c",
+			"RecordKey__c": "Cart Line Item",
+			"DefaultId__c": "AF0003-SG0003-AS0001",
+			"Name": "Cart Lines Columns"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "SummaryGroup__c",
+			"RecordKey__c": "Cart Total Item",
+			"DefaultId__c": "AF0003-SG0004-AS0001",
+			"Name": "Totals Columns"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "LineItem__c",
+			"RecordKey__c": "Price Ramp",
+			"DefaultId__c": "AF0003-SG0005-AS0001",
+			"Name": "Price Ramp"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "UsagePriceTier__c",
+			"RecordKey__c": "Usage Price Tier",
+			"DefaultId__c": "AF0003-SG0006-AS0001",
+			"Name": "Usage Price Tier"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "PriceBreakup__c",
+			"RecordKey__c": "Tiered Price",
+			"DefaultId__c": "AF0003-SG0007-AS0001",
+			"Name": "Tiered Price"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "PriceBreakup__c",
+			"RecordKey__c": "Related Price",
+			"DefaultId__c": "AF0003-SG0008-AS0001",
+			"Name": "Related Price"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "AdjustmentLineItem__c",
+			"RecordKey__c": "Adjustment Line Item",
+			"DefaultId__c": "AF0003-SG0009-AS0001",
+			"Name": "Adjustment Line Item"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "LineItem__c",
+			"RecordKey__c": "Mass Update",
+			"DefaultId__c": "AF0003-SG0010-AS0001",
+			"Name": "Mass Update"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "AgreementPriceRule__c",
+			"RecordKey__c": "Agreement Price Rule",
+			"DefaultId__c": "AF0003-SG0011-AS0001",
+			"Name": "Agreement Price Rule"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayActions__c",
+			"RecordKey__c": "Asset Line Item",
+			"DefaultId__c": "AF0004-SG0001-AS0001",
+			"Name": "Navigation and Actions"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "AssetLineItem__c",
+			"RecordKey__c": "Asset Line Item",
+			"DefaultId__c": "AF0004-SG0002-AS0001",
+			"Name": "Columns"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Direct Configure Asset Actions",
+			"FieldName__c": "DirectConfigureAssetActions__c",
+			"DefaultId__c": "AF0004-SG0003-AS0001",
+			"Name": "Direct Configure Asset Actions",
+			"HelpText__c": "Comma separated values of Increment, Amend, Renew, Cancel actions. Listed actions will configure products directly."
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Hide Asset Actions",
+			"FieldName__c": "HideAssetActions__c",
+			"DefaultId__c": "AF0004-SG0003-AS0002",
+			"Name": "Hide Asset Actions",
+			"HelpText__c": "Comma separated values of Increment, Amend, Renew, Cancel actions. Listed actions will be hidden from the users."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Submenu Actions",
+			"FieldName__c": "SubmenuActions__c",
+			"DefaultId__c": "AF0004-SG0003-AS0003",
+			"Name": "Submenu Actions",
+			"HelpText__c": "List of actions to be displayed in the asset action submenu dropdowns separated by commas."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Max Renews Per Trip",
+			"FieldName__c": "MaxRenewsPerTrip__c",
+			"DefaultId__c": "AF0004-SG0003-AS0004",
+			"Name": "Max Renews Per Trip",
+			"HelpText__c": "To prevent CPU timeout use a smaller number. Default is 20"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Accounts Filter",
+			"FieldName__c": "ShowAccountsFilter__c",
+			"DefaultId__c": "AF0004-SG0003-AS0005",
+			"Name": "Show Accounts Filter",
+			"HelpText__c": "Display accounts filter in the installed products page"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Amend Change Fields",
+			"FieldName__c": "AmendChangeFields__c",
+			"DefaultId__c": "AF0004-SG0003-AS0006",
+			"Name": "Amend Change Fields",
+			"HelpText__c": "Comma separated line item field names whose values can turn an existing asset line into amended asset line."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Filter Fields",
+			"FieldName__c": "FilterFields__c",
+			"DefaultId__c": "AF0004-SG0003-AS0007",
+			"Name": "Filter Fields",
+			"HelpText__c": "Asset Line Fields to be displayed on filter. Works with text fields and End Date."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Default Renewal Term",
+			"FieldName__c": "DefaultRenewalTerm__c",
+			"DefaultId__c": "AF0004-SG0003-AS0008",
+			"Name": "Default Renewal Term",
+			"HelpText__c": "When the value is provided use this value as the renewal term for Renewing products. Number signifies months to renew as the end date."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Hide Co-Term",
+			"FieldName__c": "HideCoTerm__c",
+			"DefaultId__c": "AF0004-SG0003-AS0009",
+			"Name": "Hide Co-Term",
+			"HelpText__c": "Check to hide co-term end date on renew"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Allow Backdated Termination",
+			"FieldName__c": "AllowBackdatedTermination__c",
+			"DefaultId__c": "AF0004-SG0003-AS0010",
+			"Name": "Allow Backdated Termination"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Show Assets",
+			"FieldName__c": "ShowAssets__c",
+			"DefaultId__c": "AF0004-SG0003-AS0011",
+			"Name": "Show Assets",
+			"DefaultValue__c": "Current Account",
+			"HelpText__c": "Comma separated values of Parents and/or Children or empty. If empty, only context account assets are shown. Examples: 1) parents 2) parents,children.",
+			"StaticPicklistOptions__c": "Current Account,Parents,Parents and Children,Children"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Renewal Lead Time",
+			"FieldName__c": "RenewalLeadTime__c",
+			"DefaultId__c": "AF0004-SG0004-AS0001",
+			"Name": "Renewal Lead Time"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Renewal Group Fields",
+			"FieldName__c": "RenewalGroupFields__c",
+			"DefaultId__c": "AF0004-SG0004-AS0002",
+			"Name": "Renewal Group Fields"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Default Renewal Price List",
+			"FieldName__c": "DefaultRenewalPriceList__c",
+			"DefaultId__c": "AF0004-SG0004-AS0003",
+			"Name": "Default Renewal Price List"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Renewal Execution Mode",
+			"FieldName__c": "RenewalExecutionMode__c",
+			"DefaultId__c": "AF0004-SG0004-AS0004",
+			"Name": "Renewal Execution Mode",
+			"StaticPicklistOptions__c": "Auto,On Demand"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Max Renewal Line Item Per Cart",
+			"FieldName__c": "MaxRenewalLineItemPerCart__c",
+			"DefaultId__c": "AF0004-SG0004-AS0005",
+			"Name": "Max Renewal Line Item Per Cart",
+			"HelpText__c": "Max Renewal Line Item to be processed in one cart. Used to limit the size of product configuration to avoid exceeding CPU and SOQL limits."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Max Renewal Group Per Job",
+			"FieldName__c": "MaxRenewalGroupPerJob__c",
+			"DefaultId__c": "AF0004-SG0004-AS0006",
+			"Name": "Max Renewal Group Per Job"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Renewal Default Price Book",
+			"FieldName__c": "RenewalDefaultPriceBook__c",
+			"DefaultId__c": "AF0004-SG0004-AS0007",
+			"Name": "Renewal Default Price Book",
+			"HelpText__c": "Default price book name used in renewal opportunity"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Renewal Business Object Type",
+			"FieldName__c": "RenewalBusinessObjectType__c",
+			"DefaultId__c": "AF0004-SG0004-AS0008",
+			"Name": "Renewal Business Object Type",
+			"StaticPicklistOptions__c": "Proposal,Agreement"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Cotermination Preferences During Renewal",
+			"FieldName__c": "CoterminationPreferencesDuringRenewal__c",
+			"DefaultId__c": "AF0004-SG0004-AS0009",
+			"Name": "Cotermination Preferences During Renewal",
+			"StaticPicklistOptions__c": "UseProposalOrAgreementEndDate,RetainCurrentAssetEndDate,UseFarthestAssetEndDate,UseRenewalDate"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Picklist",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Default Renewal Cotermination Option",
+			"FieldName__c": "DefaultRenewalCoterminationOption__c",
+			"DefaultId__c": "AF0004-SG0004-AS0010",
+			"Name": "Default Renewal Cotermination Option",
+			"StaticPicklistOptions__c": "UseProposalOrAgreementEndDate,RetainCurrentAssetEndDate,UseFarthestAssetEndDate,UseRenewalDate"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable One Time Change",
+			"FieldName__c": "EnableOneTimeChange__c",
+			"DefaultId__c": "AF0004-SG0005-AS0001",
+			"Name": "Enable One Time Change",
+			"HelpText__c": "Allow users to make change to one time line item."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Asset Currency Field Precision",
+			"FieldName__c": "AssetCurrencyFieldPrecision__c",
+			"DefaultId__c": "AF0004-SG0005-AS0002",
+			"Name": "Asset Currency Field Precision"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Allow Mass Change",
+			"FieldName__c": "AllowMassChange__c",
+			"DefaultId__c": "AF0004-SG0005-AS0003",
+			"Name": "Allow Mass Change"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Create Renewal Opportunity",
+			"FieldName__c": "CreateRenewalOpportunity__c",
+			"DefaultId__c": "AF0004-SG0005-AS0004",
+			"Name": "Create Renewal Opportunity",
+			"HelpText__c": "Indicates whether a renewal opportunity should be created for system generated asset renewal quotes"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Renew One Ramp",
+			"FieldName__c": "RenewOneRamp__c",
+			"DefaultId__c": "AF0004-SG0005-AS0005",
+			"Name": "Renew One Ramp",
+			"HelpText__c": "Renew only one ramp line item based on the new term in order of renewal term in asset line item, default renewal term in installed product setting and selling term in asset line item."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Service Coverage",
+			"FieldName__c": "ShowServiceCoverage__c",
+			"DefaultId__c": "AF0004-SG0005-AS0006",
+			"Name": "Show Service Coverage",
+			"HelpText__c": "Determines whether service coverage will be displayed for a primary service."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Account Hierarchy Batch Size",
+			"FieldName__c": "AccountHierarchyBatchSize__c",
+			"DefaultId__c": "AF0004-SG0005-AS0007",
+			"Name": "Account Hierarchy Batch Size",
+			"HelpText__c": "Indicates the number of Account Hierarchy records processed per batch execution. Recommended value is 500. Valid values range from 1 to 2000."
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "End Date preferences for Cotermination",
+			"FieldName__c": "EndDatePreferencesForCotermination__c",
+			"DefaultId__c": "AF0004-SG0006-AS0001",
+			"Name": "End Date preferences for Cotermination",
+			"StaticPicklistOptions__c": "RetainCurrentAssetEndDate,UseCustomDate,UseProposalEndDate"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Picklist",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Default Cotermination Option",
+			"FieldName__c": "DefaultCoterminationOption__c",
+			"DefaultId__c": "AF0004-SG0006-AS0002",
+			"Name": "Default Cotermination Option",
+			"StaticPicklistOptions__c": "RetainCurrentAssetEndDate,UseCustomDate,UseProposalEndDate"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Relate Action Criteria Fields",
+			"FieldName__c": "RelateActionCriteriaFields__c",
+			"DefaultId__c": "AF0004-SG0007-AS0001",
+			"Name": "Relate Action Criteria Fields"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Asset Source",
+			"FieldName__c": "AssetSource__c",
+			"DefaultId__c": "AF0004-SG0008-AS0001",
+			"Name": "Asset Source"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Mass Edit Criteria",
+			"FieldName__c": "MassEditActionCriteriaFields__c",
+			"DefaultId__c": "AF0004-SG0009-AS0001",
+			"Name": "Mass Edit Criteria"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Purchase Id Criteria",
+			"FieldName__c": "PurchaseIdentificationCriteria__c",
+			"DefaultId__c": "AF0004-SG0010-AS0001",
+			"Name": "Purchase Id Criteria"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Split Asset Actions",
+			"FieldName__c": "SplitAssetActions__c",
+			"DefaultId__c": "AF0004-SG0011-AS0001",
+			"StaticPicklistOptions__c": "Amend,Renew,Swap",
+			"Name": "Split Asset Actions"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Asset Termination Fields",
+			"FieldName__c": "AssetTerminationFields__c",
+			"DefaultId__c": "AF0004-SG0013-AS0001",
+			"Name": "Asset Termination Fields"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Merge Action Criteria Fields",
+			"FieldName__c": "MergeActionCriteriaFields__c",
+			"DefaultId__c": "AF0004-SG0014-AS0001",
+			"Name": "Merge Action Criteria Fields"
+		},
+		{
+			"CustomSettingName__c": "InstalledProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Multi-Select Checkbox",
+			"FieldLabel__c": "Editable Fields For Cancelled Lines",
+			"FieldName__c": "EditableFieldsForCancelledLines__c",
+			"DefaultId__c": "AF0004-SG0015-AS0001",
+			"Name": "Editable Fields For Cancelled Lines"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayActions__c",
+			"RecordKey__c": "Cost Line Item",
+			"DefaultId__c": "AF0005-SG0001-AS0001",
+			"Name": "Navigation and Actions"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "CostLineItem__c",
+			"RecordKey__c": "Cost Line Item",
+			"DefaultId__c": "AF0005-SG0002-AS0001",
+			"Name": "Cost Line Item"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "LineItem__c",
+			"RecordKey__c": "Line Item Waterfall",
+			"DefaultId__c": "AF0005-SG0003-AS0001",
+			"Name": "Line Item Waterfall"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "LineItem__c",
+			"RecordKey__c": "Line Item Metrics",
+			"DefaultId__c": "AF0005-SG0004-AS0001",
+			"Name": "Line Item Metrics"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "SummaryGroup__c",
+			"RecordKey__c": "Summary Metrics",
+			"DefaultId__c": "AF0005-SG0005-AS0001",
+			"Name": "Summary Metrics"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "SummaryGroup__c",
+			"RecordKey__c": "Summary Waterfall",
+			"DefaultId__c": "AF0005-SG0006-AS0001",
+			"Name": "Summary Waterfall"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "LineItem__c",
+			"RecordKey__c": "Collab Parent Line Item",
+			"DefaultId__c": "AF0006-SG0002-AS0001",
+			"Name": "Parent Line Item Columns"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomDisplayColumns__c",
+			"ObjectNameForPicklistOptions__c": "LineItem__c",
+			"RecordKey__c": "Collab Child Line Item",
+			"DefaultId__c": "AF0006-SG0003-AS0001",
+			"Name": "Chid Line Item Columns"
+		},
+		{
+			"CustomSettingName__c": "ConfigFlow__c",
+			"CustomSettingRecordName__c": "Default",
+			"FieldLabel__c": "Attribute Page",
+			"FieldName__c": "ProductAttributeDetailPage__c",
+			"DefaultId__c": "AF0007-SG0001-AS0001",
+			"Name": "Attribute_DefaultFlow"
+		},
+		{
+			"CustomSettingName__c": "ConfigFlow__c",
+			"CustomSettingRecordName__c": "Default",
+			"FieldLabel__c": "Cart Page",
+			"FieldName__c": "CartPage__c",
+			"DefaultId__c": "AF0007-SG0001-AS0002",
+			"Name": "Cart_DefaultFlow"
+		},
+		{
+			"CustomSettingName__c": "ConfigFlow__c",
+			"CustomSettingRecordName__c": "Default",
+			"FieldLabel__c": "Catalog Page",
+			"FieldName__c": "CatalogPage__c",
+			"DefaultId__c": "AF0007-SG0001-AS0003",
+			"Name": "Catalog_DefaultFlow"
+		},
+		{
+			"CustomSettingName__c": "ConfigFlow__c",
+			"CustomSettingRecordName__c": "Default",
+			"FieldLabel__c": "Option Page",
+			"FieldName__c": "OptionsPage__c",
+			"DefaultId__c": "AF0007-SG0001-AS0004",
+			"Name": "Option_DefaultFlow"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable External Pricing",
+			"FieldName__c": "EnableExternalPricing__c",
+			"DefaultId__c": "AF0008-SG0001-AS0001",
+			"Name": "Enable External Pricing"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Picklist",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Pricing Profile",
+			"FieldName__c": "PricingProfile__c",
+			"DefaultId__c": "AF0008-SG0001-AS0002",
+			"StaticPicklistOptions__c": "Basic,Advanced,External",
+			"Name": "Pricing Profile"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Defer Pricing",
+			"FieldName__c": "DeferPricingUntilCart__c",
+			"DefaultId__c": "AF0008-SG0001-AS0003",
+			"Name": "Defer Pricing"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Picklist",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Totaling Group Type",
+			"FieldName__c": "TotalingGroupType__c",
+			"DefaultId__c": "AF0008-SG0002-AS0001",
+			"StaticPicklistOptions__c": "Category,Product",
+			"Name": "Totaling Group Type"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Disable Charge Type Totaling",
+			"FieldName__c": "DisableChargeTypeTotaling__c",
+			"DefaultId__c": "AF0008-SG0002-AS0002",
+			"Name": "Disable Charge Type Totaling"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Adhoc/Product Totaling Hierarchy",
+			"FieldName__c": "ProductTotalingHierarchy__c",
+			"DefaultId__c": "AF0008-SG0002-AS0003",
+			"Name": "Adhoc/Product Totaling Hierarchy"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Compute Totals In Separate Step",
+			"FieldName__c": "ComputeTotalsInSeparateStep__c",
+			"DefaultId__c": "AF0008-SG0002-AS0004",
+			"Name": "Compute Totals In Separate Step"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Aggregate Pricing",
+			"FieldName__c": "EnableAggregatePricing__c",
+			"DefaultId__c": "AF0008-SG0003-AS0001",
+			"Name": "Enable Aggregate Pricing"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Keyed Matrix Pricing",
+			"FieldName__c": "SkipPricingOnSelectPages__c",
+			"DefaultId__c": "AF0008-SG0003-AS0002",
+			"Name": "Enable Keyed Matrix Pricing"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Matrix Pricing For Options",
+			"FieldName__c": "EnableMatrixPricingForOptions__c",
+			"DefaultId__c": "AF0008-SG0003-AS0003",
+			"Name": "Enable Matrix Pricing For Options"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Auto Reprice",
+			"FieldName__c": "EnableAutoReprice__c",
+			"DefaultId__c": "AF0008-SG0003-AS0004",
+			"Name": "Enable Auto Reprice"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Max Adjustment Lines",
+			"FieldName__c": "MaxAdjustmentLines__c",
+			"DefaultId__c": "AF0008-SG0003-AS0005",
+			"Name": "Max Adjustment Lines"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Disable Constraint Rules",
+			"FieldName__c": "DisableConstraintRules__c",
+			"DefaultId__c": "AF0009-SG0001-AS0001",
+			"Name": "Disable Constraint Rules"
+		},
+		{
+			"CustomSettingName__c": "ConfigSelectConfigProductsSettings__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Show Checkbox In Rule Dialog",
+			"FieldName__c": "ShowCheckboxInRuleDialog__c",
+			"DefaultId__c": "AF0009-SG0001-AS0002",
+			"Name": "Show Checkbox In Rule Dialog"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Defer Constraint on Option Selection",
+			"FieldName__c": "AlertSelectedExclude__c",
+			"DefaultId__c": "AF0009-SG0001-AS0003",
+			"Name": "Defer Constraint on Option Selection"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Max Constraint Rules Round Trip",
+			"FieldName__c": "MaxConstraintRulesRoundTrip__c",
+			"DefaultId__c": "AF0009-SG0001-AS0004",
+			"Name": "Max Constraint Rules Round Trip"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Defer Validation Check In Bundles",
+			"FieldName__c": "DeferValidationCheckInBundles__c",
+			"DefaultId__c": "AF0009-SG0001-AS0005",
+			"Name": "Defer Validation Check In Bundles"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Picklist",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Constraint Rule Execution Mode",
+			"FieldName__c": "ConstraintRuleExecutionMode__c",
+			"DefaultId__c": "AF0009-SG0001-AS0006",
+			"Name": "Constraint Rule Execution Mode",
+			"StaticPicklistOptions__c": "Client,Server,CMS"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Cascade Shared Attribute Updates",
+			"FieldName__c": "CascadeSharedAttributeUpdates__c",
+			"DefaultId__c": "AF0009-SG0002-AS0001",
+			"Name": "Cascade Shared Attribute Updates"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Populate Attribute Extensions",
+			"FieldName__c": "PopulateAttributeExtensions__c",
+			"DefaultId__c": "AF0009-SG0002-AS0002",
+			"Name": "Populate Attribute Extensions"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Product Attribute Value Ext Lookup Fields",
+			"FieldName__c": "ProductAttributeExtensionLookupFields__c",
+			"DefaultId__c": "AF0009-SG0002-AS0003",
+			"Name": "Product Attribute Value Ext Lookup Fields"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable Field Expressions",
+			"FieldName__c": "EnableFieldExpression__c",
+			"DefaultId__c": "AF0009-SG0003-AS0001",
+			"Name": "Enable Field Expressions"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Picklist",
+			"DisplayType__c": "Picklist",
+			"FieldLabel__c": "Field Expressions Execution Mode",
+			"FieldName__c": "FieldExpressionsExecutionMode__c",
+			"DefaultId__c": "AF0009-SG0003-AS0002",
+			"StaticPicklistOptions__c": "Client,Server",
+			"Name": "Field Expressions Execution Mode"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Default Opportunity Quote Owner",
+			"FieldName__c": "Apttus_Proposal__DefaultOpportunityQuoteOwner__c",
+			"DefaultId__c": "AF0010-SG0001-AS0001",
+			"Name": "Default Opportunity Quote Owner"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Default Quote Agreement Owner",
+			"FieldName__c": "Apttus_Proposal__DefaultQuoteAgreementOwner__c",
+			"DefaultId__c": "AF0010-SG0001-AS0002",
+			"Name": "Default Quote Agreement Owner"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Disable Opportunity Products Copy",
+			"FieldName__c": "Apttus_Proposal__DisableOpportunityProductsCopy__c",
+			"DefaultId__c": "AF0010-SG0001-AS0003",
+			"Name": "Disable Opportunity Products Copy"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Email Template For Presenting Proposals",
+			"FieldName__c": "Apttus_Proposal__EmailTemplateForPresentingProposals__c",
+			"DefaultId__c": "AF0010-SG0001-AS0004",
+			"Name": "Email Template For Presenting Proposals"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Lifecycle Callback Class",
+			"FieldName__c": "Apttus_Proposal__LifecycleCallbackClass__c",
+			"DefaultId__c": "AF0010-SG0001-AS0005",
+			"Name": "Lifecycle Callback Class"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Auto Sync With Opportunity",
+			"FieldName__c": "Apttus_QPConfig__AutoSyncWithOpportunity__c",
+			"DefaultId__c": "AF0010-SG0002-AS0001",
+			"Name": "Auto Sync With Opportunity"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Sync Bundle Using Line Items",
+			"FieldName__c": "Apttus_QPConfig__SyncBundleUsingLineItems__c",
+			"DefaultId__c": "AF0010-SG0002-AS0002",
+			"Name": "Sync Bundle Using Line Items"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Sync Option Products",
+			"FieldName__c": "Apttus_QPConfig__SyncOptionProducts__c",
+			"DefaultId__c": "AF0010-SG0002-AS0003",
+			"Name": "Sync Option Products"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Instance Url",
+			"FieldName__c": "Apttus_Proposal__InstanceUrl__c",
+			"DefaultId__c": "AF0010-SG0003-AS0001",
+			"Name": "Instance Url"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Merge Call Timeout Millis",
+			"FieldName__c": "Apttus_Proposal__MergeCallTimeoutMillis__c",
+			"DefaultId__c": "AF0010-SG0003-AS0002",
+			"Name": "Merge Call Timeout Millis"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Merge Webservice Endpoint",
+			"FieldName__c": "Apttus_Proposal__MergeWebserviceEndpoint__c",
+			"DefaultId__c": "AF0010-SG0003-AS0003",
+			"Name": "Merge Webservice Endpoint"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Max Child Level",
+			"FieldName__c": "Apttus_Proposal__MaxChildLevel__c",
+			"DefaultId__c": "AF0010-SG0003-AS0004",
+			"Name": "Max Child Level"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Auto Select Attachment?",
+			"FieldName__c": "Apttus_QPDSign__AutoSelectAttachment__c",
+			"DefaultId__c": "AF0010-SG0004-AS0001",
+			"Name": "Auto Select Attachment?"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Auto Select Recipient Field Name",
+			"FieldName__c": "Apttus_QPDSign__FieldNameAutoSelectRecipient__c",
+			"DefaultId__c": "AF0010-SG0004-AS0002",
+			"Name": "Auto Select Recipient Field Name"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Auto-Select multiple recipients?",
+			"FieldName__c": "Apttus_QPDSign__AutoSelectMultipleRecipients__c",
+			"DefaultId__c": "AF0010-SG0004-AS0003",
+			"Name": "Auto-Select multiple recipients?"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "PDF Owner Password",
+			"FieldName__c": "Apttus_Proposal__PDFOwnerPwd__c",
+			"DefaultId__c": "AF0010-SG0005-AS0001",
+			"Name": "PDF Owner Password"
+		},
+		{
+			"CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Enable PDF Security",
+			"FieldName__c": "Apttus_Proposal__EnablePDFSecurity__c",
+			"DefaultId__c": "AF0010-SG0005-AS0002",
+			"Name": "Enable PDF Security"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Instance Url",
+			"FieldName__c": "InstanceUrl__c",
+			"DefaultId__c": "AF0011-SG0001-AS0001",
+			"Name": "Instance Url"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Keep Abandoned Carts",
+			"FieldName__c": "KeepAbandonedCarts__c",
+			"DefaultId__c": "AF0011-SG0001-AS0002",
+			"Name": "Keep Abandoned Carts"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "CSS Override",
+			"FieldName__c": "CSSOverride__c",
+			"DefaultId__c": "AF0011-SG0001-AS0003",
+			"Name": "CSS Override"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Bypass Shopping Cart",
+			"FieldName__c": "BypassShoppingCart__c",
+			"DefaultId__c": "AF0011-SG0001-AS0004",
+			"Name": "Bypass Shopping Cart"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Auto Update Category View",
+			"FieldName__c": "AutoUpdateCategoryView__c",
+			"DefaultId__c": "AF0011-SG0001-AS0005",
+			"Name": "Auto Update Category View"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Percentage Field Precision",
+			"FieldName__c": "PercentageFieldPrecision__c",
+			"DefaultId__c": "AF0011-SG0002-AS0001",
+			"Name": "Percentage Field Precision"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Currency Field Precision",
+			"FieldName__c": "CurrencyFieldPrecision__c",
+			"DefaultId__c": "AF0011-SG0002-AS0002",
+			"Name": "Currency Field Precision"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Quantity Field Precision",
+			"FieldName__c": "QuantityFieldPrecision__c",
+			"DefaultId__c": "AF0011-SG0002-AS0003",
+			"Name": "Quantity Field Precision"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Number",
+			"DisplayType__c": "Number",
+			"FieldLabel__c": "Term Field Precision",
+			"FieldName__c": "TermFieldPrecision__c",
+			"DefaultId__c": "AF0011-SG0002-AS0004",
+			"Name": "Term Field Precision"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Run Finalization Task In Async Mode",
+			"FieldName__c": "RunSecondaryFinalizationTaskInAsyncMode__c",
+			"DefaultId__c": "AF0011-SG0003-AS0001",
+			"Name": "Run Finalization Task In Async Mode"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Auto Finalize On Cart Approval",
+			"FieldName__c": "AutoFinalizeOnCartApproval__c",
+			"DefaultId__c": "AF0011-SG0003-AS0002",
+			"Name": "Auto Finalize On Cart Approval"
+		},
+		{
+			"CustomSettingName__c": "ConfigSystemProperties__c",
+			"CustomSettingRecordName__c": "System Properties",
+			"DataType__c": "Boolean",
+			"DisplayType__c": "Boolean Checkbox",
+			"FieldLabel__c": "Auto Sync On Cart Approval",
+			"FieldName__c": "AutoSyncOnCartApproval__c",
+			"DefaultId__c": "AF0011-SG0003-AS0003",
+			"Name": "Auto Sync On Cart Approval"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Action Invoker Callback Class",
+			"FieldName__c": "ActionInvokerCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0001",
+			"Name": "Action Invoker Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Action Params Callback Class",
+			"FieldName__c": "ActionParamsCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0002",
+			"Name": "Action Params Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Adjustment Line Item Callback Class",
+			"FieldName__c": "ActionParamsCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0003",
+			"Name": "Adjustment Line Item Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Advanced Approval Callback Class",
+			"FieldName__c": "AdvancedApprovalCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0004",
+			"Name": "Advanced Approval Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Asset Line Item Callback Class",
+			"FieldName__c": "AssetLineItemCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0005",
+			"Name": "Asset Line Item Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Cart Approval Callback Class",
+			"FieldName__c": "CartApprovalCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0006",
+			"Name": "Cart Approval Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Deal Optimizer Callback Class",
+			"FieldName__c": "DealOptimizerCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0007",
+			"Name": "Deal Optimizer Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Display Action Callback Class",
+			"FieldName__c": "DisplayActionCallbackCalss__c",
+			"DefaultId__c": "AF0011-SG0005-AS0008",
+			"Name": "Display Action Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Formula Callback Class",
+			"FieldName__c": "FormulaCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0009",
+			"Name": "Formula Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Metadata Callback Class",
+			"FieldName__c": "MetadataCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0010",
+			"Name": "Metadata Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Pricing Callback Class",
+			"FieldName__c": "PricingCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0011",
+			"Name": "Pricing Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Product Attribute Callback Class",
+			"FieldName__c": "ProductAttributeCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0012",
+			"Name": "Product Attribute Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Product Filter Callback Class",
+			"FieldName__c": "ProductFilterCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0013",
+			"Name": "Product Filter Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Recommendation Callback Class",
+			"FieldName__c": "RecommendationCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0014",
+			"Name": "Recommendation Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Related Pricing Callback Class",
+			"FieldName__c": "RelatedPricingCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0015",
+			"Name": "Related Pricing Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Shipping Callback Class",
+			"FieldName__c": "ShippingCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0016",
+			"Name": "Shipping Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Tax Callback Class",
+			"FieldName__c": "TaxCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0017",
+			"Name": "Tax Callback Class"
+		},
+		{
+			"CustomSettingName__c": "ConfigCustomClasses__c",
+			"CustomSettingRecordName__c": "Primary Settings",
+			"DataType__c": "Text",
+			"DisplayType__c": "Text",
+			"FieldLabel__c": "Validation Callback Class",
+			"FieldName__c": "ValidationCallbackClass__c",
+			"DefaultId__c": "AF0011-SG0005-AS0018",
+			"Name": "Validation Callback Class"
+		}
+	],
+	"NSApplicationFeatures": [
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0001",
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Catalog Page"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0002",
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Config Page"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0003",
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Cart Page"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0004",
+			"Apttus_Config2__Sequence__c": 4,
+			"Name": "Installed Products"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0005",
+			"Apttus_Config2__Sequence__c": 5,
+			"Name": "Analyze Deal"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0006",
+			"Apttus_Config2__Sequence__c": 6,
+			"Name": "Collaboration"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0007",
+			"Apttus_Config2__Sequence__c": 7,
+			"Name": "Flow Management"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0008",
+			"Apttus_Config2__Sequence__c": 8,
+			"Name": "Pricing Engine"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0009",
+			"Apttus_Config2__Sequence__c": 9,
+			"Name": "Configuration Engine"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0010",
+			"Apttus_Config2__Sequence__c": 10,
+			"Name": "Proposal Settings"
+		},
+		{
+			"Apttus_Config2__ApplicationName__c": "CPQ",
+			"Apttus_Config2__DefaultId__c": "AF0011",
+			"Apttus_Config2__Sequence__c": 11,
+			"Name": "Developer"
+		}
+	],
+	"NSSettingGroups": [
+		{
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Actions",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Display Settings"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Display Settings"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Actions",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Display Settings"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Actions",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Cart Lines Columns"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0004",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 4,
+			"Name": "Totals Columns"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0005",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 5,
+			"Name": "Price Ramp"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0006",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 6,
+			"Name": "Usage Price Tier"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0007",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 7,
+			"Name": "Tiered Price"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0008",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 8,
+			"Name": "Related Price"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0009",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 9,
+			"Name": "Adjustment Line Item"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0010",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 10,
+			"Name": "Mass Update"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0011",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 11,
+			"Name": "Agreement Price Rule"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0012",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Custom",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 12,
+			"Name": "Cart Views"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Actions",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Columns"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "General Settings"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 4,
+			"Name": "Renewal"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 5,
+			"Name": "Miscellaneous"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0006",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 6,
+			"Name": "Cotermination Preferences"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0007",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 7,
+			"Name": "Relate Criteria"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0008",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 8,
+			"Name": "Asset Source"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0009",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 9,
+			"Name": "Mass Edit Criteria"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0010",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 10,
+			"Name": "Purchase Id Criteria"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0011",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 11,
+			"Name": "Split Asset Actions"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0012",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Custom",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 12,
+			"Name": "Asset Views"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0013",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 13,
+			"Name": "Asset Termination Fields"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0014",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 14,
+			"Name": "Merge Action Criteria"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0015",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 15,
+			"Name": "Editable Fields For Cancelled Lines"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Actions",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Navigation and Actions"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Cost Line Item"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Line Item Waterfall"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0004",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 4,
+			"Name": "Line Item Metrics"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0005",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 5,
+			"Name": "Summary Metrics"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0006",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 6,
+			"Name": "Summary Waterfall"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0006-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Parent Line Item Columns"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0006-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Columns",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Chid Line Item Columns"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0007-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "Flow",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Flow Management"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Global Pricing"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Totaling and Subtotaling"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Advanced Pricing"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Constraint Rules"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Attributes"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Expressions"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "Default"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Syncing"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Merge Service"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0004",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 4,
+			"Name": "eSign"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0005",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 5,
+			"Name": "Security"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0006",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 6,
+			"Name": "Other"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0001",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 1,
+			"Name": "System Global"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0002",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 2,
+			"Name": "Field Precision"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0003",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 3,
+			"Name": "Finalization & Approvals"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0004",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 4,
+			"Name": "Lookup Field"
+		},
+		{
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005",
+			"Apttus_Config2__ConfigFlow__c": "Default",
+			"Apttus_Config2__DisplayType__c": "List",
+			"Apttus_Config2__IsCustom__c": false,
+			"Apttus_Config2__Sequence__c": 5,
+			"Name": "Custom Classes"
+		}
+	],
+	"NSApplicationSettings": [
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayActions__c",
+			"Apttus_Config2__RecordKey__c": "Catalog Item",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0001-AS0001",
+			"Name": "Catalog Actions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Location",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableLocation__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0001",
+			"Name": "Enable Location"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Compare Products",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideCompareProducts__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0002",
+			"Name": "Hide Compare Products"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Help Me Choose",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideHelpMeChoose__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0003",
+			"Name": "Hide Help Me Choose"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Disable Add Another",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DisableAddAnother__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0004",
+			"Name": "Disable Add Another"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Configure Action",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideConfigureAction__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0005",
+			"Name": "Hide Configure Action"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Default Options In Description",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideDefaultOptionsInDescription__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0006",
+			"Name": "Hide Default Options In Description"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Listed Products Price Column",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideListedProductsPriceColumn__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0007",
+			"Name": "Hide Listed Products Price Column"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Listed Products Column2",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ListedProductsColumn2__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0008",
+			"Name": "Listed Products Column2"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Listed Products Column3",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ListedProductsColumn3__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0009",
+			"Name": "Listed Products Column3"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Quantity Input",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowQuantity__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0010",
+			"Name": "Show Quantity Input"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Search Category Default",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__SearchCategoryDefault__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0011",
+			"Name": "Search Category Default"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Single Top Category",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideSingleTopCategory__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0012",
+			"Name": "Hide Single Top Category"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Category Filter",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableCategoryFilter__c",
+			"Apttus_Config2__DefaultId__c": "AF0001-SG0002-AS0013",
+			"Name": "Enable Category Filter"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Disabled Options",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideDisabledOptions__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0001",
+			"Name": "Hide Disabled Options"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Price Column",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HidePriceColumn__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0002",
+			"Name": "Hide Price Column"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Listed Options Column 2",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ListedOptionsColumn2__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0003",
+			"Name": "Listed Options Column 2"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Listed Options Column 3",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ListedOptionsColumn3__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0004",
+			"Name": "Listed Options Column 3"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Option Quantity",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowOptionQuantity__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0005",
+			"Name": "Show Option Quantity"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Collapse All Leaf Option Groups",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CollapseAllLeafOptionGroups__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0006",
+			"Name": "Collapse All Leaf Option Groups"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Disable Add To Cart for Option Products",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DisableAddToCartForOptionProducts__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0007",
+			"Name": "Disable Add To Cart for Option Products"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Tab View",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__TabViewInConfigureBundle__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0008",
+			"Name": "Show Tab View"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Bundle Description Field",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__BundleDescriptionField__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0010",
+			"Name": "Bundle Description Field"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Bundle Detail",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowBundleDetail__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0011",
+			"Name": "Show Bundle Detail"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Option Page Search",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableOptionPageSearch__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0012",
+			"Name": "Enable Option Page Search"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectBundleOptionsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Max Inline Option Attributes",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MaxInlineOptionAttributes__c",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0001-AS0013",
+			"Name": "Max Inline Option Attributes"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayActions__c",
+			"Apttus_Config2__RecordKey__c": "Attribute Item",
+			"Apttus_Config2__DefaultId__c": "AF0002-SG0002-AS0001",
+			"Name": "Config Actions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Auto Sequencing For Options",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableAutoSequencingForOptions__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0001",
+			"Name": "Enable Auto Sequencing For Options"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Recommended Products Cart View",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowRecommendedProductsCartView__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0002",
+			"Name": "Show Recommended Products Cart View"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Product Display Max Length",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ProductDisplayMaxLength__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0003",
+			"Name": "Product Display Max Length"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Attributes In Cart",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowAttributesInCart__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0004",
+			"Name": "Show Attributes In Cart"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Expand Bundles In Cart",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ExpandBundleLinesByDefault__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0005",
+			"Name": "Expand Bundles In Cart"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Copy Action",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideCopyAction__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0006",
+			"Name": "Hide Copy Action"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "GroupBy Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__GroupByFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0007",
+			"Name": "GroupBy Fields"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Grand Total",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideGrandTotal__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0008",
+			"Name": "Hide Grand Total"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Subtotals In Cart",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideSubtotalsInCart__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0009",
+			"Name": "Hide Subtotals In Cart"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "View Cart Total Custom Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ViewCartTotalCustomFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0001-AS0010",
+			"Name": "View Cart Total Custom Fields"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayActions__c",
+			"Apttus_Config2__RecordKey__c": "Cart Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0002-AS0001",
+			"Name": "Cart Actions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__LineItem__c",
+			"Apttus_Config2__RecordKey__c": "Cart Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0003-AS0001",
+			"Name": "Cart Lines Columns"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__SummaryGroup__c",
+			"Apttus_Config2__RecordKey__c": "Cart Total Item",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0004-AS0001",
+			"Name": "Totals Columns"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__LineItem__c",
+			"Apttus_Config2__RecordKey__c": "Price Ramp",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0005-AS0001",
+			"Name": "Price Ramp"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__UsagePriceTier__c",
+			"Apttus_Config2__RecordKey__c": "Usage Price Tier",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0006-AS0001",
+			"Name": "Usage Price Tier"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__PriceBreakup__c",
+			"Apttus_Config2__RecordKey__c": "Tiered Price",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0007-AS0001",
+			"Name": "Tiered Price"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__PriceBreakup__c",
+			"Apttus_Config2__RecordKey__c": "Related Price",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0008-AS0001",
+			"Name": "Related Price"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__AdjustmentLineItem__c",
+			"Apttus_Config2__RecordKey__c": "Adjustment Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0009-AS0001",
+			"Name": "Adjustment Line Item"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__LineItem__c",
+			"Apttus_Config2__RecordKey__c": "Mass Update",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0010-AS0001",
+			"Name": "Mass Update"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__AgreementPriceRule__c",
+			"Apttus_Config2__RecordKey__c": "Agreement Price Rule",
+			"Apttus_Config2__DefaultId__c": "AF0003-SG0011-AS0001",
+			"Name": "Agreement Price Rule"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayActions__c",
+			"Apttus_Config2__RecordKey__c": "Asset Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0001-AS0001",
+			"Name": "Navigation and Actions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__AssetLineItem__c",
+			"Apttus_Config2__RecordKey__c": "Asset Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0002-AS0001",
+			"Name": "Columns"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Direct Configure Asset Actions",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DirectConfigureAssetActions__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0001",
+			"Name": "Direct Configure Asset Actions",
+			"Apttus_Config2__HelpText__c": "Comma separated values of Increment, Amend, Renew, Cancel actions. Listed actions will configure products directly."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Hide Asset Actions",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideAssetActions__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0002",
+			"Name": "Hide Asset Actions",
+			"Apttus_Config2__HelpText__c": "Comma separated values of Increment, Amend, Renew, Cancel actions. Listed actions will be hidden from the users."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Submenu Actions",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__SubmenuActions__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0003",
+			"Name": "Submenu Actions",
+			"Apttus_Config2__HelpText__c": "List of actions to be displayed in the asset action submenu dropdowns separated by commas."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Max Renews Per Trip",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MaxRenewsPerTrip__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0004",
+			"Name": "Max Renews Per Trip",
+			"Apttus_Config2__HelpText__c": "To prevent CPU timeout use a smaller number. Default is 20"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Accounts Filter",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowAccountsFilter__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0005",
+			"Name": "Show Accounts Filter",
+			"Apttus_Config2__HelpText__c": "Display accounts filter in the installed products page"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Amend Change Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AmendChangeFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0006",
+			"Name": "Amend Change Fields",
+			"Apttus_Config2__HelpText__c": "Comma separated line item field names whose values can turn an existing asset line into amended asset line."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Filter Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__FilterFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0007",
+			"Name": "Filter Fields",
+			"Apttus_Config2__HelpText__c": "Asset Line Fields to be displayed on filter. Works with text fields and End Date."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Default Renewal Term",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DefaultRenewalTerm__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0008",
+			"Name": "Default Renewal Term",
+			"Apttus_Config2__HelpText__c": "When the value is provided use this value as the renewal term for Renewing products. Number signifies months to renew as the end date."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Hide Co-Term",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__HideCoTerm__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0009",
+			"Name": "Hide Co-Term",
+			"Apttus_Config2__HelpText__c": "Check to hide co-term end date on renew"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Allow Backdated Termination",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AllowBackdatedTermination__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0010",
+			"Name": "Allow Backdated Termination"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Show Assets",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowAssets__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0003-AS0011",
+			"Name": "Show Assets",
+			"Apttus_Config2__DefaultValue__c": "Current Account",
+			"Apttus_Config2__HelpText__c": "Comma separated values of Parents and/or Children or empty. If empty, only context account assets are shown. Examples: 1) parents 2) parents,children.",
+			"Apttus_Config2__StaticPicklistOptions__c": "Current Account,Parents,Parents and Children,Children"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Renewal Lead Time",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RenewalLeadTime__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0001",
+			"Name": "Renewal Lead Time"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Renewal Group Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RenewalGroupFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0002",
+			"Name": "Renewal Group Fields"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Default Renewal Price List",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DefaultRenewalPriceList__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0003",
+			"Name": "Default Renewal Price List"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Renewal Execution Mode",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RenewalExecutionMode__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0004",
+			"Name": "Renewal Execution Mode",
+			"Apttus_Config2__StaticPicklistOptions__c": "Auto,On Demand"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Max Renewal Line Item Per Cart",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MaxRenewalLineItemPerCart__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0005",
+			"Name": "Max Renewal Line Item Per Cart",
+			"Apttus_Config2__HelpText__c": "Max Renewal Line Item to be processed in one cart. Used to limit the size of product configuration to avoid exceeding CPU and SOQL limits."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Max Renewal Group Per Job",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MaxRenewalGroupPerJob__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0006",
+			"Name": "Max Renewal Group Per Job"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Renewal Default Price Book",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RenewalDefaultPriceBook__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0007",
+			"Name": "Renewal Default Price Book",
+			"Apttus_Config2__HelpText__c": "Default price book name used in renewal opportunity"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Renewal Business Object Type",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RenewalBusinessObjectType__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0008",
+			"Name": "Renewal Business Object Type",
+			"Apttus_Config2__StaticPicklistOptions__c": "Proposal,Agreement"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Cotermination Preferences During Renewal",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CoterminationPreferencesDuringRenewal__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0009",
+			"Name": "Cotermination Preferences During Renewal",
+			"Apttus_Config2__StaticPicklistOptions__c": "UseProposalOrAgreementEndDate,RetainCurrentAssetEndDate,UseFarthestAssetEndDate,UseRenewalDate"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Picklist",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Default Renewal Cotermination Option",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DefaultRenewalCoterminationOption__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0004-AS0010",
+			"Name": "Default Renewal Cotermination Option",
+			"Apttus_Config2__StaticPicklistOptions__c": "UseProposalOrAgreementEndDate,RetainCurrentAssetEndDate,UseFarthestAssetEndDate,UseRenewalDate"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable One Time Change",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableOneTimeChange__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005-AS0001",
+			"Name": "Enable One Time Change",
+			"Apttus_Config2__HelpText__c": "Allow users to make change to one time line item."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Asset Currency Field Precision",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AssetCurrencyFieldPrecision__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005-AS0002",
+			"Name": "Asset Currency Field Precision"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Allow Mass Change",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AllowMassChange__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005-AS0003",
+			"Name": "Allow Mass Change"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Create Renewal Opportunity",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CreateRenewalOpportunity__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005-AS0004",
+			"Name": "Create Renewal Opportunity",
+			"Apttus_Config2__HelpText__c": "Indicates whether a renewal opportunity should be created for system generated asset renewal quotes"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Renew One Ramp",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RenewOneRamp__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005-AS0005",
+			"Name": "Renew One Ramp",
+			"Apttus_Config2__HelpText__c": "Renew only one ramp line item based on the new term in order of renewal term in asset line item, default renewal term in installed product setting and selling term in asset line item."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Service Coverage",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowServiceCoverage__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005-AS0006",
+			"Name": "Show Service Coverage",
+			"Apttus_Config2__HelpText__c": "Determines whether service coverage will be displayed for a primary service."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Account Hierarchy Batch Size",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AccountHierarchyBatchSize__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0005-AS0007",
+			"Name": "Account Hierarchy Batch Size",
+			"Apttus_Config2__HelpText__c": "Indicates the number of Account Hierarchy records processed per batch execution. Recommended value is 500. Valid values range from 1 to 2000."
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "End Date preferences for Cotermination",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EndDatePreferencesForCotermination__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0006-AS0001",
+			"Name": "End Date preferences for Cotermination",
+			"Apttus_Config2__IsPicklist__c": true,
+			"Apttus_Config2__StaticPicklistOptions__c": "RetainCurrentAssetEndDate,UseCustomDate,UseProposalEndDate"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Picklist",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Default Cotermination Option",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DefaultCoterminationOption__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0006-AS0002",
+			"Name": "Default Cotermination Option",
+			"Apttus_Config2__StaticPicklistOptions__c": "RetainCurrentAssetEndDate,UseCustomDate,UseProposalEndDate"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Relate Action Criteria Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RelateActionCriteriaFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0007-AS0001",
+			"Name": "Relate Action Criteria Fields"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Asset Source",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AssetSource__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0008-AS0001",
+			"Name": "Asset Source"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Mass Edit Criteria",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MassEditActionCriteriaFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0009-AS0001",
+			"Name": "Mass Edit Criteria"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Purchase Id Criteria",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__PurchaseIdentificationCriteria__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0010-AS0001",
+			"Name": "Purchase Id Criteria"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Split Asset Actions",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__SplitAssetActions__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0011-AS0001",
+			"Apttus_Config2__StaticPicklistOptions__c": "Amend,Renew,Swap",
+			"Name": "Split Asset Actions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Asset Termination Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AssetTerminationFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0013-AS0001",
+			"Name": "Asset Termination Fields"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Merge Action Criteria Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MergeActionCriteriaFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0014-AS0001",
+			"Name": "Merge Action Criteria Fields"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__InstalledProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Multi-Select Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Editable Fields For Cancelled Lines",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EditableFieldsForCancelledLines__c",
+			"Apttus_Config2__DefaultId__c": "AF0004-SG0015-AS0001",
+			"Name": "Editable Fields For Cancelled Lines"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayActions__c",
+			"Apttus_Config2__RecordKey__c": "Cost Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0001-AS0001",
+			"Name": "Navigation and Actions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__CostLineItem__c",
+			"Apttus_Config2__RecordKey__c": "Cost Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0002-AS0001",
+			"Name": "Cost Line Item"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__LineItem__c",
+			"Apttus_Config2__RecordKey__c": "Line Item Waterfall",
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0003-AS0001",
+			"Name": "Line Item Waterfall"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__LineItem__c",
+			"Apttus_Config2__RecordKey__c": "Line Item Metrics",
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0004-AS0001",
+			"Name": "Line Item Metrics"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__SummaryGroup__c",
+			"Apttus_Config2__RecordKey__c": "Summary Metrics",
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0005-AS0001",
+			"Name": "Summary Metrics"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__SummaryGroup__c",
+			"Apttus_Config2__RecordKey__c": "Summary Waterfall",
+			"Apttus_Config2__DefaultId__c": "AF0005-SG0006-AS0001",
+			"Name": "Summary Waterfall"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__LineItem__c",
+			"Apttus_Config2__RecordKey__c": "Collab Parent Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0006-SG0002-AS0001",
+			"Name": "Parent Line Item Columns"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomDisplayColumns__c",
+			"Apttus_Config2__ObjectNameForPicklistOptions__c": "Apttus_Config2__LineItem__c",
+			"Apttus_Config2__RecordKey__c": "Collab Child Line Item",
+			"Apttus_Config2__DefaultId__c": "AF0006-SG0003-AS0001",
+			"Name": "Chid Line Item Columns"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigFlow__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Default",
+			"Apttus_Config2__FieldLabel__c": "Attribute Page",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ProductAttributeDetailPage__c",
+			"Apttus_Config2__DefaultId__c": "AF0007-SG0001-AS0001",
+			"Name": "Attribute_DefaultFlow"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigFlow__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Default",
+			"Apttus_Config2__FieldLabel__c": "Cart Page",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CartPage__c",
+			"Apttus_Config2__DefaultId__c": "AF0007-SG0001-AS0002",
+			"Name": "Cart_DefaultFlow"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigFlow__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Default",
+			"Apttus_Config2__FieldLabel__c": "Catalog Page",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CatalogPage__c",
+			"Apttus_Config2__DefaultId__c": "AF0007-SG0001-AS0003",
+			"Name": "Catalog_DefaultFlow"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigFlow__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Default",
+			"Apttus_Config2__FieldLabel__c": "Option Page",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__OptionsPage__c",
+			"Apttus_Config2__DefaultId__c": "AF0007-SG0001-AS0004",
+			"Name": "Option_DefaultFlow"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable External Pricing",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableExternalPricing__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0001-AS0001",
+			"Name": "Enable External Pricing"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Picklist",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Pricing Profile",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__PricingProfile__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0001-AS0002",
+			"Apttus_Config2__StaticPicklistOptions__c": "Basic,Advanced,External",
+			"Name": "Pricing Profile"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Defer Pricing",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DeferPricingUntilCart__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0001-AS0003",
+			"Name": "Defer Pricing"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Picklist",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Totaling Group Type",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__TotalingGroupType__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0002-AS0001",
+			"Apttus_Config2__StaticPicklistOptions__c": "Category,Product",
+			"Name": "Totaling Group Type"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Disable Charge Type Totaling",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DisableChargeTypeTotaling__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0002-AS0002",
+			"Name": "Disable Charge Type Totaling"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Adhoc/Product Totaling Hierarchy",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ProductTotalingHierarchy__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0002-AS0003",
+			"Name": "Adhoc/Product Totaling Hierarchy"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Compute Totals In Separate Step",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ComputeTotalsInSeparateStep__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0002-AS0004",
+			"Name": "Compute Totals In Separate Step"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Aggregate Pricing",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableAggregatePricing__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0003-AS0001",
+			"Name": "Enable Aggregate Pricing"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Keyed Matrix Pricing",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__SkipPricingOnSelectPages__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0003-AS0002",
+			"Name": "Enable Keyed Matrix Pricing"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Matrix Pricing For Options",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableMatrixPricingForOptions__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0003-AS0003",
+			"Name": "Enable Matrix Pricing For Options"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Auto Reprice",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableAutoReprice__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0003-AS0004",
+			"Name": "Enable Auto Reprice"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Max Adjustment Lines",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MaxAdjustmentLines__c",
+			"Apttus_Config2__DefaultId__c": "AF0008-SG0003-AS0005",
+			"Name": "Max Adjustment Lines"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Disable Constraint Rules",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DisableConstraintRules__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0001-AS0001",
+			"Name": "Disable Constraint Rules"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSelectConfigProductsSettings__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Show Checkbox In Rule Dialog",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShowCheckboxInRuleDialog__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0001-AS0002",
+			"Name": "Show Checkbox In Rule Dialog"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Defer Constraint on Option Selection",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AlertSelectedExclude__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0001-AS0003",
+			"Name": "Defer Constraint on Option Selection"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Max Constraint Rules Round Trip",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MaxConstraintRulesRoundTrip__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0001-AS0004",
+			"Name": "Max Constraint Rules Round Trip"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Defer Validation Check In Bundles",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DeferValidationCheckInBundles__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0001-AS0005",
+			"Name": "Defer Validation Check In Bundles"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Picklist",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Constraint Rule Execution Mode",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ConstraintRuleExecutionMode__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0001-AS0006",
+			"Name": "Constraint Rule Execution Mode",
+			"Apttus_Config2__StaticPicklistOptions__c": "Client,Server,CMS"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Cascade Shared Attribute Updates",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CascadeSharedAttributeUpdates__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0002-AS0001",
+			"Name": "Cascade Shared Attribute Updates"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Populate Attribute Extensions",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__PopulateAttributeExtensions__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0002-AS0002",
+			"Name": "Populate Attribute Extensions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Product Attribute Value Ext Lookup Fields",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ProductAttributeExtensionLookupFields__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0002-AS0003",
+			"Name": "Product Attribute Value Ext Lookup Fields"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable Field Expressions",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__EnableFieldExpression__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0003-AS0001",
+			"Name": "Enable Field Expressions"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Picklist",
+			"Apttus_Config2__DisplayType__c": "Picklist",
+			"Apttus_Config2__FieldLabel__c": "Field Expressions Execution Mode",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__FieldExpressionsExecutionMode__c",
+			"Apttus_Config2__DefaultId__c": "AF0009-SG0003-AS0002",
+			"Apttus_Config2__StaticPicklistOptions__c": "Client,Server",
+			"Name": "Field Expressions Execution Mode"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Default Opportunity Quote Owner",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__DefaultOpportunityQuoteOwner__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0001-AS0001",
+			"Name": "Default Opportunity Quote Owner"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Default Quote Agreement Owner",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__DefaultQuoteAgreementOwner__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0001-AS0002",
+			"Name": "Default Quote Agreement Owner"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Disable Opportunity Products Copy",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__DisableOpportunityProductsCopy__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0001-AS0003",
+			"Name": "Disable Opportunity Products Copy"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Email Template For Presenting Proposals",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__EmailTemplateForPresentingProposals__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0001-AS0004",
+			"Name": "Email Template For Presenting Proposals"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Lifecycle Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__LifecycleCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0001-AS0005",
+			"Name": "Lifecycle Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Auto Sync With Opportunity",
+			"Apttus_Config2__FieldName__c": "Apttus_QPConfig__AutoSyncWithOpportunity__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0002-AS0001",
+			"Name": "Auto Sync With Opportunity"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Sync Bundle Using Line Items",
+			"Apttus_Config2__FieldName__c": "Apttus_QPConfig__SyncBundleUsingLineItems__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0002-AS0002",
+			"Name": "Sync Bundle Using Line Items"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Sync Option Products",
+			"Apttus_Config2__FieldName__c": "Apttus_QPConfig__SyncOptionProducts__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0002-AS0003",
+			"Name": "Sync Option Products"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Instance Url",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__InstanceUrl__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0003-AS0001",
+			"Name": "Instance Url"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Merge Call Timeout Millis",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__MergeCallTimeoutMillis__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0003-AS0002",
+			"Name": "Merge Call Timeout Millis"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Merge Webservice Endpoint",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__MergeWebserviceEndpoint__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0003-AS0003",
+			"Name": "Merge Webservice Endpoint"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Max Child Level",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__MaxChildLevel__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0003-AS0004",
+			"Name": "Max Child Level"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Auto Select Attachment?",
+			"Apttus_Config2__FieldName__c": "Apttus_QPDSign__AutoSelectAttachment__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0004-AS0001",
+			"Name": "Auto Select Attachment?"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Auto Select Recipient Field Name",
+			"Apttus_Config2__FieldName__c": "Apttus_QPDSign__FieldNameAutoSelectRecipient__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0004-AS0002",
+			"Name": "Auto Select Recipient Field Name"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Auto-Select multiple recipients?",
+			"Apttus_Config2__FieldName__c": "Apttus_QPDSign__AutoSelectMultipleRecipients__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0004-AS0003",
+			"Name": "Auto-Select multiple recipients?"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "PDF Owner Password",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__PDFOwnerPwd__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0005-AS0001",
+			"Name": "PDF Owner Password"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Proposal__ProposalSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Enable PDF Security",
+			"Apttus_Config2__FieldName__c": "Apttus_Proposal__EnablePDFSecurity__c",
+			"Apttus_Config2__DefaultId__c": "AF0010-SG0005-AS0002",
+			"Name": "Enable PDF Security"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Instance Url",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__InstanceUrl__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0001-AS0001",
+			"Name": "Instance Url"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Keep Abandoned Carts",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__KeepAbandonedCarts__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0001-AS0002",
+			"Name": "Keep Abandoned Carts"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "CSS Override",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CSSOverride__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0001-AS0003",
+			"Name": "CSS Override"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Bypass Shopping Cart",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__BypassShoppingCart__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0001-AS0004",
+			"Name": "Bypass Shopping Cart"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Auto Update Category View",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AutoUpdateCategoryView__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0001-AS0005",
+			"Name": "Auto Update Category View"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Percentage Field Precision",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__PercentageFieldPrecision__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0002-AS0001",
+			"Name": "Percentage Field Precision"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Currency Field Precision",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CurrencyFieldPrecision__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0002-AS0002",
+			"Name": "Currency Field Precision"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Quantity Field Precision",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__QuantityFieldPrecision__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0002-AS0003",
+			"Name": "Quantity Field Precision"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Number",
+			"Apttus_Config2__DisplayType__c": "Number",
+			"Apttus_Config2__FieldLabel__c": "Term Field Precision",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__TermFieldPrecision__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0002-AS0004",
+			"Name": "Term Field Precision"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Run Finalization Task In Async Mode",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RunSecondaryFinalizationTaskInAsyncMode__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0003-AS0001",
+			"Name": "Run Finalization Task In Async Mode"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Auto Finalize On Cart Approval",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AutoFinalizeOnCartApproval__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0003-AS0002",
+			"Name": "Auto Finalize On Cart Approval"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigSystemProperties__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "System Properties",
+			"Apttus_Config2__DataType__c": "Boolean",
+			"Apttus_Config2__DisplayType__c": "Boolean Checkbox",
+			"Apttus_Config2__FieldLabel__c": "Auto Sync On Cart Approval",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AutoSyncOnCartApproval__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0003-AS0003",
+			"Name": "Auto Sync On Cart Approval"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Action Invoker Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ActionInvokerCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0001",
+			"Name": "Action Invoker Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Action Params Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ActionParamsCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0002",
+			"Name": "Action Params Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Adjustment Line Item Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ActionParamsCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0003",
+			"Name": "Adjustment Line Item Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Advanced Approval Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AdvancedApprovalCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0004",
+			"Name": "Advanced Approval Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Asset Line Item Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__AssetLineItemCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0005",
+			"Name": "Asset Line Item Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Cart Approval Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__CartApprovalCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0006",
+			"Name": "Cart Approval Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Deal Optimizer Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DealOptimizerCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0007",
+			"Name": "Deal Optimizer Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Display Action Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__DisplayActionCallbackCalss__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0008",
+			"Name": "Display Action Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Formula Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__FormulaCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0009",
+			"Name": "Formula Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Metadata Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__MetadataCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0010",
+			"Name": "Metadata Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Pricing Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__PricingCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0011",
+			"Name": "Pricing Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Product Attribute Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ProductAttributeCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0012",
+			"Name": "Product Attribute Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Product Filter Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ProductFilterCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0013",
+			"Name": "Product Filter Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Recommendation Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RecommendationCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0014",
+			"Name": "Recommendation Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Related Pricing Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__RelatedPricingCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0015",
+			"Name": "Related Pricing Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Shipping Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ShippingCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0016",
+			"Name": "Shipping Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Tax Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__TaxCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0017",
+			"Name": "Tax Callback Class"
+		},
+		{
+			"Apttus_Config2__CustomSettingName__c": "Apttus_Config2__ConfigCustomClasses__c",
+			"Apttus_Config2__CustomSettingRecordName__c": "Primary Settings",
+			"Apttus_Config2__DataType__c": "Text",
+			"Apttus_Config2__DisplayType__c": "Text",
+			"Apttus_Config2__FieldLabel__c": "Validation Callback Class",
+			"Apttus_Config2__FieldName__c": "Apttus_Config2__ValidationCallbackClass__c",
+			"Apttus_Config2__DefaultId__c": "AF0011-SG0005-AS0018",
+			"Name": "Validation Callback Class"
+		}
+	]
+}

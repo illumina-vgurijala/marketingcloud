@@ -1,0 +1,649 @@
+<apex:page controller="openq.PlanDashboardListView" sidebar="false" tabStyle="Planning__tab" standardStylesheets="true">
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'bootstrap/css/bootstrap.css')}"/> 
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/common.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style2.css')}"/>    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>
+    
+    <style>
+        
+        @media print {
+            
+            @page { size: landscape; }
+            body * { visibility: hidden;}
+            body{    background: none repeat scroll 0 0 #FFFFFF !important;}
+            .toPrint * { visibility: visible; }
+            .bPageHeader, #globalHeaderBar, #topHeader, .ui-widget-header { display: none; }
+            .hideOnPrint{
+                visibility: hidden !important;
+            }
+            .doNotDisplayOnPrint{
+                display:none !important;
+            }                       
+        }
+        
+        label{
+        
+            display: inline;
+        }
+        
+          .optionsFilter{ 
+            background-color: #FFFFFF;
+           color: #000000;
+           display: block;
+           height: 10px;
+           padding: 15px 30px;
+           position: static;
+           top: 872px;
+           width: 350px;
+           z-index: 99;
+          }
+        
+        .divContainer {
+            cursor: pointer;
+            float: right;
+            height: 30px;
+            margin-left: 55px;
+            margin-right: -45px;
+            margin-top: 10px;
+            
+            text-align: center;
+            vertical-align: middle;
+            width: 90px;
+        }
+        
+        .divContainer:hover{
+            color:#c3c3c3;
+          }
+        
+        div [id$="leftContainer"] {
+            float: left;
+            padding-bottom: 70px;
+            height: 768px;
+            left: 0;
+            position: fixed;
+            width: 550px;
+            z-index: 999;
+        }
+        
+        @media (min-height: 550px){
+       
+            div [id$="leftContainer"] {
+                height: 550px !important;
+            }
+       }
+    
+        .ui-dialog-titlebar {
+            background-color: #B2CA45;
+            border: none;
+            color: #FFF;
+        }
+        
+        .actionsHeader{
+        
+            text-align: center !important;
+        }
+        
+        .planLabel{
+        
+            color: #245c8a !important;  
+
+        }
+        
+        .actionsLink{
+        
+            text-align: center !important;
+            font-weight: normal;
+        }
+        
+        .actionsLink a{
+        
+            padding: 0 5px;
+        }
+        
+        .tableWrapper{
+            
+            margin-left: 30px;
+        }
+        
+        .margLeft{
+        
+            margin-left: 5px;
+        }
+        
+        .sortByLabelSelected{
+        
+            margin-right:20px;
+        }
+        
+        .pushy-open {
+            margin-left: 0;
+            transform: translate3d(0px, 0px, 0px);
+            width: 450px;
+        }
+        
+        .popupHeader{
+        
+            font-weight: bold;
+        }
+        
+        #container{
+        
+            min-height: 400px;
+        }
+        
+        .planSortArrow {
+            background-position: 3px -8px;
+            background-repeat: no-repeat;
+            height: 16px;
+            position: absolute;
+            top: -1px;
+            right: 0;
+            width: 16px;
+            background-image: url({!URLFOR($Resource.openq__StandaloneCommonImages,'img/arrowUpDown2.png')});          
+        }
+        
+        .planSortArrowDown{
+        
+            background-position: 3px 9px !important;
+        }
+        
+        .planHeaderThNoHover{
+            background-color: #F2F3F3;
+            border-right: 1px solid #EDEDED;
+            color: #222222 !important;
+            cursor: default;
+            font-size: 14px;
+        
+        }
+        
+        .plansTableHeader{
+        
+            background-color:#f2f3f3;
+            border-right:1px solid #ededed;
+            color:#222222 !important;
+            font-size:14px;
+            font-weight: bold;
+        }
+        
+        #planTable .tableText{
+        
+            color:black !important; 
+            font-weight: normal;
+        }
+        
+        #planTable .numberField span{
+        
+            float: right;
+        }
+        
+        .plansContentRow{
+        
+            color:black;
+        }
+        
+        .plansContentRow.plansOdd{
+        
+            background-color: #E6EDF7;
+        }
+        
+        .plansContentRow.plansEven{
+        
+            background-color: #ffffff;
+        }
+        
+        .sortableColumn{
+        
+            cursor: pointer;
+        }
+        
+        .settings {
+            width: 16px;
+            height: 16px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/cogsprite.png')});                            
+        }
+        
+        .settings:hover{
+        
+            background-position: 0px -20px;
+            cursor: pointer;
+        }
+        
+        .newObject {
+            background-repeat: no-repeat;
+            background-size: 16px;
+            height: 16px;
+            width: 16px;
+            float:right;
+            background-color: transparent;
+            margin-right: 6px;       
+        }
+        
+        .newObject.easyAdd {                    
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/plus.png')});
+        }
+        
+        .newObject.easyAdd:hover {
+             cursor: pointer;
+        }
+        
+        .printIcon{
+            cursor:pointer;
+            margin-right:4px;
+            width:16px;
+            height:16px;
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/print-icon.png')}) 
+        }
+        
+        .planIcon{
+        
+            float:right;
+            margin-right: 2px;
+        }
+        
+        #topPanel{
+        
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .breadcrumbs{
+        
+            float:left;
+        }
+        
+        #rightContentPanel{
+        
+            float: right;
+        }
+        .pushy{
+        position: absolute !important;
+        }
+        
+    </style>
+    
+    <apex:form rendered="{!AND(epColumns != null, epColumns.size > 0)}">
+        <!--  left side filter menu  -->
+        <apex:outputPanel layout="block" id="leftContainer" styleClass="pushyWrapper">
+            <c:LeftSideMenu container_selector="container" >            
+                <div id="leftLeft" class="shadow-wrap" style="height:100%;">
+                    <div class="optionsFilter">
+                        <div class="divContainer" onclick="applyFilter();">
+                            <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Apply</a>
+                        </div>
+                        <div class="divContainer" onclick="resetFilter();">
+                            <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Reset</a>
+                        </div>
+                    </div>
+                    <c:GenerateFilterComponent filterList="{!filterList}" callback="filterMenuLoaded"/>
+                    <div class="optionsFilter">
+                        <div class="divContainer" onclick="applyFilter();">
+                            <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Apply</a>
+                        </div>
+                        <div class="divContainer" onclick="resetFilter();">
+                            <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Reset</a>
+                        </div>
+                    </div>
+                </div>  
+             </c:LeftSideMenu>
+         </apex:outputPanel>
+         <apex:outputPanel styleClass="configdialog" layout="block" style="display:none;">
+            <apex:outputText value="Default {!$Label.openq__plan_label_singular} Statuses to Display" styleClass="popupHeader"/>
+            <table>
+                <apex:repeat value="{!planStatusOptions}" var="pso">
+                    <tr>
+                        <td>
+                            <apex:inputCheckbox id="psoSelected" value="{!pso.selected}"/>
+                            <apex:inputHidden value="{!pso.val}" />
+                        </td>
+                        <td>
+                            <apex:outputText id="psoField" value="{!pso.val}" styleClass="margLeft" style="color:black;"/>
+                        </td>
+                    </tr>
+                </apex:repeat>
+            </table>
+            <br />
+            <apex:panelGrid columns="2">
+                <apex:outputLabel value="Default Sort Column" />
+                <apex:selectList id="defaultSortColumn" value="{!defaultSortColumn}" size="1" styleClass="margLeft">
+                    <apex:selectOptions value="{!defaultSortOptions}" />
+                </apex:selectList>  
+                <apex:outputLabel value="Default Sort Order" />
+                <apex:selectList id="defaultSortOrder" value="{!defaultSortOrder}" size="1" styleClass="margLeft">
+                    <apex:selectOption itemValue="Ascending" itemLabel="Ascending"/>
+                    <apex:selectOption itemValue="Descending" itemLabel="Descending"/>
+                </apex:selectList>
+            </apex:panelGrid>
+                                    
+        </apex:outputPanel>
+        
+        <div id="appendLostHtml" style="display:none;">&nbsp;</div> 
+        <apex:outputPanel id="mainContainer" styleClass="default clearFix order-sm layout-order" layout="block">
+        <div id="topPanel">
+            <div class="breadcrumbs">
+                <apex:outputText value="You're here:" />&nbsp;
+                <apex:outputLink value="{!$Page.openq__PlanDashboard}">{!$Label.openq__plan_label}</apex:outputLink>
+            </div>
+            <apex:outputPanel id="rightContentPanel" >                  
+                <div class="planIcon">
+                   <div title="New {!$Label.openq__plan_label_singular}">
+                        <apex:outputLink value="{!$Page.openq__PlanDetail}?newPlan=1" styleClass="newObject easyAdd" />
+                    </div>
+                </div>
+                <div class="planIcon">
+                    <div class="settings"></div>
+                </div>
+                <div class="planIcon">
+                   <div id="printFeature" title="Print">
+                        <div class="printIcon" onclick="window.print();" ></div>
+                    </div>
+                </div>  
+            </apex:outputPanel>               
+        </div>
+        <div id="container" class="pushy_container">    
+            <input type="hidden" id="lvFilteredColumn" value="" />
+            <input type="hidden" id="lvFilteredColumnLabel" value="" />     
+            <div class="wi-gen gr b-card shado conc" style="margin-top: 0">             
+                <apex:outputPanel id="planTableWrapper">
+                    <div class="bootstrapPrefix tableWrapper toPrint">
+                        <table id="planTable" class="table table-bordered table-responsive">
+                            <thead>
+                                <tr class="header">
+                                    <apex:repeat value="{!epColumns}" var="epc">
+                                        <th data-apiName = "{!epc.apiName}" class="plansTableHeader {!IF(epc.isSortable, 'sortableColumn ', '')}{!IF(AND(isAsc, epc.apiName == sortByField), 'toggleAscDesc', '')}">
+                                            <div style="position:relative">                                            
+                                                <apex:outputText styleClass="planLabel {!IF(epc.apiName == sortByField, 'sortByLabelSelected', '')}" value="{!epc.label}"></apex:outputText>
+                                                <apex:outputpanel styleclass="doNotDisplayOnPrint planSortArrow {!If(isAsc,'planSortArrowDown','')}" layout="block" rendered="{!epc.apiName == sortByField}"></apex:outputpanel>                                            
+                                            </div>
+                                        </th>
+                                    </apex:repeat>
+                                    <th class="actionsHeader hideOnPrint planLabel">
+                                        <apex:outputText value="Actions"></apex:outputText>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>                 
+                                <apex:variable value="{!0}" var="cont"/>
+                                <apex:repeat id="tableContent" value="{!epws}" var="ep">
+                                    <tr class="plansContentRow {!IF(Mod(cont,2)==0,'plansOdd','plansEven')}">
+                                        <apex:repeat value="{!epColumns}" var="epc">
+                                            <td class="tableText {!IF(epc.isNumberOrCurrency, 'numberField', '')}"><apex:outputField value="{!ep.plan[epc.apiName]}"></apex:outputField></td>
+                                        </apex:repeat>
+                                        <th class="actionsColumn hideOnPrint">
+                                            <div class="actionsLink">
+                                                <apex:outputLink styleClass="hideOnPrint" rendered="{!ep.access.HasReadAccess}" value="{!URLFOR($Action.openq__Engagement_Plan__c.View, ep.plan.Id)}">View</apex:outputLink>
+                                                <apex:outputText styleClass="hideOnPrint" rendered="{!AND(ep.access.HasReadAccess, ep.access.HasDeleteAccess)}" value="|" />
+                                                <apex:outputLink styleClass="hideOnPrint" onclick="return confirm('Are you sure you want to delete this {!$Label.openq__plan_label_singular}?');" rendered="{!ep.access.HasDeleteAccess}" value="{!URLFOR($Action.openq__Engagement_Plan__c.Delete, ep.plan.Id, [retURL=$Page.openq__PlanDashboard])}">Delete</apex:outputLink>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                    <apex:variable value="{!cont+1}" var="cont"/>
+                                </apex:repeat>  
+                            </tbody>
+                        </table>
+                        <apex:outputPanel layout="block" id="noResults" rendered="{!listSize == 0}">
+                            <apex:outputText value="No results to display"></apex:outputText>
+                        </apex:outputPanel>         
+                    </div>
+                    <apex:outputPanel id="btnsPanel" rendered="{!listSize > 0}">
+                        <span>                
+                            <apex:outputLabel value="{!recordInfo}"/>                
+                            <apex:outputText value="Show: " style="padding-left: 10px;"/>
+                            <apex:selectList value="{!theLimits}" size="1" onchange="waitOn();changeLimit();return false;">                    
+                                <apex:selectOptions value="{!items}"/>                
+                            </apex:selectList>            
+                        </span>           
+                        <span style="left: 45%; position: absolute;">                                           
+                            <span class="restrictedTableSpan">                    
+                                <apex:outputPanel rendered="{!firstOff}">                        
+                                    <img src="/s.gif" onclick="waitOn();first();return false;" style="cursor:pointer; cursor:hand; background-image: url('/img/paginationArrows.gif');background-position: 0 1px;background-repeat: no-repeat; height: 10px;width: 9px;"/>                    
+                                </apex:outputPanel>                    
+                                <apex:outputPanel rendered="{!(!firstOff)}">                        
+                                    <img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: 0 -10px;background-repeat: no-repeat; height: 10px;width: 9px;"/>                    
+                                </apex:outputPanel>                
+                            </span>                
+                            <span class="restrictedTableSpan">                    
+                                <apex:outputPanel rendered="{!firstOff}">                       
+                                    <img class="prev" src="/s.gif" onclick="waitOn();previous();return false;" style="cursor:pointer; cursor:hand;background-image: url('/img/paginationArrows.gif'); background-position: -10px 1px;background-repeat: no-repeat;height: 10px;margin: 0; padding: 0;width: 9px;"/>                        <apex:outputLabel value="Previous"  style="cursor:pointer; cursor:hand;" onclick="waitOn();previous();return false;"/>                    
+                                </apex:outputPanel>                   
+                                <apex:outputPanel rendered="{!(!firstOff)}">                        
+                                    <img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: -10px -10px;background-repeat: no-repeat;height: 10px;margin: 0;padding: 0;width: 9px;"/>                        
+                                    <apex:outputLabel value="Previous"  style="cursor:text; color: #A8A8A8"/>                    
+                                </apex:outputPanel>                
+                            </span>                
+                            <span class="restrictedTableSpan">                    
+                                <apex:outputPanel rendered="{!lastOff}">                       
+                                    <apex:outputLabel value="Next" style="cursor:pointer; cursor:hand;" onclick="waitOn();next();return false;"/>                        
+                                    <img src="/s.gif" onclick="waitOn();next();return false;" style="cursor:pointer; cursor:hand; background-image: url('/img/paginationArrows.gif');background-position: -17px 1px; background-repeat: no-repeat;height: 10px; width: 9px;"/>                    
+                                </apex:outputPanel>                    
+                                <apex:outputPanel rendered="{!(!lastOff)}">                        
+                                    <apex:outputLabel value="Next" style="cursor:text; color: #A8A8A8"/>                        
+                                    <img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: -17px -10px;background-repeat: no-repeat;height: 10px;width: 9px;"/>                    
+                                </apex:outputPanel>                
+                            </span>                
+                            <span class="restrictedTableSpan">                    
+                                <apex:outputPanel rendered="{!lastOff}">                        
+                                    <img src="/s.gif" onclick="waitOn();last();return false;" style="cursor:pointer; cursor:hand; background-image: url('/img/paginationArrows.gif'); background-position: -27px 1px;background-repeat: no-repeat;height: 10px;width: 9px;"/>                    
+                                </apex:outputPanel>                    
+                                <apex:outputPanel rendered="{!(!lastOff)}">                        
+                                    <img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: -27px -10px;background-repeat: no-repeat;height: 10px;width: 9px; "/>                    
+                                </apex:outputPanel>                
+                            </span>            
+                        </span>            
+                        <span style="float:right;">                
+                            <apex:outputLabel value="Page {!pageNumber} of {!totalPage}"/>       
+                        </span>        
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            </div>
+        </apex:outputPanel>
+        <apex:actionFunction name="loadPlansApex" action="{!refreshEngagementPlans}" rerender="planTableWrapper, noResults, btnsPanel" oncomplete="bindEvents(); waitOff();">
+            <apex:param name="sortByFieldLocal" value="" assignTo="{!sortByFieldLocal}" />
+            <apex:param name="isAscLocal" value="" assignTo="{!isAscLocal}" />
+        </apex:actionFunction>
+        <apex:actionFunction name="applyFilterApex" action="{!refreshEngagementPlans}" rerender="planTableWrapper, noResults, btnsPanel" oncomplete="bindEvents(); waitOff();">
+            <apex:param name="filterJson" value="" assignTo="{!flJson}" />
+        </apex:actionFunction>
+        <apex:actionFunction name="setPlanConfigurationsApex" action="{!setConfigurations}" rerender="planTableWrapper, noResults, btnsPanel" oncomplete="onSetPlanConfigurationsApexDone();">
+            <apex:param name="defaultSortColumn" value="" assignTo="{!defaultSortColumn}" />
+            <apex:param name="defaultSortOrder" value="" assignTo="{!defaultSortOrder}" />
+        </apex:actionFunction>
+        <apex:actionFunction name="first" action="{!first}" reRender="planTableWrapper, noResults" oncomplete="bindEvents(); waitOff();"/>        
+        <apex:actionFunction name="last" action="{!last}" reRender="planTableWrapper, noResults" oncomplete="bindEvents(); waitOff();"/>        
+        <apex:actionFunction name="next" action="{!next}" reRender="planTableWrapper, noResults" oncomplete="bindEvents(); waitOff();"/>        
+        <apex:actionFunction name="previous" action="{!previous}" reRender="planTableWrapper, noResults" oncomplete="bindEvents(); waitOff();"/>        
+        <apex:actionFunction name="changeLimit" action="{!changeLimit}" reRender="planTableWrapper, noResults" oncomplete="bindEvents(); waitOff();" />
+    </apex:form>
+        
+    <c:WaitComponent /> 
+    
+    <script>
+        
+        jQuery(document).ready(function(){
+            waitOn();
+            
+            installLeftPanelSettings();
+            installConfigDialog();
+            bindEvents();
+            
+            if(msieversion() != -1 && msieversion() < 9){
+            
+                jQuery('div [id$= leftContainer]').height('75%');
+            }
+            //this function is in GenerateFilterComponent.component
+            //When it finishes, it calls the callback defined there.
+            //It asynchronously loads the JS through Require.js
+   
+            initFilterComponent();
+        });
+        
+        function filterMenuLoaded(){
+        
+            loadDatePickers();
+            syncStatusesWithFilters();
+            waitOff();
+        }
+        
+        function installLeftPanelSettings(){
+            $(".settings").click(function() {
+                $( ".configdialog" ).dialog( "open" );
+            });
+        }
+        
+        function installConfigDialog(){
+            $(".configdialog").dialog({
+                title: 'Configuration options',
+                autoOpen: false,
+                height: "auto",
+                width: 450,
+                modal: true,
+                show: {
+                    effect: "drop",
+                    duration: 500
+                },
+                hide: {
+                    effect: "drop",
+                    duration: 500
+                },
+                buttons: {
+                    "Save": function() {
+                    
+                        var dialogParent = jQuery(".configdialog");
+                        
+                        var sortColumn = jQuery('[id$=defaultSortColumn]').val();
+                        var sortOrder = jQuery('[id$=defaultSortOrder]').val();
+                        
+                        jQuery(".configdialog").clone().prependTo("#appendLostHtml");
+                                                
+                        setPlanConfigurationsApex(sortColumn, sortOrder);
+                    },
+                    Cancel: function() {
+                        $(this).dialog( "close" );
+                    }
+                },
+                close: function() {
+                    $(".configMessage").css('display', 'none');
+                }
+            });
+        }
+        
+        function onSetPlanConfigurationsApexDone(){
+        
+            bindEvents();
+            jQuery("#appendLostHtml").empty();
+            syncStatusesWithFilters();
+            jQuery(".configdialog").dialog("close");
+        }
+        
+        function syncStatusesWithFilters(){
+        
+            var doNotShow = new Array();
+                
+            jQuery('[id$=psoSelected]').each(function(event, ui){ 
+            
+                if(jQuery(this).prop('checked') === false){
+                    
+                    doNotShow.push(jQuery(this).next().val());
+                
+                }else{
+                    
+                    var i = jQuery.inArray(jQuery(this).next().val(),doNotShow);
+
+                    if (i >= 0){
+                        doNotShow.splice(i, 1);
+                    }
+                }
+            });
+                        
+            jQuery('#Plan_Status__c .picklistValue input').each(function(ev, ui){
+                                
+                if(jQuery.inArray(jQuery(this).attr('id'), doNotShow) !== -1){
+                    
+                    jQuery(this).parent().hide();
+                
+                }else{
+                
+                    jQuery(this).parent().show();
+                }
+            });
+        }
+        
+        function bindEvents(){
+                    
+            jQuery('#planTable th.sortableColumn').on('click', function(){
+                
+                var sortByField = jQuery(this).data('apiname');
+                var order = jQuery(this).hasClass('toggleAscDesc')? 'DESC': 'ASC';
+                jQuery(this).removeClass('toggleAscDesc');
+                
+                waitOn();
+                
+                loadPlansApex(sortByField, order);
+                                    
+            });         
+        }
+        
+        function loadDatePickers() {                                    
+            jQuery( ".datepicker" ).datepicker({
+                showOn: "both",
+                buttonImage: "{!URLFOR($Resource.openq__StylesScriptsImages,'img/datepicker-ico.png')}",
+                buttonImageOnly: true,
+                dateFormat: 'mm/dd/yy'
+            });
+        }
+        
+        function msieversion() {
+
+            var ua = window.navigator.userAgent;
+            var msie = ua.indexOf('MSIE ');
+            var trident = ua.indexOf('Trident/');
+        
+            if (msie > 0) {
+                // IE 10 or older => return version number
+                return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+            }
+        
+            if (trident > 0) {
+                // IE 11 (or newer) => return version number
+                var rv = ua.indexOf('rv:');
+                return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
+            }
+        
+            // other browser
+            return -1;          
+        }
+        
+        /***
+        
+        Start Filer Block
+        
+    ***/
+    function applyFilter(){
+            
+            waitOn();
+            //var currentSortField = jQuery('.headerSortUp, .headerSortDown').data('apiName');
+            applyFilterApex(JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])));
+            jQuery('#container').click();
+            waitOff();  
+    }
+    
+    function resetFilter(){
+        //receives an instance of the component widget.  returns a cleared filter list. 
+        filterProcessor.clearGeneralFilterComponent(document.querySelectorAll('.filtersWrapper')[0]);
+        //we need to refresh always the calendar view on Day view
+        applyFilter();
+    }
+    /***
+    
+        End Filter Blocks
+    **/     
+    </script>
+    
+    <!--[if IE 8 ]><script src="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/excanvas.js')}" type="text/javascript"></script><![endif]-->            
+    
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></apex:includescript>
+                    
+</apex:page>

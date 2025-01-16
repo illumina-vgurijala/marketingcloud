@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workflow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <alerts>
+        <fullName>Parts_Order_Line_Send_Email_When_Parts_Order_Line_Status_Is_Parts_Review</fullName>
+        <ccEmails>ILMN-CustomerSolutionsPartsInquiry@illumina.com</ccEmails>
+        <description>Parts Order Line : Send Email When Parts Order Line Status Is Parts Review</description>
+        <protected>false</protected>
+        <senderType>CurrentUser</senderType>
+        <template>Parts_Order_Line_Email_Templates/Parts_Order_Line_Email_to_Parts_Inquiry_Team_for_Parts_Review</template>
+    </alerts>
+    <fieldUpdates>
+        <fullName>Check_Service_Product_Type_Instrument</fullName>
+        <field>Service_Product_Type_Instrument__c</field>
+        <literalValue>1</literalValue>
+        <name>Check Service Product Type Instrument</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>PartsOrderLine_UpdateCostCenter</fullName>
+        <description>Updates Cost Center in Parts Order Line from the User Record.</description>
+        <field>Cost_Center__c</field>
+        <formula>$User.Cost_Center__c</formula>
+        <name>PartsOrderLine:UpdateCostCenter</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Formula</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Parts_Order_Line_Set_Company_From_Name</fullName>
+        <description>To populate company name of the logged in user</description>
+        <field>Company__c</field>
+        <formula>Name__r.CompanyName</formula>
+        <name>Parts Order Line : Set Company From Name</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Formula</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Parts_Order_Line_Set_Phone_From_Name</fullName>
+        <description>To populate mobile number from name</description>
+        <field>Phone__c</field>
+        <formula>Name__r.MobilePhone</formula>
+        <name>Parts Order Line : Set Phone From Name</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Formula</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Parts_Order_Line_Set_Product_Family</fullName>
+        <description>Populate product family from associated work order installed product&apos;s product.</description>
+        <field>Instrument_or_Component_Model_Type__c</field>
+        <formula>TEXT(  SVMXC__RMA_Shipment_Order__r.SVMXC__Service_Order__r.SVMXC__Component__r.SVMXC__Product__r.Family )</formula>
+        <name>Parts Order Line : Set Product Family</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Formula</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Parts_Order_Line_Set_Serial_Number</fullName>
+        <description>To populate the Component serial number from Installed Product of associated work order.</description>
+        <field>Instrument_or_Component_Serial_Number__c</field>
+        <formula>SVMXC__RMA_Shipment_Order__r.SVMXC__Service_Order__r.SVMXC__Component__r.SVMXC__Serial_Lot_Number__c</formula>
+        <name>Parts Order Line : Set Serial Number</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Formula</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <fieldUpdates>
+        <fullName>Uncheck_Service_Product_Type_Instrument</fullName>
+        <field>Service_Product_Type_Instrument__c</field>
+        <literalValue>0</literalValue>
+        <name>Uncheck Service Product Type Instrument</name>
+        <notifyAssignee>false</notifyAssignee>
+        <operation>Literal</operation>
+        <protected>false</protected>
+        <reevaluateOnChange>false</reevaluateOnChange>
+    </fieldUpdates>
+    <rules>
+        <fullName>Parts Order Line %3A Line Status Parts Review</fullName>
+        <actions>
+            <name>Parts_Order_Line_Send_Email_When_Parts_Order_Line_Status_Is_Parts_Review</name>
+            <type>Alert</type>
+        </actions>
+        <active>false</active>
+        <description>To notify DL when parts order line status is changed to &quot;Parts Review&quot;</description>
+        <formula>AND(     TEXT( SVMXC__Line_Status__c )=$Label.PartsOrderLineStatusPartsReview,     OR(         ISBLANK( SVMXC__Serial_Number__c ),         ISBLANK( SVMXC__Product__c )       ),     OR(         ISNEW(),         ISCHANGED(SVMXC__Line_Status__c), 		ISCHANGED( SVMXC__Product__c), 		ISCHANGED( SVMXC__Serial_Number__c )         )   )</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>Parts Order Line %3A Parts Order Is Not Null</fullName>
+        <actions>
+            <name>Parts_Order_Line_Set_Company_From_Name</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <actions>
+            <name>Parts_Order_Line_Set_Phone_From_Name</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <description>To populate the company and phone number of the logged in user</description>
+        <formula>NOT(ISBLANK(SVMXC__RMA_Shipment_Order__c ))</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>Parts Order Line %3A Product Is Not Null</fullName>
+        <actions>
+            <name>Parts_Order_Line_Set_Product_Family</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <actions>
+            <name>Parts_Order_Line_Set_Serial_Number</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <description>To populate the product code from product.</description>
+        <formula>AND(     OR(        ISNEW(),        ISCHANGED( SVMXC__RMA_Shipment_Order__c )      ) ,     NOT(ISBLANK( SVMXC__RMA_Shipment_Order__c ))    )</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>Parts Order Line %3ACheck For Instrument Product Type</fullName>
+        <actions>
+            <name>Check_Service_Product_Type_Instrument</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <description>Check if service product type of associated product is Instrument.</description>
+        <formula>OR(    AND(        ISNEW() ,         NOT(ISNULL(SVMXC__Product__c)),         ISPICKVAL(SVMXC__Product__r.Service_Product_Type__c,         &apos;Instrument&apos;)    ),    AND(        ISCHANGED(SVMXC__Product__c),        ISPICKVAL(SVMXC__Product__r.Service_Product_Type__c,         &apos;Instrument&apos;)       ) )</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>Parts Order Line %3ACheck For Non Instrument Product Type</fullName>
+        <actions>
+            <name>Uncheck_Service_Product_Type_Instrument</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <description>Check if service product type of associated product is Instrument</description>
+        <formula>OR(     ISNULL(SVMXC__Product__c),     NOT(ISPICKVAL(SVMXC__Product__r.Service_Product_Type__c,  &apos;Instrument&apos;) ) )</formula>
+        <triggerType>onAllChanges</triggerType>
+    </rules>
+    <rules>
+        <fullName>PartsOrderLine%3APopulateCostCenterFromUser</fullName>
+        <actions>
+            <name>PartsOrderLine_UpdateCostCenter</name>
+            <type>FieldUpdate</type>
+        </actions>
+        <active>false</active>
+        <criteriaItems>
+            <field>SVMXC__RMA_Shipment_Line__c.SVMXC__Line_Status__c</field>
+            <operation>equals</operation>
+            <value>Open</value>
+        </criteriaItems>
+        <description>Updates Cost center in Parts Order Line from the User Record.</description>
+        <triggerType>onCreateOrTriggeringUpdate</triggerType>
+    </rules>
+</Workflow>

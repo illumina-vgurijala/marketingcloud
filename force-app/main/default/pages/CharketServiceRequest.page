@@ -1,0 +1,1169 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 01-12-2022
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<apex:page showHeader="false" standardStylesheets="false" controller="CharketServiceRequestController" action="{!init}" id="page" cache="false">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>ServiceNow</title>
+
+        <link rel="stylesheet" type="text/css" href="https://asset.charket.com.cn/styles/vendor/weui.min.css" />
+        <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.CharketResource,'CharketResources/css/servicerequestcustom.css')}" />
+        <script src="{!URLFOR($Resource.CharketResource,'CharketResources/jquery/jquery-3.4.1.min.js')}" />        
+    </head>
+
+    <body class="main-page">
+        <apex:form id="form">
+            <apex:inputhidden id="targetId" value="{!caseNumber}" />
+            <apex:actionFunction action="{!uploadImages}" name="uploadImages">
+            </apex:actionFunction>
+            <apex:outputpanel rendered="{!NOT(isWeChatBrowser)}">
+                <article class="slds-card">
+                    <div class="slds-card__body slds-card__body_inner">
+                        <div class="webContent">
+                            <img class="qrCodeImage" src="{!URLFOR($Resource.CharketResource,'CharketResources/QRCode/')}{!CurrentCharketSetting.QRCodeImageName}"/>
+                            <img class="wechatLogo" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/wechat-icon-@2x.png')}"
+                            />
+                            <p class="web-limit1">该表单只限在微信内访问</p>
+                            <p class="web-limit2">请使用微信扫一扫访问表单</p>
+                        </div>
+                    </div>
+                </article>
+            </apex:outputpanel>
+            <apex:outputpanel rendered="{!isWeChatBrowser}">
+                <input type="hidden" value="{!OpenId}" id="openId" />
+                <div class="loading-mask weui-mask_transparent" id="formtast" style="display:none"></div>
+                <div class="loading-toast weui-toast" id="formloading" style="display:none">
+                    <i class="weui-loading weui-icon_toast"></i>
+                    <p class="weui-toast__content">Waiting...</p>
+                </div>
+                <apex:outputPanel rendered="{!AND(hasUploadFiles, uploadFilesSuccessed)}">
+                    <div class="result-notify">
+                        <div class="weui-msg">
+                            <div class="weui-msg__icon-area">
+                                <i class="weui-icon-success weui-icon_msg"></i>
+                            </div>
+                            <div class="weui-msg__text-area">
+                                <h2 class="weui-msg__title">提交成功</h2>
+                                <div class="weui-msg__desc" id="successmsg">
+                                    感谢您联系Illumina。关于 {!caseSubject} 的需求已经被记录为案例({!CaseNumber})。我们会尽快跟您联系，请耐心等待。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!AND(hasUploadFiles, NOT(uploadFilesSuccessed))}">
+                    <div class="weui-toptips weui-toptips_warn js_tooltips" id="weuiWarn">提交失败</div>
+                </apex:outputPanel>
+                <div class="result-notify" style="display:none">
+                    <div class="weui-msg">
+                        <div class="weui-msg__icon-area">
+                            <i class="weui-icon-success weui-icon_msg"></i>
+                        </div>
+                        <div class="weui-msg__text-area">
+                            <h2 class="weui-msg__title">提交成功</h2>
+                            <div class="weui-msg__desc" id="successmsg"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="weui-toptips weui-toptips_warn js_tooltips" id="weuiWarn"></div>
+                <div class="banner" style="display:{!IF(hasUploadFiles, 'none', '')}">
+                    <div class="banner-pic-wrapper">
+                        <img src="{!URLFOR($Resource.CharketResource,'CharketResources/images/bannerimage.png')}" class="banner-pic" />
+                    </div>
+                </div>
+                <div class="js_dialog privacyBox" style="display:{!IF(isAcceptDataPrivacyPolicy, 'none', '')}">
+                    <div class="weui-mask privacyBox" style="display:{!IF(isAcceptDataPrivacyPolicy, 'none', '')}"></div>
+                    <div class="weui-dialog">
+                        <div class="privacyBoxTitle">
+                            <h3 class="weui-msg__title">温馨提示</h3>
+                        </div>
+                        <div class="weui-dialog_bd">
+                            <div class="weui-msg__text-area">
+                                <div class="weui-msg__desc privacyBoxContent">
+                                    请您务必仔细阅读和充分理解
+                                    <a href="https://www.illumina.com.cn/company/legal/corporate-privacy-policy.html">《因美纳隐私政策》</a>和
+                                    <a href="CharketCustomDataPrivacyConsent?wechatAccountId={!$CurrentPage.parameters.wechatAccountId}">《因美纳服务请求同意函》</a>，我们将严格按照经您同意的各项条款保存、使用您的个人信息，为您提供服务。
+                                    <br/>如果您同意，请点击‘同意’继续提交您的服务需求。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="privacyBoxButton">
+                            <input type="button" id="openBox" name="Address" value="同意" class="weui-btn weui-btn_primary"
+                                onclick="updateDataPrivacyConsentDate()"></input>
+                        </div>
+                    </div>
+                </div>
+                <apex:outputpanel rendered="{!AND(IsEmailVerified, NOT(hasUploadFiles))}">
+                    <div class="CaseDetails" id="emailVeriedWithContact">
+                        <div>
+                            <div class="caseDetailsTitle">我的案例</div>
+                            <div class="newCaseButton" onclick="showCreateCasePage()">
+                                <svg width="15" height="15" viewBox="-10 -10 60 60">
+                                    <path xmlns="http://www.w3.org/2000/svg" fill="black" d="m30 29h16.5c0.8 0 1.5-0.7 1.5-1.5v-3c0-0.8-0.7-1.5-1.5-1.5h-16.5c-0.6 0-1-0.4-1-1v-16.5c0-0.8-0.7-1.5-1.5-1.5h-3c-0.8 0-1.5 0.7-1.5 1.5v16.5c0 0.6-0.4 1-1 1h-16.5c-0.8 0-1.5 0.7-1.5 1.5v3c0 0.8 0.7 1.5 1.5 1.5h16.5c0.6 0 1 0.4 1 1v16.5c0 0.8 0.7 1.5 1.5 1.5h3c0.8 0 1.5-0.7 1.5-1.5v-16.5c0-0.6 0.4-1 1-1z"></path>
+                                </svg>
+                                <span class="history-new-case">提交新需求</span>
+                            </div>
+                            <div class="clearboth"></div>
+                        </div>
+                        <apex:repeat value="{!HistoryCases}" var="myCase">
+                            <div class="weui-cells history-list">
+                                <div class="weui-cell caseHeader">
+                                    <div class="weui-cell__hd">
+                                        <label class="weui-label caseTitleLabel casetitle">案例编号</label>
+                                    </div>
+                                    <div class="weui-cell__bd casetitle">
+                                        {!myCase.caseNumber}
+                                    </div>
+                                </div>
+                                <div class="weui-cell caseItemTop" style="border:none">
+                                    <div class="weui-cell__hd">
+                                        <label class="weui-label caseitemLabel">问题类型</label>
+                                    </div>
+                                    <div class="weui-cell__bd">
+                                        {!myCase.subject}
+                                    </div>
+                                </div>
+                                <div class="weui-cell caseItem">
+                                    <div class="weui-cell__hd">
+                                        <label class="weui-label caseitemLabel">问题描述</label>
+                                    </div>
+                                    <div class="weui-cell__bd">
+                                        {!myCase.description}
+                                    </div>
+                                </div>
+                                <div class="weui-cell caseItem">
+                                    <div class="weui-cell__hd">
+                                        <label class="weui-label caseitemLabel">创建日期</label>
+                                    </div>
+                                    <div class="weui-cell__bd">
+                                        {!myCase.createdDate}
+                                    </div>
+                                </div>
+                                <div class="weui-cell caseItem">
+                                    <div class="weui-cell__hd">
+                                        <label class="weui-label caseitemLabel">工单状态</label>
+                                    </div>
+                                    <div class="weui-cell__bd">
+                                        {!myCase.status}
+                                    </div>
+                                </div>
+                                <div class="weui-cell caseItem">
+                                    <div class="weui-cell__hd">
+                                        <label class="weui-label caseitemLabel">机器序列号</label>
+                                    </div>
+                                    <div class="weui-cell__bd">
+                                        {!myCase.productSerialNumber}
+                                    </div>
+                                </div>
+                                <div class="weui-cell caseItem caseItemBottom">
+                                    <div class="weui-cell__hd">
+                                        <label class="weui-label caseitemLabel"></label>
+                                    </div>
+                                    <div class="weui-cell__bd">
+                                        <a href="CharketServiceRequestComment?cid={!JSENCODE(myCase.caseId)}&wid={!JSENCODE($CurrentPage.parameters.wechatAccountId)}">点击查看案例详情</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:repeat>
+                    </div>
+                    <div class="VerifiedCase" id="emailVeriedWithoutContact">
+                        <p class="sectionTitle">CONTACT INFORMATION</p>
+                        <div class="weui-cells VerifiedCaseDetails">
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">姓</label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <apex:outputText value="{!CurrentFollower.Lastname}" styleClass="output-field-value" />
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">名</label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <apex:outputText value="{!CurrentFollower.FirstName}" styleClass="output-field-value" />
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">单位/公司名称</label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <apex:outputText value="{!CurrentFollower.CompanyName}" styleClass="output-field-value" />
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">电话</label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <apex:outputText value="{!CurrentFollower.Mobile}" styleClass="output-field-value" />
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">邮箱</label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <apex:outputText value="{!CurrentFollower.Email}" styleClass="output-field-value" />
+                                </div>
+                            </div>
+                        </div>
+                        <p class="sectionTitle">SERVICE REQUEST DETAILS</p>
+                        <div class="weui-cells" style="margin-top:5px;">
+                            <div class="weui-cell weui-cell_select weui-cell_select-after subjectCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">服务类型
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <select class="weui-select subject" id="subject">
+                                        <option value="">请选择</option>
+                                        <option value="技术咨询">技术咨询</option>
+                                        <option value="产品报修">产品报修</option>
+                                        <option value="服务申请">服务申请</option>
+                                        <option value="其它">其它</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="weui-cell weui-cell_select weui-cell_select-after usedForCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">应用方向
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <select class="weui-select usedFor" id="usedFor">
+                                        <option value="">请选择</option>
+                                        <option value="测序（Sequencing）">测序（Sequencing）</option>
+                                        <option value="芯片（Array）">芯片（Array）</option>
+                                        <option value="信息分析（Bioinformatics）">信息分析（Bioinformatics）</option>
+                                        <option value="其它">其它</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="weui-cell weui-cell_select weui-cell_select-after equimentTypeCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">仪器类型
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <select class="weui-select equimentType" id="equimentType">
+                                        <option value="">请选择</option>
+                                        <option value="iSeq">iSeq</option>
+                                        <option value="MiniSeq">MiniSeq</option>
+                                        <option value="MiSeq">MiSeq</option>
+                                        <option value="MiSeqDx">MiSeqDx</option>
+                                        <option value="NextSeq500/550">NextSeq500/550</option>
+                                        <option value="NextSeq550Dx">NextSeq550Dx</option>
+                                        <option value="NextSeq 1000/2000">NextSeq 1000/2000</option>
+                                        <option value="HiSeq">HiSeq</option>
+                                        <option value="NovaSeq 6000">NovaSeq 6000</option>
+                                        <option value="iScan">iScan</option>
+                                        <option value="NovaSeq X/Plus">NovaSeq X/Plus</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="weui-cell productSerialNumberCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">机器序列号</label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input productSerialNumber" type="text" id="serialnumber" placeholder="机器序列号" />
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label caseDescriptionLabel">服务需求描述
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__bd">
+                                    <textarea class="weui-textarea caseDescription" id="caseDescription" placeholder="具体描述..." rows="5" maxlength="32000"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="sectionTitle">UPLOAD FILES</p>
+                        <p class="fileLimit">支持的文件格式：MP4、AVI、MOV、JPG、JPEG、PNG、HEIC
+                            <br/>每个文件限制10MB以内<br/>
+                            根据《中华人民共和国人类遗传资源管理条例》有关规定，在未取得人遗办备案之前，您不可以将人类遗传资源信息提供给我司。
+                            </p>
+                        <div class="weui-cells" style="margin-top:5px;">
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd" style="width:90%">
+                                    <apex:inputfile styleclass="file1" style="font-size:13px" onchange="showDelFileBtn('file1')" 
+                                        value="{!contentVersion1.VersionData}" filename="{!contentVersion1.Title}"></apex:inputfile>
+                                </div>
+                                <div class="weui-cell__bd" style="float:right">
+                                    <label class="label">
+                                        <input type="checkbox" class="checkbox" onclick="removeFileSelect('file1')" />
+                                        <span class="checkbox_faux"></span>
+                                    </label>
+                                    <!--<input type="button" value="Del" onclick="removeFileSelect('file1')" class="slds-button slds-button_destructive"></input>-->
+                                </div>
+
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd" style="width:90%">
+                                    <apex:inputfile styleclass="file2" style="font-size:13px" onchange="showDelFileBtn('file2')" 
+                                        value="{!contentVersion2.VersionData}" filename="{!contentVersion2.Title}"></apex:inputfile>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <label class="label">
+                                        <input type="checkbox" class="checkbox" onclick="removeFileSelect('file2')" />
+                                        <span class="checkbox_faux"></span>
+                                    </label>
+                                    <!--<input type="button" value="Del" onclick="removeFileSelect('file2')" class="slds-button slds-button_destructive"></input>-->
+                                </div>
+
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd" style="width:90%">
+                                    <apex:inputfile styleclass="file3" style="font-size:13px" onchange="showDelFileBtn('file3')" 
+                                        value="{!contentVersion3.VersionData}" filename="{!contentVersion3.Title}"></apex:inputfile>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <label class="label">
+                                        <input type="checkbox" class="checkbox" onclick="removeFileSelect('file3')" />
+                                        <span class="checkbox_faux"></span>
+                                    </label>
+                                    <!--<input type="button" value="Del" onclick="removeFileSelect('file3')" class="slds-button slds-button_destructive"></input>-->
+                                </div>
+
+                            </div>
+                        </div>
+                        <footer class="footer" style="text-align:center">
+                            <button type="button" class="sure-btn submit-button weui-btn weui-btn_primary submitButton" style="width:80%;"
+                                onclick="SaveCaseWithoutContact()">提交</button>
+                        </footer>
+                    </div>
+                </apex:outputpanel>
+                <apex:outputpanel rendered="{!AND(NOT(IsEmailVerified), NOT(hasUploadFiles))}">
+                    <div class="newCase">
+                        <p class="sectionTitle">CONTACT INFORMATION</p>
+                        <div class="weui-cells" style="margin-top:5px;">
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">姓
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input lastname" type="text" name="lastname" placeholder="姓" />
+                                </div>
+                                <div style="display: none" class="weui-cell__ft">
+                                    <i class="weui-icon-warn"></i>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">名
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input firstname" type="text" name="firstname" placeholder="名" />
+                                </div>
+                                <div style="display: none" class="weui-cell__ft">
+                                    <i class="weui-icon-warn"></i>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">单位/公司名称
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input company" type="text" name="company" placeholder="公司名称" />
+                                </div>
+                                <div style="display: none" class="weui-cell__ft">
+                                    <i class="weui-icon-warn"></i>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">电话
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input phone" type="text" name="phone" placeholder="请填写手机号" />
+                                </div>
+                                <div style="display: none" class="weui-cell__ft">
+                                    <i class="weui-icon-warn"></i>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">邮箱
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input email" type="text" id="email" placeholder="邮箱" />
+                                </div>
+                                <div style="display: none" class="weui-cell__ft">
+                                    <i class="weui-icon-warn"></i>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">邮箱验证码
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input emailcode" type="text" id="emailcode" placeholder="邮箱验证码" />
+                                </div>
+                                <button type="button" class="emailVeriyButton" onclick="sendVerificationCode()">获取验证码</button>
+                            </div>
+                        </div>
+                        <p class="sectionTitle">SERVICE REQUEST DETAILS</p>
+                        <div class="weui-cells request-detail" style="margin-top:5px;">
+                            <div class="weui-cell weui-cell_select weui-cell_select-after subjectCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">服务类型
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <select class="weui-select caseSubject" id="subject">
+                                        <option value="">请选择</option>
+                                        <option value="技术咨询">技术咨询</option>
+                                        <option value="产品报修">产品报修</option>
+                                        <option value="服务申请">服务申请</option>
+                                        <option value="其它">其它</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="weui-cell weui-cell_select weui-cell_select-after usedForCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">应用方向
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <select class="weui-select usedFor" id="usedFor">
+                                        <option value="">请选择</option>
+                                        <option value="测序（Sequencing）">测序（Sequencing）</option>
+                                        <option value="芯片（Array）">芯片（Array）</option>
+                                        <option value="信息分析（Bioinformatics）">信息分析（Bioinformatics）</option>
+                                        <option value="其它">其它</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="weui-cell weui-cell_select weui-cell_select-after equimentTypeCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">仪器类型
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <select class="weui-select equimentType" id="equimentType">
+                                        <option value="">请选择</option>
+                                        <option value="iSeq">iSeq</option>
+                                        <option value="MiniSeq">MiniSeq</option>
+                                        <option value="MiSeq">MiSeq</option>
+                                        <option value="MiSeqDx">MiSeqDx</option>
+                                        <option value="NextSeq500/550">NextSeq500/550</option>
+                                        <option value="NextSeq550Dx">NextSeq550Dx</option>
+                                        <option value="NextSeq 1000/2000">NextSeq 1000/2000</option>
+                                        <option value="HiSeq">HiSeq</option>
+                                        <option value="NovaSeq 6000">NovaSeq 6000</option>
+                                        <option value="iScan">iScan</option>
+                                        <option value="NovaSeq X/Plus">NovaSeq X/Plus</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="weui-cell serialnumberCell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">机器序列号</label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input serialnumber" type="text" id="serialnumber" name="serialnumber" placeholder="机器序列号" />
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label caseDescriptionLabel">服务需求描述
+                                        <span class="requiredMark">*</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__bd">
+                                    <textarea class="weui-textarea caseDescription" rows="5" placeholder="具体描述..." maxlength="32000"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="sectionTitle">UPLOAD FILES</p>
+                        <p class="fileLimit">支持的文件格式：MP4、AVI、MOV、JPG、JPEG、PNG、HEIC
+                            <br/>每个文件限制10MB以内<br/>
+                            根据《中华人民共和国人类遗传资源管理条例》有关规定，在未取得人遗办备案之前，您不可以将人类遗传资源信息提供给我司。
+                        </p>
+                        <div class="weui-cells" style="margin-top:5px;">
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd" style="width:90%">
+                                    <apex:inputfile styleclass="file1" style="font-size:13px" onchange="showDelFileBtn('file1')" 
+                                        value="{!contentVersion1.VersionData}" filename="{!contentVersion1.Title}"></apex:inputfile>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <label class="label">
+                                        <input type="checkbox" class="checkbox" onclick="removeFileSelect('file1')" />
+                                        <span class="checkbox_faux"></span>
+                                    </label>
+                                    <!-- <input type="button" value="Del" onclick="removeFileSelect('file1')" class="slds-button slds-button_destructive"></input>-->
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd" style="width:90%">
+                                    <apex:inputfile styleclass="file2" style="font-size:13px" onchange="showDelFileBtn('file2')" 
+                                        value="{!contentVersion2.VersionData}" filename="{!contentVersion2.Title}"></apex:inputfile>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <label class="label">
+                                        <input type="checkbox" class="checkbox" onclick="removeFileSelect('file2')" />
+                                        <span class="checkbox_faux"></span>
+                                    </label>
+                                    <!--<input type="button" value="Del" onclick="removeFileSelect('file2')" class="slds-button slds-button_destructive"></input>-->
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd" style="width:90%">
+                                    <apex:inputfile styleclass="file3" style="font-size:13px" onchange="showDelFileBtn('file3')" 
+                                        value="{!contentVersion3.VersionData}" filename="{!contentVersion3.Title}"></apex:inputfile>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <label class="label">
+                                        <input type="checkbox" class="checkbox" onclick="removeFileSelect('file3')" />
+                                        <span class="checkbox_faux"></span>
+                                    </label>
+                                    <!--<input type="button" value="Del" onclick="removeFileSelect('file3')" class="slds-button slds-button_destructive"></input>-->
+                                </div>
+                            </div>
+                        </div>
+                        <footer class="footer" style="text-align:center">
+                            <button type="button" class="sure-btn submit-button weui-btn weui-btn_primary submitButton" style="width:80%;"
+                                onclick="doSave()">提交</button>
+                        </footer>
+                    </div>
+                </apex:outputpanel>
+            </apex:outputpanel>
+        </apex:form>
+        <script>
+            jQuery.noConflict();
+
+            var isUpdatePersonalInfo;
+            var isEmailVerified;
+            var isComplaintAndFeedback;
+            var isFollowerRelatedCase;
+
+            function showDelFileBtn(fileSelectId) {
+                var thisfile = jQuery("." + fileSelectId)[0];
+                if (thisfile.files[0].name != "") {
+                    jQuery("." + fileSelectId).parent().parent().find(".label").show();
+                }
+                else {
+                    jQuery("." + fileSelectId).parent().parent().find(".label").hide();
+                }
+            }
+
+            function closePrivacyBox() {
+                jQuery('.newCase').show();
+                jQuery('.CaseDetails').show();
+                jQuery('.banner').show();
+                jQuery('.privacyInfo').show();
+                jQuery(".privacyBox").hide();
+            }
+
+            function openPrivacyBox() {
+                jQuery('.newCase').hide();
+                jQuery('.CaseDetails').hide();
+                jQuery('.banner').hide();
+                jQuery('.privacyInfo').hide();
+                jQuery(".privacyBox").show();
+            }
+
+            function initPage() {
+                var isAcceptDataPrivacyPolicy = {!isAcceptDataPrivacyPolicy};
+                if (!isAcceptDataPrivacyPolicy) {
+                    openPrivacyBox();
+                }
+                var currentSerialNumber = "{!$CurrentPage.parameters.number}";
+                if (currentSerialNumber != null && currentSerialNumber != "") {
+                    jQuery("#serialnumber").val(currentSerialNumber);
+                    jQuery("#serialnumber").prop('disabled', true);
+                }
+                else {
+                    jQuery("#serialnumber").prop('disabled', false);
+                }
+
+                isUpdatePersonalInfo = Boolean({!JSENCODE(IF(IsUpdatePersonalInfo,"true", "false"))});
+                isEmailVerified = Boolean({!JSENCODE(IF(IsEmailVerified,"true", "false"))});
+                isComplaintAndFeedback = Boolean({!JSENCODE(IF(IsComplaintAndFeedback,"true", "false"))});
+                isFollowerRelatedCase = Boolean({!JSENCODE(IF(IsFollowerRelatedCase,"true", "false"))});
+                
+                if (isUpdatePersonalInfo && isEmailVerified)
+                {
+                    jQuery(".productSerialNumberCell").hide();
+                    jQuery(".usedForCell").hide();
+                    jQuery(".equimentTypeCell").hide();
+                    jQuery("#subject").append('<option value="注册信息维护" selected="selected">注册信息维护</option>');
+                    jQuery("#subject").prop('disabled', true);
+                }
+                if (isComplaintAndFeedback)
+                {
+                    jQuery(".productSerialNumberCell").hide();
+                    jQuery(".usedForCell").hide();
+                    jQuery(".equimentTypeCell").hide();
+                    jQuery(".serialnumberCell").hide();
+                    jQuery(".subjectCell").hide();
+                }
+
+                    
+                if(isFollowerRelatedCase && !isUpdatePersonalInfo && !isComplaintAndFeedback) {
+                    jQuery("#emailVeriedWithoutContact").hide();
+                } else {
+                    jQuery("#emailVeriedWithContact").hide();
+                }
+            }
+
+            function removeFileSelect(fileSelectId) {
+                jQuery("." + fileSelectId).val("");
+                jQuery("." + fileSelectId).parent().parent().find(".label").hide();
+            }
+
+            function uploadCaseImages(newCaseNumber) {
+                var targetId = jQuery("[id$='targetId']");
+                targetId.val(newCaseNumber);
+                uploadImages();
+            }
+
+            function displayErrorMsg(content) {
+                jQuery('#weuiWarn').show();
+                jQuery('#weuiWarn').html(content);
+                setTimeout(function () {
+                    jQuery('#weuiWarn').hide();
+                }, 2000);
+            }
+
+            function showLoading() {
+                jQuery('#formtast').show();
+                jQuery('#formloading').show();
+            }
+
+            function showCreateCasePage() {
+                jQuery('#emailVeriedWithoutContact').show();
+                jQuery('.privacyInfo').show();
+                jQuery('#emailVeriedWithContact').hide();
+            }
+
+            function SaveCaseWithoutContact() {
+                var openId = "{!OpenId}";
+                var isValid = true;
+                var subject = "";
+
+                if (isUpdatePersonalInfo && isEmailVerified){
+                    subject = "注册信息维护";
+                } else if(isComplaintAndFeedback) {
+                    subject = "投诉与建议";
+                }
+                    else
+            {
+                var subject1 = jQuery('#subject').val();
+                var subject2 = jQuery('#usedFor').val();
+                var subject3 = jQuery('#equimentType').val();
+                var subject1 = jQuery('#subject').val();
+                if (subject1 == "" || subject1 == "请选择") {
+                    isValid = false;
+                    jQuery('#subject').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('#subject').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var subject2 = jQuery('#usedFor').val();
+                if (subject2 == "" || subject2 == "请选择") {
+                    isValid = false;
+                    jQuery('.usedFor').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.usedFor').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var subject3 = jQuery('#equimentType').val();
+                if (subject3 == "" || subject3 == "请选择") {
+                    isValid = false;
+                    jQuery('.equimentType').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.equimentType').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                if (isValid) {
+                    subject = subject1 + '_' + subject2 + '_' + subject3;
+                }
+            }
+            var serialNumber = jQuery('#serialnumber').val();
+            var contactMethod = "";
+                             
+            var caseDescription = jQuery('#caseDescription').val();
+            if (caseDescription == '') {
+                isValid = false;
+                jQuery('.caseDescription').parent().parent().parent().find(".caseDescriptionLabel").css('color', 'red');
+            }
+            else {
+                jQuery('.caseDescription').parent().parent().parent().find(".caseDescriptionLabel").css('color', 'black');
+            }
+            if (isValid) {
+                if ((hasFiles() && validaImageFormat()) || (!hasFiles())) {
+                    showLoading();
+                    try {
+                        CharketServiceRequestController.createNewCase(
+                            subject,
+                            contactMethod,
+                            caseDescription,
+                            serialNumber,
+                            openId,
+                            function (result, event) {
+                                if (event.status) {
+                                    var saveResult = JSON.parse(result);
+                                    if (saveResult.status == 1) {
+                                        if (hasFiles()) {
+                                            var casenum = saveResult.message;
+                                            uploadCaseImages(casenum);
+                                        }
+                                        else {
+                                            hideLoging();
+                                            generateSuccessMessage(saveResult.message);
+                                            jQuery('.result-notify').show();
+                                            jQuery('.privacyInfo').hide();
+                                            jQuery('#emailVeriedWithoutContact').hide();
+                                            jQuery('.banner').hide();
+                                        }
+                                    }
+                                    else {
+                                        hideLoging();
+                                        displayErrorMsg("提交失败");
+                                        alert(saveResult.message);
+                                    }
+                                } else {
+                                    hideLoging();
+                                    displayErrorMsg("提交失败");
+                                    alert(event.message);
+                                }
+                            },
+                            { escape: false, timeout: 120000 }
+                        )
+                    }
+                    catch (e) {
+                        hideLoging();
+                        displayErrorMsg("提交失败");
+                        alert(e);
+                    }
+                }
+            }
+            else {
+                displayErrorMsg("请填写页面上的必填项");
+            }
+                }
+
+
+            function hideLoging() {
+                jQuery('#formtast').hide();
+                jQuery('#formloading').hide();
+            }
+
+            //update Follower Data Privacy Policy Consent Date
+            function updateDataPrivacyConsentDate() {
+                var openId = "{!OpenId}";
+                CharketServiceRequestController.updateFollowerDataPrivacyPolicyConsentDate(
+                    openId,
+                    function (result, event) {
+                        if (event.status) {
+                            var saveResult = JSON.parse(result);
+                            if (saveResult.status == 1) {
+                                closePrivacyBox();
+                            }
+                            else {
+                                displayErrorMsg(saveResult.message);
+                            }
+                        } else {
+                            displayErrorMsg("系统繁忙，请稍后再试");
+                        }
+                    },
+                    { escape: false, timeout: 120000 }
+                )
+            }
+
+            //send the verification code
+            function sendVerificationCode() {
+                var followerId = "{!CurrentFollower.FollowerId}";
+                var replyEmail = "{!CurrentCharketSetting.ReplyToEmailAddress}";
+                var senderDisplayName = "{!CurrentCharketSetting.SenderDisplayName}";
+                var email = jQuery('#email').val();
+                if (email == '') {
+                    jQuery('#email').parent().parent().find(".weui-label").css('color', 'red');
+                    displayErrorMsg("请填写页面上的必填项");
+                }
+                else {
+                    email = email.replace(/\s/g, '');
+                    var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+                    if (!emailPattern.test(email)) {
+                        displayErrorMsg("请填写正确的邮箱格式");
+                    }
+                    else {
+                        jQuery('#email').parent().parent().find(".weui-label").css('color', 'black');
+                        showLoading();
+                        try {
+                            CharketServiceRequestController.sendVerificationCode(
+                                email,
+                                replyEmail,
+                                senderDisplayName,
+                                followerId,
+                                function (result, event) {
+                                    if (event.status) {
+                                        hideLoging();
+                                        var saveResult = JSON.parse(result);
+                                        //alert(saveResult.status);
+                                        if (saveResult.status == 1) {
+                                            jQuery(".emailVeriyButton").html("已发送");
+                                            jQuery(".emailVeriyButton").prop('disabled', true);
+                                        }
+                                        else {
+                                            displayErrorMsg(saveResult.message);
+                                        }
+                                    } else {
+                                        hideLoging();
+                                        displayErrorMsg("发送验证码失败");
+                                    }
+                                },
+                                { escape: false, timeout: 120000 }
+                            )
+                        }
+                        catch (e) {
+                            hideLoging();
+                            //alert(e);
+                        }
+                    }
+                }
+            }
+
+            function generateSuccessMessage(casenumber) {
+                var subject1 = jQuery('#subject').val();
+                var subject2 = jQuery('#usedFor').val();
+                var subject3 = jQuery('#equimentType').val();
+                var subject = subject1 + '_' + subject2 + '_' + subject3;
+
+                if (isUpdatePersonalInfo && isEmailVerified) {
+                subject = "注册信息维护";
+            }
+
+            if (isComplaintAndFeedback) {
+                    subject = "投诉与建议";
+                }
+
+            var resultmessage = "感谢您联系Illumina。关于 " + subject + " 的需求已经被记录为案例(" + casenumber + ")。我们会尽快跟您联系，请耐心等待。";
+            jQuery('#successmsg').text(resultmessage);
+                }
+
+            function validateRequiredFields() {
+                var isValid = true;
+                var firstname = jQuery('.firstname').val();
+                if (firstname == "") {
+                    isValid = false;
+                    jQuery('.firstname').parent().parent().find(".weui-cell__ft").show();
+                    jQuery('.firstname').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.firstname').parent().parent().find(".weui-cell__ft").hide();
+                    jQuery('.firstname').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var lastname = jQuery('.lastname').val();
+                if (lastname == "") {
+                    isValid = false;
+                    jQuery('.lastname').parent().parent().find(".weui-cell__ft").show();
+                    jQuery('.lastname').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.lastname').parent().parent().find(".weui-cell__ft").hide();
+                    jQuery('.lastname').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var email = jQuery('.email').val();
+                if (email == "") {
+                    isValid = false;
+                    jQuery('.email').parent().parent().find(".weui-cell__ft").show();
+                    jQuery('.email').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.email').parent().parent().find(".weui-cell__ft").hide();
+                    jQuery('.email').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var phone = jQuery('.phone').val();
+                if (phone == "") {
+                    isValid = false;
+                    jQuery('.phone').parent().parent().find(".weui-cell__ft").show();
+                    jQuery('.phone').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.phone').parent().parent().find(".weui-cell__ft").hide();
+                    jQuery('.phone').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var companyname = jQuery('.company').val();
+                if (companyname == "") {
+                    isValid = false;
+                    jQuery('.company').parent().parent().find(".weui-cell__ft").show();
+                    jQuery('.company').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.company').parent().parent().find(".weui-cell__ft").hide();
+                    jQuery('.company').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var emailcode = jQuery('.emailcode').val();
+                if (emailcode == "") {
+                    isValid = false;
+                    jQuery('.emailcode').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.emailcode').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var contactMethod = "";//
+                jQuery('.contactMethod').val();
+
+                if(!isComplaintAndFeedback){
+                    var subject1 = jQuery('#subject').val();
+                if (subject1 == "" || subject1 == "请选择") {
+                    isValid = false;
+                    jQuery('#subject').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('#subject').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var subject2 = jQuery('#usedFor').val();
+                if (subject2 == "" || subject2 == "请选择") {
+                    isValid = false;
+                    jQuery('.usedFor').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.usedFor').parent().parent().find(".weui-label").css('color', 'black');
+                }
+                var subject3 = jQuery('#equimentType').val();
+                if (subject3 == "" || subject3 == "请选择") {
+                    isValid = false;
+                    jQuery('.equimentType').parent().parent().find(".weui-label").css('color', 'red');
+                }
+                else {
+                    jQuery('.equimentType').parent().parent().find(".weui-label").css('color', 'black');
+                     }
+                }            
+                var caseDescription = jQuery('.caseDescription').val();
+                if (caseDescription == "") {
+                    isValid = false;
+                    jQuery('.caseDescription').parent().parent().parent().find(".caseDescriptionLabel").css('color', 'red');
+                }
+                else {
+                    jQuery('.caseDescription').parent().parent().parent().find(".caseDescriptionLabel").css('color', 'black');
+                }
+                return isValid;
+            }
+
+            function validatePhoneFormat() {
+                var isValid = true;
+                var phone = jQuery('.phone').val();
+                var phonePattern = /^!*(\d!*){11,}$/;
+                if (!phonePattern.test(phone)) {
+                    isValid = false;
+                    displayErrorMsg("请填写正确的手机格式");
+                }
+                return isValid;
+            }
+
+            function validateEmailFormat() {
+                var isValid = true;
+                var email = jQuery('.email').val();
+                email = email.replace(/\s/g, '');
+                var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+                if (!emailPattern.test(email)) {
+                    isValid = false;
+                    displayErrorMsg("请填写正确的邮箱格式");
+                }
+                return isValid;
+            }
+
+            function checkSupportFileType(fileName) {
+                var isSupport = true;
+                var validExtensions = ['jpg', 'jpeg', 'heic', 'mp4', 'png', 'avi', 'mov'];
+                var fileNameExt = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+                if (jQuery.inArray(fileNameExt, validExtensions) == -1) {
+                    alert(fileName + '非支持文件类型，请确认后再上传');
+                    isSupport = false;
+                }
+                return isSupport
+            }
+
+            function validaImageFormat() {
+                var isValid1 = true;
+                var isValid2 = true;
+                var isValid3 = true;
+
+                var file1 = jQuery(".file1")[0];
+                var file2 = jQuery(".file2")[0];
+                var file3 = jQuery(".file3")[0];
+                if (file1.files.length > 0) {
+                    if (file1.files[0].size > (10 * 1024 * 1024)) {
+                        alert(file1.files[0].name + ' 超出文件大小限制，请压缩后再上传');
+                        isValid1 = false;
+                    }
+                    else {
+                        var fileName = file1.files[0].name;
+                        isValid1 = checkSupportFileType(fileName);
+                    }
+                }
+                if (file2.files.length > 0) {
+                    if (file2.files[0].size > (10 * 1024 * 1024)) {
+                        alert(file2.files[0].name + ' 超出文件大小限制，请压缩后再上传');
+                        isValid2 = false;
+                    }
+                    else {
+                        var fileName = file2.files[0].name;
+                        isValid2 = checkSupportFileType(fileName);
+                    }
+                }
+                if (file3.files.length > 0) {
+                    if (file3.files[0].size > (10 * 1024 * 1024)) {
+                        alert(file3.files[0].name + ' 超出文件大小限制，请压缩后再上传');
+                        isValid3 = false;
+                    }
+                    else {
+                        var fileName = file3.files[0].name;
+                        isValid3 = checkSupportFileType(fileName);
+                    }
+                }
+                return isValid1 & isValid2 & isValid3;
+            }
+
+            function hasFiles() {
+                var hasFile = false;
+                var file1 = jQuery(".file1")[0];
+                var file2 = jQuery(".file2")[0];
+                var file3 = jQuery(".file3")[0];
+                if (file1.files.length > 0) {
+                    hasFile = true;
+                }
+                if (file2.files.length > 0) {
+                    hasFile = true;
+                }
+                if (file3.files.length > 0) {
+                    hasFile = true;
+                }
+                return hasFile;
+            }
+
+            //creates a new case       
+            function doSave() {
+                if (validateRequiredFields()) {
+                    if (validatePhoneFormat()) {
+                        if (validateEmailFormat()) {
+                            if ((hasFiles() && validaImageFormat()) || (!hasFiles())) {
+                                var openId = "{!OpenId}";
+                                var firstname = jQuery('.firstname').val();
+                                var lastname = jQuery('.lastname').val();
+                                var email = jQuery('.email').val();
+                                email = email.replace(/\s/g, '');
+                                var phone = jQuery('.phone').val();
+                                var companyname = jQuery('.company').val();
+                                var emailcode = jQuery('.emailcode').val();
+                                var serialNumber = jQuery('.serialnumber').val();
+                                var subject1 = jQuery('#subject').val();
+                                var subject2 = jQuery('#usedFor').val();
+                                var subject3 = jQuery('#equimentType').val();
+                                var subject = subject1 + '_' + subject2 + '_' + subject3;
+                                if (isComplaintAndFeedback) {
+                                    subject = "投诉与建议";
+                                }
+                                var caseDescription = jQuery('.caseDescription').val();
+                                var contactMethod = '';
+                                //jQuery('.contactMethod').val();
+                                //alert(emailcode);
+                                showLoading();
+                                try {
+                                    CharketServiceRequestController.verifiyEmailCode(
+                                        emailcode,
+                                        firstname,
+                                        lastname,
+                                        email,
+                                        phone,
+                                        companyname,
+                                        contactMethod,
+                                        serialNumber,
+                                        subject,
+                                        caseDescription,
+                                        openId,
+                                        function (result, event) {
+                                            if (event.status) {
+                                                var saveResult = JSON.parse(result);
+                                                //alert(saveResult.status);
+                                                if (saveResult.status == 1) {
+                                                    if (hasFiles()) {
+                                                        uploadCaseImages(saveResult.message);
+                                                    }
+                                                    else {
+                                                        hideLoging();
+                                                        generateSuccessMessage(saveResult.message);
+                                                        jQuery('.result-notify').show();
+                                                        jQuery('.newCase').hide();
+                                                        jQuery('.banner').hide();
+                                                        jQuery('.privacyInfo').hide();
+                                                    }
+                                                }
+                                                else {
+                                                    displayErrorMsg(saveResult.message);
+                                                    jQuery(".emailVeriyButton").html("获取验证码");
+                                                    jQuery(".emailVeriyButton").prop('disabled', false);
+                                                    //alert(saveResult.message);
+                                                }
+                                            } else {
+                                                hideLoging();
+                                                jQuery(".emailVeriyButton").html("获取验证码");
+                                                jQuery(".emailVeriyButton").prop('disabled', false);
+                                                displayErrorMsg("提交失败");
+                                                //alert(event.message);
+                                            }
+                                        },
+                                        { escape: false, timeout: 120000 }
+                                    )
+                                }
+                                catch (e) {
+                                    hideLoging();
+                                    jQuery(".emailVeriyButton").html("获取验证码");
+                                    jQuery(".emailVeriyButton").prop('disabled', false);
+                                    displayErrorMsg("提交失败");
+                                    alert(e);
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    displayErrorMsg("请填写页面上的必填项");
+                }
+            }
+            initPage();
+        </script>
+    </body>
+
+    </html>
+</apex:page>

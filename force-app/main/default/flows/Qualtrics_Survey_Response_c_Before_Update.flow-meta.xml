@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Remove_reason_to_re_open0</name>
+        <label>Remove reason to re-open</label>
+        <locationX>314</locationX>
+        <locationY>503</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Reason_for_Reopen__c</assignToReference>
+            <operator>Assign</operator>
+        </assignmentItems>
+    </assignments>
+    <assignments>
+        <name>UpdateReopenBy0</name>
+        <label>Update Reopened by</label>
+        <locationX>50</locationX>
+        <locationY>395</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Reopened_By__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>reOpenedBy</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <decisions>
+        <name>Blank_out_reason_to_re_open</name>
+        <label>Blank out reason to re-open</label>
+        <locationX>446</locationX>
+        <locationY>395</locationY>
+        <defaultConnectorLabel>FALSE_Blank out reason to re-open</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_Blankoutreasontore_open</name>
+            <conditionLogic>(1 OR 3) AND 2</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Status__c</leftValueReference>
+                <operator>StartsWith</operator>
+                <rightValue>
+                    <elementReference>recordStatusStartsWith</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Reason_for_Reopen__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Review Not Required</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Remove_reason_to_re_open0</targetReference>
+            </connector>
+            <label>TRUE_Blank out reason to re-open</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Update_ReOpened_By</name>
+        <label>Update ReOpened By</label>
+        <locationX>248</locationX>
+        <locationY>287</locationY>
+        <defaultConnector>
+            <targetReference>Blank_out_reason_to_re_open</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>FALSE_Update ReOpened By</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_UpdateReOpenedBy</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>surveyResponseReOpened</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>UpdateReopenBy0</targetReference>
+            </connector>
+            <label>TRUE_Update ReOpened By</label>
+        </rules>
+    </decisions>
+    <description>Migrated from the Qualtrics Survey Response: Update Record on ReOpening process using multiple criteria.
+Flow to update reopened by and blank reason to re-open</description>
+    <formulas>
+        <name>recordStatusStartsWith</name>
+        <dataType>String</dataType>
+        <expression>&apos;Closed&apos;</expression>
+    </formulas>
+    <formulas>
+        <name>reOpenedBy</name>
+        <dataType>String</dataType>
+        <expression>{!$User.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>surveyResponseReOpened</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+NOT(ISNEW()),
+BEGINS(TEXT(PRIORVALUE({!$Record.Status__c} )), &apos;Closed&apos;),
+ISPICKVAL({!$Record.Status__c} ,&apos;In Progress&apos;)  
+)</expression>
+    </formulas>
+    <interviewLabel>Qualtrics_Survey_Response__c: Before Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Qualtrics_Survey_Response__c: Before Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>122</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Update_ReOpened_By</targetReference>
+        </connector>
+        <object>Qualtrics_Survey_Response__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Obsolete</status>
+</Flow>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckIROAndIFSDirectSaletoUltimateConsig</fullName>
+    <active>true</active>
+    <description>Prevents users from going to further stages if &quot;Is Customer Account Creation Requested&quot; is blank, &quot;Direct Sale to Ultimate Consignee&quot; is TRUE and Ultimate Consignee Account Status is Unverified.</description>
+    <errorConditionFormula>IF ( 
+    AND (
+        AND (
+            OR (
+                $RecordType.DeveloperName = $Label.IndirectFieldServices,
+                $RecordType.DeveloperName = $Label.IndirectReOrder
+             ),
+             NOT ( 
+                OR (
+                    ISPICKVAL ( StageName, &apos;Closed Lost&apos; ),
+                    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Lost&apos; ), 
+                    ISPICKVAL ( StageName, &apos;Closed Abandoned&apos; ),
+                    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Abandoned&apos; ),
+                    ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Won&apos; ),
+                    ISPICKVAL ( StageName, &apos;Develop&apos; ),
+                    TEXT ( StageName ) = $Label.OpportunityStageClosedWon
+                  ) 
+               )
+           ),
+        Direct_Sale_to_Ultimate_Consignee__c = true,
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) == $Label.AccountStatusUnverified,
+        ISBLANK ( Customer_Account_Creation_Requested_On__c ),
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+        NOT (
+            OR (     
+                ISCHANGED ( Is_Updated_By_System__c ),
+                Is_Updated_By_System__c = true,
+                $Profile.Name = $Label.ProfileSystemAdmin, 
+                $Profile.Name = $Label.ProfileDataSteward 
+            )
+        )
+    ),
+    true,
+    false
+)</errorConditionFormula>
+    <errorDisplayField>Customer_Account_Creation_Requested_On__c</errorDisplayField>
+    <errorMessage>Please request ultimate consignee be upgraded and enter date requested under &quot;Customer Account Creation Requested On&quot; field.</errorMessage>
+</ValidationRule>

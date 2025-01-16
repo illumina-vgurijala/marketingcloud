@@ -1,0 +1,103 @@
+<!--
+    Apttus Config & Pricing
+    OrderRuleset
+
+    @2019-2020 Apttus Inc. All rights reserved.
+ -->
+<apex:page lightningStylesheets="true" standardController="Apttus_Config2__OrderWorkflowRuleset__c" 
+           standardStylesheets="true"
+           extensions="Apttus_Config2.OrderRulesetController" 
+           showHeader="false" 
+           sidebar="false" 
+           tabStyle="Apttus_Config2__OrderWorkflowRuleset__c">
+
+        <style>
+            textarea {
+                height: 40px;
+                width: 200px;
+            }
+            
+            body .bDetailBlock.bPageBlock .pbBody .labelCol, 
+            body .bDetailBlock.bPageBlock .pbBody .dataCol, 
+            body .bDetailBlock.bPageBlock .pbBody .data2Col, 
+            body .bPageBlock.bEditBlock .pbBody .labelCol, 
+            body .bPageBlock.bEditBlock .pbBody .dataCol, 
+            body .bPageBlock.bEditBlock .pbBody .data2Col {
+                padding-top: 3px;
+                padding-left: 2%;
+                padding-bottom: 3px;
+            }
+                
+        </style>
+        <apex:sectionHeader title="{!$ObjectType.Apttus_Config2__OrderWorkflowRuleset__c.Label & ' ' & $Label.apttus_config2__new}" 
+                        subtitle="{!$Label.apttus_config2__new & ' ' & $ObjectType.Apttus_Config2__OrderWorkflowRuleset__c.Label}" 
+                        rendered="{!ISBLANK(Apttus_Config2__OrderWorkflowRuleset__c.Id)}" />
+                        
+        <apex:sectionHeader title="{!$ObjectType.Apttus_Config2__OrderWorkflowRuleset__c.Label & ' ' & $Label.apttus_config2__edit}" 
+                        subtitle="{!Apttus_Config2__OrderWorkflowRuleset__c.Name}" 
+                        rendered="{!NOT(ISBLANK(Apttus_Config2__OrderWorkflowRuleset__c.Id))}" />
+        
+           
+        <apex:form id="idOrderRulesetSO">
+            <apex:pageBlock id="idOrderRulesetBlock" 
+                        title="{!$ObjectType.Apttus_Config2__OrderWorkflowRuleset__c.Label & ' ' & $Label.apttus_config2__edit}" 
+                        mode="edit" >
+                <apex:pageMessages />
+            
+                <apex:pageBlockButtons location="both">
+                    <apex:commandButton value="{!$Label.apttus_config2__save}" action="{!doSave}" />
+                    <apex:commandButton value="{!$Label.apttus_config2__saveandnew}" action="{!doSaveAndNew}"/>
+                    <apex:commandButton value="{!$Label.apttus_config2__cancel}" action="{!doCancel}" immediate="true"/>
+                </apex:pageBlockButtons>
+            
+                        
+                <apex:pageBlockSection id="idOrderRulesetInputSection" 
+                                       title="{!$Label.apttus_config2__information}" 
+                                       columns="2" 
+                                       collapsible="false"
+                                       rendered="true">
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Name}" required="true"/>
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Apttus_Config2__Criteria__c}" rendered="false" />
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Id}" rendered="false" />
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Apttus_Config2__BusinessContextType__c}"/>
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Apttus_Config2__Sequence__c}" required="true"/>
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Apttus_Config2__Active__c}"/>
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Apttus_Config2__TriggerContextType__c}" onChange="clearCritriaValue();" />
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Apttus_Config2__Type__c}"/> 
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$ObjectType.Apttus_Config2__OrderWorkflowRuleset__c.Fields.Apttus_Config2__Criteria__c.Label}" 
+                                          for="idCriteria" />
+                        <apex:panelGrid columns="2">
+                            <apex:outputPanel layout="block" styleClass="{!IF(isCriteriaEditMode, 'errorRow', '')}">
+                                <apex:inputTextarea id="idCriteria" 
+                                                    rows="2"
+                                                    value="{!CriteriaExpr}"
+                                                    cols="60"
+                                                    style="font-weight: bold; width:350px; margin-left:-4px;"
+                                                    disabled="true" />
+                            </apex:outputPanel>
+                            <apex:commandLink value="{!$Label.apttus_config2__new}" action="{!doEditFilter}" 
+                                              rendered="{!NOT(HasCriteriaExpr)}"/>
+                            <apex:commandLink value="{!$Label.apttus_config2__edit}" action="{!doEditFilter}" 
+                                              rendered="{!HasCriteriaExpr}"/>
+                        </apex:panelGrid>
+                    </apex:pageBlockSectionItem>
+                    <apex:inputField value="{!Apttus_Config2__OrderWorkflowRuleset__c.Apttus_Config2__Description__c}"/>  
+                </apex:pageBlockSection>   
+
+            </apex:pageBlock>
+            
+            <c:SearchFilter id="idSearchFilter" 
+                sObjectName="{!ContextObjectName}" 
+                parentFilterLabel="Order"  
+                pageController="{!this}"
+                mode="edit"
+                autoReset="false"
+                valueSObjectNames="{!$ObjectType.Apttus_Config2__FormulaField__c.Name}" /> 
+             
+            <apex:actionFunction name="clearCritriaValue" 
+                                 action="{!clearCriteria}"
+                                 rerender="idOrderRulesetSO"/>
+        </apex:form>               
+           
+</apex:page>

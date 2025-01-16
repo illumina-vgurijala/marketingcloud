@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckInvalidDurationHour</fullName>
+    <active>true</active>
+    <description>Check if time entered is in format H or HH:MM</description>
+    <errorConditionFormula>AND( 
+    NOT(
+        AND(
+        NOT(ISBLANK(SVMX_PS_External_ID__c)),
+        ISCHANGED(Integration_Status__c),
+        Integration_Status__c==&apos;Success&apos;
+        )),
+    NOT(TEXT(SVMXC__Line_Status__c)==$Label.Canceled),
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c), 
+	/*Validate if the time is null or matches the regex HH:MM. If none of them satisfies then throw error.*/
+    NOT(
+	AND(
+	    OR(ISBLANK(Travel_Time_in_hours__c ), REGEX( Travel_Time_in_hours__c , &quot;^[0-9]{1,2}[:][0-5][0-9]|^[0-9]{1,3}$&quot;)),
+	    OR(ISBLANK(Indirect_in_hours__c ), REGEX( Indirect_in_hours__c  , &quot;^[0-9]{1,2}[:][0-5][0-9]|^[0-9]{1,3}$&quot;)),
+            OR(ISBLANK(Labor_Hours__c ), REGEX( Labor_Hours__c , &quot;^[0-9]{1,2}[:][0-5][0-9]|^[0-9]{1,3}$&quot;))
+        )
+    ) 
+)</errorConditionFormula>
+    <errorMessage>Labor, Travel and Indirect Hours should be entered in H or HH:MM format.</errorMessage>
+</ValidationRule>

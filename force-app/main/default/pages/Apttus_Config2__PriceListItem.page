@@ -1,0 +1,669 @@
+<!-- 
+    Apttus Config & Pricing
+    PriceListItem
+     
+    @2010-2019 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page lightningStylesheets="true" standardController="Apttus_Config2__PriceListItem__c" 
+	  	   extensions="Apttus_Config2.PriceListItemController" 
+           showHeader="false" 
+           sidebar="{!ShowAdminSidebar}" 
+           standardStylesheets="true" 
+           tabStyle="Apttus_Config2__PriceListItem__c">	
+    
+    <apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/assets/skins/sam/skin.css')}" />
+	
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/dragdrop/dragdrop-min.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/container/container-min.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/animation/animation-min.js')}" />
+    
+    <style type="text/css">
+    
+		textarea {
+			width: 50%;
+		}
+		
+	</style>
+	
+	<script type="text/javascript">
+			
+		// Create a namespace for our custom functions
+		YAHOO.namespace("force.com");
+		
+		// wait panel
+		
+		/**
+		 * Builds the wait panel.
+		 */
+	    YAHOO.force.com.buildWaitPanel = function() {
+	        document.body.className = document.body.className + " yui-skin-sam";
+	        YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+	            "waitPanel",  // The id of our dialog container
+	            { 
+	                    width           :   "300px", // You can play with this until it's right
+	                    visible         :   false,   // Should be invisible when rendered
+	                    draggable       :   false,   // Make the dialog draggable
+	                    close           :   false,   // Don't include a close title button
+	                    modal           :   true,    // Make it modal
+	                    fixedCenter     :   true,    // Keep centered if window is scrolled
+	                    zindex          :   40,      // Make sure it's on top of everything
+	                    constraintoviewport: true,
+	                    
+	                    // This line adds the appear/disapper fade effect
+	                    effect			:   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+        							
+	            }
+	        );
+	        
+	        // header
+	        YAHOO.force.com.waitPanel.setHeader("{!JSINHTMLENCODE($Label.LoadingPage)}");
+			// set image
+			YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+	        // Render the dialog to the document.body level of the DOM
+	        YAHOO.force.com.waitPanel.render(document.body);
+	        
+	    }
+    	
+    	/**
+		 * Callback when the action button is clicked
+		 */
+		function onActionClick() {
+			// show the modal panel
+			YAHOO.force.com.waitPanel.show();
+			// return false to allow the action to proceed
+			return false;
+			
+		}
+		
+		/**
+		 * Callback when the action is completed
+		 */
+		function onActionComplete() {
+			// hide the modal panel
+			YAHOO.force.com.waitPanel.hide();
+			
+		}
+		
+		/**
+	     * Builds the formula detail panel
+	     */
+	    YAHOO.force.com.buildFormulaDetailPanel = function() {
+			
+			YAHOO.force.com.formulaDetailPanel = new YAHOO.widget.Panel(
+			    "idFormulaDetailPanel",  // The id of our dialog container
+			    { 
+				    width           :   "600px", // You can play with this until it's right
+				    fixedcenter     :   "contained",
+				    visible         :   false,   // Should be invisible when rendered
+				    draggable       :   true,    // Make the dialog draggable
+				    modal           :   true,    // Make it modal
+				    close           :   true,
+				    zindex          :   5046,      // Make sure it's on top of everything
+		
+				    // This line adds the appear/disapper fade effect
+				    effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25} 
+			    }
+			 );
+		
+			// Render the dialog to the document.body level of the DOM
+			YAHOO.force.com.formulaDetailPanel.render();
+	
+	    }       
+    	
+    	/**
+	     * Gets the quantity formula and display it in a modal dialog
+	     * @param formulaName the formula name 
+	     */
+	    function getQuantityFormula(formulaName){
+			document.getElementById('idFormulaName').innerHTML = "{!$Label.LoadingPage}";
+		    document.getElementById('idFormulaBody').innerHTML = '';
+		        
+			Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.PriceListItemController.getQuantityFormula}', formulaName, function(result, event) {
+			    // check response status
+			    if (event.status) {
+			        // ok response (check the result)
+			        document.getElementById('idFormulaName').innerHTML = formulaName;
+			        if (result) {
+			        	document.getElementById('idFormulaBody').innerHTML = result;
+			        	
+					}
+				} else {
+			    	document.getElementById('idFormulaBody').innerHTML = event.message;
+			    	
+				}
+				
+	       	}, {buffer:false,escape:true});
+			
+			// show the modal panel
+			document.getElementById("idFormulaDetailPanel").style.display = "block";              
+			YAHOO.force.com.formulaDetailPanel.show();
+		
+		}
+		
+		/**
+	     * Gets the price formula and display it in a modal dialog
+	     * @param formulaName the formula name 
+	     */
+	    function getPriceFormula(formulaName){
+			document.getElementById('idFormulaName').innerHTML = "{!$Label.LoadingPage}";
+		    document.getElementById('idFormulaBody').innerHTML = '';
+		        
+			Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.PriceListItemController.getPriceFormula}', formulaName, function(result, event) {
+			    // check response status
+			    if (event.status) {
+			        // ok response (check the result)
+			        document.getElementById('idFormulaName').innerHTML = formulaName;
+			        if (result) {
+			        	document.getElementById('idFormulaBody').innerHTML = result;
+			        	
+					}
+				} else {
+			    	document.getElementById('idFormulaBody').innerHTML = event.message;
+			    	
+				}
+				
+	       	}, {buffer:false,escape:true});
+			
+			// show the modal panel
+			document.getElementById("idFormulaDetailPanel").style.display = "block";              
+			YAHOO.force.com.formulaDetailPanel.show();
+		
+		}
+		
+	    // Function called when the DOM is ready to create the dialog,
+    	// render the dialog into the document body, add our dialog skin
+    	// css to the body tag, and wire up the buttons on our dialog   
+		YAHOO.force.com.onDOMReady = function() {
+			// build the wait panel
+			YAHOO.force.com.buildWaitPanel();
+			// build the formula detail panel
+			YAHOO.force.com.buildFormulaDetailPanel();
+			
+		}
+		
+	    // build the tree as soon as the DOM is in a usable state
+		YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady);   	
+		
+	</script>
+	
+	<apex:sectionHeader title="{!$ObjectType.Apttus_Config2__PriceList__c.Label}" subtitle="{!priceListSO.Name}"/>
+
+	<apex:form id="idPriceListItemSO">
+		
+		<!--  required fields -->
+		<apex:outputText value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceType__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceMethod__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Criteria__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultPriceFrom__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultQuantityFrom__c}" rendered="false" />
+		
+		<apex:pageBlock id="idPriceListItemBlock" 
+						title="{!$ObjectType.Apttus_Config2__PriceListItem__c.Label & ' ' & $Label.apttus_config2__edit}" 
+						mode="edit" >
+						
+			<apex:pageMessages />
+			
+			<apex:pageBlockButtons location="top" rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" >
+		        <apex:commandButton value="{!$Label.apttus_config2__save}" 
+		        					action="{!doSave}" />			
+		        <apex:commandButton value="{!$Label.apttus_config2__saveandnew}" 
+		        					action="{!doSaveAndNew}" />			
+		        <apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+		        					action="{!doCancel}" 
+		        					immediate="true" />
+		    </apex:pageBlockButtons>
+		    
+		    <apex:pageBlockSection title="{!$Label.apttus_config2__information}" columns="2" collapsible="false" >
+		    
+		    	<apex:pageBlockSectionItem rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" >
+					<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__ProductId__c.Label}" 
+									  for="idProduct" />
+					<apex:outputPanel styleClass="requiredInput" layout="block">
+   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+  						<apex:inputField id="idProduct" 
+  										 value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ProductId__c}" />
+ 					</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+		    	
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ProductId__c}" 
+		    					  rendered="{!isCriteriaEditMode || isFilterEditMode}" />
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceListId__c}" />
+		    	
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ChargeType__c}" 
+		    					 required="true"
+		    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ChargeType__c}" 
+		    					  rendered="{!isCriteriaEditMode || isFilterEditMode}" />
+		    					  
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ListPrice__c}" 
+		    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ListPrice__c}" 
+		    					  rendered="{!isCriteriaEditMode || isFilterEditMode}" />
+		    	
+		    	<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__Criteria__c.Label}" 
+									  for="idCriteria" />
+					<apex:panelGrid columns="2">
+						<apex:outputPanel styleClass="{!IF(isCriteriaEditMode, 'errorRow', '')}" layout="block">
+							<apex:inputTextarea id="idCriteria" 
+				        						value="{!criteriaExpr}"
+				        						rows="2"
+				        						cols="60"
+			        							style="font-weight: bold; width: 350px;"
+			       								disabled="true" 
+			       								title="{!criteriaExpr}" />
+				    	</apex:outputPanel>
+				    	<apex:commandLink action="{!doEditFilter}" 
+				    					  value="{!$Label.apttus_config2__new}" 
+				    					  rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+				    					  			  NOT(hasCriteriaExpr)}" />
+				    	<apex:commandLink action="{!doEditFilter}" 
+				    					  value="{!$Label.apttus_config2__edit}" 
+				    					  rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+				    					  			  hasCriteriaExpr}" />
+					</apex:panelGrid>
+				</apex:pageBlockSectionItem>
+				
+				<apex:pageBlockSectionItem >
+	    			<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__Cost__c.Label}" />
+					<apex:outputPanel > 			  
+				    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Cost__c}" 
+				    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Cost__c}" 
+				    					  rendered="{!isCriteriaEditMode || isFilterEditMode}" />
+			    	</apex:outputPanel>				  			  
+				</apex:pageBlockSectionItem>
+								  
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceType__c}" 
+		    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceType__c}" 
+		    					  rendered="{!isFilterEditMode}" />
+		    	
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceUom__c}" 
+		    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceUom__c}" 
+		    					  rendered="{!isFilterEditMode}" />
+		    					  
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Frequency__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Frequency__c}" 
+								  rendered="{!isFilterEditMode}" />
+				
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MinPrice__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MinPrice__c}" 
+								  rendered="{!isFilterEditMode}" />
+								  
+								  
+				<apex:pageBlockSectionItem rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" >
+			    	<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__PriceMethod__c.Label}" 
+			    					  for="idPriceMethod" />
+			    	<apex:selectList id="idPriceMethod" size="1" value="{!priceMethod}" >
+			      		<apex:selectOptions value="{!priceMethodItems}" />
+			      		<apex:actionSupport event="onchange" reRender="idPriceListItemBlock" />
+			      	</apex:selectList>
+				</apex:pageBlockSectionItem>	
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceMethod__c}" 
+								  rendered="{!isFilterEditMode}" />
+				
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MaxPrice__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MaxPrice__c}" 
+								  rendered="{!isFilterEditMode}" />
+								  
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedPercent__c}" 
+		    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+		    					 			 isPercentagePriceEnabled}" />
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedPercent__c}" 
+		    					  rendered="{!NOT(isCriteriaEditMode) && 
+		    					  			  NOT(isRelatedPriceEnabled) &&
+		    					  			 (isFilterEditMode || NOT(isPercentagePriceEnabled))}" />
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedAdjustmentAmount__c}" 
+		    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+		    					 			 isRelatedPriceEnabled}" />
+		    					 			 
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MinMaxPriceAppliesTo__c}" 
+		    					 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MinMaxPriceAppliesTo__c}" 
+		    					  rendered="{!isFilterEditMode}" />
+		    					  
+								  				  				  				 
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedPercentAppliesTo__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+		    					 			 isPercentagePriceEnabled}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedPercentAppliesTo__c}" 
+								  rendered="{!NOT(isCriteriaEditMode) && 
+								  			  NOT(isRelatedPriceEnabled) &&
+		    					  			 (isFilterEditMode || NOT(isPercentagePriceEnabled))}" />
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedAdjustmentType__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+		    					 			 isRelatedPriceEnabled}" />
+		    	
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__EffectiveDate__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__EffectiveDate__c}" 
+								  rendered="{!isFilterEditMode}" />
+		    					    				  			 				 			 				  				  
+				<apex:pageBlockSectionItem rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+		    					 			 		   isPercentagePriceEnabled}" >
+		    		
+			    	<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__RelatedItemId__c.Label}" 
+			    					  for="idRelatedItem" />
+			    	<!-- 
+			    	<apex:selectList id="idRelatedItem" 
+			    					 size="1" 
+			    					 value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedItemId__c}" 
+			    					 multiselect="false">
+			      		<apex:selectOptions value="{!relatedItems}" />
+			      	</apex:selectList> 
+					-->
+					<apex:inputField id="idRelatedItem" value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedItemId__c}" />
+		    					  			 
+				</apex:pageBlockSectionItem>
+		    	<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedItemId__c}" 
+		    					  rendered="{!NOT(isCriteriaEditMode) && 
+		    					  			  NOT(isRelatedPriceEnabled) &&
+		    					  			 (isFilterEditMode || NOT(isPercentagePriceEnabled))}" />
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedAdjustmentAppliesTo__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+		    					 			 isRelatedPriceEnabled}" />
+		    	
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ExpirationDate__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ExpirationDate__c}" 
+								  rendered="{!isFilterEditMode}" />
+				
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RelatedAdjustmentAmountSourceId__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode) && 
+		    					 			 isRelatedPriceEnabled}" />
+		    					 			 
+		    	<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Type__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Type__c}" 
+								  rendered="{!isFilterEditMode}" />	
+				
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Active__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Active__c}" 
+								  rendered="{!isFilterEditMode}" />
+								  
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__SubType__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__SubType__c}" 
+								  rendered="{!isFilterEditMode}" />
+								  				  				 			 				  	  				  				 			 
+				<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Description__c}" 
+								 rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" />
+				<apex:outputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Description__c}" 
+								  rendered="{!isFilterEditMode}" />
+											  		  				  				  
+			</apex:pageBlockSection>
+			
+			<!-- Create Tab panel -->
+		    <apex:tabPanel id="idTabPanel" 
+		    			   switchType="ajax" 
+		    			   selectedTab="OptionPriceTab" 
+		    			   tabClass="activeTab" 
+		    			   inactiveTabClass="inactiveTab" 
+		    			   disabledTabClass="disabledTab"
+		    			   rendered="{!NOT(isCriteriaEditMode || isFilterEditMode)}" >
+    			
+    			<!-- disabled="{!NOT(hasOptionComponents)}"-->
+				<apex:tab id="idOptionPriceTab" 
+		        		  label="{!$Label.apttus_config2__options}" 
+		        		  name="OptionPriceTab" 
+		        		  ontabenter="onActionClick();" 
+						  oncomplete="onActionComplete();" >
+		        		  
+		        	<c:ProductOptionPrice id="idOptionPriceComponent" 
+				    			   		  pageController="{!this}" 
+				    			   		  priceListId="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceListId__c}"  
+				    			   		  parentProductId="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ProductId__c}" />	
+				    			     
+		        </apex:tab>
+		        
+				<apex:tab id="idPriceMatrixTab" 
+		        		  label="{!$Label.apttus_config2__matrices}" 
+		        		  name="PriceMatrixTab" 
+		        		  ontabenter="onActionClick();" 
+						  oncomplete="onActionComplete();" >
+		        		  
+		        	<c:PriceMatrixList id="idPriceMatrixListComponent" 
+				    			       pageController="{!this}"  
+				    			   	   priceListItemId="{!Apttus_Config2__PriceListItem__c.Id}" />	
+				    			     
+		        </apex:tab>
+		        
+		        <apex:tab id="idDefaultsTab" 
+		        		  label="{!$Label.apttus_config2__defaults}" 
+		        		  name="DefaultsTab" 
+		        		  ontabenter="onActionClick();" 
+						  oncomplete="onActionComplete();" >
+		        		  
+			    	<apex:pageBlockSection title="{!$Label.apttus_config2__defaults}" columns="2" collapsible="false" >
+			
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultQuantity__c}" />
+						
+						<apex:pageBlockSectionItem >
+					    	<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__DefaultPriceFrom__c.Label}" 
+					    					  for="idDefaultPriceFrom" />
+					    	<apex:selectList id="idDefaultPriceFrom" 
+					    					 size="1" 
+					    					 value="{!defaultPriceFrom}" >
+					      		<apex:selectOptions value="{!defaultPriceFromItems}" />
+					      		<apex:actionSupport event="onchange" reRender="idPriceListItemBlock" />
+					      	</apex:selectList>
+						</apex:pageBlockSectionItem>	
+						
+						<apex:pageBlockSectionItem >
+					    	<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__DefaultQuantityFrom__c.Label}" 
+					    					  for="idDefaultQuantityFrom" />
+					    	<apex:selectList id="idDefaultQuantityFrom" 
+					    					 size="1" 
+					    					 value="{!defaultQuantityFrom}" >
+					      		<apex:selectOptions value="{!defaultQuantityFromItems}" />
+					      		<apex:actionSupport event="onchange" reRender="idPriceListItemBlock" />
+					      	</apex:selectList>
+						</apex:pageBlockSectionItem>	
+						
+						<apex:pageBlockSectionItem >
+							<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__DefaultPriceDatasource__c.Label}" 
+					    					  for="idDefaultPriceDatasource" />
+					    	<apex:panelGrid columns="2">
+						    	<apex:selectList id="idDefaultPriceDatasource" 
+						    					 size="1" 
+						    					 value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultPriceDatasource__c}" >
+						      		<apex:selectOptions value="{!defaultPriceFieldItems}" />
+						      		<apex:actionSupport event="onchange" reRender="idPriceListItemBlock" />
+						      	</apex:selectList>
+						      	<apex:commandLink rerender="dummy" 
+						      					  rendered="{!NOT(ISBLANK(PriceListItem__c.DefaultPriceDatasource__c)) && 
+						      					  			 (defaultPriceFrom == 'Advanced Formula')}">
+									<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+												title="{!$Label.apttus_config2__view}" 
+							                    alt="{!$Label.apttus_config2__view}"
+												onclick="getPriceFormula('{!JSENCODE(Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultPriceDatasource__c)}');" />
+								</apex:commandLink>	
+						    </apex:panelGrid>
+				     	</apex:pageBlockSectionItem>
+						
+						<apex:pageBlockSectionItem >
+							<apex:outputLabel value="{!$ObjectType.Apttus_Config2__PriceListItem__c.Fields.Apttus_Config2__DefaultQuantityDatasource__c.Label}" 
+					    					  for="idDefaultQuantityDatasource" />
+					    	<apex:panelGrid columns="2">
+						    	<apex:selectList id="idDefaultQuantityDatasource" 
+						    					 size="1" 
+						    					 value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultQuantityDatasource__c}" >
+						      		<apex:selectOptions value="{!defaultQuantityFieldItems}" />
+						      		<apex:actionSupport event="onchange" reRender="idPriceListItemBlock" />
+						      	</apex:selectList>
+						      	<apex:commandLink rerender="dummy" 
+						      					  rendered="{!NOT(ISBLANK(PriceListItem__c.DefaultQuantityDatasource__c)) && 
+						      					  			 (defaultQuantityFrom == 'Advanced Formula')}">
+									<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+												title="{!$Label.apttus_config2__view}" 
+							                    alt="{!$Label.apttus_config2__view}"
+												onclick="getQuantityFormula('{!JSENCODE(Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultQuantityDatasource__c)}');" />
+								</apex:commandLink>	
+						     </apex:panelGrid>
+				     	</apex:pageBlockSectionItem>				  
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DefaultSellingTerm__c}" />
+						
+						<!--  reusing deprecated field for quantity modifiable indicator -->
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RollupPriceToBundle__c}" />	  
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AutoCascadeSellingTerm__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AutoCascadeQuantity__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__IsSellingTermReadOnly__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__IsQuantityReadOnly__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AutoRenew__c}" />
+						
+						<apex:pageBlockSectionItem />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AutoRenewalType__c}" />
+						
+						<apex:pageBlockSectionItem />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AutoRenewalTerm__c}" />
+							  				  				  				  				  				  				  				 
+					</apex:pageBlockSection>			     
+				    
+		        </apex:tab>
+		        
+		        <apex:tab id="idTaxBillingTab" 
+		        		  label="{!$Label.apttus_config2__taxandbilling}" 
+		        		  name="TaxBillingTab" 
+		        		  ontabenter="onActionClick();" 
+						  oncomplete="onActionComplete();" >
+						  
+					<apex:pageBlockSection title="{!$Label.apttus_config2__taxandbilling}" columns="2" collapsible="false" >
+					
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__Taxable__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__BillingRule__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__TaxInclusive__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__BillingFrequency__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__TaxCodeId__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MinUsageQuantity__c}" />
+						
+						<apex:pageBlockSectionItem />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__MaxUsageQuantity__c}" />
+						
+					</apex:pageBlockSection>		  
+				</apex:tab>
+				
+				<apex:tab id="idFinanceRevenueTab" 
+		        		  label="{!$Label.apttus_config2__financeandrevenue}" 
+		        		  name="FinanceRevenueTab" 
+		        		  ontabenter="onActionClick();" 
+						  oncomplete="onActionComplete();" >
+						  
+					<apex:pageBlockSection title="{!$Label.apttus_config2__taxandbilling}" columns="2" collapsible="false" >
+					
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__ARAccountRuleId__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RevRecPolicyId__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DRAccountRuleId__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RevenueSplitPolicyId__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__RRAccountRuleId__c}" />
+						<apex:pageBlockSectionItem />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__UBARAccountRuleId__c}" />
+						<apex:pageBlockSectionItem />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__UBAccountRuleId__c}" />
+						<apex:pageBlockSectionItem />
+						
+					</apex:pageBlockSection>		  
+				</apex:tab>
+				
+		        <apex:tab id="idMiscTab" 
+		        		  label="{!$Label.apttus_config2__miscellaneous}" 
+		        		  name="MiscTab" 
+		        		  ontabenter="onActionClick();" 
+						  oncomplete="onActionComplete();" >
+						  
+					<apex:pageBlockSection title="{!$Label.apttus_config2__miscellaneous}" columns="2" collapsible="false" >
+					
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__PriceIncludedInBundle__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AllowManualAdjustment__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__EnablePriceRamp__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AllocateGroupAdjustment__c}"  />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__EnableAutoRampCreation__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AllowProration__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__AllowPriceRampOverlap__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__EnableCommitment__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__IsUsageTierModifiable__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DisableAssetIntegration__c}" />
+						
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DisableCostModel__c}" />
+						<apex:inputField value="{!Apttus_Config2__PriceListItem__c.Apttus_Config2__DisableSyncWithOpportunity__c}" />
+						
+					</apex:pageBlockSection>		  
+				</apex:tab>
+				
+				<apex:tab id="idCustomScopeTab" 
+		        		  label="{!$Label.apttus_config2__customscope}" 
+		        		  name="CustomScopeTab" 
+		        		  ontabenter="onActionClick();" 
+						  oncomplete="onActionComplete();" 
+						  rendered="{!HasCustomScope}" >
+						  
+					<apex:pageBlockSection title="{!$Label.apttus_config2__customscope}" columns="2" collapsible="false" >
+						<apex:repeat value="{!$ObjectType.Apttus_Config2__PriceListItem__c.FieldSets.Apttus_Config2__CustomScopeFields}" 
+									 var="fd">
+							<apex:inputField value="{!Apttus_Config2__PriceListItem__c[fd.FieldPath]}" />
+						</apex:repeat>	 
+						
+					</apex:pageBlockSection>		  
+				</apex:tab>
+			</apex:tabPanel>
+				     		 
+		</apex:pageBlock>
+			
+		<!--  Search Filter -->
+	    <c:SearchFilter id="idSearchFilter" 
+	    				sObjectName="{!$ObjectType.Apttus_Config2__LineItem__c.Name}"  
+	    				childSObjectName="{!$ObjectType.Apttus_Config2__ProductAttributeValue__c.Name}"  
+	    				relationFieldName="{!$ObjectType.Apttus_Config2__ProductAttributeValue__c.Fields.Apttus_Config2__LineItemId__c.Name}"  
+	    				parentFilterLabel="{!$Label.apttus_config2__lineitem}"  
+	    				childFilterLabel="{!$Label.apttus_config2__attributes}"  
+	    				pageController="{!this}"
+	    				mode="edit"
+	    				autoReset="false" />	
+		    					
+		
+		<!-- formula detail dialog -->
+		<apex:outputPanel >
+			<div id="idFormulaDetailPanel" style="display: none">
+				<apex:outputPanel >
+				    <div class="hd">
+				    	<apex:outputPanel >
+				    		<span id="idFormulaName">Hello Name</span>
+				        </apex:outputPanel>	
+				    </div> 
+				    <div class="bd">
+			    		<apex:pageBlock >
+			    			<apex:pageBlockSection columns="1">
+			    				<apex:pageBlockSectionItem >
+			    					<span id="idFormulaBody">Hello Description</span>
+				    			</apex:pageBlockSectionItem>
+			    			</apex:pageBlockSection>
+			    		</apex:pageBlock>
+				    </div> 
+				</apex:outputPanel>	
+			</div>
+		</apex:outputPanel>					
+		
+	</apex:form>
+
+</apex:page>

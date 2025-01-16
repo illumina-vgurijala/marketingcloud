@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDirectUltimateConsigneeErase</fullName>
+    <active>true</active>
+    <description>Prevents user from deleting Ultimate Consignee for Direct record types.</description>
+    <errorConditionFormula>IF ( 
+   AND (
+        NOT (
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+        ),
+        NOT (
+            OR (     
+                ISCHANGED ( Is_Updated_By_System__c ),
+                Is_Updated_By_System__c = true,
+                TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+				 $Profile.Name =  $Label.ProfileSystemAdmin,
+				 $Profile.Name =  $Label.ProfileDataSteward 
+            )
+        ),
+        ISCHANGED ( Ultimate_Consignee__c ),
+        ISBLANK ( Ultimate_Consignee__c),
+        OR (
+            RecordType.DeveloperName == $Label.OpportunityRTDirectStandard,
+            RecordType.DeveloperName == $Label.OpportunityRTDirectReOrder,
+            RecordType.DeveloperName == $Label.FieldServices
+        ),
+        AND ( 
+	    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+        )
+    ),
+   true,
+   false
+)</errorConditionFormula>
+    <errorDisplayField>Ultimate_Consignee__c</errorDisplayField>
+    <errorMessage>Please provide an &quot;Ultimate Consignee&quot; (Opportunity Details section).</errorMessage>
+</ValidationRule>

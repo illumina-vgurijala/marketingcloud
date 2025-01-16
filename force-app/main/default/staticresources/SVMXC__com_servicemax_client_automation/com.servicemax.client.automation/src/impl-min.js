@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.automation.impl");a.Class("Module",com.servicemax.client.lib.api.ModuleActivator,{__constructor:function(){this.__base();},beforeInitialize:function(){com.servicemax.client.automation.automationagent.impl.init();},initialize:function(){},afterInitialize:function(){}},{});})();

@@ -1,0 +1,180 @@
+<!-- 
+    Apttus Contract Management
+    AgreementClone
+     
+    @2009-2019 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus__APTS_Agreement__c" 
+		   extensions="Apttus.AgreementCloneController" >
+    <apex:includeScript value="/support/console/46.0/integration.js"/>
+    <apex:variable var="isLightning" value="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}"  />
+    <apex:variable var="isSalesforce1" value="{!$User.UIThemeDisplayed == 'Theme4t'}" />
+	 
+	
+	 <apex:variable var="isIncludecss" value="{!isLightning  || isSalesforce1 }" 
+                   rendered="{!isLightning || isSalesforce1}">
+        <apex:stylesheet value="{!URLFOR($Resource.Apttus__LightningResource, 'css/agreement-clone-styling.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+        <style>
+            html body.sfdcBody {
+            padding:0 0 0 0;
+            }
+           	body .bPageBlock .detailList tr td, body .bPageBlock .detailList tr th, body table.list tr td, body table.list tr th, body .hoverDetail .bPageBlock .detailList tr td, body .hoverDetail .bPageBlock .detailList tr th{
+            	border-color:#f4f6f9;
+            }
+			body .bPageBlock, body #bodyCell .bResource .secondaryPalette, body .secondaryPalette.bPageBlock, body .individualPalette .secondaryPalette.bPageBlock, body .bodyDiv .genericTable, body .genericPageBlockTable, body .bodyDiv .bSubBlock, body .bComponentBlock .bPageBlock, body .bMyDashboard .bPageBlock, body.rlHoverFrame .bPageBlock, body.subjectSelectionPopup div.choicesBox, body.lookupTab .secondaryPalette.bPageBlock, body.popupTab .secondaryPalette.bPageBlock, body.UserTagStatsPage .secondaryPalette.bPageBlock{
+				border-color:#f4f6f9;
+            	border-bottom:#f4f6f9;
+            	border-left:#f4f6f9;
+            	border-right:#f4f6f9;
+            }            
+        </style>
+    </apex:variable>
+
+    <script type="text/javascript">
+        /**
+        * 
+        * For console application close current tab
+        * Get the primary tab id and close when tab id is received successfully
+        */
+        function closeTab() {
+            //First find the ID of the current tab to close it
+            sforce.console.getEnclosingPrimaryTabId(closeSubtab);
+        }
+        var closeSubtab = function closeSubtab(result) {
+            //Close the tab when returnId is retrived.
+            var tabId = result.id;
+            sforce.console.closeTab(tabId, callback);
+        };
+
+        var callback = function callback(result) {
+            if (result.error) {
+                alert("Error in closing tab " + result.error);
+            }
+        };
+    </script>
+
+        <script language="Javascript">
+        
+            /** Redirect back to agreement detail page if the status category of agreement is import 
+            * and status is review
+            */            
+            var agreementStatusCategory = '{!JSENCODE(APTS_Agreement__c.Status_Category__c)}';
+            var agreementStatus = '{!JSENCODE(APTS_Agreement__c.Status__c)}';
+                
+            if(agreementStatusCategory == '{!$Label.IntelligentImportStatusCategory}' && agreementStatus == '{!$Label.IntelligentImportStatus}') {
+                alert('{!$Label.CloneonReviewIntelligentImport_ErrorMsg}');
+                if((typeof sforce != 'undefined') && sforce && sforce.one) {
+                    // if console application, close the current tab and navigate to object
+                    if (sforce.console.isInConsole()) {
+                        // close currentTab
+                        closeTab();
+                    } else {
+                        sforce.one.navigateToURL('{!URLFOR($Action.APTS_Agreement__c.View, APTS_Agreement__c.Id)}');
+                    }
+                }
+                else {      
+                    window.open('{!URLFOR($Action.APTS_Agreement__c.View, APTS_Agreement__c.Id)}', '_self');
+                }                        
+            }            
+            
+			/** Handle Click disable button and invoke Action
+			*/	    
+		    function SubmitOnClick (objSubmitBtn) {
+		        
+		        var isFirefox = typeof InstallTrigger !== 'undefined';
+		        var isChrome = !!window.chrome && !!window.chrome.webstore;
+		        
+		        if(isFirefox == true){
+		            objSubmitBtn.className = 'btnDisabled';
+		        }
+		        else if(isChrome == true){
+		            objSubmitBtn.disabled = true;
+		            objSubmitBtn.className = 'btnDisabled';
+		            doSubmit();
+		        }
+		            else{
+		                objSubmitBtn.className = 'btnDisabled';
+		            }
+		        return true;
+		    }
+            
+    </script>	   
+	<apex:form id="frmId">	
+        <apex:outputPanel rendered="{!!(isLightning || isSalesforce1)}">
+		<!--  required fields -->
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Name}" rendered="false"/>
+		
+      	<apex:pageBlock rendered="{!NOT(isInitialized) && NOT(hasErrors)}">
+			<apex:pageBlockButtons location="bottom">
+                <apex:actionStatus id="continueStatus">
+                        <apex:facet name="stop">
+                            <apex:commandButton value="{!$Label.apttus__continue}"  action="{!onLoad}" rerender="frmId" status="continueStatus"/> 
+                        </apex:facet>
+                        <apex:facet name="start">
+                            <apex:outputPanel >
+                                <apex:commandButton value="{!$Label.apttus__continue}" status="continueStatus" disabled="true"/>
+                            </apex:outputPanel>
+                        </apex:facet>
+                </apex:actionStatus>
+                
+                <!-- <apex:commandButton value="{!$Label.apttus__continue}"  onclick="return SubmitOnClick(this);" action="{!onLoad}" />-->
+				<apex:commandButton value="{!$Label.apttus__cancel}" action="{!doCancel}" immediate="true" />
+		    </apex:pageBlockButtons>
+		    <apex:pageBlockSection title="{!$Label.apttus__cloneagreement}" columns="2" collapsible="false">
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.Name}" rendered="{!NOT(isLightningTheme)}"/>
+				<apex:inputField value="{!Apttus__APTS_Agreement__c.Name}" required="true" rendered="{!isLightningTheme}"/>
+
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.Apttus__FF_Agreement_Number__c}"/>
+
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.Apttus__Contract_Start_Date__c}" rendered="{!NOT(isLightningTheme)}"/>
+				<apex:inputField value="{!Apttus__APTS_Agreement__c.Apttus__Contract_Start_Date__c}" rendered="{!isLightningTheme}"/>
+
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.Apttus__Contract_End_Date__c}"/>
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.Apttus__Status__c}"/>
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.Apttus__Status_Category__c}"/>
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.Apttus__Requestor__c}"/>
+				<apex:outputField value="{!Apttus__APTS_Agreement__c.OwnerId}"/>
+		    </apex:pageBlockSection>
+		</apex:pageBlock>
+		
+		<apex:pageBlock mode="edit" rendered="{!hasErrors}" >
+			<apex:pageMessages />
+			<apex:pageBlockButtons location="bottom" >
+				<apex:commandButton action="{!doCancel}" value="{!$Label.apttus__cancel}" immediate="true"/>
+			</apex:pageBlockButtons>
+		</apex:pageBlock>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!isLightning || isSalesforce1}">
+            <apex:includeLightning />
+                <style>
+                  html{
+                       background: white!important;
+                  }
+                  body{
+                       background: RGB(244,246,249)!important;
+                  }
+                </style>
+               <div id="cloneAgreementContainer"/>
+                <script>    
+                    $Lightning.use("{!ComponentNamespace}:AgreementEditApp", function() {
+                        $Lightning.createComponent("{!ComponentNamespace}:LightningAggregate",{                 
+                            recordName : '{!JSENCODE(APTS_Agreement__c.Name)}',
+                            sObjectName : '{!$ObjectType.APTS_Agreement__c.Name}',
+                            action : 'Clone Agreement',
+                            recordId : '{!APTS_Agreement__c.Id}',
+                            typeofImage : '/images/headericons/Clone.png',
+                            editMode : false
+                        },
+                        "cloneAgreementContainer",
+                        function(cmp) {
+                            console.log('Component created');
+                        });
+                    });
+             </script>
+        </apex:outputPanel>
+		<apex:actionFunction name="doSubmit" action="{!onLoad}" />
+	</apex:form>
+	
+</apex:page>

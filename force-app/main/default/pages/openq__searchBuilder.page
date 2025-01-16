@@ -1,0 +1,204 @@
+<apex:page controller="openq.searchBuilderController" >
+      <style>
+        .textt{ margin-left:20px; }
+        .list .headerRow th{
+            white-space : pre-wrap;
+        }
+    </style>
+     <apex:form style="margin-top:20px;"> 
+         <apex:pageBlock title="Contact Search">
+          <apex:pageMessages ></apex:pageMessages>
+            <center> 
+                <apex:commandButton value="Add Criteria"  action="{!addSearchObjectRow}" style="font-weight:bold;" rendered="{!showAddButton}" /><br/>
+            </center> 
+            <br/>
+           
+            <table border="0"  cellpadding="5" cellspacing="5"> 
+                       
+                 <apex:repeat value="{!SearchObjectRowParamList}" var="inn">
+                     
+                    <tr>
+                         <td >  
+                         
+                            <apex:outputPanel style="margin-right:20px;">
+                                <apex:commandLink value="REMOVE" action="{!removeSearchRow}" style="font-weight:bold;" rendered="{!inn.rowIndex <> 0}">
+                                    <apex:param name="row" value="{!inn.rowIndex}" assignTo="{!row}"/>
+                                </apex:commandLink>   
+                            </apex:outputPanel>
+                         </td>
+                         
+                         <td >
+
+                            <apex:outputPanel id="theGroup">                           
+                            
+                                <apex:outputLabel value="Object{!inn.rowIndex + 1}" style="font-weight:bold" />
+                                
+                                <apex:selectList value="{!inn.searchObject}" multiselect="false" size="1" style="margin-left:20px;margin-right:25px;">
+                                    <apex:selectOptions value="{!ChildObjectList}"/>  
+                                    <apex:actionSupport event="onchange" action="{!getAttributes}" reRender="attributes" status="objectStatus">
+                                        <apex:param name="searchObjecRow" value="{!inn.rowIndex}" assignTo="{!searchObjec}" />
+                                    </apex:actionSupport>                                
+                                </apex:selectList> 
+                                
+                            </apex:outputPanel>
+                         </td>
+                         <td >
+                            <apex:outputPanel id="theGroup2">
+                                
+                                <apex:outputpanel id="searchField">  
+                                    <apex:outputPanel >
+                                        <apex:outputLabel value="Attribute" style="font-weight:bold" />                           
+                                            <apex:selectList value="{!inn.searchField}" multiselect="false" size="1" id="attributes"  style="margin-left:20px;margin-right:25px;">
+                                                <apex:selectOptions value="{!inn.ObjectfieldOptions}" /> <!--searchButton, addLinkId,-->
+                                                <apex:actionSupport event="onchange" action="{!searchFieldType}" reRender="tt,theGroup22,fieldID" status="search1Status">
+                                                   <apex:param name="searchFieldRow" value="{!inn.rowIndex}" assignTo="{!searchFieldRow}" />
+                                                </apex:actionSupport>
+                                           </apex:selectList>                                           
+                                    </apex:outputpanel>
+                                   <apex:actionStatus id="objectStatus" startStyle="color:#880000; padding-left:3px" startText="Processing.."></apex:actionStatus>
+                                 
+                                </apex:outputPanel>                       
+                            </apex:outputPanel>
+                       </td>
+                       
+                      <td >    
+                         <apex:outputPanel id="theGroup22">
+                          
+                            <apex:outputPanel id="fieldID"  rendered="{!inn.searchField <> null}">
+                              
+                                <apex:outputLabel value="Value"  style="font-weight:bold"/>
+                                <apex:outputPanel id="search1">
+                             
+                             <apex:inputText value="{!inn.searchValue}" rendered="{!(inn.objectAttributeAndDataTypeMap[inn.searchField] = 'STRING' || inn.objectAttributeAndDataTypeMap[inn.searchField] = 'INTEGER')}" style="margin-left:20px;"> 
+                                    
+                                    </apex:inputtext>
+                                   
+                                  <apex:selectList value="{!inn.searchValue}" multiselect="false" size="1" id="value1" rendered="{!(inn.objectAttributeAndDataTypeMap[inn.searchField] = 'PICKLIST')}" style="margin-left:20px;">
+                                        <apex:selectOptions value="{!inn.PicklistfieldOptions}"/>
+                                    </apex:selectList>
+                                     
+                                    <apex:inputCheckbox value="{!inn.searchValue}" rendered="{!(inn.objectAttributeAndDataTypeMap[inn.searchField] = 'BOOLEAN')}" style="margin-left:20px;"> 
+                                     
+                                    </apex:inputCheckbox>
+                                </apex:outputPanel>
+                               
+                            </apex:outputPanel>
+                          <apex:actionStatus id="search1Status"  startStyle="color:#880000; padding-left:3px" startText="Processing...." />
+                        </apex:outputPanel>
+                    
+                     </td>
+                     
+                      <td >   
+                         <apex:outputpanel id="lookupField">
+                            <apex:outputPanel rendered="{! (inn.searchObject <> NULL) && (inn.searchField <> NULL) && (inn.parentToChildReferenceFieldOptions.size > 1)}" >
+                                
+                                <apex:selectList value="{!inn.relationshipName}" multiselect="false" size="1" id="lookupFields">
+                                    <apex:selectOptions value="{!inn.parentToChildReferenceFieldOptions}" />                                              
+                                    
+                                </apex:selectList>
+                                                                            
+                            </apex:outputpanel>
+                            <apex:actionStatus id="status11" startStyle="color:#880000; padding-left:3px" startText="Processing.."></apex:actionStatus>
+                        </apex:outputPanel>
+                     </td>
+                 </tr>
+                    
+                 </apex:repeat>
+             </table>
+             
+                <apex:pageBlockButtons location="bottom">
+                    <apex:commandButton value="Search" action="{!makeSearch}"/>
+                </apex:pageBlockButtons>
+         </apex:pageBlock>
+         <br/>
+          <apex:pageBlock title="Search Results" rendered="{!(parentResult.size > 0)}" id="resultArea">
+          
+            <apex:variable var="first" value="{!0}" id="id1"/>
+            <apex:variable var="second" value="{!1}" id="id2"/>
+             <apex:variable var="three" value="{!2}" id="id3"/>
+            <apex:variable var="four" value="{!3}" id="id4"/>
+            <apex:variable var="five" value="{!4}" id="id5"/>
+            <div style="text-align:right">
+               <apex:commandLink action="{!exportResultInCSV}" style="color:blue;font-size:12px"> 
+                   <apex:image url="{!URLFOR($Resource.openq__ExcelImages, 'images/Excel_icon.gif')}" width="20" height="20" title="Export to Excel" />
+               </apex:commandLink>
+             </div> <br/>
+            
+            <apex:pageBlockTable value="{!parentResult}" var="result" id="results">
+            
+                <apex:column >
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!doSearch}" reRender="results" >
+                          <span style="margin-right:70px">Contact Name </span>   
+                          <apex:image url="{!URLFOR($Resource.openq__SortIcons, 'sort_down.jpg')}" width="17" height="17" title="Sort by Name" rendered="{!renderDESCIconFlag}"/>  
+                         <apex:image url="{!URLFOR($Resource.openq__SortIcons, 'sort_up.jpg')}" width="17" height="17" title="Sort by Name" rendered="{!renderASCIconFlag}"/>
+                       </apex:commandLink>
+                                        
+                    </apex:facet>
+                    
+                    <apex:outputLink value="/{!result.Id}"> {!result[NameFld]} </apex:outputLink>
+                </apex:column>
+               
+                 <apex:column >  
+                      <apex:facet name="header"> <apex:outputText rendered="{!SearchObjectRowParamList.size > 0}"> {!SearchObjectRowParamList[first].AttributesNameAndLabelMap[SearchObjectRowParamList[first].searchField]}</apex:outputText></apex:facet>
+                     <apex:outputPanel rendered="{!SearchObjectRowParamList.size > 0}">
+                   
+                      
+                      <apex:outputPanel rendered="{!NOT(ISNULL(SearchObjectRowParamList[first].searchObject))}">
+                          <pre style="font-family:arial; white-space:pre-wrap;">  <apex:outputText value="{!contactIdSearchRowAndSearchAttr[result.Id+Text(first)]}"/></pre>
+                       </apex:outputPanel></apex:outputPanel>
+                </apex:column> 
+                
+                <apex:column headerValue="{!SearchObjectRowParamList[second].AttributesNameAndLabelMap[SearchObjectRowParamList[second].searchField]}" rendered="{!SearchObjectRowParamList.size > 1}">  
+                 <!--<apex:facet name="header"> <apex:outputText rendered="{!SearchObjectRowParamList.size > 1}"> {!SearchObjectRowParamList[second].AttributesNameAndLabelMap[SearchObjectRowParamList[second].searchField]}</apex:outputText></apex:facet>
+                    <apex:outputPanel rendered="{!SearchObjectRowParamList.size > 1}">
+                   
+                      <apex:outputPanel rendered="{!NOT(ISNULL(SearchObjectRowParamList[second].searchObject))}">-->
+                          <pre style="font-family:arial; white-space:pre-wrap;">  <apex:outputText value="{!contactIdSearchRowAndSearchAttr[result.Id+Text(second)]}"/></pre>
+                    <!--   </apex:outputPanel></apex:outputPanel>-->
+                </apex:column>                
+                 
+                <apex:column headerValue="{!SearchObjectRowParamList[three].AttributesNameAndLabelMap[SearchObjectRowParamList[three].searchField]}" rendered="{!SearchObjectRowParamList.size > 2}">  
+                    <!-- <apex:facet name="header" > <apex:outputText rendered="{!SearchObjectRowParamList.size > 2}"> {!SearchObjectRowParamList[three].AttributesNameAndLabelMap[SearchObjectRowParamList[three].searchField]}</apex:outputText></apex:facet>
+                    <apex:outputPanel rendered="{!SearchObjectRowParamList.size > 2}">
+                   
+                      <apex:outputPanel rendered="{!NOT(ISNULL(SearchObjectRowParamList[three].searchObject))}">-->
+                          <pre style="font-family:arial; white-space:pre-wrap;">  <apex:outputText value="{!contactIdSearchRowAndSearchAttr[result.Id+Text(three)]}"/></pre>
+                     <!--  </apex:outputPanel>
+                   </apex:outputPanel>-->
+                </apex:column>
+                
+                 <apex:column headerValue="{!SearchObjectRowParamList[four].AttributesNameAndLabelMap[SearchObjectRowParamList[four].searchField]}" rendered="{!SearchObjectRowParamList.size > 3}">  
+                    <!--  <apex:facet name="header"> <apex:outputText rendered="{!SearchObjectRowParamList.size > 3}"> {!SearchObjectRowParamList[four].AttributesNameAndLabelMap[SearchObjectRowParamList[four].searchField]}</apex:outputText></apex:facet>
+                      <apex:outputPanel rendered="{!SearchObjectRowParamList.size > 3}">
+                   
+                      <apex:outputPanel rendered="{!NOT(ISNULL(SearchObjectRowParamList[four].searchObject))}">-->
+                          <pre style="font-family:arial; white-space:pre-wrap;">  <apex:outputText value="{!contactIdSearchRowAndSearchAttr[result.Id+Text(four)]}"/></pre>
+                      <!-- </apex:outputPanel>
+                   </apex:outputPanel>-->
+                </apex:column>
+                
+               <apex:column headerValue="{!SearchObjectRowParamList[five].AttributesNameAndLabelMap[SearchObjectRowParamList[five].searchField]}" rendered="{!SearchObjectRowParamList.size > 4}"> 
+                  <!--    <apex:facet name="header"> <apex:outputText rendered="{!SearchObjectRowParamList.size > 3}"> {!SearchObjectRowParamList[five].AttributesNameAndLabelMap[SearchObjectRowParamList[five].searchField]}</apex:outputText></apex:facet>
+                      <apex:outputPanel rendered="{!SearchObjectRowParamList.size > 4}">
+                   
+                      <apex:outputPanel rendered="{!NOT(ISNULL(SearchObjectRowParamList[five].searchObject))}"> -->
+                         <pre style="font-family:arial; white-space:pre-wrap;">  <apex:outputText value="{!contactIdSearchRowAndSearchAttr[result.Id+Text(five)]}"/></pre>
+                  <!--      </apex:outputPanel>
+                   </apex:outputPanel>-->
+                </apex:column>
+              
+            </apex:pageBlockTable>
+            
+            
+        </apex:pageBlock>
+       
+         
+        <apex:pageBlock title="Search Results" rendered="{!parentResult.size = 0 && isNoError && ismakeSearch }">
+            <center> <apex:outputText value="There are no matching Contacts" style="color:#DC143C;font-family:Monotype Corsiva, cursive;font-size:20px;"></apex:outputText> </center>
+        </apex:pageBlock>
+       
+        
+     </apex:form>
+     
+</apex:page>

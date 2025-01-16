@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>50.0</apiVersion>
+    <assignments>
+        <name>Populate_Quote_Output_Generated_Valid_From_Date</name>
+        <label>Populate Quote Output Generated / Valid From Date</label>
+        <locationX>669</locationX>
+        <locationY>359</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Quote_Output_Generated_Valid_From_Date__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>QuoteOutputGeneratedDate</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.Generated_Date__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>GeneratedDateValue</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.Apttus_Proposal__ExpectedEndDate__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>ValidToDate</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <description>Flow to Update the following fields: Generated Date, Valid From Date and Valid To Date on Quotation</description>
+    <formulas>
+        <name>GeneratedDateValue</name>
+        <dataType>Date</dataType>
+        <expression>IF(
+     TEXT({!$Record.Generated_Date__c}) &amp; &quot;*&quot; = &quot;*&quot;, TODAY(), {!$Record__Prior.Generated_Date__c}
+)</expression>
+    </formulas>
+    <formulas>
+        <name>QuoteOutputGeneratedDate</name>
+        <dataType>Date</dataType>
+        <expression>IF(
+    DATEVALUE({!$Record.Apttus_QPConfig__PricingDate__c} ) = DATEVALUE({!$Record.CreatedDate}), 
+TODAY(),
+DATEVALUE({!$Record.Apttus_QPConfig__PricingDate__c} )
+)</expression>
+    </formulas>
+    <formulas>
+        <name>ValidToDate</name>
+        <dataType>Date</dataType>
+        <expression>IF(
+     TEXT({!$Record.Apttus_Proposal__ExpectedEndDate__c})  + &quot;*&quot; = &quot;*&quot;, {!GeneratedDateValue} + 30, 
+IF( {!$Record.Apttus_Proposal__ExpectedEndDate__c} &lt; {!$Flow.CurrentDate} , {!GeneratedDateValue} + 30, 
+{!$Record__Prior.Apttus_Proposal__ExpectedEndDate__c} )
+)</expression>
+    </formulas>
+    <interviewLabel>Quotation: Update Generated Valid From And To Date {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Quotation: Update Generated Valid From And To Date</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>543</locationX>
+        <locationY>48</locationY>
+        <connector>
+            <targetReference>Populate_Quote_Output_Generated_Valid_From_Date</targetReference>
+        </connector>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Apttus_Proposal__Approval_Stage__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Generated</stringValue>
+            </value>
+        </filters>
+        <object>Apttus_Proposal__Proposal__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

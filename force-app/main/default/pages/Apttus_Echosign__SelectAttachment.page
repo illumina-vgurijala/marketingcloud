@@ -1,0 +1,285 @@
+<!-- 
+    Apttus Echosign Integration
+    SelectAttachment
+     
+    @2009-2020 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus__APTS_Agreement__c"
+    extensions="Apttus_Echosign.SelectAttachmentController" showHeader="true"
+    sidebar="true" tabStyle="Apttus__APTS_Agreement__c" id="selectionPage">
+
+    <Apttus_Base2:UsageDataComponent2 ProdName="{!systemSettingforUsageAnalytics['productName']}" ProdVersion="{!systemSettingforUsageAnalytics['productVersion']}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Echosign__EchoSignHeader,'css/page-icon.css')}"/>
+    <apex:form id="mainForm">
+        
+    <apex:inputHidden id="hdnSelectedTemplate" value="{!selectedTemplate}"/>   
+    <script>
+        function persistRadioSelection() {
+            var selectedTemplate = '{!JSENCODE(selectedTemplate)}';
+            if(!!selectedTemplate) {
+                var radioChecked = document.getElementById(selectedTemplate);
+                if(radioChecked) {
+                    radioChecked.checked = true;
+                    markSelected(radioChecked);
+                }
+            }
+
+        }
+
+        function getSelectedTemplate() {
+            var radios = document.getElementsByName('selectRadio');
+            var tempId = '';
+            for(i = 0; i < radios.length; i++) {
+                if(document.getElementById(radios[i].id).checked == true) {
+                    tempId = radios[i].id;
+                    
+                }
+            }
+            var hiddenFld = document.getElementById("selectionPage:mainForm:hdnSelectedTemplate");
+            hiddenFld.value = tempId;
+            
+        }
+
+        var checkedradio;
+        function markSelected(thisradio) {
+            if (checkedradio == thisradio) {
+                thisradio.checked = false;
+                checkedradio = null;
+            }
+            else {checkedradio = thisradio;}
+            
+            getSelectedTemplate();
+        }
+
+        window.onload = persistRadioSelection;
+    </script>
+        
+        <apex:outputPanel >
+          <div class="bPageTitle bpageTitleExtra">
+            <div class="ptBody">
+              <div class="content">
+                <img src="{!URLFOR($Resource.EchoSignHeader, '/images/headericons/EchoSign.png')}" class="pageIconPadding" />
+                <h1 class="pageType">{!$Label.SendForESignature}</h1>
+                <h2 class="pageDescription">{!Apttus__APTS_Agreement__c.Name}</h2>
+              </div>
+            </div>
+          </div>
+        </apex:outputPanel> 
+        
+        
+        <apex:pageBlock rendered="{!NOT(showOrderPage)}">
+
+            <apex:pageBlockButtons location="top">
+                <apex:outputPanel id="idButtonsTopPanel" >
+                    <apex:commandButton action="{!doSelect}" value="{!$Label.apttus_echosign__select}"
+                        id="cmdButtonDoSelect" disabled="{!attachments.size = 0}" />
+                    <apex:commandButton action="{!doCancel}" value="{!$Label.apttus_echosign__cancel}"
+                        id="cmdButtonDoCancel" />
+                </apex:outputPanel>
+                <b><apex:actionStatus startText="{!$Label.apttus_echosign__statusmessage}"
+                    id="waitStatus" /></b>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockButtons location="bottom">
+                <apex:outputPanel id="idButtonsBottomPanel">
+                    <apex:commandButton action="{!doSelect}" value="{!$Label.apttus_echosign__select}"
+                        id="cmdButtonDoSelect" disabled="{!attachments.size = 0}" />
+                    <apex:commandButton action="{!doCancel}" value="{!$Label.apttus_echosign__cancel}"
+                        id="cmdButtonDoCancel" />
+                </apex:outputPanel>
+            </apex:pageBlockButtons>
+            <apex:pageMessages />
+            
+            <apex:outputPanel styleClass="searchFilterFields" 
+                    rendered="{!AND(hasAssociatedAgmts, enableFilter)}">
+                <apex:pageBlockSection title="{!$Label.apttus_echosign__choosefiltercriteria}" columns="2"
+                    collapsible="false">
+
+                    <apex:panelGrid columns="3" rendered="{!hasParent}">
+                        <apex:inputCheckbox value="{!includeParent}" id="includeParent" />
+                        <apex:outputLabel value="{!$Label.apttus_echosign__showparentattachments}"
+                            for="includeParent" />
+                        <apex:actionSupport event="onclick" action="{!doSearch}"
+                            rerender="idAttachments, idButtonsTopPanel, idButtonsBottomPanel"
+                            status="waitStatus" />
+                    </apex:panelGrid>
+
+                    <apex:panelGrid columns="2" rendered="{!hasRelated}">
+                        <apex:inputCheckbox value="{!includeRelated}" id="includeRelated" />
+                        <apex:outputLabel value="{!$Label.apttus_echosign__showrelatedattachments}"
+                            for="includeRelated" />
+                        <apex:actionSupport event="onclick" action="{!doSearch}"
+                            rerender="idAttachments, idButtonsTopPanel, idButtonsBottomPanel"
+                            status="waitStatus" />
+                    </apex:panelGrid>
+
+                    <apex:panelGrid columns="2" rendered="{!hasChildren}">
+                        <apex:inputCheckbox value="{!includeChildren}"
+                            id="includeChildren" />
+                        <apex:outputLabel value="{!$Label.apttus_echosign__showchildattachments}"
+                            for="includeChildren" />
+                        <apex:actionSupport event="onclick" action="{!doSearch}"
+                            rerender="idAttachments, idButtonsTopPanel, idButtonsBottomPanel"
+                            status="waitStatus" />
+                    </apex:panelGrid>
+
+                    <apex:panelGrid columns="2" rendered="{!hasAmendRenew}">
+                        <apex:inputCheckbox value="{!includeAmendRenew}"
+                            id="includeAmendRenew" />
+                        <apex:outputLabel value="{!$Label.apttus_echosign__showamendrenewattachments}"
+                            for="includeAmendRenew" />
+                        <apex:actionSupport event="onclick" action="{!doSearch}"
+                            rerender="idAttachments, idButtonsTopPanel, idButtonsBottomPanel"
+                            status="waitStatus" />
+                    </apex:panelGrid>
+
+                    <apex:panelGrid columns="2" rendered="{!hasSiblings}">
+                        <apex:inputCheckbox value="{!includeSiblings}"
+                            id="includeSiblings" />
+                        <apex:outputLabel value="{!$Label.apttus_echosign__showsiblingattachments}"
+                            for="includeSiblings" />
+                        <apex:actionSupport event="onclick" action="{!doSearch}"
+                            rerender="idAttachments, idButtonsTopPanel, idButtonsBottomPanel"
+                            status="waitStatus" />
+                    </apex:panelGrid>
+
+                </apex:pageBlockSection>
+
+            </apex:outputPanel>
+
+            <apex:outputPanel id="idAttachments" >
+                <apex:pageBlockSection title="{!$Label.apttus_echosign__selectattachments}" columns="1"
+                    collapsible="false" rendered="{!attachments.size > 0}">
+                    <apex:pageBlockTable value="{!attachments}" var="attachData"
+                        width="100%">
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_echosign__select}</apex:facet>
+                            <apex:inputCheckbox selected="{!attachData.selected}"
+                                value="{!attachData.selected}" />
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_echosign__filename}</apex:facet>
+                            <apex:outputLink value="/{!attachData.attachment.Id}">{!attachData.attachment.Name}</apex:outputLink>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_echosign__agreementname}</apex:facet>
+                            <apex:outputLink value="/{!attachData.agmt.Id}">{!attachData.agmt.Name}</apex:outputLink>
+                        </apex:column>
+                        <apex:column rendered="{!enableFilter}">
+                            <apex:facet name="header">{!$Label.apttus_echosign__relationship}</apex:facet>
+                            <apex:outputText value="{!attachData.agmtAssociationType}" />
+                        </apex:column>
+                        <apex:column value="{!attachData.agmt.Apttus__FF_Agreement_Number__c}" />
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_echosign__documenttype}</apex:facet>
+                            <apex:outputText value="{!attachData.attachment.documentType}" />
+                        </apex:column>
+                        <apex:column value="{!attachData.agmt.Apttus__Status__c}" />
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_echosign__size}</apex:facet>
+                            <apex:outputText value="{!attachData.attachment.BodyLength}" />
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_echosign__modifieddate}</apex:facet>
+                            <apex:outputText value="{!attachData.attachment.LastModifiedDate}" />
+                        </apex:column>
+                    </apex:pageBlockTable>
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+            
+            <apex:outputPanel id="idTemplates">
+                <apex:pageBlockSection title="{!$Label.apttus_echosign__selecttemplate}" columns="1"
+                    collapsible="false" rendered="{!templates.size > 0}">
+                    <apex:pageBlockTable value="{!templates}" var="applyTemplate"
+                        width="100%">
+						<!--
+                        <apex:column rendered="{!!applyTemplate.echosign_dev1__Default__c}">
+                            <apex:facet name="header">{!$Label.apttus_echosign__select}</apex:facet>
+                            <input type="radio" name="selectRadio" id="{!applyTemplate.Id}" value="{!applyTemplate.Id}" onclick="markSelected(this);"/>
+                        </apex:column> -->
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_echosign__select}</apex:facet>                             
+                            <apex:outputPanel rendered="{!!applyTemplate.echosign_dev1__Default__c}">
+                                <input type="radio" name="selectRadio" id="{!applyTemplate.Id}" value="{!applyTemplate.Id}" onclick="markSelected(this);"/>    
+                            </apex:outputPanel>                         
+                            <apex:outputPanel rendered="{!applyTemplate.echosign_dev1__Default__c}">
+                                <input type="radio" name="selectRadio" id="{!applyTemplate.Id}" value="{!applyTemplate.Id}" onclick="markSelected(this);" checked="checked"/>    
+                            </apex:outputPanel>  
+                            <script>getSelectedTemplate();</script>
+                        </apex:column> 
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink action="{!doSort}" 
+                                                    value="{!$Label.apttus_echosign__templatename}"
+													reRender="idTemplates" 
+													status="waitStatus">
+                                    <apex:outputPanel rendered="{!currentSortBy == 'Name'}">	
+                                        <apex:image id="imgSortName" value="{!sortUrl}"  title="{!sortTitle}"/>
+                                    </apex:outputPanel>
+                                    <apex:param name="sortBy" value="Name" assignTo="{!sortBy}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputLink value="/{!applyTemplate.Id}">{!applyTemplate.Name}</apex:outputLink>
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">
+                                <apex:commandLink action="{!doSort}" 
+														  value="{!$Label.apttus_echosign__createddate}"
+														  reRender="idTemplates" 
+														  status="waitStatus">
+                                    <apex:outputPanel rendered="{!currentSortBy == 'CreatedDate'}">
+                                        <apex:image id="imgSortCreatedDate" value="{!sortUrl}"  title="{!sortTitle}"/>
+                                    </apex:outputPanel>
+                                    <apex:param name="sortBy" value="CreatedDate" assignTo="{!sortBy}"/>
+                                </apex:commandLink>
+                            </apex:facet>
+                            <apex:outputField value="{!applyTemplate.CreatedDate}" />
+                        </apex:column>
+                    </apex:pageBlockTable>
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+        </apex:pageBlock>
+        
+        <apex:pageBlock rendered="{!showOrderPage}">
+            <apex:pageMessages />
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!doPrevious}" value="{!$Label.apttus_echosign__previous}" />
+                <apex:commandButton action="{!doContinue}" value="{!$Label.apttus_echosign__next}" />
+                <apex:commandButton action="{!doCancel}" value="{!$Label.apttus_echosign__cancel}" />
+            </apex:pageBlockButtons>            
+
+            <apex:pageBlockSection id="idAttachments" title="{!$Label.apttus_echosign__orderattachments}" collapsible="false" columns="1">
+                <apex:pageBlockTable value="{!selectedAtts}" var="selectedAtt" width="100%" >
+                        <apex:column >
+                            <apex:commandLink action="{!doMoveDown}" reRender="idAttachments">
+                                <apex:outputPanel rendered="{!NOT(selectedAtt.Id = lastAttachmentId)}">
+                                    <img src="/img/s.gif" alt="Down"  class="downArrowIcon" title="{!$Label.ImageTitleDown}"/>
+                                </apex:outputPanel>
+                                <apex:param name="param" assignTo="{!moveDownId}" value="{!selectedAtt.Id}" />
+                            </apex:commandLink>
+                        </apex:column>
+                        <apex:column >
+                            <apex:commandLink action="{!doMoveUp}" reRender="idAttachments">
+                                <apex:outputPanel rendered="{!NOT(selectedAtt.Id = firstAttachmentId)}">
+                                    <img src="/img/s.gif" alt="Up"  class="upArrowIcon" title="{!$Label.ImageTitleUp}"/>
+                                </apex:outputPanel>
+                                <apex:param name="param" assignTo="{!moveUpId}" value="{!selectedAtt.Id}" />
+                            </apex:commandLink>
+                        </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus_echosign__filename}</apex:facet>
+                        <apex:outputLink value="/{!selectedAtt.Id}">{!selectedAtt.Name}</apex:outputLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus_echosign__size}</apex:facet>
+                        <apex:outputText value="{!selectedAtt.BodyLength}"/>
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus_echosign__createddate}</apex:facet>
+                        <apex:outputText value="{!selectedAtt.CreatedDate}"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

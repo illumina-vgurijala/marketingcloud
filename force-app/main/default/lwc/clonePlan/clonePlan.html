@@ -1,0 +1,193 @@
+<!-- sldsValidatorIgnore -->
+<!-- 
+  Modification Log:
+        Developer      Date                Description
+      Nishan Shetty   23-Feb-2022         Added Due Date Logic for Strategy.
+-->
+<template>
+  <lightning-quick-action-panel title="Clone Plan Setup">
+    <template if:true={booLoading}>
+      <lightning-spinner
+        alternative-text="Loading"
+        variant="brand"
+      ></lightning-spinner>
+    </template>
+    <header class="slds-modal__header">
+      <button
+        class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+        title="Close"
+        onclick={closeModal}
+      >
+        <lightning-icon
+          icon-name="utility:close"
+          alternative-text="close"
+          variant="inverse"
+          size="small"
+        >
+        </lightning-icon>
+        <span class="slds-assistive-text">Close</span>
+      </button>
+      <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+        {modalHeader}
+      </h2>
+    </header>
+    <lightning-progress-indicator current-step={currentStep} type="path" variant="base">
+      <template for:each={steps} for:item="step">
+          <lightning-progress-step id={step.value} label={step.label} value={step.value} key={step.label}></lightning-progress-step>
+      </template>
+    </lightning-progress-indicator>
+    
+    
+    <template if:false={booIsFirstPage}>
+      <template if:false={booIsListEmpty}>
+          <lightning-card key={strategy.recordId}>
+            <lightning-layout class="slds-grid_align-center" multiple-rows="true" vertical-align="center">
+              <lightning-layout-item flexibility="auto" class="slds-p-horizontal_large layoutItem-min-size" size="1">
+                  <lightning-input id={strategy.num} type="checkbox" variant="label-hidden" onchange={handleChangeStrategies} checked={strategy.isChecked}> 
+                  </lightning-input>
+              </lightning-layout-item>
+
+              <lightning-layout-item flexibility="auto" alignment-bump="right"
+                  class="slds-p-right_x-medium layoutItem-min-size " size="11">
+                  <div title={strategy.recordId}>
+                      <label><b>Strategy: {strategy.name}</b></label><br>
+                      <!--Added due date logic for DCP-52241-->
+                      <lightning-layout class="slds-grid_align-center" vertical-align="center">
+                        <lightning-layout-item flexibility="auto" class="layoutItem-min-size" size="2">
+                          <template if:true={strategy.isChecked}>
+                            <label class="slds-required">*</label>
+                          </template>
+                          <label>Due Date: </label>
+                        </lightning-layout-item>
+                        <lightning-layout-item flexibility="auto" class="layoutItem-min-size" size="3">
+                          <lightning-input type="date" class="due-date"
+                            data-checked={strategy.isChecked} data-id={strategy.num} variant="label-hidden"
+                            onchange={handleStrategyDueDate} value={strategy.dueDate}
+                            required={strategy.isChecked} min={todaysDate}>
+                          </lightning-input>
+                        </lightning-layout-item>
+                        <lightning-layout-item flexibility="auto" class="layoutItem-min-size" size="6">
+                        </lightning-layout-item>
+                    </lightning-layout>
+                  </div>
+              </lightning-layout-item> 
+              
+            </lightning-layout>
+            <lightning-layout class="slds-grid_align-center" multiple-rows="true" vertical-align="center">
+              <lightning-layout-item flexibility="auto" class="slds-p-horizontal_large layoutItem-min-size" size="1">
+              </lightning-layout-item>
+
+              <lightning-layout-item flexibility="auto" alignment-bump="right"
+                  class="slds-p-right_x-medium layoutItem-min-size " size="11">
+                  <c-objectives-actions-for-plans-l-w-c lst-objectives-actions={strategy.lstObjectives} onobjectivechange={handleChangeObjectives} onactionchange={handleChangeActions} onduedatechange={handleDueDateChange}>
+
+                  </c-objectives-actions-for-plans-l-w-c>
+              </lightning-layout-item> 
+              
+            </lightning-layout>
+          </lightning-card>
+      </template>
+    </template>
+      <template if:true={selectionView}>
+        <lightning-input
+          type="text"
+          label="Status"
+          value="Draft"
+          disabled
+        ></lightning-input>
+        <template if:true={territorySelectView}>
+          <lightning-combobox
+            class="territorySelect"
+            name="TerritorySelect"
+            label="Territory"
+            options={territoryOptions}
+            onchange={territorySelect}
+            required
+            message-when-value-missing={mapUILabels.UI_Territory_Not_Selected}
+          >
+          </lightning-combobox>
+        </template>
+        <!-- DCP-39735 -->
+        <template if:true={channelPartnerSelectView}>
+          <lightning-combobox
+            class="channelPartner"
+            name="channelPartner"
+            label="Channel Partner"
+            options={channelPartnerOption}
+            onchange={channelPartnerSelect}
+            value={channelPartnerValue}
+            required
+            message-when-value-missing={mapUILabels.UI_CP_Not_Selected}
+          >
+          </lightning-combobox>
+        </template>
+        <template if:true={yearSelectView}>
+          <lightning-combobox
+            class="year"
+            name="YearSelect"
+            label="Year"
+            options={yearOptions}
+            onchange={yearSelect}
+            required
+            message-when-value-missing={mapUILabels.UI_Year_Not_Selected}
+          >
+          </lightning-combobox>
+        </template>
+        <template if:true={roleSelectView}>
+          <lightning-combobox
+            class="role"
+            name="RoleSelect"
+            label="Role"
+            options={roleOptions}
+            onchange={roleSelect}
+            value={overlayRole}
+            required
+            message-when-value-missing={mapUILabels.UI_Role_Not_Selected}
+          >
+      </lightning-combobox>
+      <!-- DCP-41767 -->
+          <lightning-input
+            type="date"
+            name="StartDate"
+            label="Start Date"
+            class="startdate"
+        value={startDate}
+        onchange={startSelect}
+        required
+        message-when-value-missing={mapUILabels.UI_Start_Date_Not_Selected}
+          ></lightning-input>
+          <lightning-input
+            type="date"
+            name="EndDate"
+            label="End Date"
+            class="enddate"
+        value={endDate}
+        onchange={endSelect}
+        required
+        message-when-value-missing={mapUILabels.UI_End_Date_Not_Selected}
+          ></lightning-input>
+        </template>
+      </template>
+    
+    <div slot="footer">
+      <div class="slds-align_absolute-center">
+        <lightning-button
+          class="slds-m-right_small"
+          variant="neutral"
+          type="Previous"
+          label="Previous"
+          onclick={previous}
+          disabled={booDisabled}
+        >
+        </lightning-button>
+        <lightning-button
+          variant="brand"
+          type={strButtonLabel}
+          label={strButtonLabel}
+          onclick={next}
+        >
+        </lightning-button>
+      </div>
+    </div>
+  </lightning-quick-action-panel>
+</template>

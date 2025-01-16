@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckFieldAccessOnCertainQuoteStages</fullName>
+    <active>false</active>
+    <description>Prevents the user to edit some fields(Quote Name , Prepared by ,Web Visible , Preferred Language, Display Discount as Total) when Quote Stage is Rejected ,Accepted ,Denied</description>
+    <errorConditionFormula>AND (
+    AND ( 
+        CONTAINS(Quote_Type__c , &quot;Reorder and Custom Product&quot;), 
+        CONTAINS(Quote_Sub_Type__c , &quot;Custom Product (First-Buy)&quot;) 
+    ),
+    OR (
+         TEXT( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageAccepted,
+         TEXT( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageDenied
+    ),
+    NOT ( 
+        OR ( 
+            ISCHANGED ( Is_Updated_By_System__c ), 
+            Is_Updated_By_System__c, 
+            Invalid_Quote__c 
+        ) 
+    ),
+    OR (
+        ISCHANGED ( Apttus_Proposal__Proposal_Name__c),
+        ISCHANGED ( Prepared_by__c),
+        ISCHANGED ( Web_Visible__c),
+        ISCHANGED ( Preferred_Language__c),
+        ISCHANGED ( Display_Discount_As_Total__c)
+    )
+)</errorConditionFormula>
+    <errorMessage>You cannot edit the fields on this particular Quote Stage.</errorMessage>
+</ValidationRule>

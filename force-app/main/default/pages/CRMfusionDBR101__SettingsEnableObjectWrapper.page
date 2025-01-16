@@ -1,0 +1,47 @@
+<apex:page controller="CRMfusionDBR101.SettingsEnableObjectController" showHeader="false" sidebar="false" standardStylesheets="false">
+
+  <apex:includeScript value="{!URLFOR($Resource.CRMfusionDBR101__DB_Javascript, 'jszip/jszip.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.CRMfusionDBR101__DB_Javascript, 'jszip/jszip-deflate.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.CRMfusionDBR101__DB_Javascript, 'jquery.min.js')}" />
+
+  <script type="text/javascript">
+
+    // get URL for lightning 
+    var host = window.location.hostname;
+    host = host.substring(0, host.indexOf('--'));
+    var lexOrigin = 'https://' + host + '.lightning.force.com';
+
+    function sendMessage(action, message) {
+      parent.postMessage({action: action, message: message}, lexOrigin);
+    }
+
+    function handleMessage(event) {
+
+      if (event.origin !== lexOrigin) {
+        // Not the expected origin: reject message!
+        console.error('Not the expected origin');
+        return;
+      }
+
+      switch (event.data.action) {
+        case 'enable-object':
+          DupeBlockerEnableObjects.enableObject(event.data.objectName, event.data.objectLabel, sendMessage);
+          break;
+        case 'disable-object':
+          DupeBlockerEnableObjects.disableObject(event.data.objectName, event.data.objectLabel, 
+            event.data.triggerName, event.data.className, sendMessage );
+          break;
+      }
+
+    }
+
+    window.onload = function() {
+      window.addEventListener("message", handleMessage, false);
+      sendMessage('loaded');
+    }
+
+  </script>
+
+  <c:SettingsEnableObject />
+
+</apex:page>

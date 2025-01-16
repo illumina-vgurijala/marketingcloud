@@ -1,0 +1,536 @@
+<apex:page controller="openq.MyContactsController" showHeader="false" sidebar="false"> 
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"> </apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.js"></apex:includescript>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>
+    
+    <style>
+    body .bRelatedList .pbTitle h3, body .bPageBlock .pbTitle h2, body .bPageBlock .pbTitle h3, body .bSubBlock h3.lbHeader{
+    color: black;
+    font-size: 1.45em;
+    } 
+    </style>
+
+    <style>
+        
+        .ui-dialog-titlebar {
+            background-color: #B2CA45;
+            border: none;
+            color: #FFF;
+        }
+        
+        .configdialog{
+        
+            overflow-y: hidden !important;
+        }
+        
+        .userOptions {
+        
+            float:left;
+        }
+        
+        .settings {
+            width: 16px;
+            height: 16px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/cogsprite.png')});                            
+        }
+        
+        .settings:hover{
+        
+            background-position: 0px -20px;
+            cursor: pointer;
+        }
+    
+        #cdiv {
+            visibility: hidden; 
+            
+            background-color: #F1F5F6;  
+            position:absolute; 
+            z-index:1000; 
+            left: 120px;       
+            
+            border: 2px solid #EDEDED;
+            
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            
+            
+            -webkit-border-bottom-left-radius: 10px;
+            -webkit-border-bottom-right-radius: 10px;
+            -webkit-border-top-left-radius: 10px;
+            -webkit-border-top-right-radius: 10px;
+            
+            -moz-border-bottom-left-radius: 10px;
+            -moz-border-bottom-right-radius: 10px;
+            -moz-border-top-left-radius: 10px;
+            -moz-border-top-right-radius: 10px;
+        }
+    
+        #cdiv a {
+            color: #015BA7;        
+        }
+    
+        #pic {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            margin-top: 5px;
+            margin-left: 5px;
+            height: 100%;
+            float: left;       
+            
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        
+        .myContactLink{
+        
+            display:inline-block;
+            width: 48%;
+            margin-bottom: 5px;
+            text-decoration: none;
+            word-wrap: break-word;
+        }
+        
+        #info {
+            height: 100%;
+            
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+            
+            position: relative;
+            float: left;
+            min-width: 200px;           
+        }
+        
+        #addressPanel{
+            font-size: 11px;
+        }
+        
+    </style>
+   
+    <apex:form id="contactForm">
+        <apex:pageMessages />
+        <apex:pageBlock id="contactBlock" title="{!$Label.openq__my_contacts_label}" TabStyle="KOL_Search__tab">
+            <div style="float: right; margin-top: -35px;" >
+                <div class="settings" >
+                </div>
+            </div>
+            <apex:pageBlockTable id="contactTable" value="{!contactList}" var="mc" rendered="{!contactList.size > 0}">
+                <apex:repeat value="{!fieldsToQuery}" var="ftq">                
+                    <apex:column headerValue="{!ftq.label}">
+                         <apex:outputField value="{!mc[ftq.apiName]}" rendered="{!ftq.apiName != 'Name'}"></apex:outputField>
+                         <apex:outputPanel layout="block" styleClass="contactNameColumn" rendered="{!ftq.apiName == 'Name'}">
+                            <a href ="/{!mc.Id}" target="_parent">{!mc.Name}</a>
+                         </apex:outputPanel>
+                    </apex:column>
+                </apex:repeat>            
+            </apex:pageBlockTable>
+            <apex:outputText rendered="{!contactList.size == 0}" value="No Contacts managed by you." />
+            <div id="cdiv">   
+            <div id="pic">
+                <img id="picImg" src="" height="100px"></img>    
+            </div>
+            
+            <div id="info">
+                <table>
+                   <tr>
+                        <td>
+                            <div id="specialities" style="width: 175px; font-weight: bold;">
+                                
+                            </div>                        
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td>
+                            <div id="addressPanel">
+                                
+                            </div>
+                        </td>
+                    </tr>
+                </table>  
+                <br/>
+                <div id="links">
+                    
+                </div>                                             
+            </div>                       
+        </div>
+        </apex:pageBlock>         
+            
+        <apex:actionFunction name="setMyContactsConfigurationsApex" rerender="contactBlock" action="{!saveConfig}" oncomplete="myContactsConfigurationsDone();">
+            <apex:param name="firstParam" assignTo="{!sortFieldSelected}" value="" />
+            <apex:param name="secondParam" assignTo="{!sortOrderSelected}" value="" />
+            <apex:param name="thirdParam" assignTo="{!fieldsSelected}" value=""/>
+        </apex:actionFunction>
+        <apex:outputPanel styleClass="dialogWrapper" style="visibility: hidden;">    
+            <apex:outputPanel id="configdialog" styleClass="configdialog" layout="block">
+                <div>
+                    <c:MultiselectPicklist leftLabel="Available Fields" leftOptionsValues="{!allAttributes}" rightLabel="Selected Fields" rightOptionsValues="{!selectedAttributes}" size="10" width="200px"/>
+                </div>
+                <div class="userOptions">
+                    <div>
+                        <apex:outputLabel for="defaultSort" value="Default Sort"/>
+                        <select id="sortFieldSelect" size="1" name="sortFieldSelect">
+                            <apex:repeat value="{!sortFieldOptions}" var="sfo" rendered="{!$Objecttype.openq__My_Contacts_User_Prefs__c.fields.openq__Field_to_Sort__c.Accessible}">
+                                <apex:outputPanel layout="none" rendered="{!!sfo.selected}">
+                                    <option value="{!sfo.value}" >{!sfo.label}</option>
+                                </apex:outputPanel>
+                                <apex:outputPanel layout="none" rendered="{!sfo.selected}">
+                                    <option value="{!sfo.value}" selected="selected" >{!sfo.label}</option>
+                                </apex:outputPanel>
+                            </apex:repeat>
+                        </select>
+                    </div>
+                    <div>
+                        <apex:outputLabel for="order" value="Order"/>
+                        <apex:selectList id="sortOrderSelect" size="1" value="{!sortOrderSelected}" rendered="{!$Objecttype.openq__My_Contacts_User_Prefs__c.fields.openq__Sort_Order__c.Accessible}">
+                            <apex:selectOptions value="{!sortOrderOptions}"/>
+                        </apex:selectList>
+                    </div>
+                </div>              
+        </apex:outputPanel>
+    </apex:outputPanel>
+    <div id="appendLostHtml" style="display:none;">&nbsp;</div>
+</apex:form>
+    
+     <script>     
+        
+        var processing = false;
+
+        jQuery('[id$=contactForm]').ready(function(){
+            
+            checkPageBlockWidth();
+            installConfigDialog();
+            bindEvents();
+            
+            var moveConfig = moveSelectedOptions;
+            
+            moveSelectedOptions = function(idFrom, idTo, idHdnFrom, idHdnTo){
+            
+                moveConfig(idFrom, idTo, idHdnFrom, idHdnTo);
+                refreshSortFieldDropdown();
+            };
+        })
+        
+        function bindEvents(){
+        
+            jQuery(".settings").click(function() {
+                jQuery( ".configdialog" ).dialog( "open" );
+            });
+        }
+        
+        jQuery("div.contactNameColumn a").live("mouseover", function(ev) {    
+   
+            var sURL = jQuery(this).attr("href");                             
+            var contactId = sURL.split('/')[1];              
+            y = ev.clientY;
+            
+            Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.MyContactsController.getContact}',
+            
+                contactId,
+                
+                function(result, event){
+                    
+                    jQuery('#links').empty();
+                    
+                    if(event.status){
+                                                
+                        if(result.contact !== undefined){
+                                
+                            var contact = result.contact;
+                                                        
+                            var specialityText = contact.{!namespace}Physician_Specialities__c != null? contact.{!namespace}Physician_Specialities__c: '';
+                            var addressText = ''; 
+                            
+                            if({!isDisplayOpenQAddress}) {
+                                if(contact.{!namespace}Physician_Address_Line_1__c != null){
+                                
+                                    addressText += contact.{!namespace}Physician_Address_Line_1__c+"<br/>";
+                                }
+                                
+                                if(contact.{!namespace}Physician_Address_Line_2__c != null){
+                                
+                                    addressText += contact.{!namespace}Physician_Address_Line_2__c+"<br/>";
+                                }
+                                
+                                if(contact.{!namespace}Physician_Address_City__c != null || contact.{!namespace}Physician_Address_State__c != null){ 
+                                
+                                    if(contact.{!namespace}Physician_Address_City__c != null){
+                                    
+                                        addressText += contact.{!namespace}Physician_Address_City__c;
+                                    }
+                                    
+                                    if(contact.{!namespace}Physician_Address_State__c != null){
+                                    
+                                        addressText += " "+contact.{!namespace}Physician_Address_State__c;
+                                    }
+                                
+                                    addressText += "<br/>";
+                                }
+                                
+                                if(contact.{!namespace}Physician_Address_Postal_Code__c != null){
+                                
+                                    addressText += contact.{!namespace}Physician_Address_Postal_Code__c+"<br/>";
+                                }
+                                
+                                if(contact.{!namespace}Physician_Address_Country__c != null){
+                                
+                                    addressText += contact.{!namespace}Physician_Address_Country__c;
+                                }
+                            } else {
+                            
+                                if(contact.MailingStreet != null){
+                                
+                                    addressText += contact.MailingStreet+"<br/>";
+                                }
+                            
+                                if(contact.MailingCity != null || contact.MailingState != null){ 
+                                
+                                    if(contact.MailingCity != null){
+                                    
+                                        addressText += contact.MailingCity;
+                                    }
+                                    
+                                    if(contact.MailingState != null){
+                                    
+                                        addressText += " "+contact.MailingState;
+                                    }
+                                
+                                    addressText += "<br/>";
+                                }
+
+                                if(contact.MailingPostalCode != null){
+                                
+                                    addressText += contact.MailingPostalCode+"<br/>";
+                                }
+                                if(contact.MailingCountry != null){
+                                
+                                    addressText += contact.MailingCountry;
+                                }
+                            }
+                            
+                            if(addressText == '') addressText = 'No address known';
+                            
+                            jQuery('#addressPanel').html(addressText);
+                            
+                            jQuery('#specialities').text(specialityText);                       
+                                                                                                                                            
+                            if(result.contactLinks !== undefined && result.contactLinks.length > 0){
+                            
+                                for(var i = 0; i < result.contactLinks.length; i++){
+                                
+                                    var contactLink = result.contactLinks[i];
+                                    
+                                    var linkHtml = "<div class='myContactLink'>";
+                                    linkHtml += "<a href="+contactLink.URL+" target='_parent'>"+contactLink.label+"</a>";
+                                    linkHtml += "</div>";
+                                    
+                                    jQuery('#links').append(linkHtml);
+                                }
+                            }
+                            
+                            var imageUrl = '';
+                            
+                            if(contact.Attachments !== undefined && contact.Attachments.length == 1){
+                                
+                                imageUrl = '/servlet/servlet.FileDownload?file='+contact.Attachments[0].Id;
+                                jQuery('#picImg').width('auto');                                
+                            }else{
+                            
+                                imageUrl = '{!URLFOR($Resource.openq__PictureUploader, '/images/unknownperson.jpg')}';
+                                jQuery('#picImg').width('100px');
+                            }
+                            
+                            jQuery('#picImg').attr('src', imageUrl);                        
+                                                    
+                        }
+                                            
+                    } else if (event.type === 'exception') {
+                        console.log(event.message);
+                    }
+                }   
+                );
+                
+            show(); 
+            return false;
+        });
+        
+        jQuery(".pbBody").live("mouseleave", function(ev) {
+            
+            hide();
+            return false;
+        });
+         
+        function refreshSortFieldDropdown(){
+            
+            var sortFieldSelected = jQuery("select[id$='sortFieldSelect']").find("option:selected").val();
+            
+            var $selectList = jQuery("select[id$='sortFieldSelect']");
+            
+            $selectList.children().remove();
+
+            
+            jQuery("[id$=rightList] option").each(function(index, el){
+                
+                var val = jQuery(this).val();
+                var label = jQuery(this).text();
+                
+                if(sortFieldSelected == val){
+                
+                    $('<option>').val(val).text(label).attr('selected', 'selected').appendTo($selectList);
+                
+                }else{
+                
+                    $('<option>').val(val).text(label).appendTo($selectList);
+                }
+            });         
+        } 
+                 
+        function hide() {
+           $("#cdiv").css("visibility", "hidden");      
+        }
+        
+        function show() {
+            
+            var pbHeight = $('.pbBody').height();
+            var popupHeight = $('#cdiv').height();
+            var iFrameHeight = 430;
+            var offset = Math.max(document.documentElement.scrollTop,document.body.scrollTop);
+            
+            //if popup comes out of table
+            if(((offset + y) + popupHeight) > pbHeight){
+                
+                $("#cdiv").css("top", (pbHeight - 20 - (popupHeight/2)+"px"));
+            
+            //if popup comes out of fixed height container below
+            }else if((y + popupHeight) > iFrameHeight){
+                
+                $("#cdiv").css("top", ((offset + y) - (popupHeight)+"px"));
+            
+            //or above
+            }else if((y - (popupHeight / 2) < 0)){
+            
+                $("#cdiv").css("top", (y+offset)+"px");
+
+            //popup has room to breathe 
+            }else{
+                
+                var top = (offset + y) - (popupHeight /2);
+                
+                if(top < 0) top = 0;
+                
+                $("#cdiv").css("top", top+"px");
+            }
+                                    
+            $("#cdiv").stop().css("visibility", "visible");            
+        }
+        
+        function getSelectedFields(a){
+                        
+            var ret = '';
+            
+            for(var i = 0 ; i<a.length;i++){
+
+                if(i%2==0){
+                    
+                    ret+=a[i]+'^';
+                
+                }else{
+                
+                    ret+=a[i]+'~';
+                }
+            }
+            
+            if(ret != ''){
+            
+                ret = ret.substring(0, ret.length - 1);
+            }
+            
+            return ret;
+        }
+        
+        function setMyContactsConfigurations(){
+            
+            if(!processing){
+                
+                processing = true;
+                
+                var selectedFields = getSelectedFields(jQuery('[id$=rightHidden]').val().split('&'))
+                
+                var sortFieldSelected = jQuery("select[id$='sortFieldSelect']").find("option:selected").val();
+                var sortOrderSelected = jQuery("select[id$='sortOrderSelect']").find("option:selected").val();          
+                                        
+                setMyContactsConfigurationsApex(sortFieldSelected, sortOrderSelected, selectedFields);
+            
+            }else{
+            
+                return false;
+            }
+        }
+        
+        function myContactsConfigurationsDone(){
+
+            processing = false;         
+            checkPageBlockWidth();
+            bindEvents();
+            jQuery("#appendLostHtml").empty();
+            jQuery(".configdialog").dialog("close");
+        }
+        
+        function checkPageBlockWidth(){
+        
+            if(jQuery('[id$=contactTable]').length){
+            
+                var tableWidth = jQuery('[id$=contactTable]').width() + 13;
+            
+                if(jQuery('[id$=contactBlock]').length){
+                
+                    jQuery('[id$=contactBlock]').width(tableWidth);
+                }   
+            }
+            
+            return false;
+        }
+        
+        function installConfigDialog(){
+        
+            jQuery(".configdialog").dialog({
+                title: 'Columns to Display',
+                draggable: false,
+                resizable: false,
+                autoOpen: false,
+                height: 390,
+                width: 550,
+                modal: true,
+                show: {
+                    effect: "drop",
+                    duration: 500
+                },
+                hide: {
+                    effect: "drop",
+                    duration: 500
+                },
+                buttons: {
+                    "Save": function() {
+                        
+                        
+                        var dialogParent = jQuery(".configdialog");
+                        jQuery(".configdialog").clone().prependTo("#appendLostHtml");
+                        for(var i = 0; i < jQuery('select:visible',dialogParent).size() ; i++){
+                             jQuery('#appendLostHtml select')[i].selectedIndex = jQuery('select:visible',dialogParent)[i].selectedIndex;
+                             jQuery('#appendLostHtml select')[i].value = jQuery('select:visible',dialogParent)[i].value;
+                        }
+                        setMyContactsConfigurations();
+                    },
+                    Cancel: function() {
+                        jQuery(this).dialog( "close" );
+                    }
+                }
+            });         
+        }
+         
+    </script> 
+       
+</apex:page>

@@ -1,0 +1,113 @@
+<!-- 
+    Apttus Contract Management
+    SendForReviewStatus
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus.SendForReviewStatusController" title="{!$Label.apttus__reviewcyclestatus}" sidebar="false" showHeader="false" docType="html-5.0" >
+	
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+	
+	<script type="text/javascript">
+		function selectAllItems(elem) {
+			selectAllReviewItems(elem.checked);
+			
+		}
+		
+		function resetHeaderCheckbox() {
+			jQuery('[id$=headerCheckbox]').attr('checked', false);
+			 
+		}
+	</script>
+	
+	<style>
+		.errorRow {
+			border: 1px solid red;
+			height: 35px;
+		}
+		
+		.oddRow {
+			background-color: #FFFFFF;
+			height: 35px;
+		}
+		
+		.evenRow {
+			background-color: #EDF3FE;
+			height: 35px;
+		}
+		
+		.selectList {
+			margin-bottom: 10px;
+		}
+		
+		.selectList select {
+			height: 30px;
+		}
+	</style>
+
+	<apex:form >
+		<apex:pageBlock id="sendForReviewBlock" title="{!$Label.apttus__reviewcyclestatus}" mode="detail">
+			<apex:pageMessages />
+			<apex:outputText value="{!$Label.apttus__reviewcycletimeinstruction}" style="margin-bottom:40px;"/> 
+			 
+			<apex:pageBlockButtons location="both">
+		        <apex:commandButton value="{!$Label.apttus__closeselectedcycles}" 
+		        					action="{!endSelectedReview}" 
+		        					rendered="{!selectedReviewStatusId != null}"
+		        					disabled="{!NOT(hasSelectedItems)}"
+		        					reRender="reviewStatusContainer" />
+		        <apex:commandButton value="{!$Label.apttus__cancel}" 
+		        					action="{!doCancel}" 
+		        					immediate="true" 
+		        					reRender="sendForReviewBlock" />		        					
+		    </apex:pageBlockButtons>
+		    
+			<apex:actionFunction name="selectAllReviewItems" action="{!selectAllReviewItems}" rerender="sendForReviewBlock">
+				<apex:param name="checked" value=""></apex:param>
+			</apex:actionFunction>
+			<apex:outputPanel layout="block" style="margin-top:40px;" rendered="{!selectedReviewStatusId != null}">		
+				<div class="selectList">
+					<apex:outputText value="{!$Label.apttus__selectcycle}" style="float:left; margin-right:15px; margin-top:8px;"/>
+					<apex:selectList value="{!selectedReviewStatusId}" size="1" style="float:right; border-radius:2px;">
+			        	<apex:selectOptions value="{!reviewSelectOptions}" />
+			        	<apex:actionSupport event="onchange" rerender="sendForReviewBlock" oncomplete="resetHeaderCheckbox()"></apex:actionSupport>
+			        </apex:selectList>
+			        <div style="clear:both"></div>
+				</div> 
+			</apex:outputPanel>
+			<apex:outputPanel id="reviewStatusContainer" styleClass="reviewStatusContainer" rendered="{!selectedReviewStatusId != null}">
+				<apex:pageBlockTable value="{!reviewStatusMap[selectedReviewStatusId]}" 
+					        					 var="reviewStatus" 
+					        					 
+					        					 width="100%">
+				    <apex:column width="25px;">
+						<apex:facet name="header"> 
+							<apex:inputCheckbox id="headerCheckbox" onchange="selectAllItems(this)" />
+						</apex:facet>
+						<apex:inputCheckbox value="{!reviewStatus.selected}" disabled="{!reviewStatus.TimeReceived != null}">
+							<apex:actionSupport event="onchange" rerender="sendForReviewBlock"></apex:actionSupport>
+						</apex:inputCheckbox>
+					</apex:column>
+					<apex:column value="{!reviewStatus.UserEmail}" headerValue="{!$Label.apttus__reviewername}" />
+					<apex:column value="{!reviewStatus.DocumentName}" headerValue="{!$Label.apttus__documentname}" />
+					<apex:column value="{!reviewStatus.Status}" headerValue="{!$Label.apttus__cyclestatus}" /> 
+				</apex:pageBlockTable>
+			</apex:outputPanel>
+			<apex:outputPanel layout="block" style="margin-top:40px;" rendered="{!selectedReviewStatusId == null}">
+				<apex:outputText value="{!$Label.apttus__norecordstodisplay}"></apex:outputText>
+			</apex:outputPanel>
+			<apex:outputPanel rendered="{!NOT(hasErrors) && (hasResponseXml)}" >
+				<script>
+					try {
+						var responseXml = "{!JSENCODE(responseXml)}";					
+						window.external.SetResponse(responseXml);
+						
+					} catch(ex) {
+					} 
+					
+				</script>
+			</apex:outputPanel>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

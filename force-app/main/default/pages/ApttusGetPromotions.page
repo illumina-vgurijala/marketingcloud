@@ -1,0 +1,115 @@
+<!--
+ * @author Kristiyan Petkov
+ * @date   06-Nov-2018
+ * @description   DCP-15146 Selection of Explicit Promotions
+ * Modification Log:
+ *  --------------------------------------------------------------------------------------------------
+ *   Developer                Date                Description                                                  
+ *   Kristiyan Petkov         06-Nov-2018         Original Version
+ *   Prakhar Kumar            20-Sept-2019        Added checkbox tick ,Pagination, Panel shows all selected codes.
+ *   Raja Siva Krishna        09-Sept-2020        Added Records per page text scroll, Regions picklist
+ *   Satya Swain              09 Dec 2022         Added Codescan fix for Variable Naming Convention
+ *   Adyasha Satapathy        20-Feb-2023         TASK0862791: Added Codescan fix for Remove Long Lines
+ * ---------------------------------------------------------------------------------------------------
+ -->
+
+
+<apex:page sidebar="false" showHeader="false" controller="ApttusGetPromotionsController" lightningStylesheets="true" docType="html-5.0">
+
+<apex:form id="myform">
+<script>
+    function CallJSFuntion(data1,data2,data,IdValue,data3){    
+    OnSelection(data1,data2,data.checked,IdValue,data3);
+    }
+</script>
+
+<style type="text/css">
+#paginationWrapper {
+  /* for visualization purposes */
+  text-align: center;
+  padding: 1%;
+}
+#paginationDiv {
+   /* for visualization purposes */
+  display: inline-block;
+}
+#pageSizeError {
+   /* for visualization purposes */
+   text-align: center;
+   padding: 1%;
+   color:red;
+}
+</style>
+
+<apex:pageblock >
+<apex:pageBlockButtons location="Top">
+
+
+<apex:inputText value="{!searchPromo}" >
+<apex:outputLabel >Search Promotions </apex:outputLabel>
+     <apex:actionSupport action="{!typeAheadSearchPromotions}"  event="onkeyup" rerender="PromotionsTable" />
+</apex:inputText>
+<apex:commandButton value="Save" action="{!save}" rerender="showMsg"/>              
+</apex:pageBlockButtons>
+
+<section class="border-bottom"></section>
+</apex:pageBlock>
+
+<apex:pageBlock id="PromotionsTable" title="Choose Promotions"> 
+<apex:pageblocktable value="{!listOfsearchIncentivesWrapper}" var="prom" >
+<apex:column >
+<apex:inputCheckbox value="{!prom.bool}"  
+onchange="CallJSFuntion('{!prom.incentive.Apttus_Config2__IncentiveCode__c}','{!prom.incentive.Apttus_Config2__Description__c}',this,'{!prom.incentive.Id}','{!prom.incentive.Promo_Channel__c}'); return false;" /> 
+</apex:column>
+<apex:column value="{!prom.incentive.Apttus_Config2__IncentiveCode__c}" headerValue="Promotion Code"/>
+<apex:column value="{!prom.incentive.Apttus_Config2__Description__c}" headerValue="Promotion Name"/>
+<apex:column value="{!prom.incentive.Sales_Description__c}" headerValue="Sales Description"/>
+<apex:column value="{!prom.incentive.Regions__c}" headerValue="Regions"/>
+<apex:column value="{!prom.incentive.Distribution_Channel__c}" headerValue="Distribution Channel"/>
+<apex:column value="{!prom.incentive.Apttus_Config2__ExpirationDate__c}" headerValue="Expiration Date"/>
+<apex:column value="{!prom.incentive.Approval_Required__c}" headerValue="Approval Required"/>
+<apex:column style="width:1000px" value="{!prom.incentive.Promotion_Details__c}" headerValue="Promotion Details"/>
+</apex:pageblocktable>
+<apex:actionFunction name="OnSelection" action="{!onSelect}" rerender="SelectedTable">
+    <apex:param name="p1" value="" assignTo="{!objIncentive}" />
+    <apex:param name="p2" value="" assignTo="{!objdescription}" />
+    <apex:param name="p3" value="" assignTo="{!isTicked}" />
+    <apex:param name="p4" value="" assignTo="{!incentiveId}" />
+    <apex:param name="p5" value="" assignTo="{!objPromoChannel}" />
+    
+</apex:actionFunction>
+<div id="paginationWrapper">
+  <div id ="paginationDiv">
+  <apex:input type="number" style="width:50px" html-min="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57" value="{!pageSize}">
+  <apex:outputLabel >Records per page:</apex:outputLabel>
+  <apex:actionSupport action="{!typeAheadSearchPromotions}"  event="onchange" rerender="PromotionsTable,showMsg" />
+  </apex:input>&nbsp;
+  <apex:outputLabel value="Region:"/>
+  <apex:selectList value="{!selectedRegion}" size="1">
+  <apex:selectOptions value="{!items}"/>
+  <apex:actionSupport action="{!typeAheadSearchPromotions}"  event="onchange" rerender="PromotionsTable,showMsg" />
+  </apex:selectList>  
+  <apex:commandButton value="First" action="{!first}" disabled="{!!hasPrevious}" reRender="myform" />
+  <apex:commandButton value="Previous" action="{!previous}" disabled="{!!hasPrevious}" reRender="myform" />
+  <apex:commandButton value="Next" action="{!next}" disabled="{!!hasNext}" reRender="myform" />
+  <apex:commandButton value="Last" action="{!last}" disabled="{!!hasNext}" reRender="myform" />
+  </div>
+  </div>
+  <div id = "pageSizeError">
+    <apex:outputText rendered="{!shwErrorMsg}">{!pageSizeErrorMsg}</apex:outputText>
+  </div> 
+</apex:pageblock>
+
+<apex:pageBlock >
+    <apex:pageBlock id="SelectedTable" title="Selected Promotions"  >
+        <apex:pageblocktable value="{!listOfselectedIncentivesWrapper}" var="prom1" >
+            <apex:column value="{!prom1.incentive.Apttus_Config2__IncentiveCode__c}"/>
+            <apex:column value="{!prom1.incentive.Apttus_Config2__Description__c}"/>
+        </apex:pageblocktable>
+    </apex:pageBlock>
+</apex:pageBlock> 
+<apex:pageMessages id="showMsg">
+</apex:pageMessages>
+
+</apex:form>
+</apex:page>

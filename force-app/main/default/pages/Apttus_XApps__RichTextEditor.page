@@ -1,0 +1,89 @@
+<!-- 
+    Apttus XAuthor Apps
+    RichTextEditor
+     
+    @2013-2014 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus_XApps.RichTextEditorController" 
+		   action="{!pageInit}" 
+		   sidebar="false" 
+		   showHeader="false">
+
+  <script type='text/javascript'>
+    
+    // $j = jQuery.noConflict();
+  
+    // Continue executing scripts after errors in IE
+    window.onerror = function() {
+        return true;
+    }
+	
+    /**
+     * Callback after a partial page update
+     */
+    function afterPageUpdate() {
+        // delay to allow the page to be rendered   
+        setTimeout(function() {
+            // callback the object
+            try {
+                window.external.PageRefreshed();
+            } catch(ex) {
+                // object not available
+            }
+        }, 0);
+    }
+    
+    function submitSelection() {
+    
+    	try {
+          var returnVal = document.getElementById('{!$Component.richTextEditForm.editTemplate}').value;
+          returnVal = returnVal.replace(/(\r\n|\n|\r|\t)/gm,"");                            
+          setResponse(returnVal);
+        } catch(ex) {
+          alert(ex);
+          
+        }
+        
+    }
+  
+    function setResponse(response) {
+          
+        try {
+            window.external.SetResponse(JSON.stringify(response));               
+        } catch(ex) {
+            //alert(ex.message);
+              
+        }   
+                  
+    }
+        
+    // register to invoke the function after the page load
+    window.onload = function() {
+        // make the window visible
+        try {
+            window.external.MakeVisible();
+            afterPageUpdate();
+        } catch(ex) {
+            // object not available
+        }
+        
+    }
+       
+  </script>
+
+  <apex:form id="richTextEditForm">
+      <apex:inputTextarea id="editTemplate" 
+      					  value="{!fieldValue}" 
+      					  richText="true" 
+      					  cols="100" 
+      					  rows="25" 
+      					  disabled="{!isControlReadOnly}" />
+      <apex:commandButton id="submitvalue" 
+      					  value="{!$Label.apttus_xapps__savetoexcel}" 
+      					  style="font-size: 10pt; color: black" 
+      					  oncomplete="submitSelection()" 
+      					  rendered="{!submitButtonVisible}"/>                 
+  </apex:form>
+  
+</apex:page>

@@ -1,0 +1,238 @@
+<apex:component controller="ApttusSubmitForApprovalController" access="global">
+    <apex:attribute name="ProposalId" type="String" description="Id of the Proposal" assignTo="{!strQuoteId}"/>
+    <apex:attribute name="ApprovalRequestObject" type="Apttus_Approval__Approval_Request__c" description="Approval Request Object" assignTo="{!objApprovalRequest}"/>
+    <style type="text/css"> 
+		.alignCenter {text-align: center; font-weight: bold;} 
+	</style>
+    {!LoadData}
+    <div id="main-div"> 
+        <div id="quoteDetailsDiv" style ="margin-top: 1%;">  
+            <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">{!$Label.UI_Text_Quote_Details}</div>
+            <table id="table-quote-details" style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;">
+                <tbody>
+                    <apex:repeat value="{!lstQuotation}" var="quotation">
+                        <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Quote_Number}</td>
+                            <td style="text-align: right !important;">{!quotation.Name}</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Currency}</td>
+                            <td style="text-align: right !important;" >{!quotation.CurrencyIsoCode}</td>
+                            <td></td>
+                        </tr>
+                        <tr style="width:100%;border-bottom: solid 1px #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Opportunity}</td>
+                            <td style="text-align: right !important;">{!quotation.Apttus_Proposal__Opportunity__r.Name}</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Payment_Terms}</td>
+                            <td style="text-align: right !important;">{!quotation.Apttus_Proposal__Payment_Term__c}</td>   
+                            <td></td>
+                        </tr>
+                        <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Sold_To_Account_Quotation}</td>
+                            <td style="text-align: right !important;">{!quotation.Apttus_Proposal__Account__r.Name}</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Sold_To_Account_ERP_ID}</td>
+                            <td style="text-align: right !important;" >{!quotation.Sold_To_ERP_Number__c}</td>
+                            <td></td>
+                        </tr>
+                        <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Ultimate_Consignee_Quotation}</td>
+                            <td style="text-align: right !important;">{!quotation.Ultimate_Consignee__r.Name}</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Ultimate_Consignee_ERP_ID}</td>
+                            <td style="text-align: right !important;" >{!quotation.Ultimate_Consignee_ERP_Number__c}</td>
+                            <td></td>
+                        </tr>
+                        <apex:variable var="v" value="" rendered="{!IF(CONTAINS(quotation.Quote_Type__c,'Direct'),false,true)}">
+                            <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                                <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Distributor_Quotation}</td>
+                                <td style="text-align: right !important;">{!quotation.Distributor__r.Name}</td>
+                                <td style="text-align: center !important;"></td>
+                                <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Distributor_ERP_ID}</td>
+                                <td style="text-align: right !important;" >{!quotation.Distributor_ERP_Number__c}</td>
+                                <td></td>
+                            </tr>
+                        </apex:variable>
+                        <tr style="width:100%;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Valid_From_Date}</td>
+                            <td style="text-align: right !important;">
+                                <apex:outputText value="{0,date,M/dd/yyyy}">
+                                    <apex:param value="{!quotation.Apttus_Proposal__ExpectedStartDate__c}" />
+                                </apex:outputText>
+                            </td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Quote_Total_Value_Prior_To_Discount}</td>
+                            <td style="text-align: right !important;">{!ROUND(quotation.Quote_Total_Value_Prior_To_Discount__c,2)}</td> 
+                            <td></td>
+                        </tr>
+                        <tr style="width:100%;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Valid_To_Date}</td>
+                            <td style="text-align: right !important;">
+                                <apex:outputText value="{0,date,M/dd/yyyy}">
+                                    <apex:param value="{!quotation.Apttus_Proposal__ExpectedEndDate__c}" />
+                                </apex:outputText>
+                            </td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Total_Discount_Value}</td>
+                            <td style="text-align: right !important;">{!ROUND(quotation.Total_Cart_Discount__c,2)}</td>   
+                            <td></td>
+                        </tr>
+                        <tr style="width:100%;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Blended_Discount_Percentage}</td>
+                            <td style="text-align: right !important;">{!quotation.Blended_Discount_Percentage__c} %</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Quote_Total_Value_After_Discount}</td>
+                            <td style="text-align: right !important;">{!quotation.Quote_Total_Value_After_Discount__c}</td>  
+                            <td></td>
+                        </tr>
+                        <tr style="width:100%;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Text_Post_Pricing_Message_Text}</td>
+                            <td colspan="5" style="word-wrap: break-word !important;overflow-wrap: break-word;text-align: justify;text-justify: inter-word; padding-right:2%">
+                                <div style="width: 100%; max-height: 100px; margin: 0; padding: 0; overflow-y: auto; overflow-x: hidden;">{!quotation.Post_Pricing_Message__c}</div>
+                            </td>                                
+                        </tr>  
+                        <tr>
+                            <td colspan="6" style="padding-top:2%"></td>
+                        </tr>
+                    </apex:repeat>
+                    <tr>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>  
+        </div>
+        <div id="lineItemDiv">
+            <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">{!$Label.UI_Text_Line_Items}</div>            
+            <table style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;" id="tableApprovalHierarchy">
+                <thead style="width:100%; !important;">
+                    <tr style="width:100%; !important;">
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Material_Number}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Product}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_List_Price}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Applied_Discount_Amount}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Applied_Discount_Percentage}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Applied_Discount_Details}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Adjusted_Price}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Quantity}</th>
+                        <th class="alignCenter" >{!$Label.UI_Discounted_Price}</th>
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Net_Adjustment_Percent}</th>
+                    </tr>
+                </thead>
+                <tbody> 
+                    <apex:repeat value="{!lstProposalLineItem}" var="lineItem">
+                        <tr id="approvalHierarchyBody" style="width:100%;">
+                            <td style="text-align: center; word-wrap: break-word !important;">{!lineItem.Material_Number__c}</td>
+                            <td style="text-align: center; word-wrap: break-word !important;">
+                                <div style="word-wrap: break-word !important;padding:1%">
+                                    {!lineItem.Apttus_Proposal__Product__r.Name}
+                                </div>
+                            </td>
+                            <td style="text-align: center; word-wrap: break-word !important;">
+                                <apex:outputText rendered="{! AND(NOT(ISBLANK(lineItem.Price_Override__c)), lineItem.Price_Override__c > 0 ) }" value="{!lineItem.Price_Override__c}"></apex:outputText>
+                                        <apex:outputText rendered="{! OR(ISBLANK(lineItem.Price_Override__c), lineItem.Price_Override__c = 0 ) }" value="{!ROUND(lineItem.Apttus_QPConfig__ListPrice__c,2)}"></apex:outputText>
+                            </td>
+                            <td style="text-align: center; word-wrap: break-word !important;">{!ROUND(lineItem.Applied_Discount_Amount__c,2)}</td>
+                            <td style="text-align: center; word-wrap: break-word !important;">{!ROUND(lineItem.Applied_Discount_Percentage__c,2)}</td>
+                            <td style="text-align: center; word-wrap: break-word !important;">{!lineItem.Applied_Discount_Details__c}</td>
+                            <td style="text-align: center; word-wrap: break-word !important;">{!ROUND(lineItem.Apttus_QPConfig__AdjustedPrice__c,2)}</td>
+                            <td style="text-align: center; word-wrap: break-word !important;">{!ROUND(lineItem.Apttus_QPConfig__Quantity2__c,2)}</td>
+                            <td style="text-align: center; word-wrap: break-word !important;">{!ROUND(lineItem.Apttus_QPConfig__NetPrice__c,2)}</td>
+                            <td style="text-align: center; word-wrap: break-word !important;padding:1%;">{!ROUND(lineItem.Applied_Discount_Percentage__c,2)}</td>
+                        </tr>
+                    </apex:repeat>
+                </tbody>
+            </table>
+        </div>
+        <div id="approvalHierarchyDiv">
+            <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">{!$Label.UI_Text_Approval_Hierarchy}</div>
+            <table style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;">
+                <thead>
+                    <tr style="width:100%;">
+                        <th style="text-align: center; font-weight: bold;">{!$Label.UI_Text_Step}</th>
+                        <th style="text-align: center; font-weight: bold;">{!$Label.UI_Text_Approval_Name}</th>
+                        <th style="text-align: center; font-weight: bold;">{!$Label.UI_Text_Region}</th>
+                        <th style="text-align: center; font-weight: bold;">{!$Label.UI_Text_Approver_Level}</th>
+                        <th style="text-align: center; font-weight: bold;">{!$Label.UI_Text_Approver_Details}</th>
+                    </tr>
+                </thead>
+                <tbody> 
+                    <apex:repeat value="{!lstApprovalRequestWrapper}" var="approval">
+                        <tr style="width:100%;">
+                            <td style="text-align: center; font-weight: bold;">{!approval.intStepSequence}</td>
+                            <td style="text-align: center; font-weight: bold;">{!approval.strApprovalName}</td>
+                            <td style="text-align: center; font-weight: bold;">{!approval.strApprovalRequestRegion}</td>
+                            <td style="text-align: center; font-weight: bold;">
+                                <apex:repeat value="{!approval.lstApprovalSequence}" var="approverLevel">
+                                    {!$Label.UI_Text_Level} {!approverLevel} <br/>
+                                </apex:repeat>
+                            </td>
+                            <td style="text-align: center;word-break: break-word;white-space: normal !important;">
+                                <apex:repeat value="{!approval.lstApproverName}" var="approverName">
+                                   - {!approverName} <br/>
+                                </apex:repeat>
+                            </td>
+                        </tr>
+                    </apex:repeat>
+                </tbody>
+            </table>
+        </div>
+        <div id="submitterDiv">
+            <apex:outputPanel id="discountReasonPanel">
+                <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">{!$Label.UI_Text_Submitter_Details}</div>
+                <table style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;" id="discountTable">
+                    <tbody id="discountTableBody"> 
+                        <tr style="width:100%;">
+                            <td style="text-align: left;font-weight: bold;">{!$Label.UI_Text_Discount_Reason}</td>
+                            <td style="text-align: left;" colspan="3" id="discountColumn">                                    
+                                <apex:outputField id="discountReason" value="{!objQuotation.Discount_Reason__c}" style="width : 30%"/>                            
+                            </td>
+                        </tr>
+                        <tr style="width:100%;">
+                            <td style="text-align: left; font-weight: bold;">{!$Label.UI_Text_Discount_Justification}</td>
+                            <td style="text-align: justify; margin-right: 1%" colspan="3">                                    
+                                <apex:outputField id="discountJustification" value="{!objQuotation.Discount_Justification__c}" style="width : 30%"/>                                    
+                            </td>
+                        </tr>
+                        <tr style="width:100%;">
+                            <td ></td>
+                            <td style="text-align: left;" colspan="3">                                    
+                                <div id="errorName"></div>                                  
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>               
+            </apex:outputPanel>            
+        </div>
+        <div id="previousApproverDiv">
+            <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">{!$Label.UI_Text_Previous_Approver}</div>
+            <table style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;table-layout: fixed;">
+                <thead>
+                    <tr style="width:100%;">
+                        <th style="text-align: center; font-weight: bold;" >{!$Label.UI_Text_Approver_Name}</th>
+                        <th style="text-align: center; font-weight: bold;">{!$Label.UI_Text_Approver_Comments}</th>
+                    </tr>
+                </thead>
+                <tbody> 
+                    <apex:repeat value="{!lstPreviousApprover}" var="approver">
+                        <tr style="width:100%;">
+                            <td style="text-align: center;">{!approver.Apttus_Approval__Assigned_To_Name__c}</td>
+                            <td style="text-align: center;">{!approver.Apttus_Approval__Approver_Comments__c}</td>   
+                        </tr>
+                    </apex:repeat>                    
+                </tbody>
+            </table>       
+        </div>
+        <div id="nextApproverDiv">
+            <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">{!$Label.UI_Text_Next_Approver}</div>
+            <table style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;table-layout: fixed;">             
+                <tbody> 
+                    <apex:repeat value="{!lstNextApprover}" var="approver">
+                        <tr style="width:100%;">
+                            <td style="text-align:left;">{!approver.Apttus_Approval__Assigned_To_Name__c}</td>  
+                        </tr>
+                    </apex:repeat>                    
+                </tbody>
+            </table>       
+        </div>
+    </div>
+</apex:component>

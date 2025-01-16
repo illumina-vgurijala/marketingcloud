@@ -1,0 +1,243 @@
+<!--
+ 	Apttus Config & Pricing
+ 	ProductOptionComponentEdit
+ 	 
+ 	@2010-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__ProductConfiguration__c"
+			extensions="Apttus_Config2.ProductOptionComponentEditController,Apttus_Config2.RemoteActionController"  
+			showHeader="false" 
+			sidebar="false" 
+           	cache="false"   
+           	tabstyle="Product2">
+	
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+    
+	<script type="text/javascript">
+		
+		// This to make sure jQuery doesn't conflict with any other JS libraries
+    	var j$ = jQuery.noConflict();
+ 		
+ 		j$(document).ready(function(){
+			
+			// setup namespace
+			j$.APTTUS = {};
+			
+			// setup the filter expression dialog
+			j$("#idFilterExprPanel").dialog({
+				autoOpen: false,
+				draggable: false,
+				modal: true,
+				resizable: false,
+				position: 'center',
+				overlay: { 
+		            opacity: 0.5,
+		            backgroundColor: "#000"
+		        } 
+				
+			});
+		 	
+		 	
+		});
+		
+		/**
+		 * Gets the string representation of the inclusion criteria
+		 * @param filterName the inclusion criteria name
+		 * @return the inclusion criteria expression
+		 */
+	    function getInclusionCriteriaExpr(filterName){
+			document.getElementById('idFilterExprName').innerHTML = "{!JSINHTMLENCODE($Label.LoadingPage)}";
+		    document.getElementById('idFilterExprBody').innerHTML = '';
+		        
+			Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.RemoteActionController.getInclusionCriteriaExpr}', filterName, function(result, event) {
+			    // check response status
+			    if (event.status) {
+			        // ok response (check the result)
+			        document.getElementById('idFilterExprName').innerHTML = !JSINHTMLENCODE(filterName);
+			        if (result) {
+			        	document.getElementById('idFilterExprBody').innerHTML = !JSINHTMLENCODE(result);
+			        	
+					}
+				} else {
+			    	document.getElementById('idFilterExprBody').innerHTML = !JSINHTMLENCODE(event.message);
+			    	
+				}
+				
+	       	}, {buffer:false, escape:true});
+			
+			// show the modal panel
+			document.getElementById("idFilterExprPanel").style.display = "block";     
+			
+			showFilterExpr();
+			         
+		}
+		
+		/**
+		 * Show filter expression dialog
+		 */
+		function showFilterExpr() {
+			// Show filter expression dialog
+			j$("#idFilterExprPanel").dialog("open");
+	      	
+	   	}
+	   	
+	   	/**
+		 * Hide the filter expression dialog
+		 */
+   		function hideFilterExpr(){
+	    	// close the filter expression dialog
+	      	j$("#idFilterExprPanel").dialog("close");
+	      
+	   	}
+	   	
+	</script>
+	
+	<apex:form >
+		<apex:pageBlock id="idComponentsBlock" title="{!$Label.apttus_config2__editoptionproperties}" >
+
+			<apex:outputPanel id="idErrorMsg" >
+				<apex:pageMessages />
+			</apex:outputPanel>
+			
+			<apex:pageBlockButtons id="idButtons" location="both">
+				<apex:commandButton id="idSaveButton" value="{!$Label.apttus_config2__save}" action="{!doSave}"/>
+				<apex:commandButton id="idCancelButton" value="{!$Label.apttus_config2__cancel}" action="{!doCancel}"/>
+				<b><apex:actionStatus startText="{!$Label.apttus_config2__statusmessageupdatingpage}..."
+					id="idStatusSelect" /></b>
+			</apex:pageBlockButtons>
+			
+			<!-- ProductGroupOption -->
+			<apex:pageBlockSection id="idOptionGroup" columns="2" title="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.Label}">
+				<apex:inlineEditSupport event="ondblclick" 
+                        changedStyleClass="myBoldClass" resetFunction="resetInlineEdit"/>
+				<apex:outputField value="{!pog.Apttus_Config2__OptionGroupId__c}" />
+				<apex:outputField value="{!pog.Apttus_Config2__ModifiableType__c}" />
+				<apex:outputField value="{!pog.Apttus_Config2__MinOptions__c}" />
+				<apex:outputField value="{!pog.Apttus_Config2__MinTotalQuantity__c}" />
+				<apex:outputField value="{!pog.Apttus_Config2__MaxOptions__c}" />
+				<apex:outputField value="{!pog.Apttus_Config2__MaxTotalQuantity__c}" />
+				<apex:outputField value="{!pog.Apttus_Config2__IsHidden__c}" />
+				<apex:outputField value="{!pog.Apttus_Config2__IsPicklist__c}" />
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection title="{!$Label.apttus_config2__productoptions}"
+								   columns="1" 
+								   collapsible="true" >
+
+				<apex:pageBlockTable id="idComponentsTable" 
+									 value="{!pocList}"
+									 var="poc" 
+									 width="100%" >
+
+					<apex:column headerValue="{!$ObjectType.Product2.Fields.Name.Label}">
+						<apex:outputField value="{!poc.Apttus_Config2__ComponentProductId__c}" />
+					</apex:column>
+
+					<apex:column headerValue="{!$ObjectType.Product2.Fields.Family.Label}">
+						<apex:outputField value="{!poc.ComponentProductId__r.Family}" />
+					</apex:column>
+
+					<apex:column headerValue="{!$ObjectType.Product2.Fields.ProductCode.Label}">
+						<apex:outputField value="{!poc.ComponentProductId__r.ProductCode}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__Default__c.Label}">
+						<apex:inputField value="{!poc.Apttus_Config2__Default__c}" style="width:40px;"/>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__InclusionCriteria__c.Label}">
+						<apex:panelGrid columns="2">
+					    	<apex:selectList value="{!poc.Apttus_Config2__InclusionCriteria__c}" 
+	  										 multiselect="false" 
+	  										 required="false" 
+	  										 size="1" >
+								<apex:selectOptions value="{!inclusionCriteriaItems}"></apex:selectOptions>
+								<apex:actionSupport event="onchange" reRender="idComponentsTable" />
+							</apex:selectList>
+					      	<apex:commandLink rerender="dummy" 
+					      					  rendered="{!NOT(ISBLANK(poc.Apttus_Config2__InclusionCriteria__c))}">
+								<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+											title="{!$Label.apttus_config2__view}" 
+						                    alt="{!$Label.apttus_config2__view}"
+											onclick="getInclusionCriteriaExpr('{!JSENCODE(poc.Apttus_Config2__InclusionCriteria__c)}');" />
+							</apex:commandLink>	
+					     </apex:panelGrid>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__Required__c.Label}">
+						<apex:inputField value="{!poc.Apttus_Config2__Required__c}" style="width:40px;"/>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__MinQuantity__c.Label}">
+						<apex:inputField value="{!poc.Apttus_Config2__MinQuantity__c}" style="width:40px;"/>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__MaxQuantity__c.Label}">
+						<apex:inputField value="{!poc.Apttus_Config2__MaxQuantity__c}" style="width:40px;"/>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__DefaultQuantity__c.Label}">
+						<apex:inputField value="{!poc.Apttus_Config2__DefaultQuantity__c}" style="width:40px;"/>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__Modifiable__c.Label}">
+						<apex:inputField value="{!poc.Apttus_Config2__Modifiable__c}" style="width:40px;"/>
+					</apex:column>
+
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.Fields.Apttus_Config2__AllowCloning__c.Label}">
+						<apex:inputField value="{!poc.Apttus_Config2__AllowCloning__c}" style="width:40px;"/>
+					</apex:column>
+					
+					<apex:column width="20px">
+				   		<apex:commandLink action="{!doMoveUpRow}" 
+								  	  	  reRender="idComponentsBlock" 
+								  	  	  rendered="{!poc.Id != firstRowId}" 
+								  	  	  status="idStatusSelect" >
+							<apex:param name="seqNum" assignTo="{!moveSeqNum}" value="{!poc.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveUp}" 
+	                       				title="{!$Label.apttus_config2__moveup}" 
+	                       				alt="{!$Label.apttus_config2__moveup}" />
+						</apex:commandLink>
+						<apex:commandLink action="{!doMoveDownRow}" 
+								  	  	  reRender="idComponentsBlock" 
+								  	  	  rendered="{!poc.Id != lastRowId}" 
+								  	  	  status="idStatusSelect" >
+							<apex:param name="seqNum" assignTo="{!moveSeqNum}" value="{!poc.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveDown}" 
+	                       				title="{!$Label.apttus_config2__movedown}" 
+	                       				alt="{!$Label.apttus_config2__movedown}" />
+						</apex:commandLink>
+				   	</apex:column>
+				</apex:pageBlockTable>	
+
+			</apex:pageBlockSection>
+
+		</apex:pageBlock>
+		
+		<!-- inclusion criteria expression dialog -->
+		<apex:outputPanel >
+			<div id="idFilterExprPanel" style="display: none">
+				<apex:outputPanel >
+					<div class="hd">
+				    	<apex:outputPanel >
+				    		<span id="idFilterExprName">Hello Name</span>
+				        </apex:outputPanel>	
+				    </div> 
+				    <div class="bd">
+			    		<apex:pageBlock >
+			    			<apex:pageBlockSection columns="1">
+			    				<apex:pageBlockSectionItem >
+			    					<span id="idFilterExprBody">Hello Description</span>
+				    			</apex:pageBlockSectionItem>
+			    			</apex:pageBlockSection>
+			    		</apex:pageBlock>
+				    </div> 
+				</apex:outputPanel>	
+			</div>
+		</apex:outputPanel>				
+			
+	</apex:form>
+</apex:page>

@@ -1,0 +1,63 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" 
+                controller="GlobalLanguageController" access="global" extends="c:BaseSuperComponent">
+    
+    <aura:attribute name="objProposal" type="Apttus_Proposal__Proposal__c"/>
+    <aura:attribute name="strGlobalLang" type="List"/>
+    <aura:attribute name="mapLabels" type="Map"/>
+    <aura:attribute name="lstStrTemp" type="List"/>
+    <aura:attribute name="booIsTextArea" type="Boolean" default = "false"/>
+    
+    
+    <aura:method name="acceptppmValue" action="{!c.acceptppmValue}" access="PUBLIC">
+        <aura:attribute name="strPpmVal" type="String"/>
+        <aura:attribute name="strProposalId" type="String"/>
+    </aura:method>
+    
+    <aura:method name="validate" action="{!c.validate}" access="PUBLIC">
+        <aura:attribute name="strPpmVal" type="String"/>
+        <aura:attribute name="strProposalId" type="String"/>
+    </aura:method>
+    
+    {!v.mapLabels.Post_Pricing_Message}
+    <lightning:layoutItem flexibility="grow"  size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12" padding="around-small" class="slds-box"> 
+        <aura:iteration items="{!v.strGlobalLang}" var="val">
+            <aura:if isTrue="{!val.sType == 'static'}">
+                <aura:unescapedHtml value="{!val.sValue}" />
+            </aura:if>
+			<!-- DCP-29629-Anish: Added for Canadian Template -->
+            <aura:if isTrue="{!val.sType == 'dynamicNumber'}">
+                <lightning:input type="number" aura:id="fieldId" name="input1" maxlength="255" value="{!val.sValue}" step="0.0001" required="true"/>
+            </aura:if>
+            <aura:if isTrue="{!val.sType == 'dynamic'}">
+                <aura:if isTrue="{!v.booIsTextArea}"> 
+                    <lightning:textarea type="text" aura:id="fieldId" name="input1" maxlength="131072" value="{!val.sValue}" required="true"/>
+                    <aura:set attribute="else">
+                        <!-- DCP-28436-Anish: Added booIsOptionl condition for fields which are to be optional --> 
+						<aura:if isTrue="{!val.booIsOptional}">
+							<lightning:input type="text" aura:id="fieldId" name="input1" maxlength="255" value="{!val.sValue}" required="false"/>
+							<aura:set attribute="else">
+								<lightning:input type="text" aura:id="fieldId" name="input1" maxlength="255" value="{!val.sValue}" required="true"/>
+							</aura:set>
+						</aura:if>
+                    </aura:set>
+                </aura:if>
+                <aura:if isTrue="{!val.booQuoteNum == true}">                            
+                    <lightning:helptext content = "{!v.mapLabels.Populate_Quote_Number}"/>
+                </aura:if>
+                <aura:if isTrue="{!val.booInstName == true}">
+                    <lightning:helptext content = "{!v.mapLabels.Populate_Instrument_Name}"/>
+                </aura:if>
+                <aura:if isTrue="{!val.booInstNameMiSeq == true}">
+                    <lightning:helptext content = "{!v.mapLabels.Populate_MiSeq_Instructions}"/>
+                </aura:if>
+                <aura:if isTrue="{!val.booInstNameHiSeq == true}">
+                    <lightning:helptext content = "{!v.mapLabels.Populate_HiSeq_Instructions}"/>
+                </aura:if>
+				<!-- DCP-28436 - Added help text for Brazil --> 
+                <aura:if isTrue="{!val.booBrazilHelpText}">
+                    <lightning:helptext content = "{!v.mapLabels.Brazil_PPM_Help_Text}"/>
+                </aura:if>
+            </aura:if>
+        </aura:iteration>
+    </lightning:layoutItem>
+</aura:component>

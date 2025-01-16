@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckRecordEditWhenCaseIsClosed</fullName>
+    <active>false</active>
+    <description>User cannot edit cases when it is closed
+Source: Rule fires when user try to edit cases which are closed
+Ability For Super Users To Edit &apos;Reopen Requested&apos; or Closed Case.
+Ability for QA User to accept and reject.</description>
+    <errorConditionFormula>AND(
+NOT(AND(ISNEW(),SuppliedEmail != null)), 	
+NOT($Profile.Name ==$Label.Integration_SAP_Service), 
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),	
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c), 
+    OR( 
+TEXT(PRIORVALUE(Status)) == $Label.Closed, 
+TEXT(PRIORVALUE(Status)) == $Label.CaseStatusElevationClosedSuccessful, 
+TEXT(PRIORVALUE(Status)) == $Label.CaseStatusElevationClosedUnSuccessful 
+),
+    NOT(TEXT(Status) == $Label.ReopenRequested),
+    /*To allow updating Unread Email Check Box*/
+    NOT(ISCHANGED( Unread_Emails__c )),
+    NOT(ISCHANGED(Case_Owner_s_Manager_Email__c)),
+    /*To allow change of owner upon new incoming email and owner is inactive*/
+    NOT(
+        AND(
+            ISCHANGED(OwnerId),
+            NOT(ISBLANK(Owner:Queue.QueueName)),
+            Unread_Emails__c
+            )
+        ),
+    $Permission.SS_ByPass_Case_Lock = FALSE,
+    /* Added below fields to over come the validation since these are hidden fields*/
+    NOT(ISCHANGED(Case_Completed_By__c)),
+    NOT(ISCHANGED( Regional_Email__c )),
+    NOT(ISCHANGED(SVMXC__Actual_Resolution__c)),     
+    NOT(ISCHANGED(SVMXC__Time_to_Resolve__c)),
+    NOT(ISCHANGED(Record_Updated_from_SFM__c)), 
+    NOT(ISCHANGED(Elevated_Work_Order__c)), 
+	NOT( AND(ISCHANGED(Closed_with_Associated_Codes__c ), 
+         NOT(Closed_with_Associated_Codes__c ))), 
+    /* Added below bypass to over come the validation since 
+    QA Profile will be able to accept and reject*/
+    $Profile.Name &lt;&gt; $Label.ProfileQualityAssurance   
+)</errorConditionFormula>
+    <errorMessage>To make a change to a closed case, the case must be re-opened. Please request case re-opening.</errorMessage>
+</ValidationRule>

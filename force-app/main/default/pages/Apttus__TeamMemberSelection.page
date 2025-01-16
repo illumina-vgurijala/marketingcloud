@@ -1,0 +1,309 @@
+<!-- 
+    Apttus Contract Management
+    TeamMemberSelection    
+    
+    @2019-2020 Apttus Inc. All rights reserved.
+-->
+
+<apex:page standardController="Apttus__APTS_Agreement__c" extensions="Apttus.TeamMemberSelectionController" showHeader="true" sidebar="true"
+  docType="html-5.0">
+  
+  <Apttus_Base2:UsageDataComponent2 ProdName="{!systemSettingforUsageAnalytics['productName']}" ProdVersion="{!systemSettingforUsageAnalytics['productVersion']}"/>
+
+ <apex:stylesheet value="{!URLFOR($Resource.Apttus__LightningResource,'css/page-icon.css')}"/>
+  <apex:stylesheet value="{!URLFOR($Resource.Apttus__TeamMemberSelectionUI, 'css/teammemberselection-uistyles.css')}" />
+  <script type="text/javascript" src="/soap/ajax/47.0/connection.js"></script>
+  <script type="text/javascript" src="/soap/ajax/47.0/apex.js"></script>
+  <apex:include pageName="Apttus__ComplyJSLibInclude" />
+  <script type="text/javascript"> 
+        /**
+         * Initializes the call
+         */
+         function initCall() {
+        
+            try {
+                sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+            } catch(e) {
+                erroralert(cERROR_UNKNOWN,e);
+                navigateTo("/" + "{!agreementId}");           
+            }       
+        }
+  </script>
+
+  <!-- render the lightning css files in lightning mode. -->
+  <apex:outputPanel rendered="{!OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t')}">
+    <apex:slds />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+    <style>
+      .apexDefaultPageBlock {margin:0px!important;}
+      .secondaryPalette {
+        -moz-border-radius:0px!important;-webkit-border-radius:0px!important;border-radius:0px!important;
+      }
+      .pbBody{
+        margin:0px!important;
+        padding: 0px!important;
+      }
+      .bPageBlock  {
+        margin:0px!important;
+        padding: 0px!important;
+        background: transparent!important;
+        margin-top:0px!important;
+        border-top:0px!important;
+        -moz-border-radius:4px!important;-webkit-border-radius:4px!important;border-radius:4px!important;
+      }
+    </style>
+  </apex:outputPanel>
+
+  <apex:outputText value="{!Apttus__APTS_Agreement__c.Name}" rendered="false" />
+  <div class="{!IF(OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t'), 'slds-scope' ,'' )}">
+    <!-- Lightning Header -->
+    <apex:outputPanel rendered="{!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t')}">
+      <div class="slds-page-header slds-media slds-no-space slds-grow slds-header-background">
+        <div class="slds-media__figure">
+          <span class="slds-avatar slds-avatar--medium">
+            <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/SendReview.png')}" class="pageTitleIcon"/>
+          </span>
+        </div>
+        <div class="slds-media__body">
+          <p class="slds-text-title slds-line-height--reset">{!$Label.SendToTeamReview}</p>
+          <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate">{!Apttus__APTS_Agreement__c.Name}</h1>
+        </div>
+      </div>
+    </apex:outputPanel>
+    <!-- Classic Header -->
+
+    <apex:outputPanel rendered="{!!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t')}">
+      <div class="bPageTitle bpageTitleExtra">
+        <div class="ptBody">
+          <div class="content">
+            <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/TeamsReview.png')}" class="pageIconPadding" />
+            <h1 class="pageType">{!$Label.Agreement}</h1>
+            <h2 class="pageDescription"> {!Apttus__APTS_Agreement__c.Name}</h2>
+          </div>
+        </div>
+      </div>
+    </apex:outputPanel>
+    <!-- Form -->
+    <apex:form id="frmId">
+      <script type="text/javascript">
+        function keyEnter(e, btnSearch) {
+          if (window.event) {
+            key = window.event.keyCode; //IE
+          } else {
+            key = e.which; //firefox
+          }
+          if (key == 13) {
+            var ele = document.getElementById(btnSearch);
+            ele.click();
+            return false;
+          } else {
+            return true;
+          }
+        }
+      </script>
+      <apex:outputPanel layout="block" styleClass="slds-brand-band slds-brand-band_cover">
+          <div style="margin:.5%;background:white;border-radius:4px;min-height:90vh">
+      <!-- Team Member Selection Page Block-->
+      <apex:pageBlock id="teamMemberSelection">
+
+        <div class="pageSectionHeader slds-grid">
+
+          <!-- step title -->
+          <div class="pageStepTitle">{!stepTitle}</div>
+
+          <!-- progress indicator -->
+          <apex:outputPanel rendered="{!totalStepsProgressIndicator.size > 0 && ($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t')}"
+            layout="block" styleClass="progressIndicatorPanel slds-progress">
+            <ol class="slds-progress__list">
+              <apex:variable var="currentStepNumber" value="{!totalStepsProgressIndicator.size}" />
+              <apex:repeat value="{!totalStepsProgressIndicator}" var="Step">
+                <li class="slds-progress__item {!IF(currentStepNumber == Step, 'slds-is-active','' )} {!IF(currentStepNumber > Step, 'slds-is-completed','' )}">
+
+                  <apex:outputPanel rendered="{!currentStepNumber == Step}">
+                    <div class="progressIndicatorToolTip slds-popover slds-popover_tooltip slds-nubbin_bottom-left" role="tooltip" id="step-{!Step}-tooltip">
+                      <div class="slds-popover__body" style="width:10em">Add Reviewer(s)</div>
+                    </div>
+                    <span class="slds-button slds-progress__marker" aria-describedby="step-{!Step}-tooltip">
+                      <span class="slds-assistive-text"></span>
+                    </span>
+                  </apex:outputPanel>
+
+                  <apex:outputPanel rendered="{!currentStepNumber > Step}">
+                    <button onclick="return false;" class="slds-button slds-button_icon slds-button_icon slds-progress__marker slds-progress__marker_icon">
+                      <img src="{!URLFOR($Resource.LightningResource, 'images/success.png')}" />
+                      <span class="slds-assistive-text"></span>
+                    </button>
+                  </apex:outputPanel>
+
+                </li>
+              </apex:repeat>
+            </ol>
+            <div class="slds-progress-bar slds-progress-bar_x-small" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" role="progressbar">
+              <span class="slds-progress-bar__value" style="width: 100%"></span>
+            </div>
+          </apex:outputPanel>
+
+          <!-- send email button -->
+          <div class="rightButtonsPanel">
+            <apex:commandButton value="{!$Label.apttus__search}" action="{!getTeamMembers}" reRender="teamMemberSelection" image="{!URLFOR($Resource.Apttus__Image_Search)}"
+              style="display:none;" />
+            <apex:commandButton styleclass="displayInline slds-button slds-button--brand" action="{!onSend}" value="{!$Label.apttus__emailsend}" reRender="frmId"
+            />
+            <apex:commandButton value="{!$Label.apttus__cancel}" action="{!doCancel}" styleclass="displayInline slds-button slds-button--brand" />
+          </div>
+        </div>
+        <!-- end section header -->
+
+
+        <apex:pageMessages />
+		
+        <!-- Classic Action Function to add selected members -->
+        <apex:actionFunction name="addTeamMember" action="{!addTeamMember}" reRender="teamMemberSelection">
+          <apex:param name="param" assignTo="{!memberId}" value="" />
+        </apex:actionFunction>
+        <!-- Classic Action Function to remove selected members -->
+        <apex:actionFunction name="removeTeamMember" action="{!removeTeamMember}" reRender="teamMemberSelection">
+          <apex:param name="param" assignTo="{!memberId}" value="" />
+        </apex:actionFunction>
+        <apex:outputPanel >
+          <div class="padd50 mainleft">
+            <div>Reviewers</div>
+            <div class="reviewerSelection">
+              <div class="searchSection">
+                <div class="searchInput">
+                  <!-- Search Value for Team Members -->
+                  <apex:input value="{!teamMemberSearchString}" styleClass="widthSearchTectbox" html-placeholder="{!$Label.apttus__searchteammembers}"
+                    onkeypress="return keyEnter(event, '{!$Component.btnSearch}');" />
+                </div>
+                <div class="searchButton">
+                  <apex:commandButton value="{!$Label.apttus__search}" action="{!getTeamMembers}" reRender="teamMemberSelection" image="{!URLFOR($Resource.Apttus__Image_Search)}"
+                    style="border:0px;" id="btnSearch" />
+                </div>
+              </div>
+              <!-- Display Team Members -->
+              <div class="searchSelection">
+                <div style="width:100%;padding-top:0px;margin-top:0px;;max-height:300px;overflow-y:scroll;">
+                  <apex:pageblockTable value="{!msTeamUserSelection}" var="teamsUser" style="width:90%;border:0px;" rendered="{!teamSelectionListHasValue}"
+                    headerClass="hidden">
+                    <apex:column >
+                      <table class="width100 border0">
+                        <tr>
+                          <td style="border:0px;">{!teamsUser.msTeamsUser.displayName} </td>
+                          <td rowspan="0" style="border:0px;align:right;" align="right">
+                            <apex:outputPanel rendered="{!!teamsUser.isSelected}" style="float:right;">
+                              <input id="{!teamsUser.msTeamsUser.id}" style="display:none" type="checkbox" styleClass="checkBoxes" name="SelectRecord"
+                                onclick="addTeamMember('{!teamsUser.msTeamsUser.id}')">
+                              <label for="{!teamsUser.msTeamsUser.id}">
+                                <img src="{!URLFOR($Resource.Image_AddUser)}" style="height:23px;width:23px;" />
+                              </label>
+                              </input>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!teamsUser.isSelected && teamsUser.msTeamsUser.removeNotAllowed}" style="float:right;">
+                              <input id="{!teamsUser.msTeamsUser.id}" style="display:none" type="checkbox" styleClass="checkBoxes" name="SelectRecord"
+                                onclick="removeTeamMember('{!teamsUser.msTeamsUser.id}')">
+                              <label for="{!teamsUser.msTeamsUser.id}">
+                                <img src="{!URLFOR($Resource.Image_RemoveUser)}" />
+                              </label>
+                              </input>
+                            </apex:outputPanel>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="border:0px;">{!teamsUser.msTeamsUser.mail}</td>
+                        </tr>
+                      </table>
+                    </apex:column>
+                  </apex:pageblockTable>
+                </div>
+                <div style="width:100%;padding-top:0px;">
+                  <apex:outputPanel rendered="{!!teamSelectionListHasValue}">
+                    <div class="searchNoRecordSection">
+                      {!$Label.TeamMemberSelectionSearchInfo}
+                    </div>
+                  </apex:outputPanel>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Selected Team Members -->
+          <div class="selectedSection" style="min-width:20%;">
+            <div style="float:left;">{!$Label.TeamMemberSelectionAddedReviewers}</div>
+            <div class="selectedSectionInner">
+              <div>
+                <apex:pageblockTable value="{!msTeamsUserSelected}" var="teamsUser" rendered="{!teamSelectedListHasValue}" headerClass="hidden"
+                  style="border:0px;">
+                  <apex:column >
+                    {!teamsUser.displayName}
+                  </apex:column>
+                  <apex:column >
+                    <apex:outputPanel rendered="{!!teamsUser.removeNotAllowed}">
+                      <input id="{!teamsUser.id}" style="display:none" type="checkbox" styleClass="checkBoxes" name="UnselectRecord" onclick="removeTeamMember('{!teamsUser.id}')">
+                      <label for="{!teamsUser.id}">
+                        <img src="{!URLFOR($Resource.Image_RemoveUser)}" style="height:23px;width:23px;" />
+                      </label>
+                      </input>
+                    </apex:outputPanel>
+                  </apex:column>
+                </apex:pageblockTable>
+                <apex:outputPanel rendered="{!!teamSelectedListHasValue}">
+                  <div class="selectedNoRecordSection">
+                    {!$Label.TeamMemberSelectionNoReviewers}
+                  </div>
+                </apex:outputPanel>
+              </div>
+            </div>
+          </div>
+        </apex:outputPanel>
+      </apex:pageBlock>
+      <!-- Selected Attachment or Files -->
+      <apex:pageBlock title="{!$Label.apttus__emailattachment}" rendered="{!!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t')}">
+        <apex:pageblockTable value="{!attachmentFileWrapper}" var="attachData">
+          <apex:column headerValue="{!$Label.apttus__emailfilename}">
+            {!attachData.name}
+          </apex:column>
+          <apex:column headerValue="{!$Label.apttus__emailfilesize}">
+            {!attachData.BodyLength}
+          </apex:column>
+        </apex:pageblockTable>
+      </apex:pageBlock>
+      <br/>
+      <apex:outputPanel rendered="{!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t')}">
+        <div class="emailAttachmentHeader">
+            <br/>
+                <apex:outputLabel value="{!$Label.apttus__emailattachment}"/>
+                <br/><br/>
+        </div>
+        <div class="slds-box slds-box_xx-small" style="float:left;width:100%;">
+            <apex:variable value="{!0}" var="rowNum"/> 
+            <apex:outputPanel id="idAttachmentsPanel" layout="block">                    
+                <apex:dataTable value="{!attachmentFileWrapper}" 
+                                var="attachData"
+                                styleClass="slds-table slds-table--bordered" 
+                                width="90%" columns="2">
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus__emailfilename}</apex:facet>
+                        <apex:outputText value="{!attachData.name}"/>
+                    </apex:column>                    
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus__emailfilesize}</apex:facet>
+                        <apex:outputText value="{!attachData.BodyLength}"/>
+                    </apex:column>
+                </apex:dataTable>
+            </apex:outputPanel>
+            
+            <br/>
+        </div>
+      </apex:outputPanel>        
+
+      <apex:outputPanel id="showAfterSend" rendered="{!sendInProgress}">
+              <script>
+                      initCall();
+                      alert('{!JSENCODE($Label.MSTeamsAfterSendMessage)}');
+                      navigateTo("/" + "{!agreementId}");
+              </script>
+      </apex:outputPanel> 
+      </div>
+      </apex:outputPanel>
+    </apex:form>
+  </div>
+</apex:page>

@@ -1,0 +1,169 @@
+<!-- 
+    Apttus Config & Pricing
+    ConstraintRuleActionCriteriaaEdit
+     
+    @2010-2011 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Config2__ConstraintRuleAction__c"  
+           extensions="Apttus_Config2.ConstraintRuleActionCriteriaController" 
+           lightningStylesheets="true"
+           showHeader="true"
+           sidebar="{!ShowAdminSidebar}"
+           cache="false"   
+           tabStyle="Apttus_Config2__ConstraintRuleAction__c">  
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__jQuery, 'js/jquery-1.11.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__jQuery, 'js/jquery-ui-1.11.4.min.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__jQuery, 'css/jquery-ui-1.11.4.min.css')}"/>
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__ConstraintRule,'ConstraintRule.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__ConstraintRule,'ConstraintRule.css')}"/>
+
+    <apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/apttusUtils-1.0.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/jquery-ui.multipickSearch-1.0.js')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources, 'css/font-awesome.min.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources, 'css/jquery-ui.multipickSearch-1.0.css')}" rel="stylesheet" />
+   
+    
+    <apex:sectionHeader title="{!$ObjectType.Apttus_Config2__ConstraintRuleAction__c.Label}" subtitle="{!Apttus_Config2__ConstraintRuleAction__c.Name}"/>
+    
+    <script type="text/javascript">
+      var j$ = jQuery.noConflict();
+      j$.APTTUS = {};
+      j$.APTTUS.RemoteController = {};
+      j$.APTTUS.RemoteController.getSimilarFields = '{!$RemoteAction.ConstraintRuleActionCriteriaController.getSimilarFields}';
+    </script>
+
+    <apex:form id="idEditCriteria">
+        <!--  required fields -->
+        <apex:outputText value="{!Apttus_Config2__ConstraintRuleAction__c.Apttus_Config2__Sequence__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ConstraintRuleAction__c.Apttus_Config2__ActionType__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ConstraintRuleAction__c.Apttus_Config2__ActionCriteria__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ConstraintRuleAction__c.Apttus_Config2__Message__c}" rendered="false" />
+        <apex:inputHidden value="{!Apttus_Config2__ConstraintRuleAction__c.Apttus_Config2__ActionType__c}" id="ConstraintRuleActionActionType"/>
+
+        <apex:pageBlock id="idEditCriteriaBlock" title="{!$Label.apttus_config2__editruleactioncriteria}" mode="edit">
+            <apex:pageMessages />
+            
+            <apex:pageBlockButtons location="both">
+                <apex:commandButton value="{!$Label.apttus_config2__ok}" 
+                                    action="{!doOk}"
+                                    style="width: 70px"  />
+                <apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+                                    action="{!doCancelAction}" 
+                                    immediate="true"
+                                    style="width: 70px"  />
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockSection id="idPredicatesSection" 
+                                   title="{!$Label.apttus_config2__filter}" 
+                                   columns="2" 
+                                   collapsible="false" >
+                <apex:pageBlockTable value="{!predicates}" 
+                                     var="predicate" 
+                                     columns="8" 
+                                     rowClasses="oddRow,evenRow" >
+                    
+                    <apex:column width="5%" rendered="{!isAdvancedOptionsMode}" >
+                        <apex:outputText id="idRowNum" value="{!predicate.RowNum}. " />
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_config2__field}" width="25%" >
+                        <apex:outputPanel styleClass="{!IF(predicate.FieldInError, 'errorRow', '')}" layout="block" >
+                            <apex:selectList size="1" 
+                                             rendered="{!NOT(isValidateActionType)}"
+                                             value="{!predicate.FieldName}" >
+                                <apex:selectOptions value="{!FieldItems}"></apex:selectOptions>
+                            </apex:selectList>
+
+                            <apex:outputPanel rendered="{!isValidateActionType}">
+                                <apex:inputText id="searchBoxId" 
+                                              value="{!searchTermList[predicate.RowNum-1]}" 
+                                              styleClass="placeHolder searchBoxClass" 
+                                              html-placeholder="Field Name"/>
+                                <apex:inputHidden id="idField" value="{!predicate.FieldName}"/>
+                                <apex:inputHidden id="idLabel" value="{!predicate.FieldLabel}"/>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_config2__operator}" width="25%" >
+                        <apex:outputPanel styleClass="{!IF(predicate.CompOperInError, 'errorRow', '')}" layout="block" >
+                            <apex:selectList id="idCompOper" size="1" value="{!predicate.CompOper}" >
+                                <apex:selectOptions value="{!compOperItems}"></apex:selectOptions>
+                            </apex:selectList>
+                        </apex:outputPanel>
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_config2__value}" width="25%" >
+                        <apex:outputPanel styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" layout="block" >
+                            <apex:inputText id="idFieldValue" size="25" value="{!predicate.FieldValue}" />
+                        </apex:outputPanel>
+                    </apex:column>
+                    <apex:column width="5%" >
+                        <apex:outputText id="idBoolOper" 
+                                         value="{!predicate.BoolOper}" 
+                                         rendered="{!NOT(isAdvancedOptionsMode) && NOT(ISBLANK(predicate.BoolOper))}" />
+                                         
+                        <apex:commandLink action="{!doAddRow}" 
+                                          value="{!$Label.apttus_config2__add}" 
+                                          reRender="idPredicatesSection, idAdvancedOptionsSection" 
+                                          rendered="{!NOT(isAdvancedOptionsMode) && ISBLANK(predicate.BoolOper)}" />
+                    </apex:column>
+                    <apex:column width="5%" >
+                    <apex:commandLink id="idDeleteRow" 
+                                      action="{!doDeleteRow}" 
+                                      value="{!$Label.apttus_config2__del}" 
+                                      reRender="idPredicatesSection, idAdvancedOptionsSection" >
+                        <apex:param name="rowNum" value="{!predicate.RowNum}" />          
+                    </apex:commandLink>
+                    </apex:column>
+                    <apex:column width="10%" >
+                        <apex:outputText value="{!predicate.ErrorMsg}" style="color:red;" />
+                    </apex:column>
+                   
+                </apex:pageBlockTable>
+                <script type="text/javascript">
+                  var actionType = document.querySelector('[id$="ConstraintRuleActionActionType"]').value;
+                  fieldAutocomplete(actionType);
+                </script>
+            </apex:pageBlockSection>
+                    
+            <apex:pageBlockSection id="idAdvancedOptionsSection" columns="1" collapsible="false" >
+            
+                <apex:commandLink id="idShowAdvancedOptions" 
+                                  action="{!doShowAdvancedOptions}" 
+                                  value="{!$Label.apttus_config2__advancedoptions}" 
+                                  reRender="idAdvancedOptionsSection, idPredicatesSection" 
+                                  rendered="{!NOT(isAdvancedOptionsMode)}" />
+                
+                <apex:outputPanel rendered="{!isAdvancedOptionsMode}">
+                    <apex:commandLink id="idAddRow" 
+                                      action="{!doAddRow}" 
+                                      value="{!$Label.apttus_config2__addrow}" 
+                                      reRender="idAdvancedOptionsSection, idPredicatesSection" />
+                    <span>  </span>
+                    <apex:commandLink id="idRemoveRow" 
+                                      action="{!doRemoveRow}" 
+                                      value="{!$Label.apttus_config2__removerow}" 
+                                      reRender="idAdvancedOptionsSection, idPredicatesSection" 
+                                      rendered="{!OkToRemoveRow}" />
+                    <apex:outputPanel id="idRemoveRow2" styleClass="greyedLink" rendered="{!NOT(OkToRemoveRow)}" >{!$Label.apttus_config2__removerow}</apex:outputPanel>
+                    <p/>    
+                    <apex:commandLink id="idHideAdvancedOptions" 
+                                      action="{!doHideAdvancedOptions}" 
+                                      value="{!$Label.apttus_config2__clearadvancedoptions}" 
+                                      reRender="idAdvancedOptionsSection, idPredicatesSection" />
+                    <br/>
+                    <apex:outputText value="{!$Label.apttus_config2__advancedfiltercondition}" />
+                    <br/>
+                    <apex:inputText id="idAdvancedOptions" size="80" value="{!advancedOptions}" />
+                </apex:outputPanel>
+                
+            </apex:pageBlockSection>
+            
+        </apex:pageBlock>
+        
+    </apex:form>
+    
+</apex:page>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckAccountOnERPBlank</fullName>
+    <active>true</active>
+    <description>Prevents the user to edit the fields on Account when the Prospect Account status is Pending Validation and ERP ID is blank</description>
+    <errorConditionFormula>AND(
+OR(
+AND(
+RecordType.DeveloperName = &apos;Prospect&apos;,
+OR(
+AND(
+TEXT(Account_Status__c ) = $Label.Account_Account_Status_Prospect_Validation ,
+ISBLANK( ERP_Customer_Id__c )
+),
+NOT(ISBLANK( ERP_Customer_Id__c ))
+),
+OR(
+ISCHANGED (BillingStreet),
+ISCHANGED (BillingCity),
+ISCHANGED (BillingState),
+ISCHANGED (BillingPostalCode),
+ISCHANGED (BillingCountry),
+ISCHANGED (Name),
+ISCHANGED (NameLocal),
+ISCHANGED (ParentId),
+ISCHANGED (Street_Local__c),
+ISCHANGED (City_Local__c),
+ISCHANGED (Zip_Postal_Code_Local__c),
+ISCHANGED (State_Province_Local__c),
+ISCHANGED (Street_2_Local__c),
+ISCHANGED (Market_Segment__c),
+ISCHANGED (Channel_Partner_Type__c),
+ISCHANGED (Care_Of__c),
+ISCHANGED (Care_Of_Local__c),
+ISCHANGED (Fax),
+ISCHANGED (Preferred_Language__c),
+ISCHANGED (CurrencyIsoCode)
+),
+NOT($Permission.DS_Edit_Market_Segment )
+),
+AND(
+AND(
+OR(
+NOT(ISPICKVAL(Address_Status__c,&apos;Not Submitted&apos;)),
+RecordType.DeveloperName != &apos;Prospect&apos;
+),
+RecordType.DeveloperName != $Label.AccountRecordTypeDeveloperNameChannelPartnerProspect),
+OR(
+TEXT(PRIORVALUE(Customer_Type__c )) != TEXT(Customer_Type__c ),
+TEXT(PRIORVALUE(Customer_Sub_Type__c )) != TEXT(Customer_Sub_Type__c ),
+TEXT(PRIORVALUE(Clinical_Type__c )) != TEXT(Clinical_Type__c ),
+TEXT(PRIORVALUE(CurrencyIsoCode)) != TEXT(CurrencyIsoCode ),
+TEXT(PRIORVALUE(Preferred_Language__c)) != TEXT(Preferred_Language__c ),
+ISCHANGED (Care_Of__c),
+ISCHANGED (Care_Of_Local__c),
+ISCHANGED (Fax),
+ISCHANGED (Preferred_Language__c),
+ISCHANGED (CurrencyIsoCode)
+),
+NOT($Permission.DS_Edit_Market_Segment )
+),
+AND(
+$Permission.DS_Edit_Market_Segment,
+OR (
+ISCHANGED ( Care_Of__c ),
+ISCHANGED ( Care_Of_Local__c ),
+ISCHANGED ( Fax ),
+ISCHANGED ( Preferred_Language__c ),
+ISCHANGED ( CurrencyIsoCode )
+)
+),
+AND(
+OR(
+RecordType.DeveloperName = &apos;Indirect_Partner&apos;,
+RecordType.DeveloperName = &apos;Customer&apos;
+),
+OR(
+ISCHANGED (Name),
+ISCHANGED (BillingStreet),
+ISCHANGED (BillingCity),
+ISCHANGED (BillingState),
+ISCHANGED (BillingPostalCode),
+ISCHANGED (BillingCountry),
+ISCHANGED (Customer_Type__c),
+ISCHANGED (Customer_Sub_Type__c),
+ISCHANGED (Clinical_Type__c),
+ISCHANGED (Preferred_Language__c),
+ISCHANGED (Phone),
+ISCHANGED (Fax),
+ISCHANGED (OwnerId),
+ISCHANGED (RecordTypeId),
+ISCHANGED (CurrencyIsoCode),
+ISCHANGED (Care_Of__c),
+ISCHANGED (ParentId),
+ISCHANGED (Care_Of_Local__c),
+ISCHANGED (Channel_Partner_Type__c),
+ISCHANGED (City_Local__c),
+ISCHANGED (Market_Segment__c),
+ISCHANGED (NameLocal)
+),
+NOT($Permission.DS_Edit_Market_Segment )
+),
+AND(OR((RecordType.DeveloperName = &apos;Customer&apos;),AND((RecordType.DeveloperName = &apos;Prospect&apos;),
+TEXT(Account_Status__c ) = $Label.Account_Account_Status_Active_Prospect)),
+ISCHANGED (ParentId)
+)
+),
+NOT(ISCHANGED(Is_Updated_By_System__c)),
+NOT(Is_Updated_By_System__c),
+NOT(
+OR(
+$Profile.Name = $Label.ProfileSystemAdmin,
+$Profile.Name = $Label.ProfileDataSteward
+)
+),
+NOT(AND( ISCHANGED ( Phone ),
+ISPICKVAL ( Is_Converted_From_Lead__c, &apos;Yes&apos; )
+))
+)</errorConditionFormula>
+    <errorMessage>Account master data fields are locked. Please contact your regional data steward team for assistance by creating a new Master Data Request.</errorMessage>
+</ValidationRule>

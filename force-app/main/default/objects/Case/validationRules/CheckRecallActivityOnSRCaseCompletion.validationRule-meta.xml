@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckRecallActivityOnSRCaseCompletion</fullName>
+    <active>true</active>
+    <description>Prevent users from Completing / Closing Recall Service Request case</description>
+    <errorConditionFormula>AND(
+/* Bypass conditions */
+NOT(
+OR(
+$Profile.Name = $Label.Integration_SAP_Service,
+$Profile.Name = $Label.Integration_Service_SNAP_Profile,
+$User.FirstName = $Label.Automated_Process_User,
+$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+)
+),
+/* Original validation conditions */
+RecordType.Name = $Label.CaseRecordTypeServiceRequest,
+Recall__c = TRUE,
+OR(
+NOT(ISBLANK( SVMXC__Component__c )),
+NOT(ISBLANK( SVMXC__Product__c )),
+NOT(ISBLANK(Subscription__c))
+),
+ISCHANGED(Status),
+OR(
+ISPICKVAL(Status, &quot;Completed&quot;),
+ISPICKVAL(Status, &quot;Closed&quot;)
+),
+ISPICKVAL(Recall_Activity__c, &quot;&quot;)
+)</errorConditionFormula>
+    <errorMessage>The Recall Activity field is blank but is required when a product is logged on the recall case. Ensure the Recall Activity field is updated on the recall case</errorMessage>
+</ValidationRule>

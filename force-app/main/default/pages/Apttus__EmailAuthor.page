@@ -1,0 +1,206 @@
+<!-- 
+    Apttus Contract Management
+    EmailAuthor
+    @2016-2019 Apttus Inc. All rights reserved.    
+ -->
+<apex:page controller="Apttus.EmailAuthorController" 
+           docType="html-5.0" 
+           showHeader="true" 
+           sidebar="true" 
+           action="{!initEmailAuthor}">
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__LightningResource,'css/page-icon.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" />     
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__EmailAuthor, 'js/email-author.js')}"/> 
+    <link type="text/css" href="{!URLFOR($Resource.EmailAuthor,'css/style.css')}" rel="stylesheet" />        
+    
+
+    <apex:outputPanel rendered="{!NOT(isFromContentDistributionPage) && isReviewIcon}">
+        <div class="bPageTitle bpageTitleExtra">
+            <div class="ptBody">
+                <div class="content">
+                    <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/SendReview.png')}" class="pageIconPadding" />
+                    <h1 class="pageType">{!$Label.SendForReview}</h1>
+                    <h2 class="pageDescription">{!contextObject['name']}</h2>
+                </div>
+            </div>
+        </div>
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!NOT(isFromContentDistributionPage) && isSignatureIcon}">
+        <div class="bPageTitle bpageTitleExtra">
+            <div class="ptBody">
+                <div class="content">
+                    <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/Signature.png')}" class="pageIconPadding" />
+                    <h1 class="pageType">{!$Label.SendForSignatures}</h1>
+                    <h2 class="pageDescription">{!contextObject['name']}</h2>
+                </div>
+            </div>
+        </div>
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!isFromContentDistributionPage}">
+        <div class="bPageTitle bpageTitleExtra">
+            <div class="ptBody">
+                <div class="content">
+                    <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/SendReview.png')}" class="pageIconPadding" />
+                    <h1 class="pageType">{!$Label.Emailmessage}</h1>
+                    <h2 class="pageDescription">{!$Label.Sendemail}</h2>
+                </div>
+            </div>
+        </div>
+    </apex:outputPanel>	
+    <apex:form >            
+        <apex:pageBlock mode="edit" rendered="{!errorDuringLoad}" id="errorBlock">
+            <apex:pageMessages escape="false"/>
+        </apex:pageBlock>            
+        <apex:pageBlock title="{!stepTitle}">            
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus__emailsend}" action="{!onSendEmail}"/>                    
+                <apex:commandButton value="{!$Label.apttus__emailcancel}" action="{!onCancel}" immediate="true"/>
+            </apex:pageBlockButtons>            
+            <apex:outputPanel id="idEditEmailPanel" layout="block">
+            <div class="emailSubHeader">
+                <apex:pageBlockSection columns="1" collapsible="false" showHeader="true" title="{!$Label.apttus__emailedit}">   
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!IF(isParallelReview , $Label.apttus__emailcontact, $Label.apttus__emailto)}" />
+                        <apex:pageBlockSectionItem >
+                    		<apex:inputField id="Contact" value="{!agmtEmailTo.Apttus__Primary_Contact__c}" styleClass="emailAddressField"/>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSectionItem>                    
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!IF(isParallelReview, $Label.apttus__emailrecipientuseroremail, $Label.apttus__emailadditionalto)}" styleClass="emailAddressLabel"/>
+                        <apex:pageBlockSectionItem >
+                            <apex:inputTextArea value="{!emailAdditionalTo}" cols="62" id="p24" rows="2" title="CC" styleClass="p24 emailAddressField" />
+                            <apex:outputlink value="{!popupWindowURL}" id="p24_lkwgt" title="{!$Label.apttus__emailadditionaltolookup}">
+                            <img src="/s.gif" style="vertical-align : top;background-repeat: no-repeat;" alt="{!$Label.apttus__emailadditionaltolookup}" class="lookupIcon" onblur="this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" title="{!$Label.apttus__emailadditionaltolookup}" />
+                    </apex:outputlink>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem rendered="{!NOT(isParallelReview)}" >
+                        <apex:outputLabel value="{!$Label.apttus__emailcc}" styleClass="emailAddressLabel"/>
+                        <apex:pageBlockSectionItem >
+                            <apex:inputTextArea value="{!emailCc}" cols="62" id="p4" rows="2" title="CC" styleClass="p4 emailAddressField" />
+                                <apex:outputlink value="{!popupWindowURL}" id="p4_lkwgt" title="{!$Label.apttus__emailcclookup}">
+                                    <img src="/s.gif" style="vertical-align : top;background-repeat: no-repeat;" alt="{!$Label.apttus__emailcclookup}" class="lookupIcon" onblur="this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" title="{!$Label.apttus__emailcclookup}" />
+                            </apex:outputlink>
+                            </apex:pageBlockSectionItem>
+                    </apex:pageBlockSectionItem>                    
+                    <apex:pageBlockSectionItem rendered="{!AND(NOT(isParallelReview), !isComplianceBCCEmailEnabled)}">
+                        <apex:outputLabel value="{!$Label.apttus__emailbcc}" styleClass="emailAddressLabel"/>
+                        <apex:pageBlockSectionItem >
+                            <apex:inputTextArea value="{!emailBcc}" cols="62" id="p5" rows="2" title="CC" styleClass="p5 emailAddressField" />
+                                <apex:outputlink value="{!popupWindowURL}" id="p5_lkwgt" title="{!$Label.apttus__emailbcclookup}">
+                                    <img src="/s.gif" style="vertical-align : top;background-repeat: no-repeat;" alt="{!$Label.apttus__emailbcclookup}" class="lookupIcon" onblur="this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" title="{!$Label.apttus__emailbcclookup}" />
+                            	</apex:outputlink>
+                        </apex:pageBlockSectionItem> 
+                    </apex:pageBlockSectionItem> 
+					<apex:pageBlockSectionItem rendered="{!AND(NOT(isParallelReview), isComplianceBCCEmailEnabled)}" >
+                        <apex:outputLabel value="{!$Label.apttus__emailbcc}" styleClass="emailAddressLabel" title="{!$Label.apttus__compliancebccenabled}"/>
+                        <apex:outputText value="{!emailBcc}" title="{!$Label.apttus__compliancebccenabled}"/>
+                    </apex:pageBlockSectionItem>        					
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.apttus__emailsubject}" styleClass="emailAddressLabel"/>
+                        <apex:pageBlockSectionItem >
+                            <apex:outputPanel styleClass="requiredInput" layout="block">
+                                <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                            <apex:inputText value="{!emailSubject}" styleClass="subjectText"
+                            disabled="{!IF((reviewCycleId != null) , true, false)}"/>
+                            </apex:outputPanel>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSectionItem>                    
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.apttus__emailbody}" styleClass="emailAddressLabel"/>
+                        <apex:pageBlockSectionItem >
+                    		<apex:inputTextarea value="{!emailBody}" 
+                                        styleClass="emailBody"  
+                                        cols="50" rows="20"                                          
+                                        richText="false" 
+                                        rendered="{!emailTemplateFormat == EMAIL_FORMAT_TEXT}"
+                                        disabled="{!IF((reviewCycleId != null) , true, false)}"/>
+                            <apex:inputTextarea value="{!emailRichTextBody}" 
+                                        styleClass="emailBody"  
+                                        cols="50" 
+                                        rows="10"                                            
+                                        richText="true"  
+                                        rendered="{!OR(isFromContentDistributionPage, emailTemplateFormat == EMAIL_FORMAT_HTML)}"
+                                        disabled="{!IF((reviewCycleId != null) , true, false)}"/>
+                        </apex:pageBlockSectionItem>
+                    </apex:pageBlockSectionItem>                     
+                </apex:pageBlockSection>
+            </div>
+            </apex:outputPanel>
+            <apex:pageBlockButtons location="Bottom">
+                <apex:commandButton value="{!$Label.apttus__emailsend}" action="{!onSendEmail}"/>                    
+                <apex:commandButton value="{!$Label.apttus__emailcancel}" action="{!onCancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+        <apex:pageBlock rendered="{!NOT(isFromContentDistributionPage)}" title="{!$Label.apttus__emailattachment}">
+            <apex:pageBlockButtons location="Top">
+                <apex:inputFile value="{!newAttachment.body}" filename="{!newAttachment.name}" 
+                                fileSize="{!newAttachment.BodyLength}" contentType="{!newAttachment.contentType}" 
+                                id="fileUploaded" style="display:none" onchange="invokeUploadAttachment();"
+                                disabled="{!IF((reviewCycleId != null) , true, false)}"/>                
+                <apex:outputLabel value="{!$Label.apttus__emailattachfile}" for="fileUploaded" styleClass="uploadFileButton"/>                
+                <apex:actionFunction name="invokeUploadAttachment" action="{!onUploadAttachment}" /> 
+            </apex:pageBlockButtons>
+            <apex:variable value="{!0}" var="rowNum"/>  
+            <apex:outputPanel id="idAttachmentsPanel" layout="block">                    
+                <apex:pageBlockTable value="{!attachments}" 
+                                     var="attachData"
+                                     width="90%" columns="4">
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus__emailaction}</apex:facet>
+                        <apex:commandLink action="{!onDeleteAttachment}" id="del" value="{!$Label.apttus__emaildelete}" rendered="{!OR(NOT(ISNULL(attachData.attachment.Id)), attachData.isInline)}">  
+                            <apex:param name="myDeleteId" value="{!attachData.attachmentId}"/>
+                            <apex:param name="{!PARAM_DELETE_ATTACHMENT}" value="{!attachData.attachmentId}"/>
+                            <apex:param name="{!PARAM_DELETE_ROW}" value="{!rowNum}" />
+                        </apex:commandLink>
+                        <apex:variable var="rowNum" value="{!rowNum + 1}"/>
+                    </apex:column>                    
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus__emailfilename}</apex:facet>
+                        <apex:outputLink value="/{!attachData.attachmentId}">{!attachData.attachment.Name}</apex:outputLink>
+                    </apex:column>                    
+                    <apex:column >
+                        <apex:facet name="header">{!$Label.apttus__emailfilesize}</apex:facet>
+                        <apex:outputText value="{!attachData.fileSize}"/>
+                    </apex:column>
+					<apex:column rendered="{!NOT(ISNULL($CurrentPage.parameters.protectionLevel))}">
+                        <apex:facet name="header">{!$Label.apttus__emailauthordocumentpermissionscolumnheader}</apex:facet>
+
+                        <apex:outputText rendered="{!Contains($CurrentPage.parameters.primaryAttachmentIds, attachData.attachmentId)}" value="{!$CurrentPage.parameters.protectionLevel}"/>
+                        <apex:outputText rendered="{!NOT(Contains($CurrentPage.parameters.primaryAttachmentIds, attachData.attachmentId))}" value="--"/>
+                    </apex:column>
+                </apex:pageBlockTable>
+            </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+    <script>  
+     window.onload = modifyToFieldErrorLabel();  
+     function modifyToFieldErrorLabel(){  
+         var erroMsgElement = $('[id$=errorBlock]').find(".messageText");  
+         var htmlerrorMsg = erroMsgElement.html();
+         if( htmlerrorMsg && htmlerrorMsg.includes('Reports To') ){
+             var newErrorMsgHtml = erroMsgElement.html().replace('Reports To','{!$Label.EmailTo}');  
+             erroMsgElement.html(newErrorMsgHtml);
+         }
+         
+     }  
+    
+    $( window ).load(function(){
+        //Once Page is loaded adjust height after 1500 ms.
+   		setTimeout(adjustRTFEditorHeight , 1500 );
+	});
+    
+    function adjustRTFEditorHeight(){
+        var rtfFrame = $(".cke_wysiwyg_frame");
+        if( rtfFrame && rtfFrame[0] ){
+                var rtfParentDiv = $("#cke_1_contents");
+                var heightOfEmailTemplate = $(".cke_wysiwyg_frame").contents().find("body").height();
+                var offset = 150;
+                
+                //Ensure Parent Div is height:auto
+            	rtfParentDiv[0].style = "height:auto;";
+                rtfFrame[0].style = "width:100%; height:"+(heightOfEmailTemplate +offset)+"px;";
+         }
+    }
+   </script>
+</apex:page>

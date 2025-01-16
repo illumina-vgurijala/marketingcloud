@@ -1,0 +1,74 @@
+<!-- 
+    Apttus Config & Pricing
+    Publish Favorite Inline VF Page for Publish button on Favorite Configuration record page
+     
+    Copyright (c) 2016, Apttus Inc. All rights reserved.
+ -->
+<apex:page showHeader="false" 
+			sidebar="false"
+			standardController="Apttus_Config2__FavoriteConfiguration__c"
+			extensions="Apttus_Config2.PublishFavoriteInlineController"
+			rendered="{!isPublishAllowed}">
+
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources, 'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources, 'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources, 'css/jQueryUIStyle.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.AttributeRuleAdmin, 'css/style.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources, 'css/jquery-ui.multipickSearch-1.0.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/optionController.js')}" />    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/apttusUtils-1.0.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/jquery-ui.multipickSearch-1.0.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__PublishFavoriteInlineJS)}" />
+	<script type="text/javascript">
+	    var j$ = jQuery.noConflict();
+	        // initialization
+	        j$.APTTUS = {};
+	        j$.APTTUS.Labels = {};
+	        j$.APTTUS.RemoteController = {};
+	        // remote actions
+	        j$.APTTUS.RemoteController.searchPriceLists = '{!$RemoteAction.PublishFavoriteInlineController.searchPriceLists}';
+	    	// labels
+	        j$.APTTUS.Labels.AvailableItems = '{!$Label.AvailableItems}';
+	        j$.APTTUS.Labels.Close = '{!$Label.Close}';
+	        j$.APTTUS.Labels.NoResultsAvailable = '{!$Label.NoResultsAvailable}';
+	        j$.APTTUS.Labels.SelectedItems = '{!$Label.SelectedItems}';
+	        j$.APTTUS.FavoriteConfigurationId = '{!Id}';
+
+	    	// removal of items from multi-pick widget.
+	        function onDeleteEvent(itemValue, hiddenControlID) {
+	            var $hdnSelectedItems = j$("[id$="+ hiddenControlID + "]"),
+	                currentValues = $hdnSelectedItems.val(),
+	                updatedList = removeValue(currentValues, itemValue, "; ");
+	                $hdnSelectedItems.val(updatedList);
+	        }
+
+	        function populatePublishedPriceLists() {
+	            j$("[id$=idPriceListSearch]").val("");
+	            <apex:repeat value="{!currentPublishedPricelists}" var="priceList">
+	                j$("[id$=idPriceListSearch]").multipickSearch("addSelectedItem", {label:"{!JSENCODE(priceList.Name)}", value:"{!priceList.Id}"});
+	            </apex:repeat>
+	        }
+	</script>
+
+
+	<apex:form id="theForm">
+	    <apex:actionFunction name="sfdcDoPublish" action="{!doPublish}" oncomplete="refresh();" reRender="idErrorMsg"> 
+	        <apex:param name="favoriteConfigId" value="" />
+	    </apex:actionFunction>
+	    <apex:outputPanel id="idPanel">
+	        <div class="field">
+	            <apex:inputText id="idPriceListSearch" html-placeholder="{!$Label.apttus_config2__search} {!$Label.apttus_config2__pricelists}" />
+	            <apex:inputHidden id="idPriceListScopeHidden" value="{!chosenPriceListIds}" />
+	        </div>
+	    </apex:outputPanel>
+	    <apex:commandButton value="{!$Label.apttus_config2__publish}" onclick="sfdcDoPublish('{!Id}'); return false;" />
+	    <div id="idSpinner" style="display:none;">
+	        <apex:image id="spinner" value="/img/loading.gif" />
+	    </div>
+	    <apex:outputPanel id="idErrorMsg">
+	        <apex:pageMessages />
+	    </apex:outputPanel>
+	</apex:form>
+</apex:page>

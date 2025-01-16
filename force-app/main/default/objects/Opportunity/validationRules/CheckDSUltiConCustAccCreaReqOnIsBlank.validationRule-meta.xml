@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSUltiConCustAccCreaReqOnIsBlank</fullName>
+    <active>true</active>
+    <description>Prevents user from moving from Negotiate and Resolve to subsequent stages when Account Record Type is Prospect or Account Group is not Sold To  or Ultimate Consignee  AND &quot;Customer Account Creation Requested On&quot; is blank.</description>
+    <errorConditionFormula>AND (
+    RecordType.DeveloperName = $Label.OpportunityRTDirectStandard,
+    OR (
+        Ultimate_Consignee__r.RecordType.Name = $Label.AccountProspect,
+        AND (
+            TEXT ( Ultimate_Consignee__r.Account_Group__c ) &lt;&gt; $Label.AccountGroupSoldTo,
+            TEXT ( Ultimate_Consignee__r.Account_Group__c ) &lt;&gt; $Label.AccountGroupUltimateConsignee
+        )
+    ),
+    ISBLANK ( Customer_Account_Creation_Requested_On__c ),
+    NOT ( CloseDate &lt; TODAY() ),
+    NOT (
+        OR (
+            TEXT ( StageName ) = $Label.OpportunityStageClosedLost, 
+            TEXT ( PRIORVALUE ( StageName )) = $Label.OpportunityStageClosedLost, 
+            TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+            TEXT ( PRIORVALUE ( StageName )) = $Label.OpportunityStageClosedAbandoned,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            TEXT ( PRIORVALUE ( StageName )) = $Label.OpportunityStageClosedWon, 
+            TEXT ( StageName ) = $Label.OpportunityStageCreate, 
+            TEXT ( StageName ) = $Label.OpportunityStageQualify,
+            TEXT ( StageName ) = $Label.OpportunityStageDevelop,
+            TEXT ( StageName ) = $Label.OpportunityStageProve,
+            TEXT ( StageName ) = $Label.OpportunityStageNegotiateResolve
+        )
+    ),
+    AND ( 
+         TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+         TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+         TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+         TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+         TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+         TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+         TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+         TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+    ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+			$Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Ultimate_Consignee__c</errorDisplayField>
+    <errorMessage>Please indicate date on which Customer (Ultimate Consignee) Account creation was requested. To do so, request prospect upgrade to Ultimate Consignee by navigating to account record and clicking &quot;Upgrade Request&quot;.</errorMessage>
+</ValidationRule>

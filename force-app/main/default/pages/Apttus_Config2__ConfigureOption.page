@@ -1,0 +1,324 @@
+<!-- 
+    Apttus Config & Pricing
+    ConfigureOption
+     
+    @2010-2014 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__LineItem__c"
+           extensions="Apttus_Config2.ConfigureOptionController"
+           lightningStylesheets="true"
+           showHeader="false"
+		   sidebar="false"
+		   action="{!doLoad}" >
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources,'CPQCommon.css')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQEvalStructJS}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQFormulaEvalJS}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQCartEvaluatorJS}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQJSLibrary}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQAttributesJS}"/>    
+    <script>
+		j$ = jQuery.noConflict();
+		j$.APTTUS = {};
+		
+		j$.APTTUS.nsPrefix = '{!NSPrefix}';
+	  	j$.APTTUS.attributeValuePrefix = '{!NSPrefix}{!AttributeValueRFieldName}.';
+
+	  	//applied expressions for cart
+	  	j$.APTTUS.appliedExpressionInfos = JSON.parse('{!JSENCODE(AppliedExpressionInfos)}');
+	    //attribute rules for context line
+	    j$.APTTUS.attributeRules = JSON.parse('{!JSENCODE(AttributeRules)}');
+
+	    var attributeIdByField = {};
+	    var productMatricies = {};
+	    var attributeOutIdByField = {};
+	    var initMatrixAttributes = [];
+
+	    // setup cart lines
+		var cartLineSObjects = {0: {'Id':'{!JSENCODE(LineItem__c.ConfigurationId__c)}'}};
+	    var lineItemList = JSON.parse('{!JSENCODE(CartLines)}');
+	    for(var i=0; i < lineItemList.length; i++) {
+	      var lineSO = lineItemList[i];
+	      var primaryLineNumber = lineSO[j$.APTTUS.nsPrefix+'PrimaryLineNumber__c'];
+	      cartLineSObjects[primaryLineNumber] = lineSO;
+	    }
+
+		j$(document).ready(function(){
+			var attributesDialogHeader = j$('.aptHeader h2').html();
+			parent.setAttributeDialogHeader(attributesDialogHeader);
+
+			//initialize select lists
+	        var modifiedByFilter = {};
+	        for(var i=0; i < initMatrixAttributes.length; i++) {
+	        	var modifiedFields = filterAttributes(initMatrixAttributes[i], productMatricies, attributeIdByField);	          
+	        }
+
+	        // run related expressions
+	        for(var modifiedName in modifiedByFilter) {
+	            var currentValue = j$(document.getElementById(attributeIdByField[modifiedName])).val();
+	            processExpressions(attributeIdByField, cartLineSObjects, {!Apttus_Config2__LineItem__c.Apttus_Config2__PrimaryLineNumber__c});
+	        }
+
+	        //run ABC rules
+	        processAttributeRules({!Apttus_Config2__LineItem__c.Apttus_Config2__PrimaryLineNumber__c}, attributeIdByField, cartLineSObjects);
+		});
+
+      	/**
+         * Invoke processing of changed input values
+         */
+      	function invokeProcessInputChange(fieldName, isAttributeInput, contextIdentifier, newValue) {      
+	        processInputChange(fieldName, 
+	                           productMatricies,
+	                           cartLineSObjects, 
+	                           attributeIdByField,
+	                           isAttributeInput, 
+	                           contextIdentifier, 
+	                           newValue);
+	    }
+
+	    /**
+       	 * Update display of output fields marked as read-only by
+       	 * product attribute rule
+       	 */
+	    function updateOutputFields() {
+	    	for(var inputId in attributeOutIdByField) {
+	    		if(attributeOutIdByField.hasOwnProperty(inputId)) {
+	    			var outputId = attributeOutIdByField[inputId];
+	        	var outputElement = document.getElementById(outputId);
+	          var inputElement = document.getElementById(inputId);
+	          j$(outputElement).text(j$(inputElement).val()); //update ellement text to match
+	          var hiddenByRule = inputElement.getAttribute('hiddenByRule');
+	          if(hiddenByRule != null) {
+	          	if(Boolean(hiddenByRule) == true) { //hide the read-only type input
+	            	j$(outputElement).closest('tr').hide();
+	            } else {
+	            	j$(outputElement).closest('tr').show();
+	            }
+	          }                  
+	        }         
+	      }
+	    }
+
+	    /**
+       	 * Initialize the attribute input for ABC rules
+       	 * @param fieldAPINAme field API name of the input
+       	 * @param isHidden whether the attribute is hidden by product attribute rule definition
+       	 * @param isReadOnly whther the attribute is ready only by product attribute rule definition
+       	 */
+      	function initializeAttribute(fieldAPINAme, isHidden, isReadOnly) {
+      		var inputId = j$('.' + fieldAPINAme + '_input').attr('id');
+      		var isFormulaButton = !!inputId;
+      		inputId = inputId || j$('.' + fieldAPINAme + '_input').parent().attr('id'); //use parent id for formula field buttons                                           
+	        
+	        var outputId = j$('.' + fieldAPINAme + '_output').attr('id');
+	        attributeIdByField['{!NSPrefix}{!AttributeValueRFieldName}.' + fieldAPINAme] = inputId;
+	        if(!isFormulaButton && isReadOnly && !isHidden) {
+	        	attributeOutIdByField[inputId] = outputId;
+	        	j$(document.getElementById(inputId)).parent('.apt-select-wrap').hide();
+
+	        }
+
+	        if(isHidden) {
+	        	j$(document.getElementById(inputId)).closest('tr').hide();
+	        	
+	        }
+      	}
+
+  	  	<apex:repeat value="{!ProductAttributeMatricies}" var="matrix">
+	        var columnInfo = JSON.parse('{!JSENCODE(matrix.Columns__c)}');
+	      
+	        var matrixInfo = {
+	          columnInfo:columnInfo,
+	          hash:'{!matrix.Hash__c}',
+	          hashKeys:JSON.parse('{!JSENCODE(matrix.Keys__c)}'),	          
+	          reverseKeys:{}
+	        };
+
+	        var lastField;
+	        for (var i in columnInfo.columns) {
+	            if(columnInfo.columns.hasOwnProperty(i)) {
+	              var columnName = columnInfo.columns[i];
+	              var columnEntry = productMatricies[j$.APTTUS.attributeValuePrefix+columnName];
+	              if(typeof(columnEntry) === 'undefined') {
+	                productMatricies[j$.APTTUS.attributeValuePrefix+columnName] = [];
+	              }
+
+	              productMatricies[j$.APTTUS.attributeValuePrefix+columnName].push(matrixInfo);
+	              lastField = columnName;
+	            }
+	        }
+
+	        //store reverse key lookup
+	        for (var i in matrixInfo.hashKeys) {
+	          matrixInfo.reverseKeys[matrixInfo.hashKeys[i]] = i;
+	        }
+
+	        //initialize select lists
+	        initMatrixAttributes.push(lastField);      
+  	  	</apex:repeat>
+    </script>
+	<style>
+    	.aptProductHeader {
+			background: -moz-linear-gradient(top,  rgba(30,87,153,1) 0%, rgba(125,185,232,0) 100%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(30,87,153,1)), color-stop(100%,rgba(125,185,232,0)));
+			background: -webkit-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -o-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -ms-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: linear-gradient(to bottom,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#007db9e8',GradientType=0 );
+			border-radius: 3px;
+			height:30px;
+		}
+		.aptContextSystem {
+			text-align: left;
+			position: absolute;
+			left: 2em;
+		}
+		
+		.aptLeftPadding {
+			left: 2em;
+		}
+		
+		.aptQuantity {
+            text-align: right;
+            width:3em;
+        }
+        .clearfix {
+			float: none;
+			clear: both;
+		}
+		
+		.oddRow {
+			border-color: transparent;
+			height: 3em;
+		}
+		
+		.evenRow {
+			border-color: transparent;
+			height: 3em;
+		}
+		
+		.headerClass {
+			height: 2.5em;
+			font-size: 1em;
+			font-family: sans-serif;
+		}
+		
+		.bPageBlock {
+            border: none !important;
+        }   
+        
+        .aptGroupHeader {
+			background: -moz-linear-gradient(top,  rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%); /* FF3.6+ */
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0))); /* Chrome,Safari4+ */
+			background: -webkit-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* Chrome10+,Safari5.1+ */
+			background: -o-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* Opera 11.10+ */
+			background: -ms-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* IE10+ */
+			background: linear-gradient(to bottom,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* W3C */
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6d3d3d3', endColorstr='#00ffffff',GradientType=0 ); /* IE6-9 */
+			
+			height:30px;
+				
+		}
+		
+		.aptGroupHeaderHeaderPadding {
+			padding:5px;
+		}
+
+		.bPageBlock .requiredInput {
+			height:inherit !important;
+		}
+
+	</style>
+	<apex:form id="idAttributesList">	
+        <apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__LocationId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__ProductId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__OptionId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.ProductId__r.Name}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.ProductId__r.Apttus_Config2__IconId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.ProductId__r.Apttus_Config2__IconSize__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__ConfigurationId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__PriceListId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__LineNumber__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__PrimaryLineNumber__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__ItemSequence__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__Quantity__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__Customizable__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__HasOptions__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__HasAttributes__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__AttributeValueId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__LineType__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__LineStatus__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.OptionId__r.Name}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__ParentBundleNumber__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__BaseProductId__c}" rendered="false" />
+		
+		<apex:outputPanel id="idErrorMsg" layout="block" style="margin-left:10px; margin-right:10px; padding-bottom:1em;" styleClass="idErrorMsg">
+			<apex:pageMessages />
+		</apex:outputPanel>
+		
+			<apex:outputPanel styleClass="aptHeader" rendered="{!NOT(ISBLANK(lineItemSO)) && IsBundleLineItem}"  >
+				<h2 style="margin-top: 10px; display:none; margin-bottom: 10px;">{!$Label.apttus_config2__configureattributesfor} {!Apttus_Config2__LineItem__c.ProductId__r.Name}</h2>
+			</apex:outputPanel>
+			<apex:outputPanel styleClass="aptHeader" rendered="{!NOT(ISBLANK(lineItemSO)) && IsOptionLineItem}"  >
+				<h2 style="margin-top: 10px; display:none; margin-bottom: 10px;">{!$Label.apttus_config2__configureattributesfor} {!Apttus_Config2__LineItem__c.OptionId__r.Name}</h2>
+			</apex:outputPanel>
+			<apex:outputPanel rendered="{!HasAssociatedAttributes}">
+				<!--  Start Attribute Groups -->
+				<apex:repeat value="{!AttrGroups}" var="grp" id="idAttributeGroups">                      
+				    <div class="aptGroupHeader" id="{!grp.groupName}">
+				         <div class="aptGroupHeaderHeaderPadding" >
+				            <h2>{!grp.groupName}</h2>
+				         </div>
+				    </div>  
+				    <apex:pageBlock id="idProductAttributeGroupsBlock">
+				    	<apex:pageBlockSection columns="{!grp.NumberOfColumns}" 
+                                  collapsible="true" >                        
+                                <!-- attribute value fields -->
+                                <apex:repeat value="{!grp.productAtributes}" var="f">                                	
+                                	<apex:pageBlockSectionItem >
+	                                	<apex:outputLabel value="{!AttributeFieldLabels[f.Apttus_Config2__Field__c]}" for="idAttributeInputOutput"/>
+	                                	<apex:outputPanel id="idAttributeInputOutput">
+		                                	<apex:outputField id="attributeOutput" rendered="{!(f.Apttus_Config2__IsReadOnly__c && NOT(f.Apttus_Config2__IsHidden__c))}" value="{!AttributeValueSOs[f.Apttus_Config2__Field__c][FieldNames[f.Apttus_Config2__Field__c]]}" styleClass="{!f.Apttus_Config2__Field__c}_output"/>
+		                                  <apex:inputField id="attributeValueInput" value="{!AttributeValueSOs[f.Apttus_Config2__Field__c][FieldNames[f.Apttus_Config2__Field__c]]}" styleClass="{!f.Apttus_Config2__Field__c} {!f.Apttus_Config2__Field__c}_input" onchange="invokeProcessChange('{!f.Apttus_Config2__Field__c}', true, {!Apttus_Config2__LineItem__c.Apttus_Config2__PrimaryLineNumber__c}, this.value);" style="{!IF(f.Apttus_Config2__IsReadOnly__c || f.Apttus_Config2__IsHidden__c, 'display:none;', '')}"/>
+		                                </apex:outputPanel>
+	                            	</apex:pageBlockSectionItem>
+                                    <script>
+                                        //initialize the attribute value input/outputs
+                                        initializeAttribute('{!JSENCODE(f.Field__c)}', {!f.IsHidden__c}, {!f.IsReadOnly__c});
+                                    </script>
+                                </apex:repeat>
+                            </apex:pageBlockSection>
+				     </apex:pageBlock>                        
+				</apex:repeat>	
+				<div style="text-align:center">
+			
+					<apex:commandButton value="{!$Label.apttus_config2__quicksave}"
+										action="{!doSaveAttributeValue}"
+										rerender="idErrorMsg, idAttributeGroups"
+										styleClass="aptListButton"/>
+					<apex:commandButton value="{!$Label.apttus_config2__save}"
+										action="{!doSaveAttributeValue}"
+										oncomplete="if({!HasError} == false) { parent.closeAttributesDialog();}"
+										rerender="idErrorMsg, idAttributeGroups"
+										styleClass="aptListButton"/>
+					<apex:commandButton value="{!$Label.apttus_config2__cancel}"
+										oncomplete="parent.closeAttributesDialog();"
+										rerender="idErrorMsg, idAttributeGroups"
+										styleClass="aptListButton"/>
+				</div>	
+			</apex:outputPanel>
+			<apex:outputPanel rendered="{!NOT(HasAssociatedAttributes)}">
+				<apex:outputText style="padding-left: 25px; font-weight: bold;" value="{!$Label.apttus_config2__noattributestodisplay}"></apex:outputText>
+				<div style="text-align:center">
+					<apex:commandButton value="{!$Label.apttus_config2__cancel}"
+										oncomplete="parent.closeAttributesDialog();"
+										rerender="idAttributeGroups"
+										styleClass="aptListButton"/>
+				</div>
+			</apex:outputPanel>
+			
+	</apex:form>
+</apex:page>

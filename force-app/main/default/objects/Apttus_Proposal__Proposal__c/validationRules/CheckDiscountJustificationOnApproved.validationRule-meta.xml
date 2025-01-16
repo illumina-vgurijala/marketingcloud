@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDiscountJustificationOnApproved</fullName>
+    <active>true</active>
+    <description>Prevent users from changing Discount Justification value when quote stage is Approved, Generated or Presented.</description>
+    <errorConditionFormula>AND (
+    OR (
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuotationApprovalStatusApproved,
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageGenerated,
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStagePresented
+    ), 
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c,
+           $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c ,
+            Invalid_Quote__c
+        )
+    ),   
+    ISCHANGED ( Discount_Justification__c )  
+)</errorConditionFormula>
+    <errorDisplayField>Discount_Justification__c</errorDisplayField>
+    <errorMessage>Discount Justification cannot be updated after quote is Approved.</errorMessage>
+</ValidationRule>

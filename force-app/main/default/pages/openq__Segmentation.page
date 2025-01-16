@@ -1,0 +1,2736 @@
+<apex:page controller="openq.Segmentation" showHeader="true" sidebar="false" standardStylesheets="false" >
+                  
+    <apex:pageMessages id="errorDiv"/>                                       
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"> </apex:includescript>    
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.js"></apex:includescript>   
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/jquery.multiselect.min.js')}"/>
+    <apex:includescript value="{!URLFOR($Resource.openq__StylesScriptsImages,'scripts/jquery.tablesorter.min.js')}"> </apex:includescript>
+        
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/jquery-migrate-1.2.1.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/cloud-carousel.1.0.5.min.js')}"/>    
+    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/common.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style2.css')}"/>    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/jquery.multiselect.css')}"/>    
+    
+     <!--[if lte IE 8]>
+        
+        <style>
+            .rightContainer {
+                 max-width: 970px !important; 
+             }         
+             
+             .rightContainer table {
+               table-layout: fixed;
+             } 
+             
+             .rightContainer td {
+               overflow: auto;
+             }
+             
+        </style>
+                                                        
+     <![endif]-->
+     
+    <head>
+        <!--[if IE]><script src="{!URLFOR($Resource.StylesScriptsImages, 'scripts/excanvas.js')}" type="text/javascript"></script><![endif]-->          
+    </head> 
+     
+    <style>
+    
+    
+        *:focus { outline: none; }
+        
+        td{
+        
+            font-family: Verdana, sans-serif !important;
+        }
+        
+        .progressbar {
+            height:12px;
+            width: 174px;
+            float:right;
+            margin-top: 4px;
+        }
+        
+        .progressbar #caption {
+            font-size: 8px;
+            font-weight: bold;
+            margin-top: -4px;
+            margin-left: 78px;
+            position: absolute;
+        }
+        
+        .activityContainer {
+        
+            padding-bottom: 15px;
+        }
+        
+        .tableHeader {
+            cursor: pointer;
+        }
+        
+        .tablesorter .odd {
+            background-color: #E5E2FF;
+        }
+                
+        .tablesorter td {
+            vertical-align: middle;
+        }
+        
+        .closeIcon {
+        
+            position: absolute;
+            height: 32px;
+            width: 32px;
+            background-repeat: no-repeat;
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/close.png')});
+        }
+        
+        .headerSortDown .sort_arrow {
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            background-position: 3px -8px;
+            background-repeat: no-repeat;
+            background-image: url({!URLFOR($Resource.StandaloneCommonImages,'img/arrowUpDown2.png')});          
+        }
+        
+        .headerSortUp .sort_arrow {
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            background-position: 3px 8px;
+            background-repeat: no-repeat;
+            background-image: url({!URLFOR($Resource.StandaloneCommonImages,'img/arrowUpDown2.png')});          
+        }
+        
+        .ui-progressbar-value.ui-widget-header {
+            background-color: #b2ca45;
+        }
+        
+        .waiting {
+            cursor: wait !important;
+        }
+    
+        #bodyTable {
+            background-color: #E6E6E5;
+        }   
+        
+        [id$='mainContainer'] {         
+            padding-left: 300px;
+            display: block;
+        }
+            
+        [id$='leftContainer'] {
+            float: left;
+            min-width: 300px;
+            width: 300px !important;
+            display: inline-block;
+            position: relative;
+            left: -300px; 
+            margin-right: -300px;
+        }
+        
+        .rightContainer {
+            min-width: 665px;
+            float: none;
+            margin-right: 0px;
+            margin-left: 20px;
+            font-family: Verdana, sans-serif;   
+            padding-right: 10px;
+            padding-left: 10px;
+        }
+        
+        
+        #minimizeMe {
+            
+            border-radius: 0 5px 0 5px;
+            -webkit-border-radius: 0 5px 0 5px;
+            -moz-border-radius: 0 5px 0 5px;
+            width: 15px;
+            height: 15px;
+            display: block;
+            background-position: 0 -624px; 
+            background-repeat: no-repeat;
+            background-color: transparent;      
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/main-nav-sprite.png')});
+        }
+        
+        .ico {
+            background-position: -16px -288px !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: -35px !important;
+            height: 4px !important;
+            width: 7px !important;
+            margin-top: -2px !important;
+        }
+        
+        .settings {
+            width: 16px;
+            height: 16px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/cogsprite.png')});                            
+        }
+        
+        .settings:hover{
+        
+            background-position: 0px -20px;
+            cursor: pointer;
+        }
+        
+         .newObject {
+    
+            background-repeat: no-repeat;
+            background-size: 16px;
+            height: 16px;
+            width: 16px;
+            float:right;
+            background-color: transparent;
+            margin-right: 6px;       
+        }
+        
+        .newObject.easyAdd {                    
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/plus.png')});
+        }
+        
+        .newObject.easyAdd:hover {
+             cursor: pointer;
+        }
+        
+        #leftRight {
+            width: 15px;
+            height: 50px;
+            right: 0px;
+            top: 0px;
+            position: absolute;
+            border-radius: 0 5px 5px 0;
+            -webkit-border-radius: 0 5px 5px 0;
+            -moz-border-radius: 0 5px 5px 0;             
+            float: left;
+        }
+        
+        .widgetHeader {
+    
+            font-weight: bold;
+            padding-bottom: 10px;
+        }
+        
+        .rich-tabpanel-content {
+            border: none;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        
+        .summaryHeader {
+            height: 24px;
+            border-bottom: 1px solid #245C8A;
+            margin-bottom: 20px;
+        }
+        
+        .detailsContainer {
+            padding: 1%;
+            font-family: Verdana, sans-serif;
+            color: rgb(85, 85, 85);
+        }
+        
+        .detailsContainer dt {
+            white-space: nowrap;            
+        }
+        
+        .summaryRelListsContent {
+            padding-bottom: 15px;
+        }
+        
+        .btnOverride, .btnOverride:hover{
+        
+             font-style: Verdana, sans-serif !important; 
+             color: #FFFFFF !important; 
+             text-decoration: none !important;
+             background-position: 0 0 !important;
+        }
+        
+        a:hover {
+            text-decoration: none !important;
+        }     
+        
+        .ui-state-default.ui-corner-top {
+            background-color: #fafafa;
+        }
+               
+        .fright {
+            float: right;
+        }
+                
+        .actionLink {
+            cursor: pointer;
+            color: rgb(48, 126, 188) !important;
+            text-decoration: underline;
+        }
+        
+        .actionLink:hover {
+            color: #015ba7 !important;
+            text-decoration: underline !important;
+        }        
+                
+        .ui-multiselect-header {
+            background-color: #b2ca45;
+        }
+        
+        .ui-multiselect-header a  {
+            color: #FFFFFF;       
+        }
+        
+        .ui-multiselect-header a:hover {
+            color: #FFFFFF;     
+            text-decoration: underline !important;  
+        }         
+        
+        .reset {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /*  tabs styles */        
+        .ui-tabs-nav.ui-helper-reset.ui-helper-clearfix.ui-widget-header.ui-corner-all {
+        
+            position: absolute;
+            margin-top: -35px;
+            margin-left: 12px;
+            background: none;
+            border: none;
+        }
+        
+        .ui-state-default.ui-corner-top {
+            background-color: #fafafa;
+        }
+        
+        .ui-tabs-active.ui-state-active {
+            background-color: #b2ca45;          
+        }
+        
+        .ui-tabs-active.ui-state-active a {
+            color: white;
+        }
+        
+        #tabs {
+            border: none;
+            background-color: #fafafa;
+            display: none;
+        }
+        
+        .ig0 {
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/main-nav-sprite.png')}); 
+            background-repeat: no-repeat;
+            background-color: transparent;
+        }
+        
+        .sectionHeader {
+        
+            color: #245C8A;
+            font-weight: bold;          
+        }
+        
+        h2.sectionHeader {
+        
+            font-size: 15px; 
+            opacity: 0.6; 
+            filter: alpha(opacity=60); /* For IE8 and earlier */          
+        }
+        
+        .sectionHeaderWrapper {
+            height: 24px;
+            border-bottom: 1px solid #245C8A;
+            margin-bottom: 20px;
+        }
+        
+        .itemMarker {
+        
+            width: 30px; 
+            height: 25px; 
+            background-color: #b2ca45; 
+            border-radius: 5px; 
+            float: left;        
+            text-align: center;
+            color: white;
+            box-shadow: 0px 1px 7px white inset;
+            -webkit-box-shadow: 0px 1px 7px white inset;
+            -moz-box-shadow: 0px 1px 7px white inset;
+            border: 1px solid #b2ca45;
+        }
+        
+        .itemli {
+            clear: left;
+            padding: 10px;
+        }
+        
+        .itemli span {
+           
+           float: left;
+           padding-left: 5px;
+           white-space: nowrap;
+        }
+        
+        [id$=filterBox] {
+        
+           margin-left: 30px; 
+           margin-top: 20px; 
+           border-radius: 5px; 
+           border: 1px solid #b2ca45; 
+           padding: 10px;
+        }
+        
+        .text {
+        
+           font-family: Verdana, sans-serif;
+           color: rgb(85, 85, 85);
+           font-size: 12px;
+        }
+        
+        .category {
+           border-bottom: none !important;
+        }
+        
+        /* CSS */
+        .fulljustify {
+            text-align: center;
+        }
+        .fulljustify:after {
+            content: "";
+            display: inline-block;
+            width: 100%;    
+        }
+        #tagline {
+            overflow: hidden;
+        }
+        
+        .fieldHelper {
+        
+            border: 1px solid #b2ca45;
+            border-radius: 5px;
+            padding: 5px;
+            background-color: white;
+        }
+        
+        .drop-hover {
+            
+            border: 1px solid #b2ca45;              
+            border-radius: 5px;         
+        }
+        
+        .editRemove {
+            
+            visibility: hidden; 
+            padding-top: 2px; 
+            padding-right: 10px; 
+            padding-bottom: 2px; 
+            color: blue; 
+            padding-left: 10px; 
+            margin-left: 10px; 
+            background-color: skyblue;        
+            opacity: 0.7;
+            border-radius: 5px;
+        }
+        
+        #conditionList {
+                    
+            min-height: 50px;
+            min-width: 200px;             
+        }
+        
+        .fieldSpan {
+        
+            cursor: pointer; 
+            color: rgb(48, 126, 188); 
+            text-decoration: none; 
+            word-wrap: break-word;
+        }
+        
+        .lensLabel{
+        
+            font-weight: bold; 
+            margin-right: 5px;
+        }
+        
+        .contactLensPopupDisplay{
+            
+            cursor: move;
+            position: absolute;  
+            min-width: 400px; 
+            background-color: white; 
+            border: 1px solid black; 
+            border-radius: 5px; 
+            padding: 10px;
+        }
+        
+        .contactLensPopupImage{
+        
+            margin-right: 10px;
+            float:left;
+        }
+        
+        a.minimize {
+          
+            text-decoration: none;            
+        }
+        
+        .sub {
+        
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;                
+        }
+        
+        .type-img {
+        
+            display: inline-block;        
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/type_icons.png')});              
+        }
+        
+        .Text-img, .LOV-img, .Multipicklist-img, .Boolean-img {
+            background-position: -40px -35px;             
+                      
+        }
+        
+        .Date-img {
+            background-position: -40px -56px;                     
+        }
+        
+        .Number-img, .Count-img {
+            background-position: -40px -16px;                             
+        }
+        
+        .action-options {
+        
+            border-radius: 5px;
+            border: 1px solid #b2ca45;
+            margin: 1px;
+            background-color: #fafafa;
+            cursor: pointer;
+            position: absolute;
+            right: 19px;
+            margin-top: 20px;
+            box-shadow: rgb(178, 202, 69) 0px 0px 7px inset;
+            z-index: 9;
+        }
+        
+        .action-options li {
+            
+            margin: 0;
+            padding: 3px;
+        }
+        
+        .action-options li:hover{
+        
+            background-color: #b2ca45;
+            color: white;
+        }
+        
+        .popUpBkg {
+        
+            top: 0;
+            left: 0;
+            height: 100%; 
+            width: 100%; 
+            display: none; 
+            background-color: black;            
+            position: fixed;
+            z-index: 1000;
+            
+            opacity: 0.6;
+            filter: alpha(opacity=60); /* For IE8 and earlier */
+        }
+        
+        .popUpDiv {
+        
+            position: absolute;
+            left: 50%; 
+            top: 30%; 
+            width: 200px; 
+            height: 200px;      
+            display: none;      
+            
+            margin-left: -100px;
+            margin-top: -100px;
+            
+            z-index: 1100;  
+        }
+        
+        .popUpContainers {
+            
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        
+        .widgetHeader {
+    
+            font-weight: bold;
+            padding-bottom: 10px;
+        }
+        
+        #newSearchDiv, #newSegmentDiv, #addToExistingPlan, #tagsDiv {
+            top: 30%;
+            border-radius: 5px;
+            background-color: white;
+            border-width: 2px;
+            border-style: solid;
+            z-index: 9999;
+            left: 50%;
+            padding:10px;
+            position: fixed;
+            width: 400px;
+            margin-left:-150px;
+        } 
+        
+        [id$=carouselDiv] {
+        
+            background-color: inherit;
+            z-index: 9999;
+            padding: 10px;
+            position: fixed !important;         
+            top: 40%;
+            width: 1000px;
+            height: 600px;
+            margin-left: -400px;
+            margin-top: -300px;         
+        }
+        
+        #spinner { 
+            
+            position: fixed;
+            z-index: 2000;
+            top: 50%;
+            left: 50%;
+            margin-top: -50px;
+            margin-left: -50px;
+            display: none;
+        }
+        
+        .ui-datepicker {
+            z-index: 500 !important;
+        }
+        
+        img.ui-datepicker-trigger {
+            margin-left: -16px;
+            padding-right: 16px;
+            cursor: pointer;
+        }
+        
+        .ui-datepicker-next span {
+            width: 20px;
+            height: 20px;
+            background-position: 0 0;
+            cursor: pointer;
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/datepicker-arrows.png')});            
+        }
+        
+        .ui-datepicker-prev span {
+            width: 20px;
+            height: 20px;
+            background-position: 0 -20px;
+            cursor: pointer;
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/datepicker-arrows.png')});
+        }
+        
+        .querySectionContent select {
+        
+            margin: 0;
+        }
+        
+        #queryLoader {
+        
+            width: 100%;
+            height: 500px;        
+            position: fixed !important;
+            top: 40%;
+            left: auto;
+            margin: auto;
+            padding: auto;
+        }
+        
+        .contactInfo{
+        
+            margin-left: 130px;
+            margin-right: 20px;
+            max-width: 300px;
+            overflow: hidden;
+            color: #245c8a;
+        }
+        
+        .ui-datepicker-next span {
+            background-position: -30px 0;
+            cursor: pointer;
+            height: 20px;
+            width: 20px;
+        }
+        
+        .ui-datepicker-prev span {
+            background-position: -98px 0;
+            cursor: pointer;
+            height: 20px;
+            width: 20px;
+        }
+    </style>
+    
+    <script>  
+    
+        // Make jQuery "contains" case insensitive
+        $.expr[":"].contains = $.expr.createPseudo(function(arg) {
+            return function( elem ) {
+                return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
+            };
+        });
+        
+        String.prototype.replaceAll = function (find, replace) {
+            var str = this;
+            return str.replace(new RegExp(find, 'g'), replace);
+        };
+        
+        var content;
+        var hasTradeoffAnalyticsAlreadyLoadedOnce = false;
+        var tradeoffAnalyticsContactSelectedId;
+        
+        $(document).ready(function() {          
+            
+            content = $("[id$=carouselDiv]").html();           
+            
+            minimize();
+            minimizeBC();                   
+            dragAndDrop();
+            setUpActions();
+            insertModalDivs();
+            minimizeAll();
+            waitOff();
+            
+            $(document).on('mouseover', ':not(".drop-hover") > span > ul > .itemli .fieldText', function() {                                       
+                
+                $('.editRemove').css("visibility", "hidden");               
+                $(this).parent().find('.editRemove').css("visibility", "visible");
+            });
+            
+            $(document).on('mouseleave', '#conditionList', function() {        
+                          
+                $('.editRemove').css("visibility", "hidden");             
+            });     
+        });
+        
+        function makeLensPopupDraggable(){
+        
+            jQuery('[id$=contactLensPopup]').draggable();
+        };
+        
+        function closeLensPopup(){
+        
+            jQuery('[id$=contactLensPopupDisplay]').remove();
+        }
+        
+        function changeConfig(cfg){ 
+            var plotOptions = {
+                                                               
+                   scatter: {
+                   
+                        cursor: 'pointer',                          
+                             
+                        point: {
+                        
+                            events: {
+                            
+                                click: function(event){
+                                    
+                                    //clientX/Y used in IE8
+                                    var eventX = event.pageX || event.clientX;
+                                    var eventY = event.pageY || event.clientY;
+                                    
+                                    var chart = $('#container').highcharts();
+                                    var i = this.series.data.indexOf(this);
+                                    
+                                    chart.series[0].data[i].update({'fillColor': 'blue'}, true, false);
+                                                                        
+                                    jQuery("#contactSelectHighcharts").remove();
+                                    
+                                    var matchingSeries = new Array();
+                                    
+                                    var x = parseInt(this.x);
+                                    var y = parseInt(this.y);                                   
+                                                                        
+                                    for(var i = 0; i < cfg.series[0].data.length; i++){
+                                    
+                                        var el = cfg.series[0].data[i];
+                                        
+                                        if(el.x === x && el.y === y){
+                                        
+                                            matchingSeries.push(el);
+                                        }
+                                    }
+                                    
+                                    if(matchingSeries.length > 1){
+                                        
+                                        var popupDiv = document.createElement('div');
+                                        popupDiv.id = "contactSelectHighcharts";
+                                        popupDiv.style.minWidth = "200px";
+                                        popupDiv.style.minHeight = "50px";
+                                        popupDiv.style.backgroundColor = "white";
+                                        popupDiv.style.textAlign = "center";
+                                        popupDiv.style.border = "1px solid black";
+                                        popupDiv.style.borderRadius = "5px";
+                                        popupDiv.style.position = "absolute";                                       
+                                        popupDiv.style.padding = "10px";
+                                        
+                                        var labelDiv = document.createElement("div");
+                                        labelDiv.innerHTML = "Select Contact: ";
+                                        popupDiv.appendChild(labelDiv);
+                                        
+                                        var dropdownDiv = document.createElement("div");
+                                        dropdownDiv.id = "dropDownLensContact";
+                                        
+                                        var dropdown = "<select>";
+                                        
+                                        for(var j = 0; j < matchingSeries.length; j++){
+                                            
+                                            var contact = matchingSeries[j];
+                                            dropdown += "<option value='"+contact.id+"'>"+contact.name+"</option>";
+                                        }
+                                        
+                                        dropdown+="</select>";
+                                        
+                                        dropdownDiv.innerHTML = dropdown;
+                                        popupDiv.appendChild(dropdownDiv);
+                                        
+                                        var buttonsDiv = document.createElement("div");
+                                        buttonsDiv.style.marginTop = "5px";
+                                        var btnOK = document.createElement("button");
+                                        
+                                        btnOK.onclick = function(){
+                                            
+                                            var contactId = jQuery('#dropDownLensContact select').val();
+                                            waitOn();
+                                            removeContactSelect();
+                                            positionPopup(event);
+                                            getContactInfoApex(contactId);      
+                                        };
+                                        
+                                        var btnOKText = document.createTextNode("OK");
+                                        btnOK.appendChild(btnOKText);
+                                        buttonsDiv.appendChild(btnOK);
+                                        var btnCancel = document.createElement("button");
+                                        btnCancel.onclick = function(){
+                                            jQuery("#contactSelectHighcharts").remove();
+                                        };
+                                        
+                                        var btnCancelText = document.createTextNode("Cancel");
+                                        btnCancel.appendChild(btnCancelText);
+                                        buttonsDiv.appendChild(btnCancel);
+                                        popupDiv.appendChild(buttonsDiv);
+                                        
+                                        popupDiv.style.top = eventY+"px";                                       
+                                        
+                                        var padding = 10;
+                                        var popupWidth = jQuery('#popupDiv').width();
+                                        
+                                        var size = {
+                                          width: window.innerWidth || document.body.clientWidth,
+                                          height: window.innerHeight || document.body.clientHeight
+                                        }
+                                        
+                                        if((eventX+padding+popupWidth) > size.width){
+                                        
+                                            popupDiv.style.left = (eventX - padding - popupWidth)+"px";
+                                            
+                                        }else{  
+                                        
+                                            popupDiv.style.left = ((eventX)+padding)+"px";
+                                        }
+                                                                                
+                                        document.getElementsByTagName('body')[0].appendChild(popupDiv);                 
+                                    
+                                    }else{
+                                    
+                                        var contactId = this.id;
+                                        waitOn();
+                                        positionPopup(event);                                       
+                                        getContactInfoApex(contactId);
+                                    }
+                                }                                                                   
+                            }
+                        }   
+                    }
+                }
+           
+            cfg.plotOptions = plotOptions; 
+        }
+        
+        function removeContactSelect(){
+        
+            jQuery("#contactSelectHighcharts").remove();
+        }
+        
+        function positionPopup(eventClick){
+            
+            var eventClickX = eventClick.pageX || eventClick.clientX;
+            var eventClickY = eventClick.pageY || eventClick.clientY;
+            
+            var size = {
+              width: window.innerWidth || document.body.clientWidth,
+              height: window.innerHeight || document.body.clientHeight
+            }
+            
+            var maxPopupWidth = 500;
+            var top = (eventClickY-155)+'px';
+            var left = null;
+            
+                                        
+            if((eventClickX+maxPopupWidth) > size.width){
+            
+                left = (eventClickX - maxPopupWidth)+"px";
+                
+            }else{  
+                        
+                left = (eventClickX)+"px";
+            }
+            
+            var $clp = jQuery('[id$=contactLensPopup]')
+            $clp.css('position', 'absolute');
+            $clp.css('top', top);
+            $clp.css('left', left);
+            makeLensPopupDraggable();           
+        }
+        
+        function setUpTags() {
+        
+            // remove 'None' values which do not make sense here
+           $('.multiTags option:contains("--None--")').remove();
+           
+           // remove default option
+           $('.multiTags').prop("selectedIndex", -1);
+           
+           $(".multiTags").multiselect({
+                
+                height: "150", width: "100%",
+                noneSelectedText : "None selected",
+                selectedText : function(numCheck, totalNum, arrCheck) {
+            
+                    var text = '';
+                    for (var i=0; i < arrCheck.length; i++) {
+                        text += arrCheck[i].value + ',';
+                    }                 
+                    if (text.indexOf(',') >= 0) {
+                        text = text.substring(0, text.length - 1);            
+                    }           
+                     
+                    if (text.length > 40) {
+                        text = text.substring(0, 40) + '...';                    
+                    }
+                     
+                    return text;            
+                },                
+                create: function() { jQuery(".multiTags_OP").show() }
+            }); 
+            
+            setTimeout(function() {
+                $('button.ui-multiselect').css('width', '100%');
+                $('div.ui-multiselect-menu').css('width', 'inherit !important');
+            },15);                     
+        }
+        
+        function setUpLOVs() {      
+                
+            $(".multiSelectPL_OP").hide();
+            $(".multiSelectPL").multiselect({
+                
+                height: "150", width: "100%",
+                noneSelectedText : "None selected",
+                selectedText : function(numCheck, totalNum, arrCheck) {
+            
+                    var text = '';
+                    for (var i=0; i < arrCheck.length; i++) {
+                        text += arrCheck[i].value + ',';
+                    }                 
+                    if (text.indexOf(',') >= 0) {
+                        text = text.substring(0, text.length - 1);            
+                    }           
+                     
+                    if (text.length > 40) {
+                        text = text.substring(0, 40) + '...';                    
+                    }
+                     
+                    return text;            
+                },                
+                create: function() { jQuery(".multiSelectPL_OP").show() }
+            });
+            
+            $(".multiSelectPL_Bool").multiselect({
+                
+                height: "150", width: "100%",
+                noneSelectedText : "None selected",
+                multiple: false,
+                selectedText : function(numCheck, totalNum, arrCheck) {
+            
+                    var text = '';
+                    for (var i=0; i < arrCheck.length; i++) {
+                        text += arrCheck[i].value + ',';
+                    }                 
+                    if (text.indexOf(',') >= 0) {
+                        text = text.substring(0, text.length - 1);            
+                    }           
+                     
+                    if (text.length > 40) {
+                        text = text.substring(0, 40) + '...';                    
+                    }
+                     
+                    return text;            
+                },                
+                create: function() { jQuery(".multiSelectPL_OP").show() }
+            });
+            
+            
+            setTimeout(function() {
+                $('button.ui-multiselect').css('width', '100%');
+                $('div.ui-multiselect-menu').css('width', 'inherit !important');
+            },15);
+        }       
+        
+        function loadDatePickers() {               
+                                
+            $( ".datepicker" ).datepicker({
+                showOn: "both",
+                buttonImage: "{!URLFOR($Resource.StylesScriptsImages,'img/datepicker-ico.png')}",
+                buttonImageOnly: true
+            });
+        }
+        
+        function insertModalDivs() {
+        
+            $('#contentWrapper').prepend('<div id="popUpBkg" class="popUpBkg"></div>');
+            var imgUrl = "{!URLFOR($Resource.StylesScriptsImages,'img/ajax-loader-t.gif')}";
+            $('#contentWrapper').prepend('<img id="spinner" src="' + imgUrl + '" />');
+        }
+        
+        function startLoading() {          
+            openModalBkg();
+            $('#spinner').show();          
+        }
+        
+        function endLoading() {
+            closeModalBkg();
+            $('#spinner').hide();
+        }
+        
+        function openModalBkg() {
+        
+            $('#popUpBkg').show();
+        }
+        
+        function closeModalBkg() {
+        
+            $('#popUpBkg').hide();         
+        }
+        
+        function closeNewSearchPopup() {
+            
+            closeModalBkg();
+            $('#newSearchPopUp').hide();
+            $('#newSearchName').val('');  
+        } 
+        
+        function closeNewSegmentPopup() {
+            
+            closeModalBkg();
+            $('#newSegmentPopUp').hide();
+            $('#newSegmentName').val('');  
+        }
+        
+        function onSaveSearch() {
+        
+            dragAndDrop();
+            closeNewSearchPopup();
+        }
+        
+        function onSaveSegment() {
+        
+            refreshColumnSorting();
+            closeNewSegmentPopup();
+        }
+        
+        function onFieldChange() {        
+            onEdit();
+        }
+        
+        function openNewSearchPopup(saveType) {            
+            
+            var type = saveType == undefined ? 'new' : 'clone';
+            openModalBkg();
+            $('#newSearchPopUp').attr('save-type', type);
+            $('#newSearchPopUp').show();
+        }
+        
+        function openNewSegmentPopup(saveType) {
+        
+            if (isKOLSelected()) {
+                var type = saveType == undefined ? 'new' : 'clone';
+                openModalBkg();
+                $('#newSegmentPopUp').attr('save-type', type);
+                $('#newSegmentPopUp').show();            
+            }            
+        }
+        
+        function saveNewSearch() {
+            
+            var searchName = $('#newSearchName').val();
+            var saveType = $('#newSearchPopUp').attr('save-type');
+                    
+            saveSearchApex(searchName, saveType);
+        }
+        
+        function saveNewSegment() {
+            
+            var segmentName = $('#newSegmentName').val();
+            var saveType = $('#newSegmentPopUp').attr('save-type');
+                    
+            saveSegmentApex(segmentName, saveType);            
+        }
+        
+        function addToNewPlan() {
+        
+            if (isKOLSelected()) {
+                startLoading();
+                addToNewPlanApex();
+            }            
+        }
+        
+        function confirmRow(rowId, objectName, fieldName, fieldType) {
+            
+            var values = '';
+            if (fieldType == 'LOV' || fieldType == 'Multipicklist' || fieldType == 'Boolean') {
+                
+                var className = fieldType == 'Boolean' ? '.multiSelectPL_Bool' : '.multiSelectPL';
+                var coll = $(className + '[data-object=' + objectName + '][data-field=' + fieldName + ']').val();
+                for (val in coll) {
+                    
+                    if(typeof(coll[val]) == 'function') continue;
+                    
+                    values += coll[val] + ',';
+                }
+                if (values != '') {
+                    values = values.substring(0, values.length - 1);
+                }
+            }
+            
+            confirmRowApex(rowId, values);        
+        }
+        
+        function onConfirmRow() {
+        
+            var flog = $('[id$="filter-logic"]').val();            
+            var last = $('.itemMarker').last().html();
+            
+            if (flog != '') {
+                if (flog.split(' ').indexOf(last) < 0) {                
+                    flog += ' AND ';
+                }
+                else {                    
+                    return;
+                }                
+            }
+            flog += last;            
+            $('[id$="filter-logic"]').val(flog);
+        }
+                
+        $(function() {
+            $( "#tabs" ).tabs({ 
+                create: function(event, ui) {
+                
+                    $('#tabs').show();
+                    $('#availableFields').show();
+                },
+                activate: function(event, ui) {                    
+                    
+                    startLoading();                    
+                    var selectedSection = $('.ui-tabs-active.ui-state-active a').html();
+                    
+                    if (selectedSection == '{!Fields}' || selectedSection == '{!MySearches}') {
+                        $('#availableFields').show();
+                    }
+                    else {
+                        $('#availableFields').hide();
+                    }
+                    
+                    changeSectionApex(selectedSection);                    
+                }
+            });
+        });         
+        
+        var rowNumberToDelete;
+        function removeField(elem, rowId) {
+                    
+                    
+            rowNumberToDelete = $(elem).parent().parent().find('.itemMarker').text();                    
+                    
+            //console.log('row ' + rowNumberToDelete)                    
+                    
+            toDelete = elem;            
+            removeSearchRowApex(rowId);
+        }       
+        
+        function addTasks() {
+         
+            if ( isTradeoffAnalyticsKOLSelected() || isKOLSelected()) {
+                addTasksApex(tradeoffAnalyticsContactSelectedId);
+            }            
+        }
+        
+        var dragging;
+        function dragAndDrop() {
+        
+            $('#conditionList').droppable({
+            
+                accept: '.sub li > span',            
+                hoverClass: 'drop-hover',
+                drop: function( event, ui ) {                
+                
+                    var objectName = ui.draggable.attr('data-object');
+                    var fieldName = ui.draggable.attr('data-field');
+                    var fieldType = ui.draggable.attr('data-type');
+                    var fieldLabel = ui.draggable.attr('data-field-label');
+                    
+                    dragging = ui.draggable;
+                    
+                    addSearchRowApex(objectName, fieldType, fieldName, fieldLabel);
+                }              
+            });            
+            
+            
+            $('.sub li > span').draggable({
+                        
+                revert: "invalid",                        
+                appendTo: "body",
+                helper: function( elem ) { return '<div class="fieldHelper" >' + $(this).text() + '</div>'; },
+                cursor: "move",
+                cursorAt: { right: 0, top: 0 }
+            });
+        }
+        
+        function setUpActions() {
+        
+            $(document).on('click', '.actions-button', function(event) {
+                
+                event.stopPropagation();
+                //$('#actions-button-options').toggle();
+                $(this).siblings().toggle();
+            });
+            
+            $(document).on('click', '#results-actions-button', function(event) {
+                
+                event.stopPropagation();
+                $('#results-actions-button-options').toggle();
+            });
+        
+            // Close when click outside
+            $(document).click(function() {             
+                $('.actions-button').siblings().hide();   
+                $('#results-actions-button-options').hide();                            
+            });            
+        }
+        
+        function minimizeAll() {
+            $('.minimize:not(".state-minimized")').click();
+        }
+        
+        function maximizeAll() {
+             $('.minimize.state-minimized').click();
+        }
+        
+        function onDrop() {
+        
+            $('#drag-fields-here').remove();
+            loadDatePickers();
+            setUpLOVs();
+            // Uncomment below line to remove item from left menu once dropped
+            //dragging.hide().attr('added', 'yes');
+        }
+        
+        function onEdit() {        
+            loadDatePickers();
+            setUpLOVs();
+        }
+        
+        function onRemoveSearchRow() {        
+        
+            onEdit();            
+            
+            var originalVal = $('[id$="filter-logic"]').val();
+            
+            var flArr = originalVal.trim().replaceAll('\\(', ' ( ').replaceAll('\\)', ' ) ').trim().replace(/  +/g, ' ').toUpperCase().split(' ')    
+                        
+            var newFl = removeFilterLogicTerm(flArr, rowNumberToDelete);            
+            
+            $('[id$="filter-logic"]').val(newFl);
+        }
+        
+        function isParenthese(str) {        
+            return str == '(' || str == ')'
+        }
+        
+        function changeLensOptions(val){
+            
+            jQuery('#contactSelectHighcharts').remove();
+            
+            if(typeof(val) == 'undefined' || val === 'Results-List View'){
+            
+                jQuery('[id$=resultsContainer]').show();
+                jQuery('[id$=resultsSelected]').show();
+                jQuery('[id$=lensContainer]').hide();
+                jQuery('#taComponent').hide();
+            
+            }else if(val === 'Tradeoff Analytics'){             
+                jQuery('[id$=resultsContainer]').hide();
+                jQuery('[id$=resultsSelected]').hide();
+                jQuery('[id$=lensContainer]').hide();
+                                
+                if(jQuery('.bootstrapPrefix .container').length){
+                    jQuery('#taComponent').show();
+                }else{
+                    enableTradeoffAnalyticsApex();                                  
+                }           
+        
+            }else{
+                
+                jQuery('#taComponent').hide();
+                jQuery('[id$=resultsContainer]').hide();
+                jQuery('[id$=resultsSelected]').hide();
+                changeLensOptionsApex();                
+            }               
+        }
+        
+        function removeUselessParentheses(expArr) {
+            
+            var result = new Array();
+            
+            for (var index = 0; index < expArr.length; index++) {
+            
+                var element = expArr[index];
+                
+                //console.log('analizing: ' + element)
+                
+                if (element == '(') {
+                
+                    //console.log('open bra found')
+                
+                    var nextElement = expArr[index + 1];
+                    
+                    //console.log('nextElement: ' + nextElement)
+                    
+                    if (nextElement == ')') {
+                        index++                  
+                    }
+                    else if (index + 2 < expArr.length)  {
+                        
+                        var nextNextElement = expArr[index + 2];
+                        
+                        //console.log('\tthere is a next2 element: ' + nextNextElement)
+                        
+                        if (nextNextElement == ')') {
+                        
+                            result.push(nextElement);
+                            index += 2;
+                            
+                            //console.log('\tprocessing...')
+                        }    
+                        else {
+                        
+                            result.push(element)
+                        }                    
+                    }                
+                }
+                else {
+                
+                    result.push(element)
+                }
+            }
+            
+            return result;        
+        }
+        
+        function removeFilterLogicTerm(filterArr, termToRemove) {        
+        
+            var result = new Array();            
+            var numTerm = parseInt(termToRemove);       
+            
+            for (var index = 0; index < filterArr.length; index++) {
+            
+                var element = filterArr[index];
+            
+                if (element == termToRemove) {
+                    
+                    var leftOp  = null;
+                    var rightOp = null;
+                    
+                    // there is a left operand (AND or OR)
+                    if (index > 0 && !isParenthese(filterArr[index - 1])) {                    
+                        leftOp =  filterArr[index - 1]   
+                    }
+                    
+                    // there is a right operand (AND or OR)
+                    if (index < filterArr.length - 1 && !isParenthese(filterArr[index + 1])) {                    
+                        rightOp = filterArr[index + 1]
+                    }
+                    
+                    if (leftOp != null) {
+                        
+                        if (rightOp != null) {
+                        
+                            if (leftOp == 'AND') {
+                                
+                                // remove operand
+                                // pop the element we pushed before
+                                result.pop();                                
+                            }
+                            else {
+                            
+                                // skip next operand
+                                index++;                            
+                            }                        
+                        }
+                        else {
+                            
+                            // remove operand
+                            // pop the element we pushed before
+                            result.pop();
+                        }                    
+                    }
+                    else if (rightOp != null) {
+                    
+                        // skip next operand
+                        index++;                    
+                    }                    
+                }                            
+                else {
+                
+                    var value = element;
+                    if (element != 'AND' && element != 'OR' && !isParenthese(element)) {
+                    
+                        var val = parseInt(element);                    
+                        val = val < numTerm ? val : val - 1;
+                        
+                        value = val.toString()
+                    }
+                    
+                    result.push(value);                                    
+                }                
+            }         
+            
+            //result = removeUselessParentheses(result)
+                        
+            return result.join(' ');            
+        }
+        
+        function onSelectSearch() {
+        
+            dragAndDrop();
+            endLoading();
+        }
+        
+        function onSelectSegment() {
+        
+            refreshColumnSorting();
+            selectContact();
+            endLoading();
+        }
+        
+        function onRemoveSelected() {
+        
+            refreshColumnSorting();
+            selectContact();
+            endLoading();
+        }
+        
+        function validateQuery() {
+            
+            var showWeightings = {!showWeightings};
+            
+            if ( $('.itemli').size() == 0) {
+            
+                alert('You must select at least one field');                
+                return false;
+            }
+            else if ($('[id$="filter-logic"]').val().trim() == '') {
+            
+                alert('Filter logic cannot be empty');                
+                return false;
+            }            
+            else if(showWeightings){
+            
+                var v1 = $('[id$="strength-weight"]').val();
+                var v2 = $('[id$="leader-weight"]').val();
+                var v3 = $('[id$="impact-weight"]').val();
+                
+                var isValid = $.isNumeric(v1) && $.isNumeric(v2) && $.isNumeric(v3);
+                
+                if (!isValid) {
+                    alert('Weightings must be numeric');                
+                }
+                else  {
+                                
+                    var inRange = 1 <= v1 && v1 <= 10 && 1 <= v2 && v2 <= 10 && 1 <= v3 && v3 <= 10;
+                    
+                    if (!inRange) {
+                        alert('Weightings must be a value between 1 and 10');
+                    }
+                    isValid = isValid && inRange;                                        
+                }
+                
+                return isValid;
+            
+            }else{
+            
+                return true;
+            }
+        }
+        
+        var startTime;
+        function runQuery() {
+        
+            if (validateQuery()) {
+                startTime = new Date().getTime();
+                startCarousel();
+                runQueryApex();            
+            }
+        }
+        
+        function filterFields (filterTerm) {
+       
+            if (filterTerm == '') {
+                minimizeAll();
+            }
+            else {
+                maximizeAll();
+            }
+        
+            // Show fields matching filterTerm
+            $('.sub li > span').filter(':not([added]):contains(' + filterTerm + ')').each(function() {
+            
+                $(this).removeAttr('filtered');
+                $(this).fadeIn('fast');
+            });
+            
+            // Hide fields which do not
+            $('.sub li > span').filter(':not([added]):not(:contains(' + filterTerm + '))').each(function() {
+            
+                $(this).attr('filtered', true);
+                $(this).fadeOut('fast'); 
+            });        
+        }
+        
+        function onChangeSection() {        
+            
+            dragAndDrop();
+            setUpLOVs();
+            loadDatePickers();
+            refreshColumnSorting();
+            selectContact();
+            endLoading();
+        }
+        
+        function deleteSearch(searchName) {
+        
+            var ans = confirm('You are about to delete the Search "' + searchName + '", would you like to proceed?');
+        
+            if (ans) {
+                
+                startLoading();
+                deleteSearchApex();
+            }
+        }      
+        
+        function deleteSegment(segmentName) {
+        
+            var ans = confirm('You are about to delete the Segment "' + segmentName + '", would you like to proceed?');
+        
+            if (ans) {
+                
+                startLoading();
+                deleteSegmentApex();
+            }
+        }    
+        
+        function removeSelected() {
+        
+            startLoading();
+            removeSelectedApex();
+        }
+        
+        function updateSearch() {
+        
+            startLoading();
+            updateSearchApex();
+        }
+                
+        function selectContact() {
+        
+            var numSelected = $('.result-checkbox:checked').size();            
+            $('#numSel').html(numSelected);
+        }
+        
+        function refreshColumnSorting() {
+            $( '.tablesorter' ).tablesorter({
+                headers: { 0: { sorter: false } },                                                              
+                cssHeader : 'tableHeader', 
+                widgets: ['zebra']
+            });
+        }
+        
+        
+        function startCarousel() {
+        
+            openModalBkg();    
+            
+            $("[id$=carouselDiv]").CloudCarousel({           
+                xPos: 500,
+                yPos: 300,
+                autoRotateDelay: 800,
+                speed: 0.1,
+                reflHeight: 40,
+                autoRotate: 'right'
+            });
+            $('[id$=carouselDiv]').unbind();
+            $('#carouselContainer').show();
+            $('#carouselContainer').css({visibility: "hidden" });
+            setTimeout(function() {             
+                $('#carouselContainer').css({visibility: "visible" });             
+            }, 1000);
+        }
+        
+        function destroyCarousel() {
+        
+            $("[id$=carouselDiv]").html(content);
+        }
+        
+        function stopCarousel() {
+        
+            $("#carouselContainer").hide();
+            destroyCarousel();
+        
+            closeModalBkg();
+        }
+        
+        // miliseconds
+        var minLoadingTime = 4000;
+        function onRunQuery() {
+            
+            changeLensOptions(jQuery('[id$=lensSelect]').val());        
+            
+            var elapsedTime = (new Date().getTime()) - startTime;            
+            var dif = minLoadingTime - elapsedTime > 0 ? minLoadingTime - elapsedTime : 0;
+            
+            setTimeout(function() {            
+                stopCarousel();
+                refreshColumnSorting();            
+            }, dif);
+        }
+        
+        function openAddToExistingPlanPopUp() {
+        
+           if (isKOLSelected()) {
+               $("#multiSelectPLAddToPlan").multiselect({
+                
+                    height: "150", width: "100%",
+                    noneSelectedText : "None selected",
+                    multiple: false,
+                    selectedText : function(numCheck, totalNum, arrCheck) {
+                
+                        var text = '';
+                        for (var i=0; i < arrCheck.length; i++) {
+                            text += arrCheck[i].value + ',';
+                        }                 
+                        if (text.indexOf(',') >= 0) {
+                            text = text.substring(0, text.length - 1);            
+                        }           
+                         
+                        if (text.length > 40) {
+                            text = text.substring(0, 40) + '...';                    
+                        }
+                         
+                        return text;            
+                    },                
+                    create: function() { jQuery(".addToPlan").show() }
+                });
+            
+               openModalBkg();
+               $('#addToExistingPlanPopUp').show();
+           }   
+        }
+        
+        function exportToXLS() {
+
+            var $table = $('#tableRes');
+            
+            if($table.length > 0){
+                                                
+                var inputsArr=jQuery('#tableRes tr input');
+                var selectedIndex = new Array();
+                
+                //skip first checkbox (select All)
+                for(var i = 1 ; i < inputsArr.length ; i++){
+                
+                    var element = inputsArr[i];
+                
+                    if(element.checked){
+                        selectedIndex.push(i);
+                    }
+                }
+                
+                if(selectedIndex.length > 0){
+                    
+                    var tableDiv = document.createElement('div');
+                    var table= document.createElement('table');
+                    table.setAttribute("id", "segmentationResultsDynamicTable");
+                    tableDiv.appendChild(table);
+                    var tbody = document.createElement('tbody');
+                    
+                    //returns the header html with the first column removed (i.e., the checkbox column)                 
+                    var $tableHeader = jQuery('#contactWrapTrHeader').clone().find('th:first-child').remove().end();
+                                        
+                    $(tbody).append($tableHeader);
+                                                            
+                    jQuery('#tableRes tr').clone().each(function(index, element){
+                        
+                        //remove checkbox column for each contact
+                        jQuery('td:first-child',this).remove();
+                                                                    
+                        if(jQuery.inArray(index,selectedIndex)!= -1){
+                            
+                            var bkImg = $(this).find('[id$=contactWrapImg]').first().attr('src');
+                            
+                            var starsText = '';
+                            
+                            if(bkImg != undefined){
+                            
+                                if(endsWith(bkImg, 'stars_000.gif')){
+                                
+                                    starsText = 'No Stars';
+                                    
+                                }else if(endsWith(bkImg, 'stars_100.gif')){
+                                
+                                    starsText = '*';
+                                
+                                }else if(endsWith(bkImg, 'stars_200.gif')){
+                                
+                                    starsText = '**';                       
+                                                        
+                                }else if(endsWith(bkImg, 'stars_300.gif')){
+                                
+                                    starsText = '***';
+                                                        
+                                
+                                }else if(endsWith(bkImg, 'stars_400.gif')){
+                                
+                                    starsText = '****';
+                                
+                                }else if(endsWith(bkImg, 'stars_500.gif')){
+                                
+                                    starsText = '*****';                        
+                                }
+                                                        
+                                $(this).find('[id$=contactWrapImg]').first().replaceWith(starsText);
+                            
+                            }                           
+                            tbody.appendChild(element);                                                         
+                        }       
+                    });                             
+                    
+                    table.appendChild(tbody);
+                                        
+                    //remove checkboxes
+                    jQuery('#segmentationResultsDynamicTable td:first-child').remove();
+                    
+                    //IE can't handle long URL strings, so we need to send to server and email
+                    if(getInternetExplorerVersion() != -1){
+                    
+                        var result =  new Array();
+                        var header = table.querySelectorAll("#contactWrapTrHeader .tableHeader");
+                        var i = 0;
+                        var hlength = header.length 
+                        while (i < hlength) {
+                            var value = jQuery(header[i]).html();
+                            value =value.substring(0,value.toLowerCase().indexOf("<span"));
+                            
+                            result.push(value + (
+                    
+                               ++i < hlength ? "," : ""
+                    
+                           ));
+                    
+                        }
+                        
+                        result.push("\n");  
+                                                
+                        var rows = table.querySelectorAll("tr[id^=contactWrapTr-]");
+                        var rLength = rows.length;
+                                                
+                        for(var j = 0; j< rLength ; j++){
+                            
+                            var rowCell = rows[j].querySelectorAll('td');
+                        
+                            for(var n = 0 ; n <rowCell.length ;n++ ){
+                        
+                                var value =jQuery(rowCell[n]).html();
+                                                                
+                                if(jQuery('a',rowCell[n]).size()>0){
+                                    value =jQuery('a',rowCell[n]).html();
+                                }
+                                if(jQuery('span',rowCell[n]).size()>0){
+                                    value =jQuery('span',rowCell[n]).html();
+                                }
+                                
+                                if(value.indexOf(",") != -1){
+                                
+                                    value = '"'+value+'"';
+                                }
+                                
+                                if(n+1 != rowCell.length) {
+                                    value +=",";
+                                }
+                    
+                                result.push(value);
+                            }
+                    
+                            result.push("\n");
+                        }
+                        
+                        if(typeof(result) != 'undefined' && result != null){
+                                                        
+                            if(confirm('An email will be sent to {!$User.Email}.  Continue?')){
+                            
+                                Visualforce.remoting.timeout = 120000; // Set timeout at page level
+                                                                
+                                var csvList = result.join("");
+                                                                
+                                Visualforce.remoting.Manager.invokeAction(
+                                    '{!$RemoteAction.Segmentation.sendSegmentationCSVMail}',
+                                    csvList, 
+                                    function(result, event){
+                                        if(event.status){
+                                            alert('An email has been sent.');
+                                        }else{
+                                            alert('Your request failed.  Please contact an administrator.');
+                                        } 
+                                    }
+                                );
+                            }                           
+                        }                       
+                                            
+                    }else{                                                                                                                  
+                        
+                        var uri = 'data:application/vnd.ms-excel,' + encodeURIComponent(tableDiv.innerHTML);
+                        
+                        var downloadLink = document.createElement("a");
+                        downloadLink.href = uri;
+                        downloadLink.download = "segment.xls";
+                        
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                    }
+                
+                }else{
+                
+                    alert('You must select at least one contact to export.');
+                }
+                
+            }else{
+            
+                alert('You must run a search and select one or more contacts before exporting.');
+            }               
+        }
+        
+        function ieversion(){
+
+            // IE 10 only CSS properties
+            var ie10Styles = [
+            'msTouchAction',
+            'msWrapFlow',
+            'msWrapMargin',
+            'msWrapThrough',
+            'msOverflowStyle',
+            'msScrollChaining',
+            'msScrollLimit',
+            'msScrollLimitXMin',
+            'msScrollLimitYMin',
+            'msScrollLimitXMax',
+            'msScrollLimitYMax',
+            'msScrollRails',
+            'msScrollSnapPointsX',
+            'msScrollSnapPointsY',
+            'msScrollSnapType',
+            'msScrollSnapX',
+            'msScrollSnapY',
+            'msScrollTranslation',
+            'msFlexbox',
+            'msFlex',
+            'msFlexOrder'];
+            
+            var ie11Styles = [
+            'msTextCombineHorizontal'];
+
+            var ieVersion = null;
+            var property;
+            var s =document.body.style
+            
+            for (var i = 0; i < ie10Styles.length; i++) {
+            
+                property = ie10Styles[i];
+            
+                if (s[property] != undefined) {
+                ieVersion = 10;
+                }
+            }
+
+            // Test IE11 properties
+            for (var i = 0; i < ie11Styles.length; i++) {
+                property = ie11Styles[i];
+                if (s[property] != undefined) {
+                    ieVersion = 11;
+            }
+        }
+        return ieVersion;
+    }
+
+    function getInternetExplorerVersion(){
+        // Returns the version of Internet Explorer or a -1
+        // (indicating the use of another browser).     
+        var rv = -1; // Return value assumes failure.
+        if (navigator.appName == 'Microsoft Internet Explorer'){
+            var ua = navigator.userAgent;
+            var re = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+        
+            if (re.exec(ua) != null) rv = parseFloat( RegExp.$1 );
+        }
+        
+        if(ieversion()!=undefined){
+            return ieversion();
+        }
+        
+        return rv;
+    }
+
+        
+        function openTagsPopUp() {   
+            
+            if ( isTradeoffAnalyticsKOLSelected() || isKOLSelected()) {
+                openModalBkg();
+                setUpTags();
+                $('#tagsPopUp').show(); 
+            }
+        }
+        
+        function endsWith(str, suffix) {
+            return str.indexOf(suffix, str.length - suffix.length) !== -1;
+        }
+        
+        function tagContacts() {        
+                
+            var tags = '';
+            $("[id$=selected-tags]").multiselect('getChecked').each(function() {                  
+                tags += $(this).val() + ';' ;                    
+            });
+                 
+            if (tags.indexOf(';') >= 0) {
+                tags = tags.substring(0, tags.length - 1);
+                   
+                closeTagsPopUp();
+                startLoading();
+                tagContactsApex(tags, tradeoffAnalyticsContactSelectedId);  
+            }
+            else {
+                alert('Select at least one tag');
+            }                   
+        }
+        
+        function isTradeoffAnalyticsKOLSelected(){
+        
+            return ((tradeoffAnalyticsContactSelectedId != null) && (jQuery('[id$=lensList]').val() == 'Tradeoff Analytics'));
+        }
+        
+        // Checks that at least one KOL is selected
+        function isKOLSelected() {
+            
+            if ($('.result-checkbox:checked').size() == 0) {
+                alert('Please select at least one row');
+                return false;
+            }       
+            return true;
+        }
+        
+        function onTagContacts() {      
+           endLoading();
+        }
+        
+        function checkAll(chk) {
+               
+            var sel = '.result-checkbox:';            
+            var isChecked = chk.checked;
+            
+            if (isChecked) {
+                sel += 'not(:checked)';
+            }          
+            else {
+                sel += 'checked';            
+            }                   
+        
+            $(sel).click(); 
+        }
+        
+        function closeAddToExistingPlanPopUp() {        
+           
+           $('#addToExistingPlanPopUp').hide();
+           closeModalBkg();
+        }
+        
+        function closeTagsPopUp() {
+        
+            $('#tagsPopUp').hide();
+            closeModalBkg();        
+        }   
+        
+        function addToExistingPlan() { 
+            
+            try {
+                
+                var planId = $("#multiSelectPLAddToPlan").multiselect('getChecked')[0].id.split('ui-multiselect-')[1];
+              
+                closeAddToExistingPlanPopUp();
+                startLoading();
+                addToExistingPlanApex(planId);                           
+            }
+            catch (exc) {
+                alert('Please select a plan');
+            }      
+        }
+        
+        function onAddToExistingPlan() {            
+            endLoading();
+        }
+        
+        function addToNewInteraction() {
+        
+            if (isKOLSelected()) {           
+                addToNewInteractionApex();
+            }
+        }
+        
+        /*** B-card minimize ***/
+        function minimizeBC() {
+            var initialHeight = 0;
+    
+            $(document).on('click', '.b-card .b-c-minimize' , function(e) {
+                e.preventDefault();
+                var link = $(this);
+                if ( link.hasClass( 'in-progress' ) ) { return; }
+    
+                link.addClass( 'in-progress' );
+    
+                var bCard = link.closest( '.b-card' ),
+                    header = bCard.find( 'h1.header.default' ),
+                    photoWrap = bCard.find( '.kol-photo' )
+                ;
+                
+                if ( link.is( '.state-minimized' ) ) { // The bCard is minimized
+                    bCard
+                        .find( '.querySectionContent' )
+                        .fadeIn( 600 )
+                    ;
+                    bCard
+                        .animate( { 'height': initialHeight }, toggleClasses );      
+                        $('.hide').fadeIn('slow');
+                }
+                else {
+                    initialHeight = bCard.height();
+                    bCard
+                        .css( { height: initialHeight } )
+                        .find( '.querySectionContent' )
+                        .fadeOut( 400, function() {
+                            bCard
+                                .animate( { 'height': header.outerHeight(true) }, toggleClasses );
+                        })
+                    ;
+                    $('.hide').fadeOut('slow');
+                }           
+                
+                function toggleClasses() {
+                    link
+                        .toggleClass( 'state-minimized' )
+                        .removeClass( 'in-progress' );
+                    bCard
+                        .toggleClass( 'minimized-block' );                  
+                    
+                    $('[id$=searchQuerySection]').css('height', 'auto');
+                }
+            });
+        };
+        /*** End B-card minimize ***/
+        
+        /*** Minimize feature ***/
+    
+        function minimize() {   
+        
+            var doc = document;
+            $( doc.body ).on( 'click.minimize', '.minimize', function(e) {
+            
+                
+                e.preventDefault();
+                var link = $(this);
+        
+                if ( link.hasClass( 'in-progress' ) ) { return; }
+        
+                var el = undefined,
+                    minTarget = ( link.attr( 'minimize' ) || '' ).toLowerCase(),
+                     dictionary = {
+                        'siblings': 'siblings',
+                        'next': 'nextAll'
+                    },
+                    fxTime = 350
+                ;
+        
+                if ( typeof dictionary[ minTarget ] != 'undefined' ) {
+                    el = link[ dictionary[ minTarget ] ]();
+                }
+                else {
+                    el = $( link.attr('minimize') ); 
+                }
+        
+                if ( !el.length ) { return; }
+        
+                link.addClass( 'in-progress' );
+        
+                if ( el.hasClass( 'minimized-block' ) ) {
+                    el.slideDown( fxTime, function() { 
+                        el.removeClass( 'minimized-block' ); 
+                        link
+                            .removeClass( 'state-minimized' )
+                            .removeClass( 'in-progress' )
+                            .closest( '.minimize-container' )
+                            .removeClass( 'state-minimized' );
+                    });
+                }
+                else {
+                    el.slideUp( fxTime, function() { 
+                        el.addClass( 'minimized-block' ); 
+                        link
+                            .addClass( 'state-minimized' )
+                            .removeClass( 'in-progress' )
+                            .closest( '.minimize-container' )
+                            .addClass( 'state-minimized' );
+                    });
+                }
+            }); // .minimize
+        };      
+        /*** End Minimize feature ***/ 
+
+    </script>
+
+    <apex:outputPanel id="mainContainer" styleClass="default clearFix order-sm layout-order" layout="block">
+        
+        <div id="topHeader" style="margin-left: -300px;">
+            <div class="breadcrumbs" style="padding-bottom: 30px; margin-top: 0;">
+                You're here:&nbsp;
+                <apex:outputLink value="{!$Page.openq__Segmentation}">{!$Label.openq__segmentation_label}</apex:outputLink>       
+            </div>
+        </div>
+        <apex:form >
+            <apex:outputPanel layout="block" id="leftContainer">    
+                <div id="leftLeft" class="shadow-wrap">
+                    <div id="leftLeftInner1" class="wi-gen gr shado reset" >                        
+                        <div id="leftLeftInner" class="marged reset" style="font-family: Verdana,sans-serif; font-size: 11px; color: #555555;">                            
+                            <div id="tabs">
+                                <ul>
+                                    <li><a href="#tabs-1">{!Fields}</a></li>
+                                    <li><a href="#tabs-2">{!MySegments}</a></li>
+                                    <li><a href="#tabs-3">{!MySearches}</a></li>
+                                </ul>
+                                <div id="tabs-1" style="padding: 0;">
+                                    
+                                </div>
+                                <div id="tabs-2">
+                                    <apex:outputPanel id="segmentNames">                                                               
+                                        <ul>
+                                            <apex:repeat value="{!orderedSegments}" var="segmentWrapper">                                            
+                                                <li style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" onclick="startLoading(); selectSegment('{!segmentWrapper.segment.Id}');" >
+                                                    <apex:image value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/project-plan.png')}" width="16" height="16"/>                                                                
+                                                    <span style="color: rgb(48, 126, 188); text-decoration: none; word-wrap: break-word;" >{!segmentWrapper.segment.Name}</span>
+                                                </li>
+                                            </apex:repeat>             
+                                        </ul>   
+                                    </apex:outputPanel>
+                                </div>
+                                <div id="tabs-3">         
+                                    <apex:outputPanel id="savedSearchesNames">                                                               
+                                        <ul>
+                                            <apex:repeat value="{!orderedSavedSearches}" var="searchWrapper">                                            
+                                                <li style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" onclick="startLoading(); selectSearch('{!searchWrapper.search.Id}');" >
+                                                    <apex:image value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/project-plan.png')}" width="16" height="16"/>                                                                
+                                                    <span style="color: rgb(48, 126, 188); text-decoration: none; word-wrap: break-word;" >{!searchWrapper.search.Name}</span>
+                                                </li>
+                                            </apex:repeat>             
+                                        </ul>   
+                                    </apex:outputPanel>                                             
+                                </div>
+                            </div>
+                            
+                            <div id="availableFields" style="border-top: 1px solid #e7e7e7; padding: 10px; display:none;" >        
+                                <div>
+                                    <input id="quickFind" type="text" placeholder="Quick Find" title="Quick find" style="width: 100%;" onkeyup="filterFields(this.value);"/>
+                                </div>
+                                <div style="width: 100%; opacity: 0.80; background-color: #b2ca45; font-size: 9px; color: white;">
+                                    <p id="tagline" class="fulljustify">Drag and drop to add fields to the Query Section</p>
+                                </div>                                 
+                                <div style="font-family: Verdana,sans-serif; font-size: 11px; color: #555555;">
+                                    <apex:repeat value="{!children}" var="child">
+                                        <ul class="sub" >                                            
+                                            <apex:image value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/folder.png')}" width="16" height="16"/>
+                                            <a class="minimize" minimize="next" href="#" style="font-weight: bold; color: rgb(48, 126, 188);" >                                       
+                                                {!child.name}                                                      
+                                            </a>                                           
+                                            <apex:repeat value="{!child.fields}" var="field">
+                                                <li style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 3em;">                                                                                                                                                                                                                  
+                                                    <span id="{!child.apiname}-{!field.apiname}" class="fieldSpan" data-object="{!child.apiname}" data-field="{!field.apiname}"  data-field-label="{!field.name}" data-type="{!field.type}" >
+                                                    <span class="{!field.type}-img type-img" style="height: 18px; width: 16px; vertical-align: middle;" />
+                                                        {!field.name}
+                                                    </span>                                                                         
+                                                </li>
+                                            </apex:repeat>                                                   
+                                        </ul>  
+                                    </apex:repeat>          
+                                </div>
+                            </div> 
+                                                                                     
+                        </div>
+                    </div>
+                </div>          
+            </apex:outputPanel>         
+            
+            <apex:outputPanel id="rightSectionsContainer"  layout="block"  styleClass="text">
+                
+                <apex:outputPanel id="searchQuerySection" layout="block" rendered="{!selectedSection != MySegments}" styleClass="rightContainer wi-gen gr b-card shado conc" style="border: none; min-height: 40px; margin-top: 0;">
+                    
+                    <apex:variable var="searchWrapper" value="{!IF(selectedSection == Fields, newSearch, IF(selectedSearchId != null, savedSearches[selectedSearchId], NULL))}" />
+                    
+                    <apex:outputPanel layout="none" rendered="{!searchWrapper == null}" >
+                       <p style="font-weight: bold;" >Please select a Search</p>
+                    </apex:outputPanel>
+                    
+                    <apex:outputPanel layout="none" rendered="{!searchWrapper != null}" >
+                       <a class="btn b-c-minimize" style="background: none; border: none; padding: 0; margin: 0; position: relative; float: right; margin-top: -12px; margin-right: -10px;" > 
+                            <i class="ig0" style="border: none;"></i>
+                        </a> 
+                        
+                        <div class="sectionHeaderWrapper" >
+                            <h1 class="sectionHeader" style="font-size: 24px; float: left;">
+                                <apex:outputPanel rendered="{!selectedSection == Fields}">
+                                    Segmentation Analysis                                                            
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!selectedSection == MySearches}">
+                                    {!IF(selectedSearchId != null, savedSearches[selectedSearchId].search.Name, '')}
+                                </apex:outputPanel>                            
+                            </h1>
+                            
+                            <apex:outputPanel rendered="{!OR(selectedSection == Fields, selectedSearchId != null)}">                               
+                                <button type="button" class="actions-button btnCustom default gr btnOverride" style="float: right; cursor: pointer;">Actions</button>                       
+                                <ul class="action-options" style="display: none;">                            
+                                    <li onclick="{!IF(selectedSection == Fields, 'openNewSearchPopup();', 'updateSearch();')}" >Save Search</li>                                                   
+                                    <apex:outputPanel rendered="{!selectedSection == MySearches}" layout="none" >
+                                        <li onclick="openNewSearchPopup('clone');" >Save Search As</li>
+                                        <li onclick="deleteSearch('{!JSENCODE(savedSearches[selectedSearchId].search.Name)}');" >Delete Search</li>                                                  
+                                    </apex:outputPanel>
+                                    <li onclick="openNewSegmentPopup();">Save Segment</li>                             
+                                    <li onclick="addToNewPlan();">Add to New Plan</li>
+                                    <li onclick="openAddToExistingPlanPopUp();">Add to Existing Plan</li>                            
+                                    <li onclick="addToNewInteraction();">Add to Interaction</li>
+                                    <li onclick="addTasks();" >Add Tasks</li>
+                                    <apex:outputPanel layout="none" rendered="{!isTagAccessible}">
+                                        <li onclick="openTagsPopUp();" >Tag Selected KOL(s)</li>                         
+                                    </apex:outputPanel>   
+                                    <li onclick="exportToXLS();" >Export to Excel</li>
+                                </ul>
+                            </apex:outputPanel>
+                        </div>
+                        <div class="querySectionContent">
+                           
+                            <div style="padding: 10px;">
+                               <h2 class="sectionHeader" >Show me KOLs where...</h2>
+                            </div>    
+                            <div style="display: inline-block; width: 100%;">
+                               <div id="conditionList" style="float: left; padding-right: 10px; padding-bottom: 10px;">    
+                                <apex:outputPanel id="theConditionList" layout="inline" rendered="{!searchWrapper != null}">
+                                    <ul>                                                                                                                       
+                                        <apex:outputPanel rendered="{!AND(newSearch.rows.size == 0, selectedSection != MySearches)}" layout="none">
+                                            <li id="drag-fields-here" style="font-style: italic;">Drop fields here</li>
+                                        </apex:outputPanel>                                 
+                                        
+                                        <apex:repeat value="{!searchWrapper.rows}" var="rowWrap" >                                 
+                                            <li class="itemli">
+                                                <apex:outputPanel rendered="{!rowWrap.editable}" >        
+                                                    
+                                                    <apex:selectList id="nameFieldCombo" value="{!rowWrap.row.openq__Field_API_Name__c}" onchange="fieldChangedApex('{!rowWrap.rid}');" multiselect="false" size="1" style="float: left;">
+                                                        <apex:selectOptions value="{!fieldsByObjectName[rowWrap.row.openq__Object_Name__c]}"/> 
+                                                    </apex:selectList>                                                                            
+                                                    
+                                                    <apex:inputField value="{!rowWrap.row.openq__Type__c}" style="display: none;"/>
+                                                    <apex:inputField id="conditionCombo" value="{!rowWrap.row.openq__Condition__c}" />
+                                                    
+                                                    <apex:inputField id="valueCombo" value="{!rowWrap.row.openq__Value__c}" rendered="{!AND(rowWrap.row.openq__Type__c != 'Boolean', AND(rowWrap.row.openq__Type__c != 'LOV', rowWrap.row.openq__Type__c != 'Multipicklist'))}" styleClass="{!IF(rowWrap.row.openq__Type__c == 'Date', 'datepicker', '')}" style="float: left; padding-top: 3px; margin-left: 5px;" />                                             
+                                                    
+                                                    <apex:outputPanel styleClass="multiSelectPL_OP" layout="inline" rendered="{!OR(rowWrap.row.openq__Type__c == 'Boolean', OR(rowWrap.row.openq__Type__c == 'LOV', rowWrap.row.openq__Type__c == 'Multipicklist'))}" style="margin-top: -2px;">                                                                                                                                                                                                                                   
+                                                        <select data-object="{!rowWrap.row.Object_Name__c}" data-field="{!rowWrap.row.openq__Field_API_Name__c}" class="multiSelectPL{!IF(rowWrap.row.Type__c == 'Boolean', '_Bool', '')}" multiple="multiple">
+                                                            <apex:repeat value="{!rowWrap.lovValues}" var="plVal" >                                                         
+                                                                <apex:outputPanel layout="none" rendered="{!plVal.selected}">
+                                                                    <option value="{!plVal.value}" selected="selected" >
+                                                                         {!plVal.value}
+                                                                     </option>
+                                                                 </apex:outputPanel>
+                                                                 <apex:outputPanel layout="none" rendered="{!NOT(plVal.selected)}">
+                                                                     <option value="{!plVal.value}">
+                                                                         {!plVal.value}
+                                                                     </option>
+                                                                 </apex:outputPanel>                                                         
+                                                             </apex:repeat>
+                                                        </select>                                                
+                                                    </apex:outputPanel>
+                                                    
+                                                    <button type="button" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 50px; padding-right: 0; padding-left: 0; text-align: center; margin-left: 5px;" onclick="confirmRow('{!rowWrap.rid}', '{!rowWrap.row.Object_Name__c}', '{!rowWrap.row.openq__Field_API_Name__c}', '{!rowWrap.row.openq__Type__c}');" >
+                                                       Ok
+                                                    </button>
+                                                       <apex:commandButton value="Cancel" action="{!cancelRow}" rerender="theConditionList" styleClass="btnCustom default gr btnOverride" style="cursor: pointer; width: 50px; padding-right: 0; padding-left: 0; text-align: center; border-radius: 5px;"  >
+                                                           <apex:param name="param1" assignTo="{!rowWrapperId}" value="{!rowWrap.rid}"/>
+                                                       </apex:commandButton>
+                                                                                            
+                                                </apex:outputPanel>
+                                                
+                                                <apex:outputPanel rendered="{!NOT(rowWrap.editable)}">                                        
+                                                    <div class="itemMarker" >{!rowWrap.row.Position__c}</div> 
+                                                    <span class="fieldText"> 
+                                                           <span style="font-weight: bold;">{!rowWrap.row.Label__c}</span>
+                                                           <span style="font-style: italic;">{!rowWrap.row.openq__Condition__c}</span>
+                                                           <span style="font-weight: bold;">"{!rowWrap.row.openq__Value__c}"</span>
+                                                    </span>
+                                                    <span class="editRemove" >
+                                                        <span style="cursor: pointer; padding: 0;" onclick="editRowApex('{!rowWrap.rid}');">Edit</span>
+                                                        <span style="cursor: pointer;" onclick="removeField(this, '{!rowWrap.rid}');">Remove</span>
+                                                    </span>                                        
+                                                </apex:outputPanel>
+                                            </li>
+                                        </apex:repeat> 
+                                    </ul>
+                                </apex:outputPanel>                             
+                            </div>   
+                              
+                            <div style="clear: both;"/>                         
+                            
+                            </div>                                                                                                                                               
+                            <apex:outputPanel id="filterBox" layout="block">
+                                <div style="padding-bottom: 10px; font-weight: bold;">
+                                    <span style="padding-right: 10px;">Filter logic:</span>
+                                    <apex:inputText id="filter-logic" value="{!searchWrapper.search.openq__Filter__c}" style="width: 700px; font-weight: normal;" />
+                                </div>
+                                <apex:outputPanel layout="block" style="font-weight: bold;" rendered="{!showWeightings}">
+                                    <span style="padding-right: 10px;" >Score Weightings:</span> 
+                                    <span style="padding-right: 10px;" >Strength&nbsp; <apex:inputText id="strength-weight" value="{!searchWrapper.search.openq__Strength_Weighting__c}" maxlength="3" size="2" style="font-weight: normal; text-align: center;" /></span>
+                                    <span style="padding-right: 10px;" >Leadership&nbsp; <apex:inputText id="leader-weight" value="{!searchWrapper.search.openq__Leadership_Weighting__c}" maxlength="3" size="2" style="font-weight: normal; text-align: center;" /></span>
+                                    <span style="padding-right: 10px;" >Impact&nbsp; <apex:inputText id="impact-weight" value="{!searchWrapper.search.openq__Impact_Weighting__c}" maxlength="3" size="2" style="font-weight: normal; text-align: center;" /></span>
+                                </apex:outputPanel>                                                  
+                            </apex:outputPanel>      
+                            
+                            <div style="margin-top: 20px; margin-left: 30px;">
+                                <input value="Cancel"  class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="removeAllRowsApex();"   />                            
+                                <input value="Run" class="btnCustom default gr btnOverride buttonDisabled" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="runQuery();" />                        
+                            </div>                         
+                        </div>
+                    </apex:outputPanel>                 
+                </apex:outputPanel>  
+                
+                <apex:outputPanel id="resultsSection" layout="block" styleClass="rightContainer wi-gen gr b-card shado conc" style="margin-top: 0;" >
+                    
+                    <apex:variable var="segmentWrapper" value="{!IF(selectedSection != MySegments, currentSegment, IF(selectedSegmentId != null, segmentsById[selectedSegmentId], NULL))}" />                   
+                    
+                    <apex:outputPanel layout="none" rendered="{!AND(selectedSection == MySegments, segmentWrapper == null)}" >
+                       <p style="font-weight: bold;" >Please select a Segment</p>
+                    </apex:outputPanel>
+                    
+                    <apex:outputPanel layout="none" rendered="{!OR(selectedSection != MySegments, AND(selectedSection == MySegments, segmentWrapper != null))}" >
+                    
+                       <div class="sectionHeaderWrapper" >
+                            <h1 class="sectionHeader" style="font-size: 24px; float: left;"> 
+                                <apex:outputPanel rendered="{!selectedSection != MySegments}">
+                                    Results                                                            
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!selectedSection == MySegments}">
+                                    {!segmentWrapper.segment.Name}
+                                </apex:outputPanel>                                                           
+                            </h1>
+                            <apex:outputPanel id="resultsSelected" style="margin-left: 20px; font-style: italic; float: left;">
+                                <apex:outputPanel layout="none" rendered="{!segmentWrapper != null}" >
+                                    Selected:&nbsp;<span id="numSel">0</span>/{!segmentWrapper.contacts.size}
+                                </apex:outputPanel>                        
+                            </apex:outputPanel>
+                            
+                            <apex:outputPanel rendered="{!selectedSection == MySegments}" layout="none">
+                                <div style="float: right;">
+                                    <button id="results-actions-button" type="button" class="btnCustom default gr btnOverride" style="cursor: pointer;">Actions</button>                            
+                                </div>
+                                <ul id="results-actions-button-options" class="action-options" style="display: none;">
+                                    <li onclick="removeSelected();">Remove Selected</li>
+                                    <li onclick="deleteSegment('{!JSENCODE(segmentsById[selectedSegmentId].segment.Name)}');">Delete Segment</li>
+                                    <li onclick="openNewSegmentPopup('clone');">Save Segment As</li>                                                        
+                                    <li onclick="addToNewPlan();">Add to New Plan</li>
+                                    <li onclick="openAddToExistingPlanPopUp();">Add to Existing Plan</li>                            
+                                    <li onclick="addToNewInteraction();" >Add to Interaction</li>
+                                    <li onclick="addTasks();" >Add Tasks</li>
+                                    <apex:outputPanel layout="none" rendered="{!isTagAccessible}">
+                                        <li onclick="openTagsPopUp();" >Tag Selected KOL(s)</li>                         
+                                    </apex:outputPanel>
+                                    <li onclick="exportToXLS();" >Export to Excel</li>
+                                </ul> 
+                            </apex:outputPanel>   
+                            <apex:outputPanel rendered="{!AND(selectedSection != MySegments, OR(selectedSection == Fields, selectedSearchId != null))}">
+                                <apex:outputPanel id="lensActions">                                 
+                                    <apex:outputPanel id="resultActionBtn" style="float:right;">                               
+                                        <button type="button" class="actions-button btnCustom default gr btnOverride" style="cursor: pointer;">Actions</button>                       
+                                        <ul class="action-options" style="display: none;">                            
+                                            <li onclick="{!IF(selectedSection == Fields, 'openNewSearchPopup();', 'updateSearch();')}" >Save Search</li>                                                   
+                                            <apex:outputPanel rendered="{!selectedSection == MySearches}" layout="none" >
+                                                <li onclick="openNewSearchPopup('clone');" >Save Search As</li>
+                                                <li onclick="deleteSearch('{!JSENCODE(savedSearches[selectedSearchId].search.Name)}');" >Delete Search</li>                                                  
+                                            </apex:outputPanel>
+                                            <li onclick="openNewSegmentPopup();">Save Segment</li>                             
+                                            <li onclick="addToNewPlan();">Add to New Plan</li>
+                                            <li onclick="openAddToExistingPlanPopUp();">Add to Existing Plan</li>                            
+                                            <li onclick="addToNewInteraction();" >Add to Interaction</li>
+                                            <li onclick="addTasks();" >Add Tasks</li>
+                                            <apex:outputPanel layout="none" rendered="{!isTagAccessible}">
+                                                <li onclick="openTagsPopUp();" >Tag Selected KOL(s)</li>                         
+                                            </apex:outputPanel>
+                                            <li onclick="exportToXLS();" >Export to Excel</li>                                   
+                                        </ul>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel id="resultsLensWrap">
+                                        <apex:outputPanel id="resultsLens" layout="block" rendered="{!AND(atLeastOneLensEnabled, AND(currentSegment != null, currentSegment.contacts.size > 0))}">
+                                            <apex:selectList id="lensList" value="{!selectedLens}" onchange="changeLensOptions(this.value);" size="1" style="float:right; margin: 0px 10px;">
+                                                <apex:selectOptions value="{!lensOptions}" />                                           
+                                            </apex:selectList>
+                                            <apex:outputLabel value="Lens:" style="float:right;"/>                                          
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </div>
+                        <apex:outputPanel id="lensContainer" layout="block" rendered="{!AND(selectedLens != null, AND(selectedLens != 'Results-List View', AND(selectedLens != 'Tradeoff Analytics', AND(currentSegment != null, currentSegment.contacts.size > 0))))}">
+                            <c:HighChartComponent width="500px" height="450px" configJsFunc="changeConfig" pgController="{!hcw}" />
+                        </apex:outputpanel>
+                        <!--<apex:outputPanel id="tradeoffAnalyticsContainer" layout="block" rendered="{!AND(loadTradeoffWidget, AND(currentSegment != null, currentSegment.contacts.size > 0))}">
+                            <div id="taComponent">
+                                <c:Tradeoff_Analytics KolIds="{!segmentContactIds}" />
+                            </div>
+                        </apex:outputPanel>-->
+                        <apex:outputPanel id="resultsContainer" layout="block">                        
+                            <apex:outputPanel layout="none" rendered="{!segmentWrapper == null}">
+                                No results                        
+                            </apex:outputPanel>
+                            <apex:outputPanel layout="none" rendered="{!segmentWrapper != null}">                            
+                                <table id="tableRes" class="tablesorter" >
+                                    <thead>
+                                        <tr id="contactWrapTrHeader">
+                                            <th><input type="checkbox" onclick="checkAll(this);"/></th>   
+                                            <apex:outputPanel layout="none" rendered="{!segmentationSettings.openq__Show_KOL_Score__c}">
+                                                <th style="text-align: center;">Score<span class="sort_arrow" style="float: right;"/></th>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel layout="none" rendered="{!segmentationSettings.openq__Show_Ratings_Column__c}">   
+                                                <th style="text-align: center;" >{!$Label.Segmentation_Star_Label}<span class="sort_arrow" style="float: right;"/></th>
+                                            </apex:outputPanel>
+                                            <apex:repeat value="{!resultcols}" var="col"> 
+                                                <th>{!col.label}<span class="sort_arrow" style="float: right;"/></th>
+                                            </apex:repeat>   
+                                        </tr>                     
+                                    </thead>
+                                    <tbody>
+                                        <apex:variable value="{!0}" var="i"/>                                    
+                                        <apex:repeat value="{!segmentWrapper.contacts}" var="contactWrap">                                    
+                                            <tr id="contactWrapTr-{!i}">   
+                                                <td><apex:inputCheckbox id="contactWrapCheckbox" styleClass="result-checkbox" value="{!contactWrap.selected}" onclick="selectContact();"/></td>
+                                                <apex:outputPanel layout="none" rendered="{!segmentationSettings.openq__Show_KOL_Score__c}">                                               
+                                                    <td style="text-align: center; font-size: 20px; font-weight: bold; color: #8EA237;">{!contactWrap.contact.KOL_Rating__c}</td>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel layout="none" rendered="{!segmentationSettings.openq__Show_Ratings_Column__c}">                                                  
+                                                    <td style="text-align: center;">
+                                                        <apex:image id="contactWrapImg" style="width:80px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_'& contactWrap.stars &'.gif')}" />
+                                                    </td>
+                                                </apex:outputPanel>                                                                         
+                                                <apex:repeat value="{!resultcols}" var="col">                    
+                                                    <td>
+                                                        <apex:outputPanel rendered="{!col.apiName != 'Name'}">
+                                                            {!contactWrap.contact.Contact__r[col.apiName]}
+                                                        </apex:outputPanel>
+                                                        
+                                                        <apex:outputLink target="_blank" rendered="{!col.apiName == 'Name'}" value="{!$Page.openq__CoDi}?id={!contactWrap.contact.Contact__c}" >
+                                                            {!contactWrap.contact.Contact__r[col.apiName]}
+                                                        </apex:outputLink>                                                           
+                                                        
+                                                    </td>      
+                                                </apex:repeat>
+                                            </tr>
+                                            <apex:variable value="{!i+1}" var="i"/>                                     
+                                        </apex:repeat>                                    
+                                    </tbody>
+                                </table>                        
+                            </apex:outputPanel>                          
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>            
+            </apex:outputPanel>
+            
+            <apex:actionFunction name="changeLensOptionsApex" action="{!loadSegmentationLens}" rerender="lensContainer"/>
+            
+            <apex:actionFunction name="enableTradeoffAnalyticsApex" action="{!enableTradeoffAnalytics}" rerender="tradeoffAnalyticsContainer" />
+            
+            <apex:actionFunction name="getContactInfoApex" action="{!loadPopupInfo}" rerender="contactLensPopupContentWrapper" oncomplete="removeContactSelect(); waitOff();">
+                <apex:param name="selectedContactId" value="" assignTo="{!selectedContactId}" />
+            </apex:actionFunction>
+                         
+            <apex:actionFunction name="addSearchRowApex" action="{!addSearchRow}" rerender="theConditionList, errorDiv" oncomplete="onDrop();">                
+                <apex:param name="param1" assignTo="{!rowobjectName}" value=""/>
+                <apex:param name="param2" assignTo="{!rowType}" value=""/>
+                <apex:param name="param3" assignTo="{!rowFieldName}" value=""/>
+                <apex:param name="param4" assignTo="{!rowLabel}" value=""/>                
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="confirmRowApex" action="{!confirmRow}" rerender="theConditionList, errorDiv" oncomplete="onConfirmRow();">
+                <apex:param name="param1" assignTo="{!rowWrapperId}" value="" />
+                <apex:param name="param2" assignTo="{!rowLOV}" value="" />
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="editRowApex" action="{!editRow}" rerender="theConditionList, errorDiv" oncomplete="onEdit();" >                
+                <apex:param name="param1" assignTo="{!rowWrapperId}" value="" />        
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="fieldChangedApex" action="{!fieldChanged}" rerender="theConditionList, errorDiv" oncomplete="onFieldChange();" >                
+                <apex:param name="param1" assignTo="{!rowWrapperId}" value="" />       
+            </apex:actionFunction>    
+            
+            <apex:actionFunction name="removeSearchRowApex" action="{!removeSearchRow}" rerender="theConditionList, errorDiv" oncomplete="onRemoveSearchRow();" >                
+                <apex:param name="param1" assignTo="{!rowWrapperId}" value=""/>        
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="removeAllRowsApex" action="{!removeAllRows}" rerender="theConditionList, filterBox, errorDiv" >
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="addToNewPlanApex" action="{!addToNewPlan}" rerender="" >
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="saveSearchApex" action="{!saveSearch}" rerender="savedSearchesNames, searchQuerySection, errorDiv" oncomplete="onSaveSearch();">
+                <apex:param name="param1" assignTo="{!newSearchName}" value=""/>            
+                <apex:param name="param2" assignTo="{!newSearchType}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="saveSegmentApex" action="{!saveSegment}" rerender="segmentNames, resultsSection, errorDiv" oncomplete="onSaveSegment();">
+                <apex:param name="param1" assignTo="{!newSegmentName}" value=""/>            
+                <apex:param name="param2" assignTo="{!newSegmentType}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="updateSearchApex" action="{!updateSearch}" rerender="searchQuerySection, errorDiv" oncomplete="endLoading();" >            
+            </apex:actionFunction>
+             
+            <apex:actionFunction name="deleteSearchApex" action="{!deleteSearch}" rerender="savedSearchesNames, searchQuerySection, errorDiv" oncomplete="endLoading();" >                          
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="deleteSegmentApex" action="{!deleteSegment}" rerender="segmentNames, resultsSection, errorDiv" oncomplete="endLoading();" >                          
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="removeSelectedApex" action="{!removeSelected}" rerender="segmentNames, resultsSection, errorDiv" oncomplete="onRemoveSelected();" >                          
+            </apex:actionFunction>           
+            
+            <apex:actionFunction name="runQueryApex" action="{!runQuery}" rerender="resultsContainer, resultsSelected, resultsSection, resultsLensWrap, errorDiv" oncomplete="onRunQuery();" >                          
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="selectSearch" rerender="searchQuerySection, resultActionBtn, errorDiv" oncomplete="onSelectSearch();">
+                <apex:param name="param1" assignTo="{!selectedSearchId}" value="" />            
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="selectSegment" rerender="resultsSection, errorDiv" oncomplete="onSelectSegment();">
+                <apex:param name="param1" assignTo="{!selectedSegmentId}" value="" />            
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="changeSectionApex" action="{!changeSection}"  rerender="rightSectionsContainer, resultsSection, filterBox, errorDiv" oncomplete="onChangeSection();">                
+                <apex:param name="param1" assignTo="{!selectedSection}" value="" />       
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="addToExistingPlanApex" action="{!addToExistingPlan}" oncomplete="onAddToExistingPlan();">
+                <apex:param name="param1" assignTo="{!planId}" value="" />                            
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="addToNewInteractionApex" action="{!addToNewInteraction}" oncomplete="onAddToExistingPlan();">                                            
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="tagContactsApex" action="{!tagContacts}" oncomplete="onTagContacts();">
+                <apex:param name="param1" assignTo="{!tags}" value="" /> 
+                <apex:param name="param2" assignTo="{!tradeoffAnalyticsSelectedContactId}" value="" />                           
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="addTasksApex" action="{!addTasks}" oncomplete="onTagContacts();">
+                <apex:param name="param1" assignTo="{!tradeoffAnalyticsSelectedContactId}" value="" />                           
+            </apex:actionFunction>
+                                          
+        </apex:form>    
+    </apex:outputPanel>    
+ 
+    <!-- POP UPS -->
+    <apex:outputPanel >  
+        <apex:form >         
+        
+            <!-- Save search -->
+            <div id="newSearchPopUp" class="popUpDiv" >
+                <div id="newSearchDiv">
+                    <div> 
+                        <apex:outputPanel styleClass="popUpContainers">
+                            <div class="widgetHeader">
+                                Save Search
+                            </div>
+                            <div>
+                                Name: &nbsp;                            
+                                <input id="newSearchName" type="text" />
+                            </div>
+                        </apex:outputPanel> 
+                    </div>
+                    <div>
+                        <div style="float: right;">                     
+                            <input value="Cancel" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="closeNewSearchPopup();" />
+                            <input value="Save" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="saveNewSearch();"/>                                                    
+                        </div>              
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Save segment -->
+            <div id="newSegmentPopUp" class="popUpDiv" >
+                <div id="newSegmentDiv">
+                    <div> 
+                        <apex:outputPanel styleClass="popUpContainers">
+                            <div class="widgetHeader">
+                                Save Segment
+                            </div>
+                            <div>
+                                Name: &nbsp;                            
+                                <input id="newSegmentName" type="text" />
+                            </div>
+                        </apex:outputPanel> 
+                    </div>
+                    <div>
+                        <div style="float: right;">                     
+                            <input value="Cancel" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="closeNewSegmentPopup();" />
+                            <input value="Save" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="saveNewSegment();"/>                                                    
+                        </div>              
+                    </div>
+                </div>
+            </div>            
+            
+            <div id="carouselContainer" class="popUpDiv" >            
+                <apex:outputPanel id="carouselDiv" layout="block" style="overflow:scroll;">                 
+                    <apex:repeat value="{!kolImages}" var="kolImg" >                    
+                        <apex:image styleClass="cloudcarousel" value="/servlet/servlet.FileDownload?file={!kolImg.fileId}" height="100" width="116" title="{!kolImg.name}"/>                    
+                    </apex:repeat>                                     
+                </apex:outputPanel>       
+                <div style="font-weight: bold; color: white; text-align: center; margin-left: -38px; top: 40%; position: fixed; margin-top: 50px;">Please wait while we gather your results...</div>     
+            </div>                        
+            
+            <!-- Available Plans -->
+            <div id="addToExistingPlanPopUp" class="popUpDiv" >                
+                <div id="addToExistingPlan" style="position: absolute;">
+                    <div>
+                        <div class="widgetHeader">
+                            Select Plan
+                        </div>
+                        <apex:outputPanel styleClass="addToPlan" layout="inline" style="margin-top: -2px;">                                                                                                                                                                                                                                   
+                             <select id="multiSelectPLAddToPlan" multiple="multiple">
+                                 <apex:repeat value="{!planOwners}" var="plan" >                         
+                                     <option id="{!plan.Engagement_Plan__c}"  value="{!plan.Engagement_Plan__r.Name__c}" >
+                                          {!plan.Engagement_Plan__r.Name__c}
+                                      </option>                                                     
+                                  </apex:repeat>
+                             </select>                                                
+                         </apex:outputPanel>                   
+                    </div>                    
+                    <div>
+                        <div style="float: right;">                     
+                            <input value="Cancel" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="closeAddToExistingPlanPopUp();" />
+                            <input value="Add" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="addToExistingPlan();"/>                                                    
+                        </div>              
+                    </div>                                                                 
+                </div>
+            </div>
+            
+            <!-- Tags Popup -->
+            <div id="tagsPopUp" class="popUpDiv" style="top: 200px;">                
+                <div id="tagsDiv" style="position: absolute;">
+                    <div>
+                        <div class="widgetHeader">
+                            Select Tags
+                        </div>         
+                        <div class="multiTags_OP" style="margin-bottom: 20px;" >
+                            <apex:inputField id="selected-tags" value="{!fakeTag.openq__Tag__c}" styleClass="multiTags" />
+                        </div>                                 
+                    </div>                    
+                    <div>
+                        <div style="float: right;">                     
+                            <input value="Cancel" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="closeTagsPopUp();" />
+                            <input value="Save" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="tagContacts();" />                                                    
+                        </div>              
+                    </div>                                                                 
+                </div>
+            </div>
+            <!-- Contact Lens popup -->
+            <apex:outputPanel id="contactLensPopup">
+                <apex:outputPanel id="contactLensPopupContentWrapper">
+                    <apex:outputPanel id="contactLensPopupDisplay" styleClass="contactLensPopupDisplay" rendered="{!displayLensPopupInfo}">                                     
+                        <apex:outputpanel id="image" layout="block" styleClass="contactLensPopupImage">
+                             <apex:image styleClass="fileImage" value="{!URLFOR($Resource.openq__PictureUploader, '/images/unknownperson.jpg')}" rendered="{!lpi.attachmentId == null}" height="100"/>
+                             <apex:image styleClass="fileImage" value="{!URLFOR($Action.Attachment.Download, lpi.attachmentId)}" rendered="{!lpi.attachmentId != null}" height="100"/>
+                        </apex:outputpanel>
+                        <div style="float:right;">
+                            <a onclick="closeLensPopup();" style="margin-left: -20px;">                                       
+                                <span class="closeIcon"></span>                                         
+                            </a>
+                        </div>
+                        <apex:outputPanel id="contactInfo" styleClass="contactInfo" layout="block">
+                            <apex:outputText value="{!lpi.contactName}" style="font-weight: bold;" />
+                            <apex:outputPanel layout="block">
+                                <table>
+                                    <apex:repeat value="{!lpi.fields}" var="lf">
+                                        <tr style="font-size: 12px;">
+                                            <apex:outputPanel layout="none" rendered="{!AND(lf.label != null, lf.label != '')}">
+                                                <td>
+                                                    <span class="lensLabel">{!HTMLENCODE(lf.label)}</span>
+                                                </td>
+                                            </apex:outputPanel>                                     
+                                            <td>
+                                                <apex:outputPanel layout="none" rendered="{!lf.referenceId == null}">
+                                                    <apex:outputText value="{!lf.value}" />
+                                                </apex:outputPanel>
+                                                <apex:outputPanel layout="none" rendered="{!lf.referenceId != null}">
+                                                    <apex:outputLink target="_blank" value="/{!lf.referenceId}">{!lf.value}</apex:outputLink>
+                                                </apex:outputPanel>
+                                            </td>
+                                        </tr>
+                                    </apex:repeat>
+                                </table>
+                            </apex:outputPanel>
+                            <apex:outputPanel layout="block">
+                                <apex:outputText style="font-size: 20px; font-weight: bold; color: #8EA237; margin-right: 5px;" rendered="{!segmentationSettings.openq__Enable_Lens_Popup_KOL_Score__c}" value="{!lpi.kolRating}" />
+                                <apex:image rendered="{!segmentationSettings.openq__Enable_Lens_Popup_Stars__c}" id="contactWrapImg" style="width:80px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_'& lpi.starsURL &'.gif')}" />
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                   </apex:outputPanel>
+            </apex:outputPanel>
+            <c:WaitComponent />
+        </apex:form>
+    </apex:outputPanel>
+</apex:page>

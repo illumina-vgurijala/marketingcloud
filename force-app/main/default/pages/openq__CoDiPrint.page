@@ -1,0 +1,217 @@
+<apex:page standardController="Contact" renderAs="pdf" extensions="openq.ContactDetailPrintController" showHeader="false" sidebar="false" standardStylesheets="false">
+
+	<apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"> </apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.js"></apex:includescript>
+
+ 	<head>
+		<style> 
+		
+		
+			#mainContainer table {
+				width: 100% !important;
+				border-collapse: collapse !important;
+			}
+			
+			#mainContainer td { 
+				padding-left: 0;			
+			}
+			
+			#mainContainer tr {			
+				height: 15px; /* actually works as min height */ 
+			}
+			
+			body {
+				font-size: 10px;
+ 				font-family: "Arial" "Sans-Serif";  
+				margin: 0;
+			}
+		    
+		    #relatedListSpan {
+		        text-decoration: underline;
+		    }
+		    		    
+		    .sectionHeader {
+		        font-size: 12px;
+		        font-weight: bold !important;
+		        color: #245C8A;
+		    }	 
+		    
+		    .sectionSubHeader {
+		        font-size: 11px;
+		        font-weight: bold;
+		        color: gray;
+		    }       
+		    
+		    .bodyText { 
+		    	font-size: 10px;	    
+		    	margin-left: 0;
+		    }
+		    
+		    .title {
+		    	font-weight: bold;
+		    }
+		    
+		    #kolNameDiv {
+		    	font-size: 16px; 
+		    	font-weight: bold; 
+		    	color: #245C8A;
+		    }
+		    
+		    .horizontalLine {
+		    	height: 1px; 
+		    	background-color: #245C8A; 
+		    	border: none;
+		    }
+		    
+		    #photoNotesContainer {
+		    	padding-bottom: 35px;
+		    }
+		    
+		    #notesSummary {
+		    	padding-left: 12px; 
+		    	width: 900px;
+		    	word-wrap: break-word;
+		    }
+		    
+		    #note {
+		    	padding-left: 4px;
+		    }
+		    
+ 		    #columnNames th { 
+  		    	border-bottom: 1px solid black !important;
+  		    	border-top: 1px solid black !important;    
+ 		    } 
+		    
+		    
+		</style> 	
+ 	</head>
+ 	 	
+ 	<div id="mainContainer">
+ 		<div id="kolNameDiv">{!contact.LastName}, {!contact.FirstName} {!contact.OPENQ_Middle_Name__c}</div>
+		<hr class="horizontalLine" />
+		<div id="photoNotesContainer">			
+			<table>			
+				<tr>					
+					<td>
+						<apex:include pageName="openq__showPicture"/>
+					</td>
+					
+					<td style="vertical-align: top;">
+						<div id="notesSummary" >
+							<span class="title">Notes:</span>
+							<span id="note">{!printContactNotes}</span>		
+						</div>
+					</td>
+				</tr>			
+			</table>
+		</div>
+		
+		<div class="sectionHeader">Summary</div>   
+		<hr class="horizontalLine" />
+		<apex:repeat value="{!contactAttributes}" var="ca">
+            <dl class="bodyText">
+                <dt class="title">{!ca.attributeName}:</dt>
+                 <apex:outputPanel layout="none" rendered="{!IF(ca.attributeName == 'Address', true, false)}">
+                	<dd>
+                        <apex:outputPanel id="spec">
+	                    	<apex:outputPanel id="noAddressText" rendered="{!IF(noAddressExists, true, false)}">
+                           		<apex:outputText value="No address known"/>
+                           	</apex:outputPanel>
+                           	<apex:outputText value="{!line1}"/><br/>
+                           	<apex:outputText value="{!line2}"/><br/>
+                           	<apex:outputText value="{!city}"/><br/>
+                           	<apex:outputText value="{!state}"/>&nbsp;
+                           	<apex:outputText value="{!postalCode}"/><br/>
+                           	<apex:outputText value="{!country}"/>
+                    	</apex:outputPanel>                                                    
+	                </dd>
+	            </apex:outputPanel>
+	            <apex:outputPanel layout="none" rendered="{!IF(ca.attributeName != 'Address', true, false)}">                               
+                    <apex:outputPanel layout="none" rendered="{!ca.attributeApiName != 'AccountId'}">
+                    	<dd class="{!IF(ca.isNumberOrCurrency, 'fright', '')}">{!ca.attributeValue}</dd>
+                    </apex:outputPanel>
+                    <apex:outputPanel layout="none" rendered="{!AND(ca.attributeApiName == 'AccountId')}">
+                    	<apex:outputLink rendered="{!accountIdToLink != null}" value="/{!accountIdToLink}">{!ca.attributeValue}</apex:outputLink>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </dl>
+        </apex:repeat>
+	    <div style="padding-top: 20px;">          
+			<apex:repeat value="{!relatedLists}" var="relListWrapper" >     
+				<apex:outputPanel rendered="{!relListWrapper.selected}">
+					<div>			
+						<table>
+							<tr>
+								<td>
+									<div class="sectionHeader">{!relListWrapper.categoryName}</div>
+									<hr class="horizontalLine" />
+								</td>
+							</tr>                                                       
+						</table>                        
+					</div>			 
+					
+					<div>                                   
+						<apex:repeat value="{!relListWrapper.relatedLists}" var="relList" > 
+							<apex:variable value="{!0}" var="rowNum"  />
+							<apex:outputPanel layout="none" rendered="{!relList.selected}" >               
+															  
+								<div style="padding-bottom: 15px;">
+									<table>
+										<tr>
+											<td>
+												<div style="padding-bottom: 15px;">
+													<div class="sectionSubHeader">{!relList.labelObject}</div>                                                                   
+												</div>
+											</td>
+										</tr>
+									</table>									
+									
+									<div>
+										<table>                                         
+											<apex:outputPanel rendered="{!relList.fieldValues.size == 0}" layout="none" >
+												<tr><td><span> No records to display </span> </td></tr>
+											</apex:outputPanel>                                         
+											<apex:outputPanel id="relListsContent" rendered="{!relList.fieldValues.size > 0}" layout="none">
+											   
+												<thead id="columnNames">
+													<tr>
+														<apex:repeat value="{!relList.labelAttribute}" var="fv">                                
+															<th><div>{!fv.value}</div></th>
+														</apex:repeat>
+													</tr>
+												</thead> 
+												<tbody>													
+													<apex:repeat value="{!relList.fieldValues}" var="fvv">
+														<apex:variable var="rowNum" value="{!rowNum + 1}"/>
+														<tr>
+															<apex:repeat value="{!fvv.listValues}" var="lv">                                                
+																<td style="vertical-align: middle !important; {!IF(rowNum != 1, 'border-top: 1px solid #DEDECD;', '')} {!IF(rowNum = relList.fieldValues.size, 'border-bottom: 1px solid black;', '')}">
+																																
+																	<apex:outputPanel rendered="{!IF(OR(CONTAINS(lv.strValue, 'http'), CONTAINS(lv.strValue, 'https')), true, false)}">  
+																		<div style="vertical-align: middle !important;">
+																			 <a href="{!lv.value}">Link</a> 
+																		</div>                                                                    
+																	</apex:outputPanel>
+																
+																	<apex:outputPanel rendered="{!IF(OR(CONTAINS(lv.strValue, 'http'), CONTAINS(lv.strValue, 'https')), false, true)}"> 
+																		<div style="vertical-align: middle !important;">
+																			 <apex:outputtext value="{!lv.value}" />  
+																		</div>                                                                    
+																	</apex:outputPanel>																
+																</td>
+															</apex:repeat>													
+														</tr>
+													</apex:repeat>
+												</tbody>
+											</apex:outputPanel>                                             
+										</table>
+									</div>                                  
+								</div>          
+							</apex:outputPanel>      
+						</apex:repeat>
+					</div>
+				</apex:outputPanel> 
+			</apex:repeat>
+		</div>	    
+ 	</div>
+</apex:page>

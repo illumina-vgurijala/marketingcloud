@@ -1,0 +1,249 @@
+<!-- 
+	Apttus Config & Pricing
+	Proposal Doc Gen
+	@2015-2016 Apttus Inc. All rights reserved.
+ -->
+
+<apex:page controller="Apttus_Proposal.RemoteProposalController"
+			title="Proposal Document Generator"
+			docType="html-5.0"
+			showHeader="false"
+			sidebar="false"
+			standardStylesheets="false"
+		    applyBodyTag="false" lightningStylesheets="true">
+
+	<Apttus_Base2:UsageDataComponent2 ProdName="{!CustomSettings['PackageName']}" ProdVersion="{!CustomSettings['PackageVersion']}"></Apttus_Base2:UsageDataComponent2>
+	
+	<head>
+	  <meta charset="utf-8" />
+	  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	  <title>{!bizObjectName}</title>
+	  <apex:stylesheet value="{!URLFOR($Resource.Apttus_Proposal__DocGen, '/app.css')}"/>
+	  <apex:outputPanel rendered="{!NOT(ISNULL(CSSOverride))}">
+          <apex:dynamicComponent componentValue="{!CSSOverrideComponent}"/>
+      </apex:outputPanel>
+	</head>
+	<body ng-app="docGen">
+		<global-header></global-header>
+		<global-sub-header></global-sub-header>
+		<page-notification></page-notification>
+		<page-container></page-container>
+		<email></email>
+
+		<script type="text/javascript">
+
+			/**
+			 * Anonymous blocks for configuring the different modules.
+			 * These config blocks need to be defined within the page to take
+			 *  advantage of visualforce binding for initializing the app with
+			 *  constant pieces of data.
+			 */
+
+			//Create System Properties constant
+			var docGenResourceUrl = formatSFDCUrl("{!URLFOR($Resource.docGen)}");
+			var baseFileUrl = '';
+			var contextParam = '{!JSENCODE(contextParam)}';
+			var proposalIdParam = '{!JSENCODE(proposalIdParam)}';
+			var configRequestParam = '{!JSENCODE(configRequestParam)}';
+			var productConfigParam = '{!JSENCODE(productConfigParam)}';
+			var cartFlowParam = '{!JSENCODE(cartFlowParam)}';
+			var cartStatusParam = '{!JSENCODE(cartStatusParam)}';
+			var launchStateParam = '{!JSENCODE(launchStateParam)}';
+			var nameSpacePrefix = '{!nameSpacePrefix}';
+
+			var systemConstants = {
+				"docGenResourceUrl": docGenResourceUrl,
+				"imagesFolderPath": docGenResourceUrl + "/app/common/assets/images/",
+				"contextParam": contextParam,
+				"proposalIdParam": proposalIdParam,
+				"configRequestParam": configRequestParam,
+				"productConfigParam": productConfigParam,
+				"cartFlowParam": cartFlowParam,
+				"cartStatusParam": cartStatusParam,
+				"launchStateParam": launchStateParam,
+				"nameSpacePrefix": nameSpacePrefix,
+			  	"docGenCustomSettings": {!docGenCustomSettings}
+			};
+
+			//Format the base url of app static resource
+			function formatSFDCUrl(sfdcString) {
+				var formatExp = /^(?:.*)(\{\!URLFOR|resource|servlet)(?:.*)(\}|\/|file=\w*)$/;
+				var matches = (sfdcString ? sfdcString.match(formatExp) : false);
+				if (matches) {
+					var matchTerm = matches[1];
+					if (matchTerm === '\{\!URLFOR') {
+						sfdcString = '.';
+
+					} else if (matchTerm === 'resource') {
+						//Will only match if last char is a '/' that needs to be removed
+						sfdcString = sfdcString.slice(0, -1);
+
+					} else if (matchTerm === 'servlet') {
+						var param = 'file=';
+						var edge = sfdcString.indexOf(param) + param.length;
+						sfdcString = sfdcString.slice(0, edge);
+
+					}
+
+				}
+				return sfdcString;
+
+			}
+
+			function baseConfig(RemoteService,i18nService) {
+
+				var remoteActions = {
+                    getURLContent: '{!$RemoteAction.RemoteProposalController.getURLContent}',
+					getAvailableTemplates: '{!$RemoteAction.RemoteProposalController.getAvailableTemplates}',
+					generateDoc: '{!$RemoteAction.RemoteProposalController.generateDoc}',
+					createWordPackage: '{!$RemoteAction.RemoteProposalController.createWordPackage}',
+					createPDFPackage: '{!$RemoteAction.RemoteProposalController.createPDFPackage}',
+					getAttachments: '{!$RemoteAction.RemoteProposalController.getAttachments}',
+					uploadAttachment: '{!$RemoteAction.RemoteProposalController.uploadAttachment}',
+					createDocumentCollateInfo: '{!$RemoteAction.RemoteProposalController.createDocumentCollateInfo}',
+					getGeneratedDocumentInfo: '{!$RemoteAction.RemoteProposalController.getGeneratedDocumentInfo}',
+					getAttachmentURL: '{!$RemoteAction.RemoteProposalController.getAttachmentURL}',
+					getCustomSettings: '{!$RemoteAction.RemoteProposalController.getCustomSettings}',
+					getUserEmail: '{!$RemoteAction.RemoteProposalController.getUserEmail}',
+					getDefaultOutputFormat: '{!$RemoteAction.RemoteProposalController.getDefaultOutputFormat}',
+					sendEmail: '{!$RemoteAction.RemoteProposalController.sendEmail}',
+					getProposalInfo: '{!$RemoteAction.RemoteProposalController.getProposalInfo}',
+					getCollatedDocuments: '{!$RemoteAction.RemoteProposalController.getCollatedDocuments}',
+					getAllEmailTemplates: '{!$RemoteAction.RemoteProposalController.getAllEmailTemplates}',
+					getDefaultContact: '{!$RemoteAction.RemoteProposalController.getDefaultContact}',
+				    getFastDocGenDetails: '{!$RemoteAction.RemoteProposalController.getFastDocGenDetails}',
+					removeOldProposal: '{!$RemoteAction.RemoteProposalController.removeOldProposal}',
+					deleteAttachment: '{!$RemoteAction.RemoteProposalController.deleteAttachment}',
+				    setDocumentName: '{!$RemoteAction.RemoteProposalController.setDocumentName}',
+				    doUploadAttachment: '{!$RemoteAction.RemoteProposalController.doUploadAttachment}',
+				    getContacts: '{!$RemoteACtion.RemoteProposalController.getContacts}',
+				    getEmailFolders: '{!$RemoteACtion.RemoteProposalController.getEmailFolders}',
+				    searchEmailTemplates: '{!$RemoteACtion.RemoteProposalController.searchEmailTemplates}',
+				    populateEmailContent: '{!$RemoteACtion.RemoteProposalController.populateEmailContent}',
+				    createTempEmailTemplate: '{!$RemoteAction.RemoteProposalController.createTempEmailTemplate}',
+				    deleteEmailTemplate: '{!$RemoteAction.RemoteProposalController.deleteEmailTemplate}',
+				    getEmailTemplates: '{!$RemoteAction.RemoteProposalController.getEmailTemplates}',
+				    getEmailTemplate: '{!$RemoteAction.RemoteProposalController.getEmailTemplate}',
+					getDefaultEmailTemplate: '{!$RemoteAction.RemoteProposalController.getDefaultEmailTemplate}',
+					getAttachmentPreviewURL: '{!$RemoteAction.RemoteProposalController.getAttachmentPreviewURL}',
+					submitGenerateDoc: '{!$RemoteAction.RemoteProposalController.submitGenerateDoc}'
+
+				};
+
+				RemoteService.setRemoteActions(remoteActions);
+				// Need retURL or other url for redirect. Default is to redirect to '/'.
+				RemoteService.setRedirectLocation('{!JSENCODE($CurrentPage.parameters.retURL)}');
+				// Set flag true to overrides skipLoader flags of RemoteActions and show loader all remoteServiceCalls.
+				RemoteService.setTrackAllRemoteCalls(false);
+			}
+
+            <apex:includeScript value="{!URLFOR($Resource.Apttus_Proposal__Vendor, '/vendor.bundle.js')}"/>
+			<apex:includeScript value="{!URLFOR($Resource.Apttus_Proposal__DocGen, '/adminService.js')}"/>
+
+			var DocGenAdminApp = angular.module('DocGenSetting',['docGen.adminServices']);
+			baseConfig.$inject = ['RemoteServiceProvider','i18nServiceProvider'];
+
+			DocGenAdminApp.constant('systemConstants', systemConstants).config(baseConfig);
+
+			<apex:includeScript value="{!URLFOR($Resource.Apttus_Proposal__DocGen, '/app.js')}"/>
+
+			 var translation = {};
+	         var CustomLabel = {};
+
+	         CustomLabel.CreateNewProposal =  "{!JSENCODE($Label.CreateNewProposal)}";
+	         CustomLabel.ProposalTitle =  "{!JSENCODE($Label.ProposalTitle)}";
+	         CustomLabel.ProposalsTitle =  "{!JSENCODE($Label.ProposalsTitle)}";
+	         CustomLabel.SearchProposals =  "{!JSENCODE($Label.SearchProposals)}";
+	         CustomLabel.GoToProposal =  "{!JSENCODE($Label.GoToProposal)}";
+	         CustomLabel.GoToPricing =  "{!JSENCODE($Label.GoToPricing)}";
+	         CustomLabel.AddMoreProducts =  "{!JSENCODE($Label.AddMoreProducts)}";
+	         CustomLabel.InstalledProducts =  "{!JSENCODE($Label.InstalledProducts)}";
+	         CustomLabel.ChooseTemplateTitle =  "{!JSENCODE($Label.ChooseTemplateTitle)}";
+	         CustomLabel.SelectOutputFormat =  "{!JSENCODE($Label.SelectOutputFormat)}";
+	         CustomLabel.IncludeWatermark =  "{!JSENCODE($Label.IncludeWatermark)}";
+	         CustomLabel.Search =  "{!JSENCODE($Label.Search)}";
+	         CustomLabel.TemplateNameColumn =  "{!JSENCODE($Label.TemplateNameColumn)}";
+	         CustomLabel.Category =  "{!JSENCODE($Label.Category)}";
+	         CustomLabel.SubCategory =  "{!JSENCODE($Label.SubCategory)}";
+	         CustomLabel.Description =  "{!JSENCODE($Label.Description)}";
+	         CustomLabel.Generate =  "{!JSENCODE($Label.Generate)}";
+	         CustomLabel.Apply =  "{!JSENCODE($Label.Apply)}";
+	         CustomLabel.AdditionalDocuments =  "{!JSENCODE($Label.AdditionalDocuments)}";
+	         CustomLabel.AddFromQuote =  "{!JSENCODE($Label.AddFromQuote)}";
+	         CustomLabel.DocumentsToBeMerged =  "{!JSENCODE($Label.DocumentsToBeMerged)}";
+	         CustomLabel.AcceptedDocgenFileFormats =  "{!JSENCODE($Label.AcceptedDocgenFileFormats)}";
+	         CustomLabel.DragAndDrop =  "{!JSENCODE($Label.DragAndDrop)}";
+	         CustomLabel.BrowseToComputer =  "{!JSENCODE($Label.BrowseToComputer)}";
+	         CustomLabel.QuoteAttachments =  "{!JSENCODE($Label.QuoteAttachments)}";
+	         CustomLabel.DocumentName =  "{!JSENCODE($Label.DocumentName)}";
+	         CustomLabel.DocumentType =  "{!JSENCODE($Label.DocumentType)}";
+	         CustomLabel.SizeKB =  "{!JSENCODE($Label.SizeKB)}";
+	         CustomLabel.NoAttachmentsToDisplay =  "{!JSENCODE($Label.NoAttachmentsToDisplay)}";
+	         CustomLabel.AddToMergeDocs =  "{!JSENCODE($Label.AddToMergeDocs)}";
+	         CustomLabel.Preview =  "{!JSENCODE($Label.Preview)}";
+	         CustomLabel.Email =  "{!JSENCODE($Label.Email)}";
+	         CustomLabel.Download =  "{!JSENCODE($Label.Download)}";
+	         CustomLabel.ESignature =  "{!JSENCODE($Label.ESignature)}";
+	         CustomLabel.MergeDocuments =  "{!JSENCODE($Label.MergeDocuments)}";
+	         CustomLabel.Send =  "{!JSENCODE($Label.Send)}";
+	         CustomLabel.SendEmail =  "{!JSENCODE($Label.SendEmail)}";
+	         CustomLabel.To =  "{!JSENCODE($Label.To)}";
+	         CustomLabel.CC =  "{!JSENCODE($Label.CC)}";
+	         CustomLabel.BCC =  "{!JSENCODE($Label.BCC)}";
+	         CustomLabel.SelectEmailFolder =  "{!JSENCODE($Label.SelectEmailFolder)}";
+	         CustomLabel.SelectEmailTemplate =  "{!JSENCODE($Label.SelectEmailTemplate)}";
+	         CustomLabel.Subject =  "{!JSENCODE($Label.Subject)}";
+	         CustomLabel.EmailRecipientError =  "{!JSENCODE($Label.EmailRecipientError)}";
+	         CustomLabel.EmailSentNotification =  "{!JSENCODE($Label.EmailSentNotification)}";
+	         CustomLabel.Attachments =  "{!JSENCODE($Label.Attachments)}";
+	         CustomLabel.Here =  "{!JSENCODE($Label.Here)}";
+	         CustomLabel.PreviewNotSupported =  "{!JSENCODE($Label.PreviewNotSupported)}";
+	         CustomLabel.PleaseClick =  "{!JSENCODE($Label.PleaseClick)}";
+	         CustomLabel.MergeFields = "{!JSENCODE($Label.MergeFields)}";
+	         CustomLabel.ToDownloadIt =  "{!JSENCODE($Label.ToDownloadIt)}";
+	         CustomLabel.MergeCallTimeout =  "{!JSENCODE($Label.MergeCallTimeout)}";
+	         CustomLabel.PreviewBrowserNotSupported =  "{!JSENCODE($Label.PreviewBrowserNotSupported)}";
+			CustomLabel.AttachToEmail =  "{!JSENCODE($Label.AttachToEmail)}";
+			CustomLabel.OutputWillBePDF =  "{!JSENCODE($Label.OutputWillBePDF)}";
+			CustomLabel.MarkProposalAsPresented =  "{!JSENCODE($Label.MarkProposalAsPresented)}";
+			CustomLabel.PresentedApprovalStage =  "{!JSENCODE($Label.PresentedApprovalStage)}";
+			CustomLabel.AddUrl =  "{!JSENCODE($Label.AddUrl)}";
+			CustomLabel.AddURLWarning =  "{!JSENCODE($Label.AddURLWarning)}";
+			CustomLabel.Add =  "{!JSENCODE($Label.Add)}";
+			CustomLabel.Title =  "{!JSENCODE($Label.Title)}";
+			CustomLabel.Url =  "{!JSENCODE($Label.Url)}";
+			CustomLabel.Done =  "{!JSENCODE($Label.Done)}";
+			CustomLabel.AddAnother =  "{!JSENCODE($Label.AddAnother)}";
+			CustomLabel.SubjectLineAndEmailBodyDisabledSelectedTemplate =  "{!JSENCODE($Label.SubjectLineAndEmailBodyDisabledSelectedTemplate)}";
+			CustomLabel.InvalidEmail = "{!JSENCODE($Label.InvalidEmail)}";
+			CustomLabel.DocumentGenerationFailure = "{!JSENCODE($Label.DocumentGenerationFailure)}";
+			CustomLabel.GenericServiceFailureError = "{!JSENCODE($Label.GenericServiceFailureError)}";
+			CustomLabel.MaximumNumberOfCharacters = "{!JSENCODE($Label.MaximumNumberOfCharacters)}";
+			CustomLabel.ShowRecentProposals = "{!JSENCODE($Label.ShowRecentProposals)}";
+			CustomLabel.HideRecentProposals = "{!JSENCODE($Label.HideRecentProposals)}";
+			CustomLabel.NoProposalDocumentCreated = "{!JSENCODE($Label.NoProposalDocumentCreated)}";
+			CustomLabel.NoEmailTemplates = "{!JSENCODE($Label.NoEmailTemplates)}";
+			CustomLabel.PleaseWaitWhileDocumentUploaded = "{!JSENCODE($Label.PleaseWaitWhileDocumentUploaded)}";
+			CustomLabel.PreviewNotSupportedOnDevice = "{!JSENCODE($Label.PreviewNotSupportedOnDevice)}";
+			CustomLabel.View = "{!JSENCODE($Label.View)}";
+			CustomLabel.PreviewNotAvailableForFiles = "{!JSENCODE($Label.PreviewNotAvailableForFiles)}";
+			CustomLabel.DocumentGenerationInProgress =  "{!JSENCODE($Label.DocumentGenerationInProgress)}";
+			CustomLabel.SubmitForGenerate = "{!JSENCODE($Label.SubmitForGenerate)}";
+			CustomLabel.SubmitDocAsyncMessage = "{!JSENCODE($Label.SubmitDocAsyncMessage)}";
+
+	         translation["CustomLabel"] = CustomLabel;
+
+	         if (typeof angular !== "undefined") {
+	            var labelConfig = function (i18nServiceProvider) {
+	                i18nServiceProvider.setCustomLabel(CustomLabel);
+	            };
+
+	            labelConfig.$inject = ['i18nServiceProvider'];
+	            DocGenAdminApp.config(labelConfig);
+
+	        }
+
+		</script>
+	</body>
+
+</apex:page>

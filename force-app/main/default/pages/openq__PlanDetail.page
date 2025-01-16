@@ -1,0 +1,2087 @@
+<apex:page standardController="openq__Engagement_Plan__c" extensions="openq.PlanDashboard" showHeader="true" sidebar="false" standardStylesheets="false" tabStyle="Planning__tab">
+    
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"> </apex:includescript>
+    <apex:includescript value="{!URLFOR($Resource.openq__StylesScriptsImages,'scripts/jquery.tablesorter.min.js')}"> </apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.js"></apex:includescript>
+    
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/f-combobox.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/common-functions.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/ui.combobox.r.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/jquery-autoSuggest2.js')}"/>  
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/jquery.tokeninput.js')}"/>        
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/jquery.multiselect.min.js')}"/>
+          
+          
+    <script src="../../soap/ajax/26.0/connection.js" type="text/javascript"></script>
+    <script src="../../soap/ajax/26.0/apex.js" type="text/javascript"></script>
+     
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/common.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style2.css')}"/>    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/autoSuggest.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/token-input.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/token-input-facebook.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/token-input-mac.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/jquery.multiselect.css')}"/>
+    
+    
+    <!--[if lte IE 8]>
+        
+        <style>
+            #rightContainer {
+                 max-width: 970px !important;
+             }         
+             
+             #rightContainer table {
+               table-layout: fixed;
+             }
+             
+             #rightContainer td {
+               overflow: auto;
+             }
+             
+        </style>
+                                                        
+     <![endif]-->
+     
+    <script type="text/javascript">
+    
+        
+        function uiCombobox_( selector, callback ) {
+            if ( typeof selector == 'function' ) {
+                callback = selector;
+                selector = null;
+            }
+            
+            selector = selector || '.ui-combobox';
+            
+            jQuery( selector )
+                .combobox( { html: true, addClasses: 'ui-widget-combobox input-combobox' } )
+                .siblings( '.ui-autocomplete-input' )
+                .autocomplete( 'option', 'position', { my: "right top", at: "right bottom" } )
+                .autocomplete( { minLength : 0 } )
+                .autocomplete( 'widget' )       
+                .addClass( 'ui-widget-combobox-list' )
+                
+            ;
+            
+            jQuery(selector).focus(function(){
+                jQuery(selector).autocomplete("search","");
+            });
+        }   
+    
+        $.noConflict();
+        // Code that uses other library's $ can follow here.
+        
+        function insertModalBkgs() {
+            
+            jQuery('#contentWrapper').prepend('<div id="popUpBkg2" class="popUpBkg" style="z-index: 1500px;"></div>');
+            jQuery('#contentWrapper').prepend('<div id="popUpBkg" class="popUpBkg"></div>');
+        }
+      
+        jQuery(document).ready(function() {
+                                    
+            refreshTabs(); 
+            insertModalBkgs();
+            if('{!JSENCODE(tabId)}' != ''){
+                 selectTab('{!JSENCODE(tabId)}')
+            }
+            if ('{!createNewPlan}' == 'true') {
+                openNewPlanPopup();          
+            }
+            
+            if ('{!currentPlan.Id}' != '') {
+                refreshColumnSorting();
+            }
+        });
+
+        var madeChanges = false;
+        window.onbeforeunload = function() {
+            if (madeChanges) {
+                return 'Changes have not been saved.';
+            }          
+        }
+        
+        function refreshColumnSorting() {
+            jQuery( '.tablesorter' ).tablesorter( { cssHeader : 'tableHeader', widgets: ['zebra']});
+        }
+        
+        function refreshTabs() {
+            jQuery( '#tabs' ).tabs({
+                create: function( event, ui ) {
+                    jQuery('#tabs').show();
+                },
+                activate: function( event, ui ) {
+                    jQuery( '.tablesorter' ).trigger('sorton', [[]]);                   
+                }
+            });
+            
+            refreshProgressBars();                                              
+        }
+        
+        function refreshProgressBars() {
+        
+            jQuery( ".progressbar" ).progressbar();
+            jQuery( ".progressbar" ).each(function(){
+                var myPer = parseInt(jQuery(this).data('percent'), 10);
+                jQuery(this).progressbar("option", "value", myPer);
+            });
+        }
+        
+        function deletePlan(){
+                
+            if(confirm('Are you sure you want to Delete this {!$Label.openq__plan_label_singular}?')){
+                                
+                deletePlanApex();               
+            }
+            
+            return false;
+        }
+        
+        function enableEditMode() {
+                                    
+            var buttonVal = jQuery('#detailsEditButton').attr('value');
+            
+            if (buttonVal == 'Edit') {
+            
+                jQuery('#detailsEditButton').attr('value', 'Cancel');           
+                disableNonSelectedTabs();       
+                enableEditModeApex();                               
+            }
+            else if (buttonVal == 'Cancel') {
+                
+                disableEditModeApex();
+            }       
+        }
+        
+        function editModeEnabled() {
+            
+         
+            
+            refreshTabs();
+            
+            jQuery('.multiSelectPicklistRow select').css('max-width', '140px');
+            jQuery('dl').css('vertical-align', 'middle');
+            
+            loadDatePickers();
+            jQuery('#tabs-2 option[value=""]').remove();                        
+            loadCombos();
+            enableButton('#detailsSaveButton');         
+            
+            jQuery('.ui-tabs-panel input').click(function(){
+                    
+                 jQuery(this).select();
+            });
+            jQuery(".multiSelectPL_OP").hide();
+            jQuery('.multiSelectPicklistTable').css('display','none');
+ 
+            jQuery('.input-combobox').bind('keydown',loadDependencies)
+            jQuery('.input-combobox').bind('focus',loadDependencies)
+            jQuery('.input-combobox').bind('blur',loadDependencies)
+            jQuery('.input-combobox').on('autocompleteselect',loadDependencies);
+            jQuery(".multiSelectPL_OP select").multiselect({
+                height: "auto", width: "100%",
+                noneSelectedText : "None selected",
+                selectedText : function(numCheck, totalNum, arrCheck) {
+                
+                    var text = '';
+                    for (var i=0; i < arrCheck.length; i++) {
+                        text += arrCheck[i].value + ', ';
+                    }                 
+                    if (text.indexOf(', ') >= 0) {
+                        text = text.substring(0, text.length - 2);            
+                    }           
+                    
+                    if (text.length > 40) {
+                        text = text.substring(0, 40) + '...';                    
+                    }
+                    
+                    return text;            
+                },                
+                create: function() { jQuery(".multiSelectPL_OP").show() }
+            }); 
+            jQuery(".multiSelectPL_OP").each(function(){
+             var values = jQuery('.defautlValues',this).val().split(';')
+                jQuery('select',this).multiselect('widget').find(":checkbox").each(function(){
+                   if(jQuery.inArray(this.value,values)!=-1 && !this.checked){
+                        this.click();
+                    }
+                 })   
+            })
+            setTimeout(function() {
+                jQuery('button.ui-multiselect').css('width', '100%');
+                jQuery('div.ui-multiselect-menu').css('width', 'inherit !important');
+            },15);
+            
+            madeChanges = true;
+            
+            // loadFirstVals();
+        }
+     
+        function loadFirstVals(){
+            jQuery('.ui-combobox-container input').each(function(){
+            jQuery(this).prev().val(this.value);
+            jQuery(this).prev().change(); 
+            jQuery('.ui-combobox-container select:visible').each(function(){
+                    var parent = jQuery(this).parent();
+                    jQuery('select:visible').change();        
+                    jQuery('select:visible',parent).combobox( { html: true, addClasses: 'ui-widget-combobox input-combobox' } )
+                        .siblings( '.ui-autocomplete-input' )
+                        .autocomplete( 'option', 'position', { my: "right top", at: "right bottom" } )
+                        .autocomplete( { minLength : 0 } )
+                        .autocomplete( 'widget' )       
+                        .addClass( 'ui-widget-combobox-list' );
+                
+                    jQuery('.input-combobox',parent).change(loadDependencies);
+                    jQuery('.input-combobox',parent).focus(loadDependencies);
+                    jQuery('.input-combobox',parent).blur(loadDependencies); 
+                    jQuery('.input-combobox',parent).mouseout(loadDependencies);  
+                    
+                    jQuery('.input-combobox',parent).on('autocompleteselect',loadDependencies);
+                            
+                  
+                })
+ 
+    
+            jQuery(".multiSelectPL_OP").show()         
+            jQuery('.multiSelectPicklistTable').css('display','none');
+            jQuery(".multiSelectPL_OP select").each(function(){
+                    this.value='';
+                    if(jQuery('.ui-multiselect',this).size()==0){
+                        jQuery(this).multiselect({
+                        height: "auto", width: "100%",
+                        noneSelectedText : "None selected",
+                        selectedText : function(numCheck, totalNum, arrCheck) {
+                        
+                            var text = '';
+                            for (var i=0; i < arrCheck.length; i++) {
+                                text += arrCheck[i].value + ', ';
+                           }                 
+                            if (text.indexOf(', ') >= 0) {
+                                text = text.substring(0, text.length - 2);            
+                            }           
+                            
+                            if (text.length > 40) {
+                                text = text.substring(0, 40) + '...';                    
+                            }
+                            
+                            return text;            
+                        },                
+                        create: function() { jQuery(".multiSelectPL_OP").show() }
+                        })
+                    }
+                })
+                
+            }); 
+  
+        }
+         
+        function loadDependencies(ele){  
+                var lastVlObj = jQuery.data(ele.currentTarget,'lastValue');
+         
+                if(!lastVlObj || (lastVlObj && lastVlObj.lastValue!=jQuery(ele.currentTarget).val())){
+                    
+                    jQuery(this).prev().val(this.value);
+                    jQuery(this).prev().change();    
+                
+                    jQuery('.ui-combobox-container select:visible').each(function(){
+                        var parent = jQuery(this).parent();
+                        jQuery('select:visible',parent).change();        
+                        jQuery('select:visible',parent).combobox( { html: true, addClasses: 'ui-widget-combobox input-combobox'} )
+                            .siblings( '.ui-autocomplete-input' )
+                            .autocomplete( 'option', 'position', { my: "right top", at: "right bottom" } )
+                            .autocomplete( { minLength : 0 } )
+                            .autocomplete( 'widget' )       
+                            .addClass( 'ui-widget-combobox-list' );
+                    
+                      
+                            jQuery('.input-combobox',parent).bind('keydown',loadDependencies);
+                            jQuery('.input-combobox',parent).bind('focus',loadDependencies);    
+                            jQuery('.input-combobox',parent).bind('blur',loadDependencies);      
+                            jQuery('.input-combobox',parent).mouseout(loadDependencies); 
+                            jQuery('.input-combobox',parent).on('autocompleteselect',loadDependencies); 
+                      
+                    })
+ 
+                    jQuery(".multiSelectPL_OP").show()         
+                    jQuery('.multiSelectPicklistTable').css('display','none');
+                    jQuery(".multiSelectPL_OP select").each(function(){
+                                this.value='';
+                                if(jQuery('.ui-multiselect',this).size()==0){
+                                    jQuery(this).multiselect({
+                                    height: "auto", width: "100%",
+                                    noneSelectedText : "None selected",
+                                    selectedText : function(numCheck, totalNum, arrCheck) {
+                                    
+                                        var text = '';
+                                        for (var i=0; i < arrCheck.length; i++) {
+                                            text += arrCheck[i].value + ', ';
+                                        }                 
+                                        if (text.indexOf(', ') >= 0) {
+                                            text = text.substring(0, text.length - 2);            
+                                        }           
+                                        
+                                        if (text.length > 40) {
+                                            text = text.substring(0, 40) + '...';                    
+                                        }
+                                        
+                                        return text;            
+                                    },                
+                                    create: function() { jQuery(".multiSelectPL_OP").show() }
+                                })
+                            }
+                
+                    })                  
+                } 
+                jQuery.data(ele.currentTarget,'lastValue',{lastValue:jQuery(ele.currentTarget).val()})
+        }
+        function editModeDisabled() {
+
+        
+            disableButton('#detailsSaveButton');            
+            jQuery('#detailsEditButton').attr('value', 'Edit');         
+            madeChanges = false;
+            
+            refreshTabs();
+            enableTabs();
+            jQuery('dt').css('vertical-align', 'baseline');
+            jQuery('dt').css('valign', 'baseline');
+        }
+        
+        function enableButton(sel) {
+            jQuery(sel).removeClass('buttonDisabled');
+            jQuery(sel).removeAttr('disabled');
+        }
+        
+        function disableButton(sel) {
+            jQuery(sel).addClass('buttonDisabled');
+            jQuery(sel).attr('disabled', true);
+        }
+        
+        
+        function selectTab(index) {
+            jQuery( '#tabs' ).tabs('option', {selected : index, active : index});
+        }
+        
+        function disableNonSelectedTabs() {
+            
+            var selTabIndex = jQuery('#tabs [aria-hidden="false"]').index() - 1;
+            var tabs = jQuery('#tabs [role="tabpanel"]').size();
+            var toDisable = [];
+            for (var i=0; i < tabs; i++) {
+                
+                if (i != selTabIndex) {
+                    toDisable.push(i); 
+                }
+            }
+            
+            jQuery('#tabs').tabs( "option", "disabled", toDisable);
+        }
+        
+        function enableTabs() {
+            
+            jQuery('#tabs').tabs( "option", "disabled", []);
+        }
+        
+        function loadDatePickers() {                
+                                
+            jQuery( ".datepicker" ).datepicker({
+                showOn: "both",
+                buttonImage: "{!URLFOR($Resource.openq__StylesScriptsImages,'img/datepicker-ico.png')}",
+                buttonImageOnly: true
+            });
+        }
+        
+        function viewRecord(nameObject, recordId){
+              
+              var tabIndex = jQuery('#tabs [aria-hidden="false"]').index() - 1;
+              viewRecordApex(nameObject, recordId, tabIndex);
+        }
+        
+        function editRecord(nameObject, recordId){
+              var tabIndex = jQuery('#tabs [aria-hidden="false"]').index() - 1;
+              editRecordApex(nameObject, recordId, tabIndex);
+        }
+                
+        function loadCombos() {
+            uiCombobox_('.ui-combobox-container select');
+            
+            jQuery('.ui-combobox-container select').each(function(i, e) {
+                             
+                var selectElem = jQuery(this);
+                var val = selectElem.val();
+                var inputElem = selectElem.next('input');
+                inputElem.val(val);         
+            });
+        }
+            
+        
+        function openNewPlanPopup(){
+        
+            jQuery('#popUpBkg').css('display', 'block');
+            jQuery('#popUpNewPlan').css('display', 'block');
+        }
+        
+        function closeNewPlanPopup(){
+        
+            jQuery('#popUpBkg').css('display', 'none');
+            jQuery('#popUpNewPlan').css('display', 'none');
+        }
+        
+        function closeOwnerPopup(){
+            jQuery('#popUpBkg').css('display', 'none');
+            jQuery('#popUpOwner').css('display', 'none'); 
+            
+            jQuery('.planOwnerSpan').each(function() {
+                jQuery(this).html(getOwners());
+            });
+        }
+        
+        function cancelOwnerPopup(){
+        
+            jQuery('#popUpBkg').css('display', 'none');
+            jQuery('#popUpOwner').css('display', 'none');
+        }
+        
+        function saveDetails() {
+        
+            var ownerIds = jQuery("input[id$=as-values-owners]").val(); 
+            saveDetailsApex(ownerIds);
+        }
+        
+        function getOwners() {
+        
+            var ownerCSV = '';
+            
+            jQuery('#as-selections-owners .as-selection-item').each(function() {
+            
+                var text = jQuery(this).html();
+                var indx = text.indexOf('</a>');
+                
+                if (indx > 0) {
+                    var ownerName = text.substring(indx + 4);
+                    ownerCSV += ownerName + ', ';
+                }               
+            });
+            
+            if (ownerCSV != '') {
+                ownerCSV = ownerCSV.substring(0, ownerCSV.length - 2);
+            }
+        
+            return ownerCSV;
+        }
+        
+        function deleteRecord(objectName, recordId, text) {
+            
+            loadStart();
+            
+            text = text == undefined ? '' : text;           
+            if (objectName == '{!namespace}Participant__c') {
+            
+                var r = confirm('Remove \"' + text + '\" as a participant?');
+                if (r == true) {
+                    deleteRecordApex(objectName, recordId);
+                }
+                else {
+                    loadComplete();
+                }
+            } 
+            else {
+                deleteRecordApex(objectName, recordId);
+            }
+                        
+        }
+        
+        // add busy cursor
+        function loadStart() {
+            jQuery('body').addClass('waiting');
+        }
+        
+        // remove busy cursor
+        function loadComplete() {       
+            jQuery('body').removeClass('waiting');
+        }
+        
+        function closeParticipantPopup() {
+            jQuery('#popUpBkg').css('display', 'none');
+            jQuery('#popUpParticipant').css('display', 'none'); 
+            loadComplete();
+            resetAutoSuggest('participants_list_field_container');          
+        }
+        
+        function printSummary(){
+            
+            var $summaryTab = jQuery('#tabs-1');
+            var isSummaryTabOn = $summaryTab.css('display') == 'block';
+            
+            if(!isSummaryTabOn){
+                
+                $summaryTab.css('position', 'absolute');
+                $summaryTab.css('display', 'block');
+                $summaryTab.css('visibility', 'hidden');
+            }
+            
+            window.print();
+            
+            if(!isSummaryTabOn){
+
+                $summaryTab.css('position', 'static');          
+                $summaryTab.css('display', 'none');
+                $summaryTab.css('visibility', 'visible');               
+            }
+        }
+        
+        function saveParticipantPopup() {
+            
+            loadStart();
+            
+            var participantIds = jQuery("#participants_list_field").tokenInput("get"); 
+            var result = ',';
+            if(participantIds.length > 0){
+                for (var i = 0; i < participantIds.length; i++) {
+                    result += participantIds[i].Id+',';
+                }
+                addParticipantsApex(result);
+            } else {
+                return;
+            }
+        }
+        
+        function addRecord(sel) {
+                        
+            if (sel == '{!namespace}Participant__c') {
+            
+                openParticipantPopup();
+            }
+            else if (sel == '{!namespace}Activities_and_Objectives__c') {
+            
+                openActivitiesPopup();
+            }
+            else {
+            
+                var tabIndex = jQuery('#tabs [aria-hidden="false"]').index() - 1;
+                addRecordApex(sel, tabIndex);
+            }           
+        }
+        
+        function filterParticipants() {
+            loadStart();
+            setInputsDisabled(true);
+            filterParticipantsApex();
+        }
+        
+        function setInputsDisabled(disabled) {        
+            jQuery( ".datepicker" ).datepicker('option', 'disabled', disabled);
+            if (disabled) {
+                jQuery( "[id$='actData'] [id$='status']").attr('disabled', 'disabled');
+            }
+            else {
+                jQuery( "[id$='actData'] [id$='status']").removeAttr('disabled');
+                jQuery('[id$="actData"] [id$="status"] option[value=""]').remove();
+            }
+            
+        }
+        
+        function addActivityAndObjective(){
+            
+            var error = false;
+            jQuery('.assignables').each(function() { 
+               
+               if (jQuery(this).html() == null || jQuery(this).html() == '') {                 
+                   error = true;
+               }               
+            });
+            if (error) {
+                alert('One or more participants do not have a user assigned to them.');
+                return;
+            }
+            
+            if(jQuery('[id$="actParticipants"] [type="checkbox"]:enabled:checked:not([id$="selectAllCheckBox"])').size() == 0){
+            
+                alert('Please add Participants to the Plan first.');
+            
+            }else {
+            
+                addActivityAndObjectiveApex();
+            }
+        };  
+           
+        var allSelected = false;           
+        function selectAllParticipants() {
+            
+            loadStart();
+            
+            jQuery('[id$="actParticipants"] [type="checkbox"]:enabled:not([id$="selectAllCheckBox"])').prop('checked', !allSelected);            
+            allSelected = !allSelected;
+            
+            selectAllParticipantsApex();
+        }           
+        
+        function openAssignToPopup(recordId) {            
+            loadStart();
+            if (recordId != '') {            
+                
+                filterAssignToUsersApex(recordId);
+            }
+        }
+        
+        function onOpenAssignToPopup() {        
+                        
+            loadDatePickers();                        
+                        
+            jQuery('#popUpBkg2').css('display', 'block');
+            jQuery('#usersdiv').css('display', 'block');
+            
+            loadComplete();
+        }
+       
+        function closeAssignToPopup() {
+            jQuery('#popUpBkg2').css('display', 'none');
+            jQuery('#usersdiv').css('display', 'none');
+        }      
+        
+        var selectedUserId;
+        function selectAssignToUser(userId) {  
+            
+            selectedUserId = userId;  
+            doneAssignToUser();                                                
+        }
+        
+        function doneAssignToUser() {             
+            
+            if (selectedUserId != '' || jQuery('[id$=assignedUser]').val() != '') {
+                loadStart();      
+                selectAssignToUserApex(selectedUserId); 
+            }
+            else {
+                alert('Please select a user.');
+            }            
+                   
+            return false;
+        }
+        
+        function onSelectAssignToUser() {
+        
+            loadDatePickers();
+            loadComplete();
+            closeAssignToPopup();
+        }
+        
+        function resetActivityAndObjective() {
+        
+            loadStart();
+            resetActivityAndObjectiveApex();
+        }
+        
+        function openActivitiesPopup(){ 
+            
+            jQuery('[id$="actData"] [id$="status"] option[value=""]').remove();
+            jQuery('#popUpBkg').css('display', 'block'); 
+            jQuery('#popUpActObj').css('display', 'block');
+            loadDatePickers(); 
+        }    
+        
+        function closeActivitiesPopup() {
+            jQuery('#popUpBkg').css('display', 'none');
+            jQuery('#popUpActObj').css('display', 'none'); 
+            
+            refreshColumnSorting();
+            
+            loadComplete();
+        }
+        
+      
+    </script>     
+    <apex:outputPanel id="ownerScript">
+        <script>
+            function openOwnerPopup(){
+                
+                var data = eval("{!JSENCODE(userJSON)}");
+                var pref = eval("{!JSENCODE(preFill)}");
+                jQuery('#owners_list_field_container').html('<input type="text" name="owners_list" id="owners_list_field" />');
+                
+                jQuery('#owners_list_field')
+                    .autoSuggest(data, {asHtmlID : "owners", selectedValuesProp : "Id", 
+                                        selectedItemProp: "Name", searchObjProps: "LastName, FirstName",
+                                        minChars: "2", startText: "", preFill : pref});
+            
+                jQuery('#popUpBkg').css('display', 'block');
+                jQuery('#popUpOwner').css('display', 'block'); 
+            }
+            var dataPart;           
+        </script>
+    </apex:outputPanel>
+
+    <apex:outputPanel id="participantScript">
+        <script type="text/javascript">
+
+
+            function openParticipantPopup(){
+                jQuery('#popUpBkg').css('display', 'block'); 
+                jQuery('#popUpParticipant').css('display', 'block');            
+
+                jQuery('#participants_list_field').tokenInput(test, {propertyToSearch: 'Name'});
+                function test(term, callback){
+                    Visualforce.remoting.Manager.invokeAction(
+                        '{!$RemoteAction.PlanDashboard.getOrgKOLsToAdd}',
+                        term,
+                        function(result, event){
+                            if (event.status) {
+                                callback(result);
+                            } else if (event.type === 'exception') {
+                                console.log("exception error.message: " + event.message + " error.where: " + error.where + " end");
+                            } else {
+                                console.log("error.message: " + event.message + " error.where: " + error.where + " end");
+                            }
+                        },
+                        {escape: true}
+                    );
+                }
+            }    
+
+            function resetAutoSuggest(id) {
+                jQuery('#'+id).html('');                
+                jQuery('#'+id).html('<input type="text" name="participants_list" id="participants_list_field" />');         
+            }
+        </script>
+    </apex:outputPanel>
+       
+    <style>
+        
+        @media print{
+            
+            @page { size: landscape; }
+            body * { visibility: hidden;}
+            body{    background: none repeat scroll 0 0 #FFFFFF !important;}
+            .toPrint * { visibility: visible; }
+            .bPageHeader, #globalHeaderBar, #topHeader, .ui-widget-header { display: none; }
+            .hideOnPrint{
+                visibility: hidden !important;
+            }
+            .doNotDisplayOnPrint{
+                display:none !important;
+            }
+        }
+        
+        *:focus { outline: none; }
+        
+        td{
+        
+            font-family: Verdana, sans-serif !important;
+        }
+        
+        .progressbar {
+            height:12px;
+            width: 174px;
+            float:right;
+            margin-top: 4px;
+        }
+        
+        .progressbar #caption {
+            font-size: 8px;
+            font-weight: bold;
+            margin-top: -4px;
+            margin-left: 78px;
+            position: absolute;
+        }
+        
+        .activityContainer {
+        
+            padding-bottom: 15px;
+        }
+        
+        .ui-progressbar-value.ui-widget-header {
+            background-color: #b2ca45;
+        }
+        
+        .waiting {
+            cursor: wait !important;
+        }
+    
+        #bodyTable {
+            background-color: #E6E6E5;
+        }   
+        
+        #rightContainer {
+            min-width: 665px;
+            float: none;
+            margin-right: 0px;
+            margin-left: 20px;
+            font-family: Verdana, sans-serif;   
+        }
+        
+        #popUpBkg2 {
+          z-index: 1500;
+        }
+        
+        .ico {
+            background-position: -16px -288px !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: -35px !important;
+            height: 4px !important;
+            width: 7px !important;
+            margin-top: -2px !important;
+        }
+        
+        .settings {
+            width: 16px;
+            height: 16px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/cogsprite.png')});                            
+        }
+        
+        .settings:hover{
+        
+            background-position: 0px -20px;
+            cursor: pointer;
+        }
+        
+         .newObject {
+    
+            background-repeat: no-repeat;
+            background-size: 16px;
+            height: 16px;
+            width: 16px;
+            float:right;
+            background-color: transparent;
+            margin-right: 6px;       
+        }
+        
+        .newObject.easyAdd {                    
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/plus.png')});
+        }
+        
+        .newObject.easyAdd:hover {
+             cursor: pointer;
+        }
+        
+        #leftRight {
+            width: 15px;
+            height: 50px;
+            right: 0px;
+            top: 0px;
+            position: absolute;
+            border-radius: 0 5px 5px 0;
+            -webkit-border-radius: 0 5px 5px 0;
+            -moz-border-radius: 0 5px 5px 0;             
+            float: left;
+        }
+        
+        .popUpBkg {
+        
+            top: 0;
+            left: 0;
+            height: 100%; 
+            width: 100%; 
+            display: none; 
+            background-color: black;            
+            position: fixed;
+            z-index: 1000;
+            
+            opacity: 0.6;
+            filter: alpha(opacity=60); /* For IE8 and earlier */
+        }
+        
+        .popUpDiv {
+        
+            position: absolute;
+            left: 50%; 
+            top: 30%; 
+            width: 200px; 
+            height: 200px;      
+            display: none;      
+            
+            margin-left: -100px;
+            margin-top: -100px;
+            
+            z-index: 1100;  
+        }
+        
+        #groupByDiv, #innerDiv, #newPlanDiv, #usersdiv {
+        
+            top: 30%;
+            border-radius: 5px;
+            background-color: white;
+            border-width: 2px;
+            border-style: solid;
+            z-index: 9999;
+            left: 50%;
+            padding:10px;
+            position: fixed;            
+        }
+        
+        #groupByDiv {
+            width: 300px;
+            margin-left: -150px;
+        }
+        
+        #innerDiv {        
+            width: 500px;
+            margin-left: -250px;
+        }
+        
+        #newPlanDiv {
+        
+            width: 400px;
+            margin-left:-150px;
+        }
+        
+        .popUpContainers {
+            
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        
+        .widgetHeader {
+    
+            font-weight: bold;
+            padding-bottom: 10px;
+        }
+        
+        .rich-tabpanel-content {
+            border: none;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        
+        [id$='theTabPanel'] {
+            margin-top: -43px;
+        }
+        
+        .summaryHeader {
+            height: 24px;
+            border-bottom: 1px solid #245C8A;
+            margin-bottom: 20px;
+        }
+        
+        .detailsContainer {
+            padding: 1% 0 1% 0;
+            font-family: Verdana, sans-serif;
+            color: rgb(85, 85, 85);
+        }
+        
+        .detailsContainer dt {
+            white-space: nowrap;            
+        }
+        
+        .summaryRelListsContent {
+            padding-bottom: 15px;
+        }
+        
+        .headerSortDown .sort_arrow {
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            background-position: 3px -8px;
+            background-repeat: no-repeat;
+            background-image: url({!URLFOR($Resource.openq__StandaloneCommonImages,'img/arrowUpDown2.png')});          
+        }
+        
+        .headerSortUp .sort_arrow {
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            background-position: 3px 8px;
+            background-repeat: no-repeat;
+            background-image: url({!URLFOR($Resource.openq__StandaloneCommonImages,'img/arrowUpDown2.png')});          
+        }
+        
+        .btnOverride, .btnOverride:hover{
+        
+             font-style: Verdana, sans-serif !important; 
+             color: #FFFFFF !important; 
+             text-decoration: none !important;
+             background-position: 0 0 !important;
+        }
+        
+        a:hover {
+            text-decoration: none !important;
+        }
+        
+        img.ui-datepicker-trigger {
+            margin-left: -16px;
+            cursor: pointer;
+        }
+        
+        .ui-datepicker-next span {
+            width: 20px;
+            height: 20px;
+            background-position: 0 0;
+            cursor: pointer;
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/datepicker-arrows.png')});            
+        }
+        
+        .buttonDisabled {
+            cursor: default !important;
+            opacity: 0.5;
+            filter: alpha(opacity=50); /* For IE8 and earlier */
+        }
+                
+        .ui-datepicker-prev span {
+            width: 20px;
+            height: 20px;
+            background-position: 0 -20px;
+            cursor: pointer;
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/datepicker-arrows.png')});
+        }
+        
+        .ui-widget-combobox + .ui-button .ui-icon {
+        
+            background: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/main-nav-sprite.png')}) no-repeat 0 -368px;
+        }
+        
+        .lookupIcon {
+            
+            position: absolute;
+            cursor: pointer;            
+        }
+        
+        .lookupIcon:hover {
+            background-position: top right;
+        }
+        
+        /*  tabs styles */
+        
+        .ui-tabs-nav.ui-helper-reset.ui-helper-clearfix.ui-widget-header.ui-corner-all {
+        
+            position: absolute;
+            margin-top: -51px;
+            background: none;
+            border: none;
+        }
+        
+        .ui-state-default.ui-corner-top {
+            background-color: #fafafa;
+        }
+        
+        #tabs {
+            border: none;
+            background-color: #fafafa;
+            display: none;
+        }
+        
+        .tableHeader {
+            cursor: pointer;
+        }
+        
+        .fright {
+            float: right;
+        }
+        
+        .columnData {
+            float: left;
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+        
+        .actionLink {
+            cursor: pointer;
+            color: rgb(48, 126, 188) !important;
+            text-decoration: underline;
+        }
+        
+        .actionLink:hover {
+            color: #015ba7 !important;
+            text-decoration: underline !important;
+        }
+        
+        
+        .ui-tabs-active.ui-state-active {
+            background-color: #b2ca45;          
+        }
+        
+        .ui-tabs-active.ui-state-active a {
+            color: white;
+        }
+        
+        .tablesorter .odd {
+            background-color: #E5E2FF;
+        }
+        
+        .oddRow {
+            background-color: #E5E2FF;
+        }
+        
+        .underlined {
+            border-bottom: 1px solid #245C8A;
+        }
+        
+        .assignToTr:hover {
+        
+          background-color: #CECBE6;
+          cursor: pointer;
+        }
+        
+        .basicPadding {
+          padding: 5px;
+        }
+        
+        .ui-multiselect-header {
+            background-color: #b2ca45;
+        }
+        
+        .ui-multiselect-header a  {
+            color: #FFFFFF;       
+        }
+        
+        .ui-multiselect-header a:hover {
+            color: #FFFFFF;     
+            text-decoration: underline !important;  
+        }
+        
+        .multiSelectPL_OP {
+            display: none;
+        }
+        
+        #usersdiv .lookupIcon {
+        
+            position: relative !important;
+        }
+        
+        .assignToTr [id$=assignedUser] {
+            left : -30px;
+            width : 0;
+            position : fixed;
+        } 
+        
+        .assignToTr [id$=assignedUser_mlktp] {
+            
+            display : none;
+        }   
+        
+        .ui-datepicker-next span {
+            background-position: -30px 0;
+            cursor: pointer;
+            height: 20px;
+            width: 20px;
+        }
+        
+        .ui-datepicker-prev span {
+            background-position: -98px 0;
+            cursor: pointer;
+            height: 20px;
+            width: 20px;
+        }
+        
+        .printIcon{
+            cursor:pointer;
+            margin-right:4px;
+            width:16px;
+            height:16px;
+            background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/print-icon.png')}) 
+        }
+        
+        .iconsPanel{
+        
+            float: right; 
+            width: 80px; 
+            height: 0px; 
+            margin-top: -20px; 
+            border-radius: 5px;" 
+        }
+        
+        .planIcon{
+        
+            float:right;
+        }
+        
+        .icons{
+        
+            margin-top: -6px !important;
+        }
+        
+        .printPanel{
+        
+            margin-right: 14px;
+            margin-left: 10px;
+        }
+        
+        .btnCancelCustom{
+    
+            display: block;
+            color: #ffffff !important;
+            background-position: 0 0 !important;
+            background-image: -webkit-gradient( linear, left top, left bottom, from( #D35654 ), to( #BC3633 ) ) !important;
+            background-image: -webkit-linear-gradient( top, #D35654, #BC3633 ) !important;
+            background-image: -moz-linear-gradient( top, #D35654, #BC3633 ) !important;
+            background-image: -ms-linear-gradient( top, #D35654, #BC3633 ) !important;
+            background-image: -o-linear-gradient( top, #D35654, #BC3633 ) !important;
+            background-image: linear-gradient( top, #D35654, #BC3633 ) !important;
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#D35654', endColorstr='#BC3633' ) !important;
+            cursor: pointer;
+            border: 1px solid #933834;
+            padding: .2em 1em .3em 1em !important;
+            text-decoration: none !important;
+            vertical-align: baseline;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px !important;
+            font-weight: normal !important;
+            border-radius: 5px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        
+        .btnCancelCustom:hover {
+            background-image: -webkit-gradient( linear, left top, left bottom, color-stop(0%, #D35654), color-stop(55%, #BC3633), color-stop(100%, #D35654) ) !important;
+            background-image: -webkit-linear-gradient( top, #D35654 0%, #BC3633 55%, #D35654 100% ) !important;
+            background-image: -moz-linear-gradient( top, #D35654 0%, #BC3633 55%, #D35654 100% ) !important;
+            background-image: -ms-linear-gradient( top, #D35654 0%, #BC3633 55%, #D35654 100% ) !important;
+            background-image: -o-linear-gradient( top, #D35654 0%, #BC3633 55%, #D35654 100% ) !important;
+            background-image: linear-gradient( top, #D35654 0%, #BC3633 55%, #D35654 100% ) !important;
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#D35654', endColorstr='#BC3633' ) !important;
+        }
+        
+        #actionButtons{
+        
+            width:80px;
+            float:right;
+            margin: -15px 15px 0 0;
+        }
+        
+    </style>
+    
+    <apex:outputPanel id="mainContainer" styleClass="default clearFix order-sm layout-order" layout="block">
+        <apex:pageMessages id="pageMsgs"/>
+        <div id="topHeader">
+            <apex:outputPanel id="breadcrumbs" layout="block" styleClass="breadcrumbs" style="padding-bottom: 20px;">
+                You're here:&nbsp;
+                <apex:outputLink value="{!$Page.openq__PlanDashboard}">{!$Label.openq__plan_label}</apex:outputLink>
+                / <apex:outputText value="{!planNameText}"/>                
+            </apex:outputPanel>         
+            <div id="iconsPanel" class="wi-gen iconsPanel">
+                <div id="icons" class="icons">
+                    <div class="planIcon printPanel" id="printFeature" title="Print">
+                        <div class="printIcon" onclick="printSummary();"></div>
+                    </div>
+            
+                    <div class="planIcon" title="New {!$Label.Plan_Label_Singular}">
+                        <apex:outputLink value="{!$Page.openq__PlanDetail}?newPlan=1" styleClass="newObject easyAdd" />
+                    </div>
+                 </div>                 
+            </div>
+            <div id="actionButtons">
+                <apex:outputPanel rendered="{!$Objecttype.openq__Engagement_Plan__c.deletable}">
+                    <a href="#" class="btnCancelCustom" onclick="deletePlan();">Delete {!$Label.Plan_Label_Singular}</a>
+                </apex:outputPanel> 
+            </div>
+        </div>
+
+        <apex:form >        
+            <div id="rightContainer" class="wi-gen gr b-card shado conc">
+                <apex:outputPanel id="rightContentPanel">               
+                    
+                    <!-- Plan detail tabbed View -->
+                    <apex:outputPanel id="tabbedPanel">                     
+                        <div id="tabs">
+                            
+                            <!-- Tab headers -->
+                            <ul>
+                            
+                                <!-- Fixed tabs -->
+                                <li><a href="#tabs-1">Summary</a></li>
+                                <li><a href="#tabs-2">Details</a></li>
+                                
+                                <!-- Dynamic tabs (Category groups) -->
+                                <apex:variable value="{!3}" var="rowNum"  />   
+                                <apex:repeat value="{!tabs}" var="tab">
+                                    <li><a href="#tabs-{!rowNum}">{!tab.categoryName}</a></li>
+                                    <apex:variable value="{!rowNum + 1}" var="rowNum"  />
+                                </apex:repeat>
+                            </ul>
+                            
+                            <!-- Actual tab content -->
+                            <!-- SUMMARY TAB -->
+                            <div id="tabs-1" class="toPrint">
+                                <div class="summaryHeader">
+                                    <h1 title="Click to Edit {!$Label.Plan_Label_Singular} Details" onclick="selectTab(1);" style="float: left; color: #245C8A; font-weight:bold; font-size: 24px; cursor: pointer;">
+                                        <apex:outputText value="{!planNameText}"/>
+                                    </h1>
+                                    <apex:outputPanel id="daysRemaining" layout="block" style="float: right;">
+                                        <apex:outputPanel layout="none" rendered="{!AND(currentPlan.openq__Plan_Status__c != 'Completed', currentPlan.openq__Plan_End_Date__c != null)}">
+                                            <span style="font-weight: bold; color: {!IF(AND(daysRemaining != null, daysRemaining >= 0), 'green', 'red')}">
+                                                {!IF(daysRemaining != null, ABS(daysRemaining), '')} Days {!IF(AND(daysRemaining != null, daysRemaining >= 0), 'Remaining', 'Overdue')}
+                                            </span>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel layout="none" rendered="{!currentPlan.openq__Plan_Status__c == 'Completed'}">
+                                            <span style="font-weight: bold; color: green">
+                                                Completed
+                                            </span>
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    <div style="clear: both;"></div>
+                                </div>
+                                <!-- Attributes section -->
+                                <apex:outputPanel id="summaryDetailsContent" layout="block">
+                                
+                                    <div style="float: left; width: 100%; font-size: 11px !important;">
+                                    
+                                        <!-- left column -->
+                                        <div class="detailsContainer" style="width: 40%; float: left;">
+                                            <apex:repeat value="{!currentPlanAttributes}" var="att">
+                                                <apex:outputPanel layout="none" rendered="{!MOD(att.order, 2) == 0}">
+                                                    <dl>
+                                                        <dt>{!att.attributeName}:</dt> 
+                                                        <dd>
+                                                              <apex:outputPanel layout="none" rendered="{!AND(att.type != 'Boolean', att.type != 'Reference')}">
+                                                                  
+                                                                    {!att.attributeValue}
+                                                                  
+                                                             </apex:outputPanel>
+                                                             <apex:outputPanel layout="none" rendered="{!att.type == 'Reference'}">
+                                                                    <apex:outputField value="{!currentPlan[att.apiName]}"/>                                                                                                             
+                                                               </apex:outputPanel>                                                      
+                                                              <apex:outputPanel layout="none" rendered="{!att.type == 'Boolean'}">
+                                                                 
+                                                                    <apex:inputCheckbox value="{!att.attributeValue}" disabled="true"/>
+                                                                  
+                                                              </apex:outputPanel>
+                                                        </dd>   
+                                                    </dl>
+                                                </apex:outputPanel>                                             
+                                            </apex:repeat>  
+                                        </div>
+                                        
+                                        <!-- right column -->
+                                        <div class="detailsContainer" style="width: 40%; float: left;" >
+                                            <apex:repeat value="{!currentPlanAttributes}" var="att">
+                                                <apex:outputPanel layout="none" rendered="{!MOD(att.order, 2) == 1}">
+                                                    <dl>
+                                                        <dt>{!att.attributeName}:</dt>
+                                                        <dd>
+                                                              <apex:outputPanel layout="none" rendered="{!AND(att.type != 'Boolean', att.type != 'Reference')}">
+                                                                  
+                                                                    {!att.attributeValue}
+                                                                  
+                                                             </apex:outputPanel>
+                                                             <apex:outputPanel layout="none" rendered="{!att.type == 'Reference'}">
+                                                                    <apex:outputField value="{!currentPlan[att.apiName]}"/>                                                                                                             
+                                                               </apex:outputPanel>                                                      
+                                                              <apex:outputPanel layout="none" rendered="{!att.type == 'Boolean'}">
+                                                                 
+                                                                    <apex:inputCheckbox value="{!att.attributeValue}" disabled="true"/>
+                                                                  
+                                                              </apex:outputPanel>
+                                                        </dd>                                 
+                                                            
+                                                    </dl>
+                                                </apex:outputPanel>                                             
+                                            </apex:repeat>      
+                                        </div>
+                                        
+                                        <!--  div style="clear: both;"></div> -->
+                                        
+                                        <!-- Other section (gauge, notes, etc) -->
+                                        <div class="detailsContainer" style="width: 10%; float: inherit;" >
+                                            
+                                            <apex:outputPanel layout="block" id="gauge" rendered="{!currentPlan.openq__Percent_Complete__c != null}">
+                                                  <c:Engagement_Planning_Gauge percentComplete="{!currentPlan.openq__Percent_Complete__c}" />
+                                            </apex:outputPanel>
+                                                                                                                                            
+                                        </div>                                                                  
+                                    </div>                                  
+                                    
+                                    <div class="detailsContainer" style="width: 100%; float: left;">
+                                        <!-- Related list retrieved from other tabs -->
+                                        <apex:outputPanel id="relatedListsSummaryContent" style="padding-top: 20px;" layout="block">        
+                                            <apex:variable value="{!2}" var="tabNum"  />                        
+                                            <apex:repeat value="{!tabs}" var="tab">
+                                                <apex:repeat value="{!tab.relatedLists}" var="relatedList" >                                    
+                                                    <apex:outputPanel styleClass="summaryRelListsContent" layout="block" rendered="{!relatedList.nameObject != namespace+'Activities_and_Objectives__c'}">
+                                                        <div style="font-weight: bold;" class="underlined">
+                                                            <div style="font-size: 15px; float: left; cursor: pointer;" title="Click to Add/Edit {!relatedList.labelObject}" onclick="selectTab({!tabNum});">{!relatedList.labelObject}</div>
+                                                            <apex:outputPanel rendered="{!relatedList.nameObject == namespace+'Participant__c'}" layout="block" style="float: right;">
+                                                                Total Participants: {!numberOfParticipants} 
+                                                            </apex:outputPanel>
+                                                            <div style="clear: both;"></div>
+                                                        </div>
+                                                        <table class="tablesorter">                                         
+                                                            <apex:outputPanel rendered="{!relatedList.fieldValues.size == 0}" layout="none" >
+                                                                <tr><td><span> No records to display </span> </td></tr>
+                                                            </apex:outputPanel>                                         
+                                                            <apex:outputPanel id="relListsContent" rendered="{!relatedList.fieldValues.size > 0}" layout="none">                                               
+                                                                <thead>
+                                                                    <tr>
+                                                                        <apex:repeat value="{!relatedList.labelAttribute}" var="fv">                                
+                                                                            <th><div class="columnData">{!fv.value}<span class="sort_arrow" style="float: right;"></span></div></th>
+                                                                        </apex:repeat>
+                                                                    </tr>
+                                                                </thead> 
+                                                                <tbody>
+                                                                    <apex:repeat value="{!relatedList.fieldValues}" var="fvv">
+                                                                        <tr>
+                                                                            <apex:repeat value="{!fvv.listValues}" var="lv">                                                                                                        
+                                                                                <td style="vertical-align: {!IF(OR(relatedList.nameObject == 'Note', relatedList.nameObject == 'Attachment'), 'top', 'middle')} !important;">
+                                                                                
+                                                                                    <apex:outputPanel rendered="{!IF(OR(OR(relatedList.nameObject != namespace+'Participant__c', lv.apiName != namespace+'Participant_Name__c'), fvv.contactId == null), true, false)}">
+                                                                                                                                                                             
+                                                                                          <div class="columnData" style="vertical-align: middle !important; padding-left: 2px;">
+                                                                                               <apex:outputtext value="{!lv.value}" />  
+                                                                                          </div>  
+                                                                                        
+                                                                                    </apex:outputPanel>
+                                                                                    <apex:outputPanel rendered="{!IF(AND(AND(relatedList.nameObject == namespace+'Participant__c', lv.apiName == namespace+'Participant_Name__c'), fvv.contactId != null), true, false)}">
+                                                                                                                                                                             
+                                                                                          <div class="columnData" style="vertical-align: middle !important; padding-left: 2px;">
+                                                                                               <apex:outputLink value="/{!fvv.contactId}">{!lv.value}</apex:outputLink> 
+                                                                                          </div>  
+                                                                                        
+                                                                                    </apex:outputPanel>
+                                                                                </td>
+                                                                            </apex:repeat>
+                                                                        </tr>
+                                                                    </apex:repeat>                                                                                                                              
+                                                                </tbody>
+                                                            </apex:outputPanel>                                             
+                                                        </table>
+                                                    </apex:outputPanel>
+                                                    
+                                                    <!-- Activities & Objectives -->                                                    
+                                                    <apex:outputPanel rendered="{!relatedList.nameObject == namespace+'Activities_and_Objectives__c'}" >                                                    
+                                                        
+                                                        <apex:variable value="{!1}" var="objNum"  />
+                                                        <apex:repeat value="{!aAndO}" var="objective">
+                                                        
+                                                            <apex:outputPanel styleClass="summaryRelListsContent" layout="block" >                                                          
+                                                                <div style="font-weight: bold;">
+                                                                    
+                                                                    <div style="font-size: 15px; float: left; cursor: pointer;" title="Click to Add/Edit {!relatedList.labelObject}"  onclick="selectTab({!tabNum});">{!objLabelO} {!objNum}: {!objective.objectiveName}</div>                                                          
+                                                                    <div class="progressbar" data-percent="{!objective.objectiveComplete}"><span id="caption">{!objective.objectiveCompleteText}</span></div>
+                                                                    <div style="clear:both;"></div>
+                                                                </div>
+                                                        
+                                                                <apex:repeat value="{!objective.activities}" var="activity">                                                                    
+                                                                    <apex:variable value="{!activity.records}" var="relatedList"  />                                                                    
+                                                                    
+                                                                    <div class="activityContainer">
+                                                                        <div style="font-weight: bold; font-style: italic;" class="underlined">
+                                                                            <div style="font-size: 13px; float: left; cursor: pointer;" >{!objLabelA}: {!activity.activityName}</div>                                                           
+                                                                            <div class="progressbar" data-percent="{!activity.activityComplete}"><span id="caption">{!activity.activityCompleteText}</span></div>
+                                                                            <div style="clear: both;"></div>
+                                                                        </div>
+                                                                        <table class="tablesorter">                                         
+                                                                            <apex:outputPanel rendered="{!relatedList.fieldValues.size == 0}" layout="none" >
+                                                                            <tr><td><span> No records to display </span> </td></tr>
+                                                                            </apex:outputPanel>                                         
+                                                                            <apex:outputPanel id="relListsContent2" rendered="{!relatedList.fieldValues.size > 0}" layout="none">                                               
+                                                                                <thead>
+                                                                                    <tr>
+                                                                                        <apex:repeat value="{!relatedList.labelAttribute}" var="fv">                                
+                                                                                            <apex:outputPanel rendered="{!AND(fv.apiName != namespace+'Objective_New__c', fv.apiName != namespace+'Activity_New__c')}" layout="none">
+                                                                                                <th>
+                                                                                                    <div class="columnData">
+                                                                                                        {!fv.value}<span class="sort_arrow" style="float: right;"/>
+                                                                                                    </div>
+                                                                                                </th>
+                                                                                            </apex:outputPanel>
+                                                                                        </apex:repeat>
+                                                                                    </tr>
+                                                                                </thead> 
+                                                                                <tbody>
+                                                                                    <apex:repeat value="{!relatedList.fieldValues}" var="fvv">
+                                                                                        <tr>
+                                                                                            <apex:repeat value="{!fvv.listValues}" var="lv">                                                                            
+                                                                                                <apex:outputPanel rendered="{!AND(lv.apiName != namespace+'Objective_New__c', lv.apiName != namespace+'Activity_New__c')}" layout="none" >
+                                                                                                    <td style="vertical-align: middle !important;">                                                                                                                                                                                      
+                                                                                                        <div class="columnData" style="vertical-align: middle !important; padding-left: 2px;">
+                                                                                                            <apex:outputtext value="{!lv.value}" />  
+                                                                                                        </div>          
+                                                                                                    </td>
+                                                                                                </apex:outputPanel>                                                                                             
+                                                                                            </apex:repeat>
+                                                                                        </tr>
+                                                                                    </apex:repeat>                                  
+                                                                                </tbody>
+                                                                            </apex:outputPanel>                                             
+                                                                        </table>                                                                    
+                                                                    </div>                                                                                                                                      
+                                                                </apex:repeat>
+                                                                <apex:variable value="{!objNum + 1}" var="objNum"  />                                               
+                                                            </apex:outputPanel>                                             
+                                                        </apex:repeat>  
+                                                    </apex:outputPanel>
+                                                    
+                                                </apex:repeat>
+                                                <apex:variable value="{!tabNum + 1}" var="tabNum"  />
+                                            </apex:repeat>  
+                                        </apex:outputPanel>
+                                    
+                                    </div>
+                                    
+                                                                        
+                                    
+
+                                    
+                                    
+                                    
+                                    <div style="clear: both;"></div>
+                                </apex:outputPanel>
+                            </div>                      
+
+                            
+                            <!-- DETAILS TAB -->
+                            <div id="tabs-2">
+                                <div class="summaryHeader">
+                                    <h1 style="float: left; color: #245C8A; font-weight:bold; font-size: 24px;">
+                                        <apex:outputText value="{!planNameText}"/>
+                                    </h1>       
+                                    <div style="float: right;">
+                                        <input id="detailsEditButton"  class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" value="Edit" onclick="enableEditMode();"  />
+                                        <input disabled="disabled" id="detailsSaveButton"  class="btnCustom default gr btnOverride buttonDisabled" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" value="Save"  onclick="saveDetails();" />
+                                    </div>                              
+                                </div>
+                                
+                                <!-- Attributes section -->
+                                <apex:outputPanel id="detailsContent" >                                 
+                                    <!-- left column -->
+                                    <div class="detailsContainer" style="width: 50%; float: left;">
+                                        <apex:repeat value="{!currentPlanAttributes}" var="att">
+                                            <apex:variable var="helpText" value="{!$ObjectType.openq__Engagement_Plan__c.fields[att.apiName].inlineHelpText}" />                                           
+                                            <apex:outputPanel layout="none" rendered="{!MOD(att.order, 2) == 0}">
+                                                
+                                                <dl>
+                                                    <dt>
+                                                        <apex:outputPanel id="helpTextBlock" rendered="{!AND(NOT(readOnlyMode), AND(helpText != null, helpText != ''))}" layout="none">
+                                                            <c:HelpText helpText="{!helpText}"  leftPositioning="0" topPositioning="22" uniqueText="{!att.apiName}" />                                                  
+                                                        </apex:outputPanel>
+                                                    </dt>
+                                                    <dt>{!att.attributeName}:</dt>                                                  
+                                                    <dd style="width: 100%;">
+                                                        
+                                                        <!-- If read only -->
+                                                        <apex:outputPanel layout="none" rendered="{!readOnlyMode}">
+                                                            <apex:outputField value="{!currentPlan[att.apiName]}" rendered="{!att.type == 'Reference'}"/>                                                                                                                                                                           
+                                                            <apex:outputText value="{!att.attributeValue}" rendered="{!AND(att.type != 'Boolean', att.type != 'Reference')}"/>                                                          
+                                                            <apex:inputCheckbox value="{!att.attributeValue}" disabled="true" rendered="{!att.type == 'Boolean'}"/>                                                     
+                                                        </apex:outputPanel>
+                                                        
+                                                        <!-- Else -->
+                                                        <apex:outputPanel layout="none" rendered="{!NOT(readOnlyMode)}">
+                                                            
+                                                            <!-- If date -->
+                                                            <apex:inputText value="{!att.attributeValue}" styleClass="datepicker" style="border-radius: 5px; width: 100%;" rendered="{!att.type == 'Date'}"/>                                                               
+                                                            
+                                                            <!-- If datetime -->
+                                                            <apex:outputText value="{!att.attributeValue}" rendered="{!att.type == 'Datetime'}"/>
+                                                            
+                                                            <!-- If number -->
+                                                            <apex:inputText style="border-radius: 5px; width: 100%;" value="{!att.attributeValue}" rendered="{!OR(att.type == 'Integer', att.type == 'Double')}"/>
+                                                            
+                                                            <!-- If plan owner -->
+                                                            <apex:outputPanel rendered="{!att.apiName == namespace+'Plan_Owners__c'}">
+                                                                <span class="planOwnerSpan">{!att.attributeValue}</span>
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If LOV -->
+                                                            <apex:outputPanel styleClass="ui-combobox-container" layout="block" rendered="{!att.type == 'LOV'}">                                                                
+                                                                <apex:inputField styleClass="ui-combobox" value="{!currentPlan[att.apiName]}" />
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If Multipicklist -->
+                                                            <apex:outputPanel styleClass="gr multiSelectPL_OP" layout="block" rendered="{!att.type == 'Multiselect'}">     
+                                                                <input type="hidden" class="defautlValues" value="{!currentPlan[att.apiName]}" />                                                         
+                                                                <apex:inputField styleClass="multiSelectPL" value="{!currentPlan[att.apiName]}" />
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If plan type -->
+                                                            <apex:outputPanel layout="" rendered="{!att.apiName == namespace+'Plan_Type_Name__c'}">
+                                                               {!att.attributeValue}
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If Text -->
+                                                            <apex:inputText style="border-radius: 5px; width: 100%;" value="{!att.attributeValue}" rendered="{!AND(AND(att.type == 'Text', att.apiName != namespace+'Plan_Owners__c'), att.apiName != namespace+'Plan_Type_Name__c')}"/>
+                                                            
+                                                            <!-- If Long Text Area -->
+                                                            <apex:inputTextArea style="border-radius: 5px; width: 100%;" value="{!att.attributeValue}" rendered="{!AND(att.type == 'Long Text Area', att.apiName != namespace+'Plan_Owners__c')}"/>
+                                                            
+                                                            <!-- If Boolean -->
+                                                            <apex:inputCheckbox value="{!att.attributeValue}" disabled="false" rendered="{!att.type == 'Boolean'}"/>
+                                                            
+                                                            <!-- If Reference -->
+                                                            <apex:inputField value="{!currentPlan[att.apiName]}" rendered="{!att.type == 'Reference'}"/>
+                                                            
+                                                            <!-- lookup icon, rendered if PlanOwnerField is included -->
+                                                            <apex:outputPanel styleClass="lookupIcon" rendered="{!att.apiName == namespace+'Plan_Owners__c'}" onclick="openOwnerPopup();" />
+                                                            
+                                                        </apex:outputPanel>
+                                                    </dd>                                                                                                           
+                                                </dl>
+                                            </apex:outputPanel>                                             
+                                        </apex:repeat>  
+                                    </div>
+                                    
+                                    <!-- right column -->
+                                    <div class="detailsContainer" style="width: 46%; float: left;" >
+                                        <apex:repeat value="{!currentPlanAttributes}" var="att">
+                                            <apex:variable var="helpText" value="{!$ObjectType.openq__Engagement_Plan__c.fields[att.apiName].inlineHelpText}" />                                           
+                                            <apex:outputPanel layout="none" rendered="{!MOD(att.order, 2) == 1}">
+                                                <dl>
+                                                    <dt>
+                                                        <apex:outputPanel id="helpTextBlock" rendered="{!AND(NOT(readOnlyMode), AND(helpText != null, helpText != ''))}" layout="none">
+                                                            <c:HelpText helpText="{!helpText}"  leftPositioning="0" topPositioning="22" uniqueText="{!att.apiName}" />                                                  
+                                                        </apex:outputPanel>
+                                                    </dt>
+                                                    <dt>{!att.attributeName}:</dt>                                                  
+                                                    <dd style="width: 100%;">
+                                                        
+                                                        <!-- If read only -->
+                                                        <apex:outputPanel layout="none" rendered="{!readOnlyMode}">
+                                                            <apex:outputField value="{!currentPlan[att.apiName]}" rendered="{!att.type == 'Reference'}"/>                                                                                                                                                                           
+                                                            <apex:outputText value="{!att.attributeValue}" rendered="{!AND(att.type != 'Boolean', att.type != 'Reference')}"/>                                                          
+                                                            <apex:inputCheckbox value="{!att.attributeValue}" disabled="true" rendered="{!att.type == 'Boolean'}"/>                                                             
+                                                        </apex:outputPanel>
+                                                        
+                                                        <!-- Else -->
+                                                        <apex:outputPanel layout="none" rendered="{!NOT(readOnlyMode)}">
+                                                            
+                                                            <!-- If date -->
+                                                            <apex:inputText value="{!att.attributeValue}" styleClass="datepicker" style="border-radius: 5px; width: 100%;" rendered="{!att.type == 'Date'}"/>                                                               
+                                                            
+                                                            <!-- If datetime -->
+                                                            <apex:outputText value="{!att.attributeValue}" rendered="{!att.type == 'Datetime'}"/>
+                                                            
+                                                            <!-- If number -->
+                                                            <apex:inputText style="border-radius: 5px; width: 100%;" value="{!att.attributeValue}" rendered="{!OR(att.type == 'Integer', att.type == 'Double')}"/>
+                                                            
+                                                            <!-- If plan owner -->
+                                                            <apex:outputPanel rendered="{!att.apiName == namespace+'Plan_Owners__c'}">
+                                                                <span class="planOwnerSpan">{!att.attributeValue}</span>
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If LOV -->
+                                                            <apex:outputPanel styleClass="ui-combobox-container" layout="block" rendered="{!att.type == 'LOV'}">                                                                
+                                                                <apex:inputField styleClass="ui-combobox" value="{!currentPlan[att.apiName]}" />
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If Multipicklist -->
+                                                            <apex:outputPanel styleClass="gr multiSelectPL_OP" layout="block" rendered="{!att.type == 'Multiselect'}">     
+                                                                <input type="hidden" class="defautlValues" value="{!currentPlan[att.apiName]}" />                                                         
+                                                                <apex:inputField styleClass="multiSelectPL" value="{!currentPlan[att.apiName]}" />
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If plan type -->
+                                                            <apex:outputPanel layout="" rendered="{!att.apiName == namespace+'Plan_Type_Name__c'}">
+                                                               {!att.attributeValue}
+                                                            </apex:outputPanel>
+                                                            
+                                                            <!-- If Text -->
+                                                            <apex:inputText style="border-radius: 5px; width: 100%;" value="{!att.attributeValue}" rendered="{!AND(AND(att.type == 'Text', att.apiName != namespace+'Plan_Owners__c'), att.apiName != namespace+'Plan_Type_Name__c')}"/>
+                                                            
+                                                            <!-- If Long Text Area -->
+                                                            <apex:inputTextArea style="border-radius: 5px; width: 100%;" value="{!att.attributeValue}" rendered="{!AND(att.type == 'Long Text Area', att.apiName != namespace+'Plan_Owners__c')}"/>
+                                                            
+                                                            <!-- If Boolean -->
+                                                            <apex:inputCheckbox value="{!att.attributeValue}" disabled="false" rendered="{!att.type == 'Boolean'}"/>
+                                                            
+                                                            <!-- If Reference -->
+                                                            <apex:inputField value="{!currentPlan[att.apiName]}" rendered="{!att.type == 'Reference'}"/>
+                                                            
+                                                            <!-- lookup icon, rendered if PlanOwnerField is included -->
+                                                            <apex:outputPanel styleClass="lookupIcon" rendered="{!att.apiName == namespace+'Plan_Owners__c'}" onclick="openOwnerPopup();" />
+                                                            
+                                                        </apex:outputPanel>
+                                                    </dd>                                                                                                           
+                                                </dl>
+                                            </apex:outputPanel>                                             
+                                        </apex:repeat>      
+                                    </div>
+                                    
+                                    <div style="clear: both;"></div>
+                                </apex:outputPanel>
+                            </div>                      
+                            
+                            <!-- DYNAMIC TABS -->
+                            <apex:variable value="{!3}" var="rowNum"  />   
+                            <apex:repeat value="{!tabs}" var="tab">
+                                <div id="tabs-{!rowNum}">
+                                    <div class="summaryHeader">
+                                        <h1 style="color: #245C8A; font-weight:bold; font-size: 24px;">
+                                            <apex:outputText value="{!planNameText}"/>
+                                        </h1>                                       
+                                    </div>
+                                    <apex:repeat value="{!tab.relatedLists}" var="relatedList" >                                    
+                                        <apex:outputPanel id="relatedListsContent" layout="block" style="padding-bottom: 15px;">
+                                            <div style="font-weight: bold; padding-bottom: 5px;" class="underlined">
+                                                <div style="float: left; font-size: 15px;">{!relatedList.labelObject}</div>                                             
+                                                <div style="float: right;" >
+                                                    <apex:outputPanel rendered="{!relatedList.nameObject == namespace+'Participant__c'}" style="float: left; padding-right: 10px;">
+                                                        Total Participants: {!numberOfParticipants} 
+                                                    </apex:outputPanel>
+                                                    <span title="Click to Add {!relatedList.labelObject}" class="newObject easyAdd" style="margin-top: 3px;" onclick="addRecord('{!relatedList.nameObject}');">
+                                                    </span>
+                                                </div>
+                                                <div style="clear: right;"></div>
+                                            </div>
+                                            <table class="tablesorter">                                         
+                                                <apex:outputPanel rendered="{!relatedList.fieldValues.size == 0}" layout="none" >
+                                                    <tr><td><span> No records to displayssss </span> </td></tr>
+                                                </apex:outputPanel>                                         
+                                                <apex:outputPanel id="relListsContent" rendered="{!relatedList.fieldValues.size > 0}" layout="none">                                               
+                                                    <thead>
+                                                        <tr>
+                                                            <apex:repeat value="{!relatedList.labelAttribute}" var="fv">                                
+                                                                <th>
+                                                                    <div class="columnData">{!fv.value}<span class="sort_arrow" style="float: right;"/></div>                                                                   
+                                                                </th>
+                                                            </apex:repeat>
+                                                            <th><div class="fright actionsColumn">Actions</div></th> 
+                                                        </tr>
+                                                    </thead> 
+                                                    <tbody id="{!relatedList.nameObject}">      
+                                                        <apex:repeat value="{!relatedList.fieldValues}" var="fvv">
+                                                            <tr>
+                                                                <apex:repeat value="{!fvv.listValues}" var="lv">                                                
+                                                                    <td style="vertical-align: {!IF(OR(relatedList.nameObject == 'Note', relatedList.nameObject == 'Attachment'), 'top', 'middle')} !important;">                                                                         
+                                                                          <apex:outputPanel rendered="{!IF(OR(OR(relatedList.nameObject != namespace+'Participant__c', lv.apiName != namespace+'Participant_Name__c'), fvv.contactId == null), true, false)}">
+                                                                                                                                                                             
+                                                                                  <div class="columnData" style="vertical-align: middle !important; padding-left: 2px;">
+                                                                                       <apex:outputtext value="{!lv.value}" />  
+                                                                                  </div>  
+                                                                                
+                                                                            </apex:outputPanel>
+                                                                            <apex:outputPanel rendered="{!IF(AND(AND(relatedList.nameObject == namespace+'Participant__c', lv.apiName == namespace+'Participant_Name__c'), fvv.contactId != null), true, false)}">
+                                                                                                                                                                     
+                                                                                  <div class="columnData" style="vertical-align: middle !important; padding-left: 2px;">
+                                                                                       <apex:outputLink value="/{!fvv.contactId}">{!lv.value}</apex:outputLink> 
+                                                                                  </div>  
+                                                                                
+                                                                            </apex:outputPanel>
+                                                                          
+                                                                                        
+                                                                    </td>
+                                                                </apex:repeat> 
+                                                                <td>
+                                                                    <div class="fright">
+                                                                        <apex:outputPanel rendered="{!relatedList.nameObject != namespace+'Participant__c'}">
+                                                                            <a class="actionLink" onclick="viewRecord('{!relatedList.nameObject}', '{!fvv.recordId}');">View</a>
+                                                                            |&nbsp;
+                                                                            <a class="actionLink" onclick="editRecord('{!relatedList.nameObject}', '{!fvv.recordId}');">Edit</a>                                                                                                                                                
+                                                                        </apex:outputPanel>
+                                                                        <apex:outputPanel rendered="{!AND(relatedList.nameObject != namespace+'Participant__c', fvv.deletable)}">
+                                                                          |
+                                                                        </apex:outputPanel>
+                                                                        <apex:outputPanel rendered="{!fvv.deletable}">                                                                            
+                                                                            <a onclick="deleteRecord('{!relatedList.nameObject}', '{!fvv.recordId}', '{!JSENCODE(fvv.text)}');" class="actionLink" style="cursor: pointer;">Del</a>                                                                       
+                                                                        </apex:outputPanel>
+                                                                    </div>                                                                  
+                                                                </td>
+                                                            </tr>
+                                                        </apex:repeat>                                                                                                                  
+                                                    </tbody>
+                                                </apex:outputPanel>                                             
+                                            </table>                                        
+                                        </apex:outputPanel> 
+                                    </apex:repeat>                                  
+                                </div>
+                                <apex:variable value="{!rowNum + 1}" var="rowNum"  />
+                            </apex:repeat>                          
+                        </div>
+                                            
+                    </apex:outputPanel>             
+                </apex:outputPanel> 
+            </div>  
+            
+            <apex:actionFunction action="{!enableEditMode}" name="enableEditModeApex" rerender="detailsContent, ownerScript" oncomplete="editModeEnabled();"/>          
+            <apex:actionFunction action="{!disableEditMode}" name="disableEditModeApex" immediate="true" rerender="detailsContent" oncomplete="editModeDisabled();"/>
+            
+            <apex:actionFunction action="{!saveDetails}" name="saveDetailsApex" rerender="detailsContent, leftContainer, sideBar, summaryDetailsContent, tabbedPanel, daysRemaining, breadcrumbs" oncomplete="editModeDisabled(); selectTab(1); refreshColumnSorting();" >
+                <apex:param name="param1" assignTo="{!selectedOwnersIds}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction action="{!addParticipants}" name="addParticipantsApex" rerender="relatedListsContent, relatedListsSummaryContent" oncomplete="closeParticipantPopup(); refreshColumnSorting();" >
+                <apex:param name="param1" assignTo="{!selectedParticipantIds}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction action="{!deletePlan}" name="deletePlanApex" rerender="pageMsgs"></apex:actionFunction>
+            
+            <apex:actionFunction action="{!deleteRecord}" name="deleteRecordApex" rerender="relatedListsContent, relatedListsSummaryContent, ownerScript, gauge" oncomplete="loadComplete(); refreshProgressBars(); refreshColumnSorting();" >
+                <apex:param name="param1" assignTo="{!objectNameToDelete}" value=""/>
+                <apex:param name="param2" assignTo="{!recordIdToDelete}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction action="{!addRecord}" name="addRecordApex" rerender="relatedListsContent, relatedListsSummaryContent" oncomplete="loadComplete();" >
+                <apex:param name="param1" assignTo="{!objectNameToAdd}" value=""/>
+                <apex:param name="param2" assignTo="{!tabId}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction action="{!viewRecord}" name="viewRecordApex" rerender="">
+                <apex:param name="param1" assignTo="{!objectNameToView}" value=""/>
+                <apex:param name="param2" assignTo="{!recordIdToView}" value=""/>
+                <apex:param name="param3" assignTo="{!tabId}" value=""/>
+            </apex:actionFunction>
+
+            <apex:actionFunction action="{!editRecord}" name="editRecordApex" rerender="">
+                <apex:param name="param1" assignTo="{!objectNameToEdit}" value=""/>
+                <apex:param name="param2" assignTo="{!recordIdToEdit}" value=""/>
+                <apex:param name="param3" assignTo="{!tabId}" value=""/>
+            </apex:actionFunction>
+            
+        </apex:form>    
+    </apex:outputPanel>
+
+    <!-- 
+    -------------------- POP UPS GO HERE ------------------------
+     -->
+     
+    <apex:outputPanel id="popUpContainer">  
+        <apex:form > 
+        
+            <apex:actionFunction name="filterParticipantsApex" action="{!filterParticipants}" rerender="popUpActObjParts, actParticipants, assignToTable" oncomplete="loadComplete(); loadDatePickers(); setInputsDisabled(false); ">                
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="filterAssignToUsersApex" action="{!filterAssignToUsers}" rerender="popUpActObjParts, actParticipants, assignToOP" oncomplete="onOpenAssignToPopup();">                
+                <apex:param name="param1" assignTo="{!participantId}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="selectAssignToUserApex" action="{!selectAssignToUser}" rerender="popUpActObjParts, actParticipants, assignToOP" oncomplete="onSelectAssignToUser();">                
+                <apex:param name="param1" assignTo="{!assignToUserId}" value=""/>
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="selectAllParticipantsApex" action="{!selectAllParticipants}" rerender="assignToTable" oncomplete="loadComplete();">              
+            </apex:actionFunction>
+            
+            <apex:actionFunction name="addActivityAndObjectiveApex" action="{!addActivityAndObjective}" oncomplete="closeActivitiesPopup(); refreshProgressBars();" rerender="relatedListsContent, relatedListsSummaryContent, ownerScript, gauge, popUpActObjParts"/> 
+            
+            <apex:actionFunction name="resetActivityAndObjectiveApex" action="{!resetActivityAndObjective}" oncomplete="closeActivitiesPopup();" rerender="relatedListsContent, relatedListsSummaryContent, ownerScript, gauge, popUpActObjParts, actParticipants, assignToOP"/>
+            
+            <!-- New plan popup -->
+            <div id="popUpNewPlan" class="popUpDiv">
+                <div id="newPlanDiv">
+                    <div> 
+                        <apex:outputPanel styleClass="popUpContainers">
+                            <div class="widgetHeader">
+                                New {!$Label.Plan_Label_Singular}
+                            </div>
+                            <div>
+                                Name: &nbsp;                            
+                                <apex:inputField value="{!newPlan.openq__Name__c}"/>
+                            </div>
+                            <div>
+                                {!$Label.Plan_Label_Singular} Type: &nbsp;
+                                <apex:selectList value="{!newPlanType}" multiselect="false" size="1">
+                                    <apex:selectOptions value="{!newPlanTypeOptions}"/>
+                                </apex:selectList>
+                            </div>
+                        </apex:outputPanel> 
+                    </div>
+                    <div>
+                        <div style="float: right;">                     
+                            <apex:commandButton value="Cancel" action="{!cancelNewPlan}" rerender="" />
+                            <apex:commandButton value="Save" action="{!saveNewPlan}" rerender="detailsContent, leftContainer, sideBar, summaryDetailsContent, tabbedPanel"/>                                                    
+                        </div>              
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Owners popup -->
+            <div id="popUpOwner" class="popUpDiv">          
+                <div id="innerDiv">
+                    <div>
+                        Plan Owners:
+                        <div class="ver" id="owners_list_field_container">
+                        </div>    
+                    </div>
+                    <div style="margin-left: 190px;">
+                        <div style="display:inline-block;">
+                            <apex:commandButton style="width: 60px;" value="Cancel" onclick="cancelOwnerPopup(); return false;" rerender="" />
+                        </div>
+                        <div style="display: inline-block">                     
+                            <apex:commandButton style="width: 60px;" value="Done" onclick="closeOwnerPopup(); return false;" rerender="" />                                                                         
+                        </div>              
+                    </div> 
+                </div>
+            </div>      
+            
+            <!-- Participants popup -->
+            <div id="popUpParticipant" class="popUpDiv">            
+                <div id="innerDiv">
+                    <div>
+                        Add Participants:
+                        <div class="ver" id="participants_list_field_container">
+                            <input type="text" name="participnats_list" id="participants_list_field" /> 
+                        </div>    
+                    </div>
+                    <div>
+                        <div style="margin-left: 180px;">
+                            <apex:commandButton style="width: 60px;" value="Cancel" onclick="closeParticipantPopup(); return false;" rerender="" />
+                            <apex:commandButton style="width: 60px;" value="Done" onclick="saveParticipantPopup(); return false;" rerender="" />
+                        </div>              
+                    </div> 
+                </div>
+            </div>
+            
+            <!-- Add new A&O popup -->
+            <div id="popUpActObj" class="popUpDiv"> 
+                 
+                <div id="innerDiv" style="position: absolute; width: 700px; margin-left: -350px;">
+                <apex:outputPanel id="popUpActObjParts" layout="none">
+                    <div>
+                        <span class="widgetHeader">Add New {!objLabelO} and {!objLabelA}and Plan Type</span>              
+                        <div>
+                            <apex:outputPanel id="actData" layout="block" style="padding: 10px;">
+                                <!-- styleClass="ui-combobox"  -->
+                         <div class="basicPadding">
+                                    <span style="width: 85px; display: inline-block;">{!objLabel1}:&nbsp;</span><apex:inputField value="{!newAct.openq__Plan_Type_Name__c}"/>
+                                </div>
+                           
+                                <div class="basicPadding">
+                                    <span style="width: 85px; display: inline-block;">Objective:&nbsp;</span><apex:inputField value="{!newAct.openq__Objective_New__c}"/>
+                                </div>
+                                <div class="basicPadding">
+                                    <span style="width: 85px; display: inline-block;">{!objLabelA}:&nbsp;</span><apex:inputField value="{!newAct.openq__Activity_New__c}" onchange="filterParticipants();"/>
+                                </div>
+                                <div class="basicPadding">
+                                    
+                                    <span style="width: 85px; display: inline-block;">{!objLabelDate}:&nbsp;</span>
+                                    <apex:inputText value="{!activityDateStr}" styleClass="datepicker" style="border-radius: 5px; width: 135px;" />
+                                </div> 
+                                <div class="basicPadding">
+                                    <span style="width: 85px; display: inline-block;">{!objLabelStatus}:&nbsp;</span><apex:inputField id="status" value="{!newAct.openq__Status__c}"/>
+                                </div>
+                            </apex:outputPanel>                         
+                            <div>
+                                <apex:outputPanel id="actParticipants" layout="block" rendered="{!AND(participants != null, participantsLoadFinished)}" >
+                                <span class="widgetHeader">Apply to following Participants:</span> 
+                                <div style="padding-top: 10px; padding-bottom: 10px;">                                  
+                                        <table class="tablesorter" style="width: 100%;">                                            
+                                            <apex:outputPanel rendered="{!participants.fieldValues.size == 0}" layout="none" >
+                                                <tr><td><span> No records to display </span> </td></tr>
+                                            </apex:outputPanel>                                         
+                                            <apex:outputPanel id="relListsContent3" rendered="{!participants.fieldValues.size > 0}" layout="none">                                               
+                                                <thead> 
+                                                    <tr>
+                                                        <th id="selectAllHeader" style="vertical-align: middle !important;">
+                                                            <apex:inputCheckbox id="selectAllCheckBox" value="{!allParticipants}" onchange="selectAllParticipants();" />
+                                                        </th>
+                                                        <apex:repeat value="{!participants.labelAttribute}" var="fv">       
+                                                             <apex:outputPanel layout="none" rendered="{!OR(OR(fv.value == 'Name', fv.value == 'City'), fv.value == 'State')}">                                                                                 
+                                                                <th>
+                                                                    <div class="columnData">{!fv.value}<span class="sort_arrow" style="float: right;"/></div>                                                                   
+                                                                </th>
+                                                            </apex:outputPanel>
+                                                        </apex:repeat>
+                                                    </tr>
+                                                </thead>    
+                                                <tbody id="{!participants.nameObject}2">                                                        
+                                                    <apex:variable value="{!1}" var="rowNum2"  />
+                                                    <apex:repeat value="{!participants.fieldValues}" var="fvv">
+                                                        <tr class="{!IF(MOD(rowNum2, 2) == 0, '', 'oddRow')}">
+                                                            <td style="vertical-align: middle !important;">
+                                                                <apex:inputCheckbox value="{!fvv.selected}"  disabled="{!fvv.saved}"> 
+                                                                     <apex:actionSupport event="onclick" rerender="assignToTable, assignAllToRunningUserLink" />
+                                                                </apex:inputCheckbox> 
+                                                            </td>
+                                                            <apex:repeat value="{!fvv.listValues}" var="lv">           
+                                                                <apex:outputPanel layout="none" rendered="{!OR(OR(lv.apiName == namespace+'Participant_Name__c', lv.apiName == namespace+'Participant_City__c'), lv.apiName == namespace+'Participant_State__c')}">                                     
+                                                                    <td style="vertical-align: middle !important;">                                                                                                                                                                  
+                                                                          <div class="columnData" style="vertical-align: middle !important; padding-left: 2px;">
+                                                                               <apex:outputtext value="{!lv.value}" />  
+                                                                          </div>                                                                                        
+                                                                    </td>
+                                                                </apex:outputPanel>
+                                                            </apex:repeat> 
+                                                        </tr>
+                                                        <apex:variable value="{!rowNum2 + 1}" var="rowNum2"  />
+                                                    </apex:repeat>                                                                                                                  
+                                                </tbody>
+                                            </apex:outputPanel>                                                                                  
+                                        </table>
+                                </div>
+                                </apex:outputPanel>
+                            </div>
+                                            
+                            <div>
+                            <apex:outputPanel id="assignToTable" rendered="{!AND(participants != null, participantsLoadFinished)}" >
+                            <span class="widgetHeader">Assign to user:</span>
+                                <div>                                    
+                                    <table class="tablesorter" style="width: 100%;">        
+                                        <apex:outputPanel rendered="{!participants.fieldValues.size > 0}" layout="none">                                               
+                                            <thead> 
+                                                <tr>
+                                                    <th style="vertical-align: middle !important;">
+                                                        Name
+                                                    </th>
+                                                    <th style="vertical-align: middle !important;">
+                                                        Assign to                                                       
+                                                    </th>
+                                                </tr>
+                                            </thead>    
+                                            <tbody>                                                        
+                                                <apex:variable value="{!1}" var="rowNum2"  />
+                                                <apex:repeat value="{!participants.fieldValues}" var="fvv">                                                    
+                                                    <apex:outputPanel layout="none" rendered="{!fvv.selected}"> 
+                                                        <tr class="{!IF(MOD(rowNum2, 2) == 0, '', 'oddRow')}">
+                                                            <td><span style="float: left;">{!fvv.text}</span></td>
+                                                            <td>
+                                                               <span class="assignables" style="float: left;">{!fvv.assignToUserName}</span>
+                                                               <apex:outputPanel rendered="{!NOT(fvv.saved)}" styleClass="lookupIcon" style="float: right; position: relative;" onclick="openAssignToPopup('{!fvv.participantId}');"/>
+                                                               </td>                                                                                                                                   
+                                                        </tr>
+                                                        <apex:variable value="{!rowNum2 + 1}" var="rowNum2"  />
+                                                    </apex:outputPanel>
+                                                </apex:repeat>                                                                                                                                                                                                   
+                                            </tbody> 
+                                            <apex:outputPanel layout="block" id="assignAllToRunningUserLink">
+                                                <apex:outputPanel rendered="{!atLeastOneParticipantSelected}">
+                                                    <apex:commandLink action="{!assignAllTasksToRunningUser}" rerender="assignToTable" style="text-decoration: none !important;">Assign all tasks to {!$User.FirstName} {!$User.LastName}</apex:commandLink>
+                                                </apex:outputPanel>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>  
+                                    </table>                                    
+                                </div>
+                            </apex:outputPanel>   
+                            </div>      
+                                                
+                        </div> 
+                    </div>
+                    <div style="width: 100%; height: 30px; padding-top: 10px;">
+                        <div style="margin-left: -75px; position: absolute; width: 150px; left: 50%;">                      
+                            <apex:commandButton value="Cancel" onclick="resetActivityAndObjective(); return false;" style="width: 60px;" />
+                            <apex:commandButton value="Save" onclick="addActivityAndObjective(); return false;" style="width: 60px;"/>                                                  
+                        </div>              
+                    </div> 
+                </apex:outputPanel>
+                </div>
+            </div>
+            
+            <div id="usersdiv" class="popUpDiv" style="z-index: 1600; width: 540px; height: auto; position: absolute; top: 60%; margin-left: -270px;">
+                <apex:outputPanel id="assignToOP" layout="block" >
+                    <table style="width: 100%; table-layout: fixed;">
+                        
+                        <thead>
+                            <tr>
+                                <th style="width: 160px;">Status</th>
+                                <th>Name</th>
+                            </tr>                                                        
+                        </thead>
+                        <tbody>
+                            <apex:variable value="{!1}" var="rowNum"  />
+                            <apex:repeat value="{!currentAssignTo}" var="ato">                          
+                                <apex:outputPanel layout="none" rendered="{!AND(ato.userName != null, ato.userName != '')}">
+                                    <tr class="assignToTr {!IF(MOD(rowNum, 2) == 0, '', 'oddRow')}" onclick="selectAssignToUser('{!ato.userId}');">
+                                        <td>{!ato.label}</td>
+                                        <td>{!ato.userName}</td>                              
+                                    </tr>     
+                                    <apex:variable value="{!rowNum + 1}" var="rowNum"  />
+                                </apex:outputPanel>
+                            </apex:repeat>
+                            <tr class="assignToTr">
+                                <td>Search for other</td>  
+                                <td><apex:inputField id="assignedUser" value="{!fakePart.openq__User_Name__c}" onchange="selectAssignToUser('');" /> </td>                                                               
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="width: 100%; height: 30px; padding-top: 10px;">
+                       <div style="width: 70px; margin-left: -35px; position: absolute; left: 50%;">
+                           <apex:commandButton value="Cancel" onclick="closeAssignToPopup(); return false;" rerender="" style="width: 60px; "/>
+                        </div>
+                    </div>
+                                        
+                </apex:outputPanel>   
+            </div>
+            
+            
+        </apex:form>
+    </apex:outputPanel> 
+</apex:page>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>52.0</apiVersion>
+    <assignments>
+        <name>Assign_to_Quotation_Line_Items</name>
+        <label>Assign to Quotation Line Items</label>
+        <locationX>50</locationX>
+        <locationY>551</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Product_Localization__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>GetLocalicalizationRecords.Id</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <decisions>
+        <name>LineItem_should_Have_product</name>
+        <label>LineItem should Have product</label>
+        <locationX>182</locationX>
+        <locationY>311</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Have_associated_Product</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Apttus_Proposal__Product__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>GetLocalicalizationRecords</targetReference>
+            </connector>
+            <label>Have associated Product</label>
+        </rules>
+    </decisions>
+    <description>To Populate ProductLocalization on QuoteLineItem - DCP-48437</description>
+    <interviewLabel>PopulateProductLocalizationonQuoteLineItem2 {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Quotation Line Item :Populate ProductLocalization on QuoteLineItem</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>GetLocalicalizationRecords</name>
+        <label>GetLocalicalizationRecords</label>
+        <locationX>50</locationX>
+        <locationY>431</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Assign_to_Quotation_Line_Items</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Preferred_Language__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Apttus_Proposal__Proposal__r.Preferred_Language__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Product__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Apttus_Proposal__Product__c</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Product_Localization__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>LineItem_should_Have_product</targetReference>
+        </connector>
+        <object>Apttus_Proposal__Proposal_Line_Item__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

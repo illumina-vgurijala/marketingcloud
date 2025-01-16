@@ -1,0 +1,161 @@
+<!-- 
+    Apttus Config & Pricing
+    IncentiveManager
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+ <apex:page controller="Apttus_Config2.AdvancedSearchController" 
+ 			lightningStylesheets="true"
+ 			standardStylesheets="false" 
+ 			sidebar="false" 
+ 			showHeader="false" 
+ 			applyHtmlTag="false" 
+ 			docType="html-5.0">
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/incentives-style.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/AdvanceSearch.js')}" />
+    
+    <script>
+        (function($){
+          $(document).ready(function(){
+            $('[id$=idAccountSearchString]').bind("keypress", function search(e) {
+              if (e.keyCode == 13) {
+                searchFunction();
+                return false; // prevent the button click from happening
+              }
+            });
+          });          
+        })(j$);
+
+        function resizeMe() {
+          window.parent.openingPopup = true;
+          if(window.parent.resizeIframe !== undefined) {
+            window.parent.resizeIframe(window.frameElement);  
+          }
+
+        }
+
+        function setSelectedAccountID(AccountID, cb){
+            var currentValue = j$('[id$=selectedAccountIds]').val();
+            if(cb.checked){                
+                if(currentValue == '') {
+                    currentValue = AccountID;
+                } else {
+                    currentValue = currentValue + '; ' + AccountID;
+                }
+            } else {
+                 currentValue = currentValue.replace(AccountID, "");
+            }            
+            j$('[id$=selectedAccountIds]').val(currentValue);
+        }
+    </script>
+    
+    <body >
+        <apex:variable var="rowcount" value="{!0}" />
+        <apex:form styleClass="advanced-search">
+            <apex:inputHidden id="selectedAccountIds" />
+            <div class="advanced-search-container">
+                <div class="search">
+                    <label class="spy-glass">
+                        <i class="fa fa-search"></i>
+                        <div>
+                            <i class="fa fa-times"></i>
+                        </div>
+                    </label>
+                    <apex:inputText id="idAccountSearchString" value="{!searchString}" html-placeholder="{!$Label.apttus_config2__search}" />
+                    <apex:actionFunction action="{!doSearchAccount}" name="searchFunction" reRender="idAccountSearchResultPanel" />
+                </div>
+            </div>
+            <apex:outputPanel id="idAccountSearchResultPanel">
+                <div class="data-controls top-data-controls">
+                    <div class="paging-status">
+                        <span>Items {!firstResult}-{!lastResult} (of {!resultsCount})</span>
+                    </div>
+                    <!-- Account paging buttons -->
+                    <apex:outputPanel styleClass="paging">
+                      <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                        styleClass="prev">&lt;{!$Label.PreviousPage}
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!previousPage}" 
+                                          rendered="{!NOT(PreviousPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idAccountSearchResultPanel">&lt;{!$Label.PreviousPage}
+                      </apex:commandLink>
+                      <span> | </span>
+                      <apex:outputPanel rendered="{!NextPageStatus}" 
+                                        styleClass="prev">{!$Label.NextPage}&gt;
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!nextPage}" 
+                                          rendered="{!NOT(NextPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idAccountSearchResultPanel">{!$Label.NextPage}&gt;
+                      </apex:commandLink>
+                      
+                    </apex:outputPanel>
+                    
+                    <div style="clear: both;"></div>
+                </div>
+                <table class="product-search-header" border="0" cellpadding="0" cellspacing="0">
+                    <thead>
+                        <th class="checkbox-4"><input type="checkbox" id="checkAll" /><label for="checkAll"> </label></th>
+                        <th class="product-15">{!$ObjectType.Account.fields.Name.Label}</th>
+                        <th class="product-family-category-19">{!accountTypeLabel}</th>
+                    </thead>
+                </table>
+                <div class="scrollable-data">
+                    <apex:dataTable value="{!searchedAccountList}" var="Account" styleClass="advanced-search-results">
+                        <apex:column styleClass="checkbox-4">
+                            <input type="checkbox" id="singleCheck{!rowcount}" onchange="setSelectedAccountID('{!Account.Id}', this);"/><label for="singleCheck{!rowcount}"> </label>
+                            <apex:variable var="rowcount" value="{!rowcount+1}" />
+                        </apex:column>
+                        <apex:column styleClass="product-15">
+                            {!Account.name}
+                        </apex:column>
+                        <apex:column styleClass="product-family-category-19">
+                            {!Account[accountTypeField]}
+                        </apex:column>
+                    </apex:dataTable>
+                </div>
+                <div class="data-controls">
+                    <div class="commands">
+                        <a href="#" class="btn disabled" id="idSelect" onclick="parent.getSelectedAccountID(j$('[id$=selectedAccountIds]').val());">Select</a>
+                        <a href="#" class="btn cancel" id="idCancel" onclick="window.parent.accountAdvancedSearchDialog.dialog('close');">Cancel</a>
+                    </div>
+
+                    <apex:outputPanel styleClass="paging">
+                      <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                        styleClass="prev">&lt;{!$Label.PreviousPage}
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!previousPage}" 
+                                          rendered="{!NOT(PreviousPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idAccountSearchResultPanel">&lt;{!$Label.PreviousPage}
+                      </apex:commandLink>
+                      <span> | </span>
+                      <apex:outputPanel rendered="{!NextPageStatus}" 
+                                        styleClass="prev">{!$Label.NextPage}&gt;
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!nextPage}" 
+                                          rendered="{!NOT(NextPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idAccountSearchResultPanel">{!$Label.NextPage}&gt;
+                      </apex:commandLink>
+                      
+                    </apex:outputPanel>
+                    <div style="clear: both;"></div>
+                </div>
+                <script>
+                j$(document).ready(function(){
+                    resizeMe();
+                    advancedSearchFunctionality(j$, ".product-search-header", ".advanced-search-results");
+                });
+                </script>
+            </apex:outputPanel>
+        </apex:form>
+    </body>
+        
+</apex:page>

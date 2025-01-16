@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDROAndIROConsortBlankTypeROConsort</fullName>
+    <active>true</active>
+    <description>Prevents users from saving the Re Order Opportunity when Type is Reorder: Consortium Consumable but Consortium is blank.</description>
+    <errorConditionFormula>AND (
+    OR (
+        RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+        RecordType.DeveloperName = $Label.IndirectReOrder
+    ),
+    TEXT ( Type ) = $Label.OpportunityTypeReorderConsortiumConsumable,
+    ISBLANK ( Consortium__c ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+			 $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward 
+			
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Consortium__c</errorDisplayField>
+    <errorMessage>Opportunity type is &quot;Reorder: Consortium Consumable&quot;; please select name of the Consortium related to this Opportunity in the Consortium lookup field in order to save.</errorMessage>
+</ValidationRule>

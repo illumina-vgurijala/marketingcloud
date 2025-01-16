@@ -1,0 +1,703 @@
+<!-- 
+    Apttus CPQ Maximizer
+    DealMaximizer
+     
+    @2012-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_DealMgr__Deal__c" 
+           extensions="Apttus_CPQOpti.DealMaximizerController" 
+           sidebar="false" 
+           showHeader="false"
+           action="{!doAnalyzeDeal}" >
+           
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Approval__RaphaelJSLibrary21, 'raphael-min.js')} "/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Approval__JQueryUILibrary, 'js/jquery-1.6.2.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Approval__JQueryUILibrary, 'js/jquery-ui-1.8.16.custom.min.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__JQueryUILibrary, 'css/ui-lightness/jquery-ui-1.8.16.custom.css')}"/>
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_CPQOpti__FormeeLibrary, '/js/formee.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_CPQOpti__FormeeLibrary, '/css/formee-style.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_CPQOpti__FormeeLibrary, '/css/formee-structure.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_CPQOpti__DealMaximizerPageLibrary, '/css/DealMaximizerPage.css')}" />
+    
+    <style>
+            .sectionUp h2{
+                padding-left:15px;
+                background-position: 0px -11px;
+                background-image: url('{!$Resource.Apttus_CPQOpti__Image_Toggle}');
+                background-size: 10px 100px;
+                background-repeat: no-repeat;
+            }
+            .sectionDown h2{
+                padding-left:15px;
+                background-position: 0px -80px;
+                background-image: url('{!$Resource.Apttus_CPQOpti__Image_Toggle}');
+                background-size: 10px 100px;
+                background-repeat: no-repeat;
+            }
+    
+          .circle{
+             width: 30px;
+             height: 30px;
+             border-radius: 50%;
+             background-color: blue;
+          }
+        .circlesmall
+            {
+             width: 20px;
+             height: 20px;
+             border-radius: 50%;
+             background-color: blue;
+            }
+        .pricingGuidanceTable {
+            width:100%;
+            text-align:center;
+            border-collapse: collapse;
+            border-top:1px solid #aaa;
+        }
+        
+        .pricingGuidanceTable thead {
+            background-color: #d6dfeb;
+            color: #6f6f6f;
+            text-align: center;
+            line-height:25px;
+            border: 1px solid #aaa;
+            
+            
+        }
+        
+        .pricingGuidanceTable th {
+            text-align:center;
+            padding: 2px 3px;
+            border-bottom: 1px solid #aaaaaa;
+            border-right: 1px solid #aaaaaa;
+        }
+        
+        .pricingGuidanceTable td{
+            vertical-align: middle !important;
+            padding: 1px;
+            border: 1px solid #e3e9ef;
+            vertical-align: middle !important;
+        }
+        
+         .pricingGuidanceTable input{
+            width:80%;
+        }
+        
+        .tiersTable tbody tr{
+            height:50px;
+        }
+        
+        .pricingGuidanceTable tbody td{
+            background-color:white;
+        }
+        .aptRoundedDiv {float: left;}                
+    </style>
+
+
+    <script type="text/javascript">
+    
+        var j$ = jQuery.noConflict();
+        // add slide toggle effects dynamically
+        // click binding is on a div with id = id***Header and action is on
+        // div with id = id***Block where *** is identical for both divs
+        j$(document).ready(function(){
+            j$( 'div[id$="Header"]' ).each(function(){
+                
+                var thisId = j$(this).attr('id');
+                if(!j$(this).hasClass('noArrow')){
+                    j$(this).addClass('sectionDown');
+                }
+                if ( (/^id/).test(thisId)){
+                    var headerId = j$(this).attr('id');
+                    var bodyId = headerId.replace('Header','Block');
+                    j$(this).click(function(){
+                        j$('#'+bodyId).slideToggle(400);
+                        if(!j$(this).hasClass('noArrow')){
+                            if(j$(this).hasClass('sectionUp')){
+                                j$(this).addClass('sectionDown');
+                                j$(this).removeClass('sectionUp');
+                            }else{
+                                j$(this).removeClass('sectionDown');
+                                j$(this).addClass('sectionUp');
+                            }
+                        }
+                    })
+                }
+            })
+            
+        })
+
+        function roundNumber(number, digits) {
+        
+            number = number.toString().replace(',', '');
+            var multiple = Math.pow(10, digits);
+            var rndedNum = Math.round(number * multiple) / multiple;
+            //alert(rndedNum);
+            
+            return rndedNum;
+        }
+        
+        function calcAdditionalDiscount(actionType,fieldNameBuyPrice, fieldNameSellPrice, fieldNameDiscount){
+                
+                //var fnBuyPrice = document.getElementById(fieldNameBuyPrice);
+                var fnSellPrice = document.getElementById(fieldNameSellPrice);
+                var fnDiscount = document.getElementById(fieldNameDiscount);
+                
+            if(actionType == "calcDiscount"){
+                if(fnSellPrice.value>=0 && fieldNameBuyPrice>0){
+                    var dcount=((fieldNameBuyPrice - fnSellPrice.value)/fieldNameBuyPrice) * 100;
+                    fnDiscount.value = roundNumber(dcount,2);
+                }
+                
+            }else if(actionType == "calcSellPrice"){
+
+                if(fnDiscount.value!='' && fieldNameBuyPrice>0){
+                    
+                    var sp=fieldNameBuyPrice - (fieldNameBuyPrice * (fnDiscount.value/100));
+                    fnSellPrice.value  = roundNumber(sp,2);
+                }
+                                
+            }
+        }
+        
+    </script>   
+    
+<!-- VIEW mode -->
+    <apex:form id="wizardForm">
+        <apex:outputPanel id="idHeaderPanel" >
+            <Apttus_Config2:CartHeader id="idCartHeader" 
+                              cartId="{!CartId}"
+                              RequestId="{!ConfigRequestId}" rendered="false"/>
+        </apex:outputPanel>
+        
+        <div width="100%"  class="aptRoundedDiv">
+        <div class="aptGroupHeader" >
+             <h2 style="margin-left: 1em;">{!$Label.DealMaximizerTitle}</h2> 
+        </div>  
+        <apex:pageMessages id="errorPage" />
+        
+        <apex:pageBlock mode="edit" id="DealOptimizerBlock">
+
+        <!-- Page block Buttons --> 
+            <div class="buttonsBlock">
+                    <apex:commandLink action="{!doReturnToCart}" value="{!$Label.apttus_cpqopti__dealreturntocartbutton}" styleClass="aptListButton"/>  
+                    <apex:commandLink action="{!doSave}" value="{!$Label.apttus_cpqopti__dealsavebutton}" styleClass="aptListButton" rendered="false"/>
+                    <apex:commandLink action="{!doCancel}" value="{!$Label.apttus_cpqopti__dealcancelbutton}" styleClass="aptListButton" rendered="false"/>
+                    <apex:commandLink action="{!doAnalyzeDeal}" value="{!$Label.apttus_cpqopti__dealanalyzebutton}" styleClass="aptListButton"/>
+            </div>  
+
+        <!-- Deal Header -->                        
+            <apex:pageBlock mode="detail" id="DealInfo">
+                <div class="aptRoundedDiv" width="100%">
+                    <div id="idDealHeader" class="aptGroupHeader">
+                        <h2 style="margin-left: 1em;">{!$Label.DealHeaderTitle}</h2>
+                    </div>  
+                    <div id="idDealBlock">
+                        <apex:pageBlockSection >
+                           <apex:repeat value="{!$ObjectType.Apttus_DealMgr__Deal__c.FieldSets.Apttus_CPQOpti__DealFieldSet}" 
+                                    var="f">
+                              <apex:outputField value="{!Apttus_DealMgr__Deal__c[f]}" />
+                           </apex:repeat>
+                        </apex:pageBlockSection>
+                    </div>
+                </div>
+           </apex:pageBlock>
+ 
+        <!-- Deal Product Details -->       
+            <apex:pageBlock mode="detail" id="productDetails"  >
+                <div class="aptRoundedDiv" width="100%">
+                    <div id="idProductDetailsHeader" class="aptGroupHeader" >
+                        <h2 style="margin-left: 1em;">{!$Label.DealProductDetailTitle}</h2>
+                    </div> 
+                    <div id="idProductDetailsBlock">
+                    <apex:pageBlockSection columns="1" id="productDetailsBlock">
+                           
+        <!-- Parent/Child   -->                                  
+                        <apex:outputPanel rendered="true" id="idProductsOutputPanel">
+                                    <table  id="idProductsBlock"  class="list" cellspacing="0" cellpadding="0">
+                                        <!-- Header -->
+                                        <tr  class="headerRow"> 
+                                            <td></td>
+                                            <td></td>
+                                            <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.name.Label} </td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.Apttus_Config2__ChargeType__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.Apttus_Config2__Frequency__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.Apttus_Config2__ExtendedListPrice__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.Apttus_Config2__ExtendedRollupPrice__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.Apttus_Config2__NetPrice__c.Label}</td>
+                                            <!-- <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.Apttus_Config2__NetAdjustmentPercent__c.Label}</td>
+                                             -->
+                                            <td> {!$Label.apttus_cpqopti__dealadditionaldiscount}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Guidance__c.Label}</td>                                                                           
+                                        </tr>    
+                                        <tr><td colspan="15"></td></tr>
+   
+                                    <apex:repeat value="{!DealSummaryInfo}"  var="dsi">
+                                    
+                                        <!-- Parent Record-->
+                                        <tr class="dataRow" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}">
+                                            <td style="width: 1%;">
+                                                <apex:commandLink action="{!doExpandSummaryGroup}" 
+                                                                    reRender="idProductsOutputPanel"
+                                                                  rendered="{!(dsi.hasProductLineItems == true && dsi.expanded == false && dsi.IsTotalSummaryGroupRecord==false)}" >
+                                                    <apex:param name="param1" value="{!dsi.dealSummaryGroup.Id}" assignTo="{!expandSummaryGroupId}"/>
+                                                    <apex:image url="{!$Resource.Apttus_Approval__Image_Plus2}" 
+                                                                title="{!$Label.apttus_approval__add}" 
+                                                                alt="{!$Label.apttus_approval__add}" />
+                                                </apex:commandLink>
+                                                <apex:commandLink action="{!doCollapseSummaryGroup}" 
+                                                                    reRender="idProductsOutputPanel"
+                                                                  rendered="{!(dsi.expanded == true && dsi.IsTotalSummaryGroupRecord==false)}" >
+                                                    <apex:param name="param1" value="{!dsi.dealSummaryGroup.Id}"  assignTo="{!collapseSummaryGroupId}"/>
+                                                    <apex:image url="{!$Resource.Apttus_Approval__Image_Minus2}" 
+                                                                title="{!$Label.apttus_approval__remove}" 
+                                                                alt="{!$Label.apttus_approval__remove}" />
+                                                </apex:commandLink>
+                                                
+                                            </td> 
+                                            <td>&nbsp;</td>
+                                            <td>
+                                                <apex:outputfield value="{!dsi.dealSummaryGroup.Name}"/>
+                                            </td>
+                                            <td></td>
+                                            <td><apex:outputfield value="{!dsi.dealSummaryGroup.Apttus_Config2__ChargeType__c}"/></td>
+                                            <td><apex:outputfield value="{!dsi.dealSummaryGroup.Apttus_Config2__Frequency__c}"/></td>
+                                            <td></td>
+                                            <td><apex:outputfield value="{!dsi.dealSummaryGroup.Apttus_Config2__ExtendedListPrice__c}" /></td>
+                                            <td><apex:outputfield value="{!dsi.dealSummaryGroup.Apttus_Config2__ExtendedRollupPrice__c}" id="idBuyPrice"/></td>
+                                            <td>
+                                                <apex:outputPanel styleClass="requiredInput" layout="block" 
+                                                    rendered="{!dsi.dealSummaryGroup.Apttus_Config2__LineType__c!='Grand Total'}">
+                                                    <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                                    
+                                                    <apex:inputfield value="{!dsi.dealSummaryGroup.Apttus_Config2__NetPrice__c}" 
+                                                    id="idSellPrice" styleClass="aptSellPrice"
+                                                    onchange="calcAdditionalDiscount('calcDiscount','{!dsi.dealSummaryGroup.Apttus_Config2__ExtendedRollupPrice__c}', '{!$Component.idSellPrice}', '{!$Component.idDiscount}');"/>
+                                                    
+                                                </apex:outputPanel>
+                                                
+                                                <apex:outputfield value="{!dsi.dealSummaryGroup.Apttus_Config2__NetPrice__c}" 
+                                                    rendered="{!dsi.dealSummaryGroup.Apttus_Config2__LineType__c=='Grand Total'}"/>
+                                                                                                    
+                                            </td>
+                                            
+                                            <!-- <td> -->
+                                                 <!-- 
+                                                <apex:outputPanel rendered="{!NOT(ISNULL(dsi.dealSummaryGroup.Apttus_Config2__NetAdjustmentPercent__c))}">
+                                                    {!dsi.dealSummaryGroup.Apttus_Config2__NetAdjustmentPercent__c * -1} 
+                                                </apex:outputPanel>
+                                                 -->
+                                                <!-- <apex:outputfield value="{!dsi.dealSummaryGroup.New_Net_Discount__c}" />-->
+                                                <!-- </td>  -->
+                                             
+                                             
+                                            <td>                                
+                                                <apex:outputPanel styleClass="requiredInput" layout="block"
+                                                    rendered="{!dsi.dealSummaryGroup.Apttus_Config2__LineType__c!='Grand Total'}">
+                                                    <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                                    <apex:inputfield id="idDiscount" styleClass="aptAdditionalDiscount"
+                                                    	value="{!dsi.dealSummaryGroup.Apttus_Config2__AdjustmentAmount__c}" 
+                                                    	onchange="calcAdditionalDiscount('calcSellPrice','{!dsi.dealSummaryGroup.Apttus_Config2__ExtendedRollupPrice__c}', '{!$Component.idSellPrice}', '{!$Component.idDiscount}');"/>
+                                                </apex:outputPanel>
+                                                
+                                                <apex:outputfield value="{!dealPWFAdditionalDiscount.Apttus_DealOpti__PercentValue__c}" 
+                                                    rendered="{!dsi.dealSummaryGroup.Apttus_Config2__LineType__c=='Grand Total'}"/>
+                                                <!-- 
+                                                <apex:outputfield value="{!dsi.dealSummaryGroup.Apttus_Config2__AdjustmentAmount__c}" 
+                                                    rendered="{!dsi.dealSummaryGroup.Apttus_Config2__LineType__c=='Grand Total'}"/>
+                                                     -->
+                                            </td>
+                                            
+                                            <td></td>
+
+                                        </tr>
+                                    
+                                        <!-- Child Record -->
+                                        <apex:repeat value="{!dsi.dealLineItems}" var="li" rendered="{!dsi.expanded == true}">
+                                            <tr class="dataRow" style="font-size:9px;" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}">
+                                                <td>&nbsp;</td>
+                                                <td>&nbsp;</td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__ProductId__r.Name}" /></td>
+                                                <td>
+                                                    <apex:outputText id="qty" value="{0, number, integer}">
+                                                        <apex:param value="{!li.Apttus_Config2__Quantity__c}" />
+                                                    </apex:outputText>                                      
+                                                </td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__ChargeType__c}"/></td>
+                                                <td></td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__ListPrice__c}" /></td>
+                                                <td><!--  <apex:outputfield value="{!li.Apttus_Config2__ExtendedListPrice__c}" />  --></td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__BasePrice__c}" /></td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__NetPrice__c}" /></td>
+                                                <!-- <td> -->
+                                                    <!--
+                                                    <apex:outputPanel rendered="{!NOT(ISNULL(li.Apttus_Config2__NetAdjustmentPercent__c))}">
+                                                        {!li.Apttus_Config2__NetAdjustmentPercent__c * -1} 
+                                                        
+                                                        <apex:outputText id="qtytmp" value="{0, number, long}">
+                                                            <apex:param value="{!li.Apttus_Config2__NetAdjustmentPercent__c * -1} " />
+                                                        </apex:outputText>                                                      
+                                                    </apex:outputPanel>
+                                                      -->
+                                                <!-- <apex:outputfield value="{!li.New_Net_Discount__c}" /> -->
+                                                <!-- </td>  -->
+                                                <td></td> 
+                                                <td Style="background-color:{!IF(NOT(ISNULL(li.Apttus_Config2__Guidance__c)), li.Apttus_Config2__Guidance__c, 'white')};color:{!IF(NOT(ISNULL(li.Apttus_Config2__Guidance__c)) && li.Apttus_Config2__Guidance__c == 'Black', 'white', 'black')}">
+                                                    &nbsp;
+                                                </td>                                               
+                                            </tr>
+                                        </apex:repeat> 
+                                        
+                                    </apex:repeat> 
+    
+                                    </table>
+
+                                    <script>
+                                    //remove decimal values from quantity field
+                                          $(".aptSellPrice").each(function(){
+                                                $(this).val($(this).val().substring(0, $(this).val().indexOf(".")+3));            
+                                          });
+                                    
+                                    </script>
+                                                    
+                        </apex:outputPanel>
+        
+                    </apex:pageBlockSection>
+
+                    <!-- Cart Line Items without the Summary Group -->
+                    <apex:pageBlockSection columns="1" id="productChildDetailsBlock" rendered="false">
+                        <apex:outputPanel rendered="true" id="idProducts2OutputPanel">
+                            <table  id="idProducts2Block" class="list" cellspacing="0" cellpadding="0">
+                                <!-- Header -->
+                                        <tr  class="headerRow">
+                                            <td></td>
+                                            <td></td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ProductId__c.Label} </td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__SummaryGroup__c.Fields.Apttus_Config2__NetPrice__c.Label}</td>
+                                            <td> {!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Guidance__c.Label}</td>
+                                                                                                                        
+                                        </tr>    
+                                        <tr><td colspan="14"></td></tr>                         
+                                <apex:repeat value="{!DealLineItemsWithoutParent}" var="li">
+                                    <tr class="dataRow" style="font-size:9px;" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}">
+                                                <td>&nbsp;</td>
+                                                <td>&nbsp;</td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__ProductId__r.Name}" /></td>
+                                                <td>
+                                                    <apex:outputText id="qty" value="{0, number, integer}">
+                                                        <apex:param value="{!li.Apttus_Config2__Quantity__c}" />
+                                                    </apex:outputText>                                      
+                                                </td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__ListPrice__c}" /></td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__ExtendedPrice__c}" /></td>
+                                                <td><apex:outputfield value="{!li.Apttus_Config2__NetPrice__c}" /></td>
+                                                <td Style="background-color:{!IF(NOT(ISNULL(li.Apttus_Config2__Guidance__c)), li.Apttus_Config2__Guidance__c, 'white')};color:{!IF(NOT(ISNULL(li.Apttus_Config2__Guidance__c)) && li.Apttus_Config2__Guidance__c == 'Black', 'white', 'black')}">
+                                                    &nbsp;
+                                                </td>                                               
+                                    </tr>
+                                </apex:repeat>
+                            </table>
+                        </apex:outputPanel>
+                    </apex:pageBlockSection>
+                    </div> 
+                </div>
+                    
+            </apex:pageBlock>
+                 
+        <!-- Comparable Deals Info -->
+            <apex:pageBlock mode="detail" id="comparableDeals">
+                <div class="aptRoundedDiv">
+                    <div id="idDealGuidanceHeader" class="aptGroupHeader" >
+                        <h2 style="margin-left: 1em;">{!$Label.DealComparableTitle}</h2>
+                    </div>
+                    <div id="idDealGuidanceBlock">
+                        
+                        <apex:pageBlockSection columns="1" rendered="true">
+                    
+                            <apex:outputPanel rendered="true" id="idcomparableDealsOutputPanel">
+                               
+                                <div id="pricingGuidancePanel"  style="padding:5px; min-width:450px;">
+                                   <b> 
+                                       <apex:outputText value="{!$Label.apttus_cpqopti__dealtotaldiscountpercent} " rendered="false"/>
+                                       
+                                       <apex:outputText value="{!$Label.apttus_cpqopti__currentdeallabel} {!MeasureLabel} {!$Label.apttus_cpqopti__islabel} "/> 
+
+										<apex:outputText value="{0, Number, Currency}" rendered="{!IsMeasureValueFormatType==1}">
+										        <apex:param value="{!MeasureValue}"/>
+										</apex:outputText>                                       
+										<apex:outputText value="{0,number,###,###.##}%" rendered="{!IsMeasureValueFormatType==2}">
+										        <apex:param value="{!MeasureValue}"/>
+										</apex:outputText>                                       										
+										<apex:outputText value="{0, number, ###,###.##}" rendered="{!IsMeasureValueFormatType==3}">
+										        <apex:param value="{!MeasureValue}"/>
+										</apex:outputText>                                       
+                                       
+                                       <apex:outputfield value="{!dealPWFAdditionalDiscount.Apttus_DealOpti__PercentValue__c}" rendered="false"/>                                  
+                                    </b><br/><br/>
+
+<!-- --Deal Guidance Rule Dimension Info -----------------------------------------------  -->                                    
+                                    <apex:outputPanel rendered="false">
+										<div id="idRuleDimensionsHeader" class="aptGroupHeader" >
+					                        <h2 style="margin-left: 1em;">{!$Label.DimensionInformation}</h2>
+					                    </div>
+					                    <div id="idRuleDimensionsBlock">	                                   
+		                                    <table class="list" style="float:left;" width="50%" cellpadding="2px" cellspacing="2px">
+		                                            <tr class="headerRow">                                    
+					                                    <apex:repeat value="{!AppliedRuleDimensionLabels}" var="dl">
+					                                    	<td>{!dl}</td>
+					                                    </apex:repeat>
+					                                </tr>
+					                                <tr class="dataRow">    
+					                                    <apex:repeat value="{!AppliedRuleDimensionValues}" var="dv">
+					                                    	<td>{!dv}</td>
+					                                    </apex:repeat>
+					                                </tr>
+					                       </table>
+				                       </div>
+				                   </apex:outputPanel> 
+								   <apex:outputPanel rendered="{!DisplayDimensionsInGuidance==true && Apttus_DealMgr__Deal__c.Apttus_DealMgr__AppliedRuleDimensionsInfo__c!=null}">				                       
+				                       <div>
+				                       		<b>{!$Label.apttus_cpqopti__dimensioninformation}</b>
+				                       		<div>{!AppliedRuleDimensionInfo}</div>
+				                       </div> 
+				                       
+			                       </apex:outputPanel>                                  
+
+<!-- --Deal Guidance -----------------------------------------------  -->  
+                                 
+                                    <table class="list pricingGuidanceTable" style="float:left;" width="100%" cellpadding="2px" cellspacing="2px">
+                                            <tr class="headerRow">
+                                                <td colspan="2"></td>
+                                                <td colspan="2">
+                                                	<apex:outputText value="{!MeasureLabel}" rendered="{!HidePercentileRangeInGuidance==false}"/>
+                                                </td>
+                                                <td colspan="2"><apex:outputText value="{!NetPriceOrOtherColumnLabel}" rendered="{!HidePriceRangeInGuidance==false}"/></td>
+                                            </tr>
+                                            <tr class="headerRow">
+                                                <td colspan="2">{!$Label.apttus_cpqopti__dealratingcollabel}</td>
+                                                <td><apex:outputText value="{!$Label.apttus_cpqopti__dealratingfromcollabel}" rendered="{!HidePercentileRangeInGuidance==false}"/></td>
+                                                <td><apex:outputText value="{!$Label.apttus_cpqopti__dealratingtocollabel}" rendered="{!HidePercentileRangeInGuidance==false}"/></td>
+                                                <td><apex:outputText value="{!$Label.apttus_cpqopti__dealratingfromcollabel}" rendered="{!HidePriceRangeInGuidance==false}"/></td>
+                                                <td><apex:outputText value="{!$Label.apttus_cpqopti__dealratingtocollabel}" rendered="{!HidePriceRangeInGuidance==false}"/></td>
+                                            </tr>                       
+                                        <apex:repeat value="{!ComparableDeals}" var="cd">
+                                            <tr class="dataRow" 
+                                            style="border: {!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true),'5px solid ' + JSENCODE(cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__ColorCode__c),'0px')};font-size: {!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true),'16px;','12px;')}">
+                                                    <td width="10px">
+                                                        <div class="circle" 
+                                                            style="background-color:{!JSENCODE(cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__ColorCode__c)};}"
+                                                            ></div>
+                                                    </td>
+                                                    <td width="50px" Style="text-align:left;">
+                                                        <apex:outputfield value="{!cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__RangeName__c}" 
+                                                                    />
+                                                    </td>
+                                                    <td>
+                                                        <apex:outputfield value="{!cd.Apttus_DealOpti__PercentFrom__c}" 
+                                                        	rendered="{!(cd.Apttus_DealOpti__PercentFrom__c!=-999 && cd.Apttus_DealOpti__PercentFrom__c!=999)
+                                                        	&&  IsRuleGuidanceUsingCustomMeasure == false && HidePercentileRangeInGuidance==false}"/>
+                                                        <apex:outputText value="{!cd.Apttus_DealOpti__PercentFrom__c}" 
+                                                        	rendered="{!(cd.Apttus_DealOpti__PercentFrom__c!=-999 && cd.Apttus_DealOpti__PercentFrom__c!=999)
+                                                        	&& IsRuleGuidanceUsingCustomMeasure == true && HidePercentileRangeInGuidance==false}"/>
+                                                        <apex:outputText value="" 
+                                                        	rendered="{!(cd.Apttus_DealOpti__PercentFrom__c==-999 || cd.Apttus_DealOpti__PercentFrom__c==999) 
+                                                        	&& HidePercentileRangeInGuidance==false}"/>                                                        
+                                                        	
+                                                    </td>
+                                                            
+                                                    <td>
+                                                        <apex:outputfield value="{!cd.Apttus_DealOpti__PercentTo__c}" 
+                                                        	rendered="{!cd.Apttus_DealOpti__PercentFrom__c!=-999 
+                                                        	&&  IsRuleGuidanceUsingCustomMeasure == false && HidePercentileRangeInGuidance==false}"
+                                                        />
+                                                        <apex:outputText value="{!cd.Apttus_DealOpti__PercentTo__c}" 
+                                                        	rendered="{!cd.Apttus_DealOpti__PercentFrom__c!=-999 
+                                                        	&&  IsRuleGuidanceUsingCustomMeasure == true && HidePercentileRangeInGuidance==false}"/>
+                                                        
+                                                        <!-- System Measure output for first row -->
+                                                        <apex:outputfield value="{!cd.Apttus_DealOpti__PercentTo__c}" 
+                                                        	rendered="{!cd.Apttus_DealOpti__PercentFrom__c==-999 
+                                                        	&& HidePercentileRangeInGuidance==false}"
+                                                        />
+                                                        <!-- Common output for first row -->            
+                                                        <apex:outputText value=" {!$Label.apttus_cpqopti__andbelow}" 
+                                                        	rendered="{!cd.Apttus_DealOpti__PercentFrom__c==-999 && HidePercentileRangeInGuidance==false}"
+                                                        />                                                        	
+                                                        <apex:outputText value=" {!$Label.apttus_cpqopti__andabove}" 
+                                                        	rendered="{!cd.Apttus_DealOpti__PercentFrom__c==999 && HidePercentileRangeInGuidance==false}"
+                                                        />                                                        	
+                                                                                                    	
+                                                    </td>
+                                                    
+                                                    <td>
+                                                        <apex:outputfield value="{!cd.Apttus_DealOpti__AmountFrom__c}" 
+                                                        	rendered="{!(cd.Apttus_DealOpti__AmountFrom__c!=9999999 && cd.Apttus_DealOpti__AmountFrom__c!=-9999999)
+                                                        				&& IsRuleGuidanceUsingCustomMeasure == false && HidePriceRangeInGuidance==false}"/>
+                                                        
+                                                        <apex:outputText value="{0, number, ###,###.##}"  
+                                                        	rendered="{!(cd.Apttus_DealOpti__AmountFrom__c!=9999999 && cd.Apttus_DealOpti__AmountFrom__c!=-9999999) 
+                                                        				&& IsRuleGuidanceUsingCustomMeasure == true && HidePriceRangeInGuidance==false}">
+                                                        
+                                                        	<apex:param value="{!cd.Apttus_DealOpti__AmountFrom__c}"/>
+                                                        		
+                                                        </apex:outputText>
+                                                        	
+                                                    </td> 
+                                                    
+                                                    <td>
+                                                        <!-- System Measure output for first row -->	
+                                                        <apex:outputfield value="{!cd.Apttus_DealOpti__AmountTo__c}"
+                                                        	rendered="{!(cd.Apttus_DealOpti__AmountFrom__c==9999999 || cd.Apttus_DealOpti__AmountFrom__c==-9999999) 
+                                                        				&& IsRuleGuidanceUsingCustomMeasure == false 
+                                                        				&& HidePriceRangeInGuidance==false}"/>  
+                                                        <!-- Custom Measure output for first row -->
+                                                        <apex:outputText value="{0, number, ###,###.##}" 
+                                                        	rendered="{!(cd.Apttus_DealOpti__AmountFrom__c==9999999 || cd.Apttus_DealOpti__AmountFrom__c==-9999999)
+                                                        				&& IsRuleGuidanceUsingCustomMeasure == true 
+                                                        				&& HidePriceRangeInGuidance==false}">
+                                                        	<apex:param value="{!cd.Apttus_DealOpti__AmountTo__c}"/>
+                                                        </apex:outputText>  
+														
+														<!-- Common Measure output for first row -->
+                                                        <apex:outputText value=" {!$Label.apttus_cpqopti__andabove}"
+                                                        	rendered="{!cd.Apttus_DealOpti__AmountFrom__c==9999999 
+                                                        				&& HidePriceRangeInGuidance==false}"/>
+                                                        <apex:outputText value=" {!$Label.apttus_cpqopti__andbelow}"
+                                                        	rendered="{!cd.Apttus_DealOpti__AmountFrom__c==-9999999 
+                                                        				&& HidePriceRangeInGuidance==false}"/>                                                        				
+
+                                                        <!-- System Measure output for rest of rows -->
+                                                        <apex:outputfield value="{!cd.Apttus_DealOpti__AmountTo__c}"
+                                                        	rendered="{!(cd.Apttus_DealOpti__AmountFrom__c!=9999999 && cd.Apttus_DealOpti__AmountFrom__c!=-9999999)
+                                                        				&& IsRuleGuidanceUsingCustomMeasure == false 
+                                                        				&& HidePriceRangeInGuidance==false}"/>
+
+														<!-- Custom Measure output for rest of rows -->
+                                                        <apex:outputText value="{0, number, ###,###.##}"  
+                                                        	rendered="{!(cd.Apttus_DealOpti__AmountFrom__c!=9999999  && cd.Apttus_DealOpti__AmountFrom__c!=-9999999)
+                                                        				&& IsRuleGuidanceUsingCustomMeasure == true 
+                                                        				&& HidePriceRangeInGuidance==false}">
+                                                        
+                                                        	<apex:param value="{!cd.Apttus_DealOpti__AmountTo__c}"/>
+                                                        	
+                                                        </apex:outputText>
+                                                                                                                	                                                      	
+                                                    </td>
+                                            </tr>                       
+                                        </apex:repeat>                              
+                                    </table>
+                                
+                                </div>                             
+    
+                             </apex:outputPanel>
+                            
+                        </apex:pageBlockSection>                    
+                    
+                        <!-- Keeping this section for a rollback scenario -->
+                        <apex:pageBlockSection columns="1" id="comparableDealsBlock" rendered="false">
+        
+                            <apex:pageBlockTable value="{!ComparableDeals}" var="cd" columnsWidth="200px,200px,200px,200px,200x" rendered="{!(ComparableDeals!=null)}">
+
+                                <apex:column value="{!cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__RangeName__c}" headerValue="{!$Label.apttus_cpqopti__dealcomparablemsg1}" 
+                                                Style="background-color:{!JSENCODE(cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c)};color:{!IF((cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c == 'Black'), 'white', 'black')}"/>
+            
+                                <apex:column value="{!cd.Apttus_DealOpti__PercentFrom__c}" headerValue="{!$Label.apttus_cpqopti__dealcomparablemsg2}" 
+                                    Style="background-color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true), JSENCODE(cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c), 'white')};color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true && cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c == 'Black'), 'white', 'black')}"/>        
+                                <apex:column value="{!cd.Apttus_DealOpti__PercentTo__c}" headerValue="" 
+                                    Style="background-color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true), JSENCODE(cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c), 'white')};color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true && cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c == 'Black'), 'white', 'black')}"/>
+                                <apex:column value="{!cd.Apttus_DealOpti__AmountFrom__c}" headerValue="{!$Label.apttus_cpqopti__dealcomparablemsg3}" 
+                                    Style="background-color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true), JSENCODE(cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c), 'white')};color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true && cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c == 'Black'), 'white', 'black')}"/>
+                                <apex:column value="{!cd.Apttus_DealOpti__AmountTo__c}" headerValue="" 
+                                    Style="background-color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true), JSENCODE(cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c), 'white')};color:{!IF((cd.Apttus_DealOpti__IsTheDealColor__c == true && cd.Apttus_DealOpti__RelatedDealPercentileRange__r.Apttus_DealMgr__DealColor__c == 'Black'), 'white', 'black')}"/>
+                    
+                            </apex:pageBlockTable>
+                                
+                        </apex:pageBlockSection>
+                        <!--  -->
+                        
+                    </div>
+                </div>  
+            </apex:pageBlock>                               
+
+	        <apex:pageBlock mode="detail" id="approvalDetails" rendered="false">
+	        
+	            <div width="100%"  class="aptRoundedDiv">
+	                <div id="idApprovalsHeader" class="aptGroupHeader" >
+	                    <h2 style="margin-left: 1em;">{!$Label.DealApprovalTitle}</h2>
+	                </div>
+	                      
+	                <div id="idApprovalsBlock">
+	                    <apex:outputPanel id="idApprovalsPanel" >
+	
+		                    <Apttus_Approval:SObjectApprovals id="idSObjectApprovals"
+		                    contextInfoParam="{!contextInfo}" 
+		                    contextHeaderId="{!ctxHeaderId}"
+		                    viewOnlyMode="false"
+		                    columnFieldSetName="{!fieldSetName}" 
+		                    requestedAction="{!action}"
+		                    exitButtonLabel=""/>
+	                    
+	            		</apex:outputPanel>
+	            
+	                </div>
+	                
+	            </div>
+	            
+	            <script>
+	                function invokeDoReturn() {
+	                    returnToCaller();
+	                }
+	            </script>
+	            <apex:actionFunction name="returnToCaller" action="{!doReturn}"  />     
+	        </apex:pageBlock>
+        
+		<!-- Discounting and Approval Info -->
+	        <apex:pageBlock mode="detail" id="discounting_waterfall">
+	            <div width="100%"  class="aptRoundedDiv">
+	                <div id="idDiscountWaterFallHeader" class="aptGroupHeader" >
+	                    <h2 style="margin-left: 1em;">{!$Label.DealDiscountBlockTitle}</h2>
+	                </div>
+	                <div id="idDiscountWaterFallBlock">
+	                    <apex:pageBlockSection columns="2" id="discounting_waterfallBlock">
+	                        <apex:pageBlockSectionItem >
+	                            <apex:outputPanel style="Width:0px;">
+	                                <apex:pageBlock >
+	                                <div width="100%"  class="aptRoundedDiv">
+	                                    <div class="aptGroupHeader" style="text-align: left;">
+	                                        <h2 style="margin-left: 1em;">{!$Label.DealDiscountTitle}</h2>
+	                                    </div>
+	                                    <apex:pageBlockSection columns="1" rendered="true">
+	                                        <apex:outputfield value="{!GrandTotalSummaryGroup.Apttus_Config2__ExtendedListPrice__c}"/>
+	                                        <apex:outputfield value="{!dealPWFStandardDiscount.Apttus_DealOpti__PercentValue__c}" label="{!$Label.apttus_cpqopti__dealstandarddiscount}"/>
+	                                        <apex:outputfield value="{!GrandTotalSummaryGroup.Apttus_Config2__ExtendedRollupPrice__c}"/>                                                                      
+	                                        <apex:outputfield value="{!dealPWFAdditionalDiscount.Apttus_DealOpti__PercentValue__c}" label="{!$Label.apttus_cpqopti__dealadditionaldiscount}"/>
+	                                        <apex:outputfield value="{!GrandTotalSummaryGroup.Apttus_Config2__NetPrice__c}"/>
+	                                    </apex:pageBlockSection>
+	                                        
+	                                </div>
+	                                </apex:pageBlock>
+	                            </apex:outputPanel> 
+	                            
+	                            <Apttus_DealOpti:DealPriceWaterfall id="idDealPriceWaterfall" dealID="{!Apttus_DealMgr__Deal__c.id}"/>
+	                                                                 
+	                        </apex:pageBlockSectionItem>
+	                            
+	                    </apex:pageBlockSection>    
+	                </div>
+	        	</div>          
+	        </apex:pageBlock>
+
+
+        </apex:pageBlock>
+ 
+    </div>
+    
+    </apex:form>
+
+</apex:page>

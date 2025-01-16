@@ -1,0 +1,76 @@
+<template>
+    <lightning-card title={label.UI_Label_Serial_Number_Selection}>
+        <lightning-button variant="brand" label={label.Button_Back_To_Cart} title="Back to Cart"
+            onclick={handleBackToCart} slot="actions"></lightning-button>
+        <template if:false={booLoadingData}>
+            <lightning-layout>
+                <lightning-layout-item size="12" padding="around-small">
+                <h2 class="slds-text-heading_small" style="border-color:green;color:green;">{mapLabels.UI_Message_SerialNumber_HelpText}</h2>
+                </lightning-layout-item>
+            </lightning-layout>
+        </template>
+        <!-- toast message section -->
+        <template if:true={visible}>
+            <lightning-layout>
+                <lightning-layout-item size="12" padding="around-small">
+                                <h2 class="slds-text-heading_small" style={notificationStyle}>{message}</h2>
+                                <template if:true={boolIsRelocation}>
+                                    <lightning-icon icon-name="utility:success" alternative-text="success"
+                                        variant="Success" size="small"></lightning-icon>
+                                </template>
+                </lightning-layout-item>
+            </lightning-layout>
+        </template>
+        <!-- load details for relocation -->
+        <template if:true={boolIsRelocation}>
+            <lightning-layout>
+                <div class="slds-scrollable_y" style="height: 450px;">
+                    <lightning-layout-item size="5" padding="around-small">
+                        <template if:true={booLoadingData}>
+                            <lightning-spinner alternative-text="Loading" variant="brand"></lightning-spinner>
+                        </template>
+                        <!-- section to show list of Cart item -->
+                        <template if:false={booLoadingData}>
+                            <lightning-card title={mapLabels.UI_Label_Cart_Line_Selection}>
+                                <ul>
+                                    <template for:each={lstLineItem} for:item="lineItem">
+                                        <c-billable-show-line-item-cart line-item={lineItem}
+                                            key={lineItem.strLineItemNumber} onremoveselection={removeSelection}>
+                                        </c-billable-show-line-item-cart>
+                                    </template>
+                                </ul>
+                            </lightning-card>
+                        </template>
+                    </lightning-layout-item>
+                </div>
+
+                <lightning-layout-item size="1" padding="around-small"></lightning-layout-item>
+                <lightning-layout-item size="6">
+                    <!-- section to show selected and available Installed Product -->
+                    <template if:false={showInstalledProductList}>
+                        <div class="slds-align_absolute-center">{mapLabels.UI_Message_Select_Line_Item}</div>
+                    </template>
+                    <template if:true={showInstalledProductList}>
+                        <!-- table to show serial number on line -->
+                        <c-billable-show-i-p-selections id-current-u-c={idCurrentUC}
+                            selected-line-item-details={selectedLineItemDetails}
+                            selected-serial-number={selectedSerialNumber} map-labels={mapLabels}
+                            is-selected-component=true onlineupdate={refreshData}></c-billable-show-i-p-selections>
+                        <br />
+                        <div onkeyup={handleKeyUp}>
+                            <lightning-input name="enter-search"
+                                label="Search (product code, serial/lot number, Installed Product ID)" type="search"
+                                value={queryTerm} is-loading={booLoading} onchange={changeHandler}></lightning-input>
+                        </div>
+                        <br />
+                        <!-- table to show serial number for selection -->
+                        <c-billable-show-i-p-selections data-id="availableIPs" id-current-u-c={idCurrentUC}
+                            selected-line-item-details={selectedLineItemDetails}
+                            selected-serial-number={selectedSerialNumber} map-labels={mapLabels}
+                            onlineupdate={refreshData}></c-billable-show-i-p-selections>
+                    </template>
+                </lightning-layout-item>
+            </lightning-layout>
+        </template>
+    </lightning-card>
+</template>

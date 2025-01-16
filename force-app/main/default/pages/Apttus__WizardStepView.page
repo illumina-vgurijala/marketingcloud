@@ -1,0 +1,104 @@
+<!-- 
+    Apttus Contract Management
+    WizardStepView
+    @2014-2015 Apttus Inc. All rights reserved.    
+ -->
+<apex:page standardController="Apttus__WizardStep2__c" 
+		   showHeader="false"
+		   sidebar="false" 
+		   tabStyle="Apttus__WizardStep2__c"
+           recordSetVar="WizardSteps"
+           extensions="Apttus.WizardStepViewController">    
+    <link rel="stylesheet" href="{!URLFOR($Resource.WizardComponentLibraryUI,'/css/WizardStep/style.css')}" />
+    <script type="text/javascript">
+    	function resetStepFocus(field) { 
+            if(document.getElementById(field) != null) {
+                var length = document.getElementById(field).value.length;            
+            	document.getElementById(field).focus();
+    			document.getElementById(field).setSelectionRange(length, length);
+            }                       
+        };
+    	var wait = (function() {
+  			var timer = 0;
+  			return function(callback, ms){
+    			clearTimeout (timer);
+    			timer = setTimeout(callback, ms);
+ 			};
+		})();    
+    	$(document).on("keyup", ".searchText", function() {
+   			wait(function(){                
+      			invokeSearchSteps();
+    		}, 1000 );
+		});
+
+        var deleteStep = function(stepId) {
+            promptConfirmDialog({
+                    onConfirm: function() {
+                        deleteWizardStep(stepId);
+                    },
+                    promptMessageText: "{!$Label.DeleteConfirmation}",
+                    alert: "{!$Label.Alert}",
+                    buttons: [
+                        { text: "{!$Label.Delete}" },
+                        { text: "{!$Label.Cancel}" }
+                    ]
+                });
+
+            return false;
+        }
+    </script> 
+    
+    <apex:form styleClass="wizard-step-container" id="WizardStepViewForm"> 
+    	<apex:pageblock id="idWizardStepPageBlock">               
+            <apex:outputLabel styleClass="wizard-step">{!$Label.apttus__steps}</apex:outputLabel>              	           
+            <apex:commandButton styleClass="wizard-btn-new" action="{!navigateToStepCreation}" value="{!$Label.apttus__newstep}"/>  
+            
+            <apex:inputText styleClass="searchText" value="{!searchText}" id="idWizardStepSearchText" html-placeholder="{!$Label.apttus__searchplaceholder}"/>
+            <apex:actionFunction name="invokeSearchSteps" action="{!search}" reRender="idWizardStepPageBlock" oncomplete="resetStepFocus('{!$Component.idWizardStepSearchText}')"/>
+            
+			<apex:pageblockTable styleClass="wizard-step-listview" value="{!wizardSteps}" var="wizardStep" id="wizard-step-list" rendered="{!displayRecords}">
+                <apex:column headerValue="{!$Label.apttus__actions}" width="60px;">                    
+                    <apex:commandLink action="{!navigateToStepEdit}" value="{!$Label.apttus__edit}">
+                    	<apex:param value="{!wizardStep.Id}" name="param" assignTo="{!SelectedStepId}"/>
+                    </apex:commandLink>
+                    <apex:outputLabel >&nbsp;|&nbsp;&nbsp;</apex:outputLabel>
+                    <apex:commandLink onclick="return deleteStep('{!wizardStep.Id}');" value="{!$Label.apttus__del}">
+					</apex:commandLink>
+                </apex:column>
+            	<apex:repeat value="{!$ObjectType.Apttus__WizardStep2__c.FieldSets.Apttus__WizardComponentLibraryFieldset}" var="wizardStepFields" >            	
+                    <apex:column value="{!wizardStep[wizardStepFields.fieldPath]}"/>            		
+            	</apex:repeat>          
+			</apex:pageblockTable>        	         
+            <apex:panelGrid columns="3" styleClass="wizard-step-pagination" rendered="{!displayRecords}">
+                <apex:outputPanel >
+                    <apex:outputText value="{!$Label.apttus__page} {!PageNumber} {!$Label.apttus__of} {!CEILING(ResultSize/PageSize)}" />
+                </apex:outputPanel>
+                <apex:outputPanel style="margin-left:250px;">
+                    <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!HasPrevious}" action="{!Previous}" reRender="idWizardStepPageBlock"/>
+                	<apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(HasPrevious)}" style="color: #ccc;"/>
+                	<apex:outputText value="  "/>
+                	<apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!HasNext}" action="{!Next}" reRender="idWizardStepPageBlock"/>                    
+                	<apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(HasNext)}" style="color: #ccc;"/>
+                </apex:outputPanel>
+                <apex:outputPanel style="float:right;">
+                    <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                	<apex:selectList value="{!PageSize}" size="1" >
+                    	<apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                    	<apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                        <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                        <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                    	<apex:actionSupport event="onchange" reRender="idWizardStepPageBlock"/>
+                	</apex:selectList>
+                </apex:outputPanel>                
+            </apex:panelGrid>
+            <apex:outputPanel >
+                <apex:pageblockSection rendered="{!!displayRecords}">
+	            	<apex:outputLabel style="font-weight:bold;margin-left:0px;">{!$Label.apttus__norecordstodisplay}</apex:outputLabel>
+            	</apex:pageblockSection>
+            </apex:outputPanel>
+		</apex:pageblock>
+        <apex:actionFunction name="deleteWizardStep" action="{!deleteWizardStep}" reRender="idWizardStepPageBlock">
+            <apex:param value="" name="param" assignTo="{!SelectedStepId}"/>
+        </apex:actionFunction>
+    </apex:form>     
+</apex:page>

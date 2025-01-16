@@ -1,0 +1,674 @@
+<!-- 
+ 	Apttus Config & Pricing
+ 	CategoryManager
+ 	 
+ 	@2010-2015 Apttus Inc. All rights reserved. 
+-->
+<apex:page standardController="Apttus_Config2__ClassificationName__c" 
+		   extensions="Apttus_Config2.CategoryManagerController" 
+		   lightningStylesheets="true"
+		   showHeader="true"
+		   sidebar="{!ShowAdminSidebar}" 
+		   cache="false">
+		   
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JSTreeLibrary, 'jstree-v.pre1.0/jquery.jstree.js')}"/>
+	
+	<script>
+	var j$ = jQuery.noConflict();
+	
+	var lgImageSet = false;
+	var smImageSet = false;
+
+	j$(function(){
+		j$( ".reorderPanel" ).dialog({
+			autoOpen: false,
+			modal: true,
+			minWidth: 400,
+			close: function( event, ui ) {
+				invokeDoReorderClassifications(selectedNodeId);
+			}
+		});
+
+		j$(document).on('change','.cat-label',function() {
+			if(j$(".cat-name").val().length == 0){
+				j$(".cat-name").val(j$(".cat-label").val());
+			}
+		});
+		
+		j$('.formee').bind("keypress", function (e) {
+			if (e.keyCode == 13) {
+				return false;
+			}
+		});
+
+		//if root node is created call invokeDoEditClassification to load tree
+		if({!NOT(ISBLANK(rootNode))}){
+			invokeDoEditClassification('{!rootNode.Id}');
+		}
+	});
+	
+	j$(".move-up").click(function() {
+		moveUp(j$(this).attr('alt'));
+	});
+	
+	j$(".move-down").click(function() {
+		moveDown(j$(this).attr('alt'));
+	});
+	
+	var depth = 0;
+	function buildHierarchy(arry) {
+		var roots = [], children = {};
+		
+		// find the top level nodes and hash the children based on parent
+		for (var i = 0, len = arry.length; i < len; ++i) {
+		    var item = arry[i];
+		    var p = item.parentId;
+		    var target = !p ? roots : (children[p] || (children[p] = []));
+		
+		    target.push({ value: item });
+		}
+		
+		// function to recursively build the tree
+		var findChildren = function(parent) {
+		    if (children[parent.value.Id]) {
+		        parent.children = children[parent.value.Id];
+		        parent.data = {};
+		        
+		        prodCount = ''; 
+		        if(parent.value.productCount != '0' && parent.value.productCount != 'undefined'){
+		        	prodCount = ' [' + parent.value.productCount + ']';
+		        	
+		        }
+		        parent.data.title = parent.value.label + prodCount;
+		        
+		        parent.data.icon = parent.value.imageUrl;
+		        hasImage = false;
+	        	if(parent.value.imageUrl != ""){
+	        		hasImage = true;
+	        	}
+		        parent.attr = {"Id" : parent.value.Id, "hasImage" : hasImage};
+		        for (var i = 0, len = parent.children.length; i < len; ++i) {
+		        	parent.children[i].data = {};
+		        	
+		        	prodCount = ''; 
+			        if(parent.children[i].value.productCount != '0' && parent.children[i].value.productCount != 'undefined'){
+			        	prodCount = ' [' + parent.children[i].value.productCount + ']';
+			        	
+			        }
+			        
+			        parent.children[i].data.title = parent.children[i].value.label + prodCount;
+		        	hasImage = false
+		        	if(parent.children[i].value.imageUrl != ""){
+		        		hasImage = true;
+		        	}
+		        	parent.children[i].data.icon = parent.children[i].value.imageUrl;
+		        	parent.children[i].attr = {"Id" : parent.children[i].value.Id, "Leaf" : parent.children[i].value.leaf, "hasImage" : hasImage};
+		            findChildren(parent.children[i]);
+		        }
+		    }else{
+		    	parent.data = {};
+		    	parent.children;
+		    	prodCount = ''; 
+		        if(parent.value.productCount != '0' && parent.value.productCount != 'undefined'){
+		        	prodCount = ' [' + parent.value.productCount + ']';
+		        	
+		        }
+		        parent.data.title = parent.value.label + prodCount;
+		        parent.data.icon = parent.value.imageUrl;
+		        hasImage = false;
+	        	if(parent.value.imageUrl != ""){
+	        		hasImage = true;
+	        	}
+		        parent.attr = {"Id" : parent.value.Id, "hasImage" : hasImage};
+		        
+		    }
+		};
+		
+		// enumerate through to handle the case where there are multiple roots
+		for (var i = 0, len = roots.length; i < len; ++i) {
+		    findChildren(roots[i]);
+		}
+		return roots;
+	}
+	
+	function removeCategory(selectedNodeId){
+		msg = "{!$Label.RemoveClassification}";
+		deleteCategory = confirm(msg);
+		if(!deleteCategory){
+			return false;
+		}
+		invokeDoRemoveClassification(selectedNodeId);
+	}
+	function getImageURL(imageId,imgType){
+		Visualforce.remoting.Manager.invokeAction(
+	        '{!$RemoteAction.CategoryManagerController.getImageUrl}', 
+	        imageId, 
+	        function(result, event){
+	            if (event.status) {
+	                imageURL = result;
+	                if(j$('#'+imageId+'-'+imgType+'-img').length == 0){
+	                	j$('#'+imageId+'-'+imgType).append('<img id="'+imageId+'-'+imgType+'-img" class="cls-icon-image" src="'+imageURL+'" />');
+	            	}
+	            } else if (event.type === 'exception') {
+	            } else {
+	            }
+	        }, 
+	        {buffer:false, escape: true} 
+	    );
+	}
+	function getDocHeight(doc) {
+	    doc = doc || document;
+	    // from http://stackoverflow.com/questions/1145850/get-height-of-entire-document-with-javascript
+	    var body = doc.body, html = doc.documentElement;
+	    var height = Math.max( body.scrollHeight, body.offsetHeight, 
+	        html.clientHeight, html.scrollHeight, html.offsetHeight );
+	    return height;
+	}
+	
+	function setIframeHeight(id) {
+	    var ifrm = document.getElementById(id);
+	    var doc = ifrm.contentDocument? ifrm.contentDocument: ifrm.contentWindow.document;
+	    ifrm.style.visibility = 'hidden';
+	    ifrm.style.height = "10px"; // reset to minimal height in case going from longer to shorter doc
+	    // some IE versions need a bit added or scrollbar appears
+	    ifrm.style.height = getDocHeight( doc ) + 40 + "px";
+	    ifrm.style.visibility = 'visible';
+	}
+	function finishedLoadingProds(){
+		j$('#loading-prods').hide();
+	}
+	function showLoadingDiv() {
+		determineLocationAndSizeOfOveraly();
+		j$('.aptLoadingOverlay').show();
+	}
+	function hideLoadingDiv() {
+		j$('.aptLoadingOverlay').hide();
+	}
+	function determineLocationAndSizeOfOveraly() {
+		var position = j$('.grid_7').position();
+		j$('.aptLoadingOverlay').css( { position: 'absolute', left: position.left, top: position.top });
+		j$('.aptLoadingOverlay').width(j$('.grid_7').width()+30);
+		j$('.aptLoadingOverlay').height(j$('.grid_7').height()+30);
+	}
+	function loading(styleClass){
+		j$(styleClass).after('<img src="/img/loading32.gif" class="saving-img" alt="{!$Label.Saving}..." />');
+		j$(styleClass).attr('disabled','disabled');
+	}
+	function loadComplete(styleClass){
+		j$(styleClass).next('img').remove();
+		j$(styleClass).removeAttr('disabled');
+	}
+	</script>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__GridSystemLibrary, '960.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__ManagerStyles)}" />	
+	
+	<div class="aptLoadingOverlay">
+		<div>
+			<br/>
+			<h2>{!$Label.Loading}...</h2><br/>
+				&nbsp;
+		</div>
+	</div>
+		
+		<apex:form id="idForm" styleClass="formee">
+			<apex:outputPanel id="idErrorMsg">
+				<apex:pageMessages />
+			</apex:outputPanel>
+			
+
+			<div id="contentWrap" class="aptRoundedDiv">
+	            <div class="aptGroupHeader">
+	                    <div style="float:left;">
+	                    		<apex:commandButton action="{!doCancel}" value="{!$Label.apttus_config2__back}"/>
+	                    </div>
+	                    <h2 class="main-head">&nbsp;&nbsp;&nbsp;&nbsp;{!hierarchyObject.name} - {!$Label.Category} {!$Label.Manager}</h2>
+	                    <div class="clear"></div>
+	            </div>
+	            
+			<div id="hierarchy-head" class="grid_12">
+				
+			</div>
+			 
+			<!-- Tree -->
+			<apex:outputPanel id="treeWrap" styleClass="grid_3 alpha" layout="block">
+				<a class="tree-commands" href="javascript:void(0);" onclick="j$('#sidetree').jstree('open_all');">{!$Label.ExpandAll}</a>
+				<a class="tree-commands" href="javascript:void(0);" onclick="j$('#sidetree').jstree('close_all');">{!$Label.CollapseAll}</a>
+				
+				<div id="sidetree">
+					<!-- TREE DISPLAY -->
+				</div>
+				
+				<div id="reorderLoading">
+					<h2>{!$Label.Loading}...</h2><br/>
+					<img src="/img/loading32.gif" title="/img/loading32.gif"/>
+				</div>
+				<apex:outputPanel id="idReorderWrap" layout="block">
+					<script>
+						var clsNodes = new Array();
+						var selectedNodeId;
+						var isSelectedNodeLeaf = 'false';
+					</script>
+					<apex:repeat value="{!classList}" var="cls">
+						<script>
+						  	clsNode = new Object();
+						  	
+						  	clsNode.label = "{!JSENCODE(SUBSTITUTE(cls.label,'"','&#34;'))}";
+						  	clsNode.data = "{!JSENCODE(SUBSTITUTE(cls.name,'"','&#34;'))}";
+				  			clsNode.parentId = "{!cls.parentId}";
+						  	clsNode.Id = "{!cls.nodeId}";
+				  			clsNode.lvl = "{!cls.nodeLvl}";
+				  			clsNode.leaf = "{!cls.leaf}";
+				  			clsNode.expanded = "{!cls.expanded}";
+				  			clsNode.focus = "{!cls.focus}";
+				  			clsNode.productCount = "{!cls.productCount}";
+				  			clsNode.imageUrl = "{!cls.imageUrl}";
+				  			
+						  	clsNodes.push(clsNode);
+						</script>
+					</apex:repeat>
+					<script type="text/javascript">
+						var theTree = { 
+								"json_data" : {
+								},
+								"plugins" : [ "themes", "json_data", "ui" ],
+								"core" : {"html_titles" : true},
+								"themes" : {
+									"icons" : true,
+									"dots" : false
+								}
+							};
+						theTree.json_data.data = buildHierarchy(clsNodes);
+						j$(document).ready(function(){
+							j$("#sidetree").jstree(theTree).bind("select_node.jstree", 
+								function (e, data) { 
+									smImageSet = false;
+									smImageSet = false;
+									selectedNodeId = data.rslt.obj.attr("id");
+									isSelectedNodeLeaf = data.rslt.obj.attr("Leaf");
+									invokeDoEditClassification(selectedNodeId);
+								}
+							).bind('loaded.jstree', function(e, data) {
+								if(selectedNodeId == undefined){
+							    	j$(this).jstree("select_node", j$('#{!rootNode.Id}'));
+							    	//invokeDoEditClassification('{!rootNode.Id}');
+							    	
+						    		selectedNodeId = '{!rootNode.Id}';
+								}else{
+									j$(this).jstree("select_node", j$('#'+selectedNodeId));
+									//invokeDoEditClassification(selectedNodeId);
+								}
+								
+								 j$("[hasImage='true']").addClass('hasImage');
+						    	 j$("[hasImage='false']").addClass('noImage');
+								 j$('#sidetree').jstree('open_all');
+								 j$('.treeWrap').css('width',j$('.treeWrap').width() + 10);
+							});
+						});
+					</script>
+				</apex:outputPanel>	
+			</apex:outputPanel>
+			<!-- End Tree -->
+			
+			<!-- Category Fields -->
+			<apex:outputPanel id="idEditClassWrap" styleClass="grid_7 omega aptRoundedDiv idEditClassWrapClass" layout="block">
+				<apex:commandButton action="{!createRoot}" 
+        							value="{!$Label.apttus_config2__createrootcategory}"
+        							rendered="{!ISBLANK(rootNode)}"/>
+
+				<apex:outputPanel rendered="{!ISBLANK(editClass)}" id="idEditClassificationNone" styleClass="aptProductListHeader hide-on-load" layout="block">
+					<div class="bread-crumb aptGroupHeader">
+						<h2 align="center">{!$Label.No} {!$Label.Category} {!$Label.Selected}</h2>
+					</div>
+				</apex:outputPanel>
+				<div id="loading">
+					<h2>{!$Label.Loading}...</h2><br/>
+					<img src="/img/loading32.gif" title="/img/loading32.gif"/>
+				</div>
+				<apex:outputPanel rendered="{!NOT(ISBLANK(editClass))}" id="idEditClassification" layout="block" styleClass="hide-on-load">
+					<div class="bread-crumb aptGroupHeader">
+						<h2>{!editTitle} {!editClass.Name}</h2>
+					</div>
+					<div id="category-fields">
+						<div class="input-col-left ">	
+							<apex:outputPanel styleClass="input-row" layout="block">
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__Label__c.label}"/>
+								</div>
+								<div class="input-field">
+									<apex:inputField styleClass="cat-label" id="idClassificationLabel" 
+										 value="{!editClass.Apttus_Config2__Label__c}"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+						
+							<apex:outputPanel styleClass="input-row" layout="block">
+								<div class="input-label">
+									<apex:outputLabel styleClass="cat-name" value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Name.label}"/>
+								</div>
+								<div class="input-field">
+									<apex:inputField styleClass="cat-name" id="idClassificationName" 
+										 value="{!editClass.Name}" 
+										 required="true"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							
+							<apex:outputPanel styleClass="input-row" layout="block" rendered="{!isOffering}">
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__GuidePage__c.label}"/>
+								</div>
+								<div class="input-field">
+									<apex:inputField id="idGuidePage" 
+										 value="{!editClass.Apttus_Config2__GuidePage__c}" />
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							
+							<apex:outputPanel styleClass="input-row" layout="block">									 
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__DefaultSearchCategory__c.label}"/>
+								</div>
+								<div class="input-field">
+									<apex:inputField id="idDefaultSearchCategory" 
+										value="{!editClass.Apttus_Config2__DefaultSearchCategory__c}"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							
+							<apex:outputPanel styleClass="input-row" layout="block">
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__ExpandedByDefault__c.label}"/>
+								</div>
+								<div class="input-field">
+									<apex:inputField id="idExpandedByDefault" 
+											 value="{!editClass.Apttus_Config2__ExpandedByDefault__c}"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							
+							<apex:outputPanel styleClass="input-row" layout="block">
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__LongDescription__c.label}"/>
+								</div>
+								<div class="input-field">
+									<span id="longdesc" style="display:none;">{!longDescription}</span>
+									<apex:inputTextarea styleClass="longdesc" id="idLongDescription" 
+											 value="{!longDescription}"/>
+									
+									<script>
+										j$('.longdesc').val(j$('#longdesc').html());
+									</script>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+						</div>
+						<div class="input-col-right">
+							<apex:outputPanel styleClass="input-row" layout="block" rendered="{!isOffering}">	 			 	 			 
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__IncludeInTotalsView__c.label}"/>
+								</div>
+								<div class="input-field">
+									<apex:inputField id="idIncludeInTotalsView" 
+										 value="{!editClass.Apttus_Config2__IncludeInTotalsView__c}"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							
+							<apex:outputPanel styleClass="input-row" layout="block" rendered="{!(isGroup && isLeaf)}">			 	 			 
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__MinOptions__c.label}" />
+								</div>
+								<div class="input-field">
+									<apex:inputField value="{!editClass.Apttus_Config2__MinOptions__c}" />
+								</div>	
+								<div class="clear"/>
+							</apex:outputPanel>
+							
+							<apex:outputPanel styleClass="input-row" layout="block" rendered="{!(isGroup && isLeaf)}">			 
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__MaxOptions__c.label}" />
+								</div>
+								<div class="input-field">
+									<apex:inputField value="{!editClass.Apttus_Config2__MaxOptions__c}"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+
+							<apex:outputPanel styleClass="input-row" layout="block" >			 
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__HideAllSearchFilters__c.label}" />
+								</div>
+								<div class="input-field">
+									<apex:inputField value="{!editClass.Apttus_Config2__HideAllSearchFilters__c}"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							
+							<apex:outputPanel styleClass="input-row" layout="block" >				 
+								<div class="input-label">
+									<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.fields.Apttus_Config2__SearchFilterFields__c.label}"/>
+								</div>
+								<div class="input-field" style="width:100%;">
+									<apex:inputField value="{!editClass.Apttus_Config2__SearchFilterFields__c}"/>
+								</div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							<apex:outputPanel rendered="{!editClass.Id != null}" styleClass="input-row" layout="block">
+								<div class="input-label">
+									<a href="javascript:void(0);" onclick="invokeDoEditImage(selectedNodeId,false);">
+										{!$Label.Image}
+									</a>
+								</div>
+								<script>
+									if ('{!JSENCODE(editClass.IconId__c)}' != '') {
+										getImageURL('{!JSENCODE(editClass.IconId__c)}','sm');
+									}
+								</script>
+								<div id="{!editClass.IconId__c}-sm" class="input-img"></div>
+								<div class="clear"/>
+							</apex:outputPanel>
+							<apex:outputPanel rendered="{!editClass.Id != null}" styleClass="input-row" layout="block">
+								<div class="input-label">
+									<a href="javascript:void(0);" onclick="invokeDoEditImage(selectedNodeId,true);">
+										{!$Label.LargeImage}
+									</a>
+								</div>
+								<script>
+									if ('{!JSENCODE(editClass.LargeIconId__c)}' != '') {
+										getImageURL('{!JSENCODE(editClass.LargeIconId__c)}','lg');
+									}	
+										
+								</script>
+								<div id="{!editClass.LargeIconId__c}-lg" class="input-img"></div>
+								<div class="clear"/>
+							</apex:outputPanel>
+						</div><div class="clear"/>
+						<div class="command-buttons">
+							<apex:commandButton value="{!$Label.apttus_config2__save}"
+												action="{!saveEditClassification}"
+												rendered="{!editClass.Id != null}"
+												onClick="loading('.save-btn');"
+												styleClass="save-btn"
+												onComplete="loadComplete('.save-btn');rerenderTree();"
+												rerender="idErrorMsg"/>
+												
+							<apex:commandButton value="{!$Label.apttus_config2__save}"
+												action="{!saveAddClassification}"
+												rendered="{!editClass.Id == null}"
+												onComplete="selectedNodeId = '{!editClass.Id}';"
+												rerender="idEditClassWrap, idReorderWrap, idErrorMsg" />
+							
+							<apex:commandButton value="{!$Label.apttus_config2__cancel}"
+												rendered="{!editClass.Id == null}"
+												onClick="invokeDoEditClassification('{!contextNodeId}');selectedNodeId = '{!contextNodeId}';return false;" />
+							
+							<apex:commandButton id="reorder-link"
+												rendered="{!isReorderable && editClass.Id != null}"
+												onclick="j$('.reorderPanel').dialog('open'); return false;" 
+												value="{!$Label.apttus_config2__reorder}"/>
+									
+							<apex:outputPanel rendered="{!editClass.Id != null}">
+								<apex:commandButton value="{!$Label.apttus_config2__addsubcategory}" 
+									onclick="invokeDoAddClassification(selectedNodeId); selectedNodeId = ''; return false;" />
+								<!-- apex:commandButton value="{!$Label.AssociateProducts}" 
+									onclick="invokeDoAssignProducts(selectedNodeId); return false;" />
+								<apex:commandButton value="{!$Label.ReorderCategories}" 
+									onclick="invokeDoReorderClassifications(selectedNodeId); return false;" /-->
+								<apex:commandButton value="{!$Label.apttus_config2__removecategory}" 
+													rendered="{!rootNode.Id != editClass.Id}"
+													onclick="removeCategory(selectedNodeId); return false;" />
+							</apex:outputPanel>
+						</div>
+					</div>
+					<div class="clear"/>
+					
+				</apex:outputPanel>
+				<apex:outputPanel id="framePanel">
+					<apex:outputPanel rendered="{!ISBLANK(productClassificationURL)}" layout="block">
+						<script>
+							hideLoadingDiv();
+						</script>
+					</apex:outputPanel>
+					<apex:outputPanel id="productClassificationPanel" rendered="{!AND(NOT(ISBLANK(productClassificationURL)),NOT(ISBLANK(editClass.Id)))}" layout="block">
+						<script>
+							j$('#loading-prods').show();
+						</script>
+						<br/><br/>
+						<iframe id="productClassificationFrame" width="100%" onload="setIframeHeight(this.id); hideLoadingDiv();" src="{!productClassificationURL}" scrolling="no" />
+					</apex:outputPanel>
+				</apex:outputPanel>
+			</apex:outputPanel>
+			<!-- End Category Fields -->
+			
+			<!-- Reorder -->
+			<div class="reorderPanel" title="{!$Label.apttus_config2__reorder}">
+				<apex:outputPanel id="reorderPanel">
+				<div title="Reorder Categories">
+					<apex:outputPanel >
+						<b><apex:actionStatus id="idReorderStatusUpdate" 
+											  startText="Updating Order..." onStart="" onStop="" /></b>
+					</apex:outputPanel>
+					
+					<apex:dataTable styleClass="reorderTable" value="{!classWrapperList}" 
+										 var="lvlClassSO"
+										 width="100%">
+	
+						<apex:column headerValue="{!$ObjectType.Apttus_Config2__ClassificationHierarchy__c.Fields.Name.Label}">
+							<span class="input-label"><apex:outputField value="{!lvlClassSO.classSO.Apttus_Config2__Label__c}" /></span>&nbsp;&nbsp;&nbsp;
+						</apex:column>
+	
+						<apex:column styleClass="reorderCol" width="20px" headerValue="Move Up/Down">
+							<div align="right">
+							<table class="move-table"><tr><td width="24">
+							<apex:commandLink action="{!doMoveUpRow}"
+											  reRender="reorderPanel"
+											  rendered="{!lvlClassSO.canMoveUp}"
+											  status="idReorderStatusUpdate">
+								<apex:param name="seqNum" 
+											assignTo="{!contextNodeId}"
+											value="{!lvlClassSO.classSO.Id}" />
+								<apex:image url="{!$Resource.Apttus_Config2__Image_MoveUp}"
+											title="{!$Label.apttus_config2__moveup}" 
+											alt="{!$Label.apttus_config2__moveup}" />
+							</apex:commandLink>
+							</td>
+							</tr><tr>
+							<td width="24">
+							<apex:commandLink action="{!doMoveDownRow}"
+											  reRender="reorderPanel"
+											  rendered="{!lvlClassSO.canMoveDown}"
+											  status="idReorderStatusUpdate">
+								<apex:param name="seqNum" 
+											assignTo="{!contextNodeId}"
+											value="{!lvlClassSO.classSO.Id}" />
+								<apex:image url="{!$Resource.Apttus_Config2__Image_MoveDown}"
+											title="{!$Label.apttus_config2__movedown}" 
+											alt="{!$Label.apttus_config2__movedown}" />
+							</apex:commandLink>
+							</td></tr></table>
+							</div>
+						</apex:column>
+	
+					</apex:dataTable>
+				</div>
+				</apex:outputPanel>
+			</div>
+			<!-- End Reorder --> 
+			
+			<apex:inputHidden value="{!Apttus_Config2__ClassificationName__c.Name}" />
+			<apex:inputHidden value="{!Apttus_Config2__ClassificationName__c.Apttus_Config2__HierarchyLabel__c}" />
+			<apex:inputHidden value="{!Apttus_Config2__ClassificationName__c.Apttus_Config2__Type__c}" />
+			<apex:inputHidden value="{!Apttus_Config2__ClassificationName__c.Apttus_Config2__GuidePage__c}" />	
+			
+			<apex:actionFunction name="invokeDoReorderClassifications"
+								 reRender="idReorderWrap"
+								 immediate="true" status="invokeDoReorderClassificationsStatus">
+				<apex:param name="firstParam" assignTo="{!contextNodeId}" value="" />
+			</apex:actionFunction>
+			<apex:actionStatus id="invokeDoReorderClassificationsStatus" 
+				onStart="j$('#reorderLoading').show();" 
+				onStop="j$('#reorderLoading').hide();" />
+				
+			<apex:actionFunction action="{!doEditClassification}"
+								 name="invokeDoEditClassification"
+								 reRender="idEditClassWrap, reorderPanel, associateProductsPanel, idSelectProduct, framePanel, idErrorMsg"
+								 immediate="true"
+								 status="loadStatus">
+				<apex:param name="firstParam" assignTo="{!contextNodeId}" value="" />
+			</apex:actionFunction>
+			
+			<apex:actionFunction action="{!doEditImage}" 
+								 name="invokeDoEditImage"
+								 reRender="idErrorMsg" 
+								 immediate="true">
+				<apex:param name="firstParam" assignTo="{!contextNodeId}" value="" />
+				<apex:param name="secondParam" assignTo="{!isLargeImage}" value="" />
+			</apex:actionFunction>
+			
+			<apex:actionStatus id="invokeDoEditClassificationStatus" 
+								onStart="showLoadingDiv();" 
+								onStop="determineLocationAndSizeOfOveraly();hideLoadingDiv();"  />
+			
+			<apex:actionFunction action="{!doAssignProducts}"
+								 name="invokeDoAssignProducts" 
+								 reRender="idErrorMsg" 
+								 immediate="true">
+				<apex:param name="firstParam" assignTo="{!contextNodeId}" value="" />
+			</apex:actionFunction>
+			
+			<apex:actionFunction action="{!doAddClassification}"
+								 name="invokeDoAddClassification"
+								 reRender="idEditClassWrap, reorderPanel, associateProductsPanel, idErrorMsg"
+								 status="invokeDoEditClassificationStatus">
+				<apex:param name="firstParam" assignTo="{!contextNodeId}" value="" />
+			</apex:actionFunction>
+			
+			<apex:actionFunction action="{!doRemoveClassification}"
+								 name="invokeDoRemoveClassification"
+								 reRender="idEditClassWrap, reorderPanel, associateProductsPanel, idReorderWrap, idErrorMsg"
+								 status="invokeDoEditClassificationStatus"
+								 onComplete="selectedNodeId = '{!editClass.Id}';">
+				<apex:param name="firstParam" assignTo="{!contextNodeId}" value="" />
+			</apex:actionFunction>
+			
+			<apex:actionFunction name="rerenderframePanel"
+								 rerender="framePanel"/>
+			
+			<apex:actionFunction name="rerenderTree"
+								rerender="treeWrap"
+								action="{!reload}"
+								status="loadStatus" />
+			
+			<apex:actionStatus id="loadStatus" 
+								onStart="showLoadingDiv();" 
+								onStop="determineLocationAndSizeOfOveraly();" />
+			<div class="clear"/>
+			</div>
+		</apex:form>
+	
+</apex:page>

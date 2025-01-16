@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckRecordEditWhenStatusNotOpenOrOnHold</fullName>
+    <active>true</active>
+    <description>The record is editable on in the following statuses - Open, On Hold. It remains locked for other status values.</description>
+    <errorConditionFormula>AND(
+			NOT(ISNEW()), 
+			AND(
+				NOT($Profile.Name =$Label.ProfileIntegrationSAP),
+				NOT($Profile.Name =$Label.Integration_SAP_Service),
+				NOT($User.FirstName ==$Label.Automated_Process_User),
+				NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)),
+				NOT($Profile.Name=$Label.ProfileCustomerService),
+				NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+				NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c)
+			),
+			NOT(TEXT(PRIORVALUE(SVMXC__Line_Status__c)) == $Label.PartsOrderLineOpen),
+			NOT(TEXT(PRIORVALUE(SVMXC__Line_Status__c)) == $Label.PartsOrderLineOnHold),
+            SVMXC__RMA_Shipment_Order__r.Integration_Status__c = &apos;S&apos;,
+            NOT( SVMXC__RMA_Shipment_Order__r.Submit_to_SAP__c = true),
+			NOT(ISCHANGED( SVMXC__Line_Status__c )),
+			NOT(ISCHANGED( Consumed_QTY__c ))
+			
+			)</errorConditionFormula>
+    <errorMessage>Record can be edited only for &quot;Open&quot; and &quot;On Hold&quot; statuses.</errorMessage>
+</ValidationRule>

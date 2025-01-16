@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>LaborTravelIndirectHoursCheckOnLaborWD</fullName>
+    <active>true</active>
+    <description>DCP-25287 : Validation rule to check if wither Labor Hours, Travel Hours or Indirect Hours is populated on Labor Work detail for work order debrief</description>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT(
+AND(
+NOT(ISBLANK(SVMX_PS_External_ID__c)),
+ISCHANGED(Integration_Status__c),
+Integration_Status__c==&apos;Success&apos;
+)),
+NOT(TEXT(SVMXC__Line_Status__c)==$Label.Canceled),
+OR($Profile.Name == $Label.ProfileName_FieldService,
+$Profile.Name == &apos;Channel Partner Sales and Read Only Service&apos;,
+$Profile.Name == &apos;Channel Partner Sales and Read Only Service Login&apos;,
+$Profile.Name == &apos;Channel Partner Sales and Service&apos;,
+$Profile.Name == &apos;Channel Partner Service&apos;),
+ISBLANK( Labor_Hours__c ),
+ISBLANK( Travel_Time_in_hours__c ),
+ISBLANK( Indirect_in_hours__c ),
+RecordType.DeveloperName = &apos;UsageConsumption&apos;,
+ISPICKVAL( SVMXC__Line_Type__c , &apos;Labor&apos;),
+NOT(OR(ISPICKVAL( SVMXC__Activity_Type__c , &apos;Field Compliance Review&apos;), ISPICKVAL( SVMXC__Activity_Type__c , &apos;Customer Service Review&apos;), ISPICKVAL( SVMXC__Activity_Type__c , &apos;Qualification Service Review&apos;) ) ) )</errorConditionFormula>
+    <errorMessage>Please populate at least one of the Labor Hours, Travel Hours, Indirect Hours fields</errorMessage>
+</ValidationRule>

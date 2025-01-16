@@ -1,0 +1,1027 @@
+<!-- 
+    Apttus Contract Management
+    ReviewOfflineDocument
+     
+    @2018-2020 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus__APTS_Agreement__c" sidebar="false"  
+           extensions="Apttus.ReviewOfflineDocumentController">    
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <Apttus_Base2:UsageDataComponent2 ProdName="{!systemSettingforUsageAnalytics['productName']}" ProdVersion="{!systemSettingforUsageAnalytics['productVersion']}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__PDFViewerJS, 'web/viewer.css')}"/>
+    <script type="text/javascript" src="/soap/ajax/42.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/42.0/apex.js"></script>      
+    <apex:include pageName="Apttus__ComplyJSLibInclude" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+    <apex:variable var="overlayPopupAddAction" value="add"/>
+    <apex:variable var="overlayPopupEditAction" value="edit"/>
+    <apex:variable var="overlayPopupDeleteAction" value="delete"/>
+    <apex:variable var="overlayPopupCancelAction" value="cancel"/>
+    <apex:variable var="overlayPopupCloseAction" value="close"/>    
+    <apex:variable var="overlayPopupAddActionFromRightclick" value="addfrompdf"/>
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__ForceTK, 'forcetk.js')}" />
+
+    <style type="text/css">
+        .scanQuality {
+            
+            color: black; 
+            padding-top: 5px; 
+            padding-left: 8px; 
+            font-size: 15px;
+        }
+        .radioOpt td {
+            padding-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .addClause {
+            display:none; position:absolute; 
+            min-width: 150px;
+            box-shadow: 2px 2px 2px -2px #ddd; 
+            text-align:center;
+            background: #fff;
+            z-index: 9999;
+            border: thin solid #ddd;
+            border-radius: 2px;   
+            padding: 15px;
+            cursor: pointer;
+            margin: 5px 0;
+            font-size: 12px;
+        }        
+        .addClause:hover {
+            background :#f5f5f5;
+        }
+        .category {
+            background : #d3d3d3;
+            padding-bottom: 7px;
+            padding-top: 5px;
+        }
+        .sub-category {
+            background : #d3d3d3;
+            padding-bottom: 7px;
+        }
+        .clausedetail {
+            background: #ece8e8;
+            overflow-y:scroll;
+            height: 90px;
+        }
+        .clause-details {
+            box-sizing: border-box;
+            border-bottom: 1px solid #a8a8a8;
+        }
+        
+        .linkContainer {
+            font-size: .98rem !important;
+            font-weight: 500;
+            padding-left: 20px;
+            padding-bottom: 10px;
+            padding-top: 10px;
+        }
+        
+        .linkContainer span a {        
+            color: #0077c5;
+        }
+        
+        html body.sfdcBody {
+            padding: 0px 20px 0 20px;
+        }
+        
+        .selectCls {
+            max-width: 100% !important;
+        }
+        
+        .inputValueCls {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+    </style>
+
+    <script type="text/javascript">
+        
+        /** Redirect back to agreement detail page if the statuscategory of agreement is NOT Import
+         *  and status is NOT Review.
+         */            
+        var agreementStatusCategory = '{!JSENCODE(APTS_Agreement__c.Status_Category__c)}';
+        var agreementStatus = '{!JSENCODE(APTS_Agreement__c.Status__c)}';
+            
+        if(agreementStatusCategory != '{!$Label.IntelligentImportStatusCategory}' && agreementStatus != '{!$Label.IntelligentImportStatus}') {            
+            if((typeof sforce != 'undefined') && sforce && sforce.one) {
+                sforce.one.navigateToURL('{!URLFOR($Action.APTS_Agreement__c.View, APTS_Agreement__c.Id)}');
+            }
+            else {      
+                window.open('{!URLFOR($Action.APTS_Agreement__c.View, APTS_Agreement__c.Id)}', '_self');
+            }                        
+        }
+
+
+        function getSelectionText() {
+            document.getElementById('addClauseId').style.display = 'none';
+            var selectedText = ""
+            
+            if (document.getElementById('pdfFrame').contentWindow.getSelection) { 
+                selectedText = document.getElementById('pdfFrame').contentWindow.getSelection().toString();
+            }
+            if(selectedText.trim().length < 1) {
+                alert('{!$Label.IDEReviewScreenNoTextSelected}');
+                return;
+            } else{                
+                openPopUpSelectedClause('addfrompdf', selectedText);
+            }
+        }
+        
+        /**
+         * Initializes the call
+         */
+        function initCall() {
+            try {
+                sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+            } catch(e) {
+                erroralert(cERROR_UNKNOWN,e);                
+            }        
+        }
+        
+        /*
+         * load PDF.js plugin Iframe.
+         */
+         function loadPDF() {        
+            
+            try {
+                
+                // IDE analysed document Id.
+                var analysedAttachmentId = "{!JSENCODE(ideAnalysedDocumentId)}";
+
+                // STEP I - initialize the call
+                initCall();
+
+                var isLargeFile = "{!isLargeFile}";   
+                
+                
+                if(isLargeFile == 'true') {
+                    document.getElementById("overlay").style.display = "block";
+                    var Query = "SELECT PathOnClient, VersionData, ContentSize FROM ContentVersion WHERE ContentDocumentId = '" + analysedAttachmentId + "'";
+                    
+                    var client = new forcetk.Client();
+                    var attacResponse;
+                    client.setSessionToken('{!$Api.Session_ID}');
+                    client.query(Query, function (response) {
+                        
+                        attacResponse = response.records[0];
+                        var size = attacResponse.ContentSize;
+                        var isTimeout = true;
+
+                        var callHideProgressBar = false;
+
+                        $.ajax({
+                            url: attacResponse.VersionData, //.Body,
+                            type: 'GET',
+                            xhr: function () {// Seems like the only way to get access to the xhr object
+                               var xhr = new XMLHttpRequest();
+                               setTimeout(function() {
+                               document.querySelector('.errorPanelClass').style.display =  'block';                            
+                               document.querySelector('.cancelBtnLoad').textContent = '{!$Label.XACFormApttusImportOfflineFormbtnOK}';
+                               document.querySelector('.modalheaderstyle').style.display =  'none';
+                               document.querySelector('.modalBody').style.display =  'none';
+                               document.querySelector('.modaltextstyle').style.borderTopRightRadius =  '4px';
+                               document.querySelector('.modaltextstyle').style.borderTopLeftRadius =  '4px';
+                              
+                               callHideProgressBar = true;
+                                                                                                               
+                               }, 600000);
+                                xhr.onloadstart = function (){  
+                                var progress = document.querySelector('.percent');  
+                                var percentBar = document.querySelector('.percentBar'); 
+                                percentBar.style.width = '0%';  
+                                percentBar.textContent = '0%';  
+                                progress.textContent = String.format('{!$Label.CompleteProg}', '0%');
+                                }   
+                                xhr.onprogress = function (evt){    
+                                var progress = document.querySelector('.percent');  
+                                var percentBar = document.querySelector('.percentBar'); 
+                                console.log(evt.loaded+'zoheb'+size);   
+                                var percentLoaded = Math.round((evt.loaded / size) * 100);  
+                                if (percentLoaded < 100) {  
+                                progress.textContent = String.format('{!$Label.CompleteProg}', percentLoaded+'%');  
+                                percentBar.style.width = percentLoaded + '%';   
+                                percentBar.textContent = percentLoaded + '%';   
+                                }   
+                                }   
+                                xhr.onloadend = function (){    
+                                var progress = document.querySelector('.percent');  
+                                var percentBar = document.querySelector('.percentBar'); 
+                                progress.textContent = String.format('{!$Label.CompleteProg}', '100%'); 
+                                percentBar.style.width = '100%';    
+                                percentBar.textContent = '100%';    
+                                }
+                                xhr.responseType = "blob";
+                                return xhr;
+                            },
+                            headers: {
+                                "Authorization": "Bearer " + "{!$Api.Session_ID}",
+                                "Cache-Control": "no-cache",
+                                "Accept-Encoding": "gzip, deflate, compress, identity, br"
+                            },
+                            success: function (blob) {
+                              document.querySelector('.loadStyle').textContent = '{!$Label.Reading}';                           
+                              
+                                var reader = new FileReader();
+                                
+                                var progress = document.querySelector('.percent');
+                                var percentBar = document.querySelector('.percentBar');
+                               
+                                percentBar.style.width = '0%';                              
+                                percentBar.textContent = '0%';                               
+                                progress.textContent = String.format('{!$Label.CompleteProg}', '0%');
+                                
+                                reader.readAsDataURL(blob);
+                                reader.onprogress = updateProgress;
+                                reader.onloadend = function () {
+                                
+                                var progress = document.querySelector('.percent');
+                                
+                                var percentBar = document.querySelector('.percentBar');
+                                isTimeout = false;
+                                var base64data = reader.result.split(',')[1];
+                                var pdfJSFrame = document.getElementById('pdfFrame');
+                                pdfJSFrame.contentWindow.postMessage(base64data, '*');
+                                setAddClause();
+                                    
+                                progress.textContent = String.format('{!$Label.CompleteProg}', '100%');                                   
+                                percentBar.style.width = '100%';                             
+                                percentBar.textContent = '100%';
+                               
+                              setTimeout(() => {                                    
+                                     if(callHideProgressBar == false ){
+                                        hideProgressBar();                                 
+                                    }
+                                    }, 1500)
+                                }
+                            },
+                            error: function (err) {
+                                console.log(err);
+                            }
+                        });
+                    });
+                } else {
+                    // STEP II - get the body of IDE analysed Attachment/File.
+                    var attorFileBody = doFetchAttOrFileBody(analysedAttachmentId);
+
+                    // STEP III - update the PDF.js Plugin IFrame with attorFileBody fetched above in Step II.
+                    var pdfJSFrame = document.getElementById('pdfFrame'); 
+                    pdfJSFrame.contentWindow.postMessage(attorFileBody,'*');  
+                    setAddClause();
+                }             
+            } catch(ex) {
+                erroralert(cERROR_UNKNOWN,ex);
+            }  
+            
+        }
+        
+        if (!String.format) {   
+                String.format = function(format) {  
+                var args = Array.prototype.slice.call(arguments, 1);    
+                return format.replace(/{(\d+)}/g, function(match, number) { 
+                return typeof args[number] != 'undefined'? args[number] : match;
+                }); 
+            };  
+        }
+        
+         /**
+         * function to hide progress bar on document load.
+         */
+        function hideProgressBar(){        
+        var overlayRender = document.querySelector('.overlaymodal');        
+          overlayRender.style.display =  'none';        
+        }
+        
+        /**
+         * function to update and load progress bar on document load.
+         */
+        
+        function updateProgress(evt) {
+       
+        var progress = document.querySelector('.percent');
+        var percentBar = document.querySelector('.percentBar');
+       
+    
+        if (evt.lengthComputable) {
+           var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+             
+        if (percentLoaded < 100) {
+            progress.textContent = percentLoaded + '% Complete';                  
+            percentBar.style.width = percentLoaded + '%';
+            percentBar.textContent = percentLoaded + '%';
+        }
+    }
+}
+
+        /**
+         * used to switch between clause and agreement detail tabs.
+         */
+        function openTab(evt, TabId) {
+        
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            
+            tablinks = document.getElementsByClassName("tablinks");
+            
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(TabId).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        /**
+         * pass the selected clause value to the PDF.JS plugin search box.
+         */
+        function passvalueToFind(value, elem, parentElement, pageNumber) {    
+        
+            document.getElementById('pdfFrame').contentWindow.document.getElementById('findInput').value = value;
+            document.getElementById('pdfFrame').contentWindow.document.getElementById('findInput').click(); 
+            document.getElementById('pdfFrame').contentWindow.document.getElementById('findbar').classList.remove('hidden');
+            
+            var clauseElmnts = document.querySelectorAll(elem);
+            
+            for(var i = 0; i < clauseElmnts.length; i++){
+                clauseElmnts[i].classList.remove('activeClause');
+            }
+            parentElement.classList.add('activeClause');
+
+            setTimeout(function () {
+                if (document.getElementById('pdfFrame').contentWindow.document.getElementById('findResultsCount').textContent === "0" && pageNumber != "") {
+
+                    pageNumber = pageNumber.substring(1, 2);
+                    var diff = pageNumber - document.getElementById('pdfFrame').contentWindow.document.getElementById('pageNumber').value;
+                    
+                    if (diff > 0) {
+                        for (i = 0; i < diff; i++) {
+                            document.getElementById('pdfFrame').contentWindow.document.getElementById('next').click();
+                        }
+                    } else if (diff < 0) {
+                        diff = diff * -1;
+                        for (i = 0; i < diff; i++) {
+                            document.getElementById('pdfFrame').contentWindow.document.getElementById('previous').click();
+                        }
+                    }
+                    
+                    alert('{!JSENCODE($Label.ReviewPageNavigationInfo)}');
+
+                }
+                document.getElementById('pdfFrame').contentWindow.document.getElementById('findbar').classList.add('hidden');
+            }, 500);
+            
+        }
+        
+        /**
+         * display max chars limit on focus of clause input.
+         */
+        function onFocusClauseInput(elem, maxChars) {            
+            document.getElementById(maxChars).classList.remove('hidden');
+        }
+        
+        /**
+         * hide max chars limit on blur of clause input.
+         */
+        function onBlurClauseInput(elem, maxChars,errMsgClause) {
+        
+            document.getElementById(errMsgClause).classList.add('hidden');            
+            document.getElementById(maxChars).classList.add('hidden');
+            
+            if(elem.value == null || elem.value.trim() == "") {
+                document.getElementById(errMsgClause).classList.remove('hidden');
+            }            
+        }
+
+        function drpClauseChangeJs(rbClauseDropdownId) {
+            if(document.getElementById(rbClauseDropdownId).value != null                     
+                && document.getElementById(rbClauseDropdownId).value.trim() == "-1") {
+                    document.getElementById('errEmptyClauseNamedrp').classList.remove('hidden'); 
+            }
+            else {
+                document.getElementById('errEmptyClauseNamedrp').classList.add('hidden');  
+            }
+        }
+        
+        /**
+         * check if there is some valid text entered in the clause header and clause text fields.
+         * display Error message if any of the field (clauseheader or clausetext) is blank.
+         */
+        function ValidateClause(actionType, clauseTextName, clauseTextArea, rbClause, rbClauseDropdownId) {
+        
+            var validationSuccess = true;
+
+            var rbClauseVal;
+            var theRadioButtonSet = document.getElementsByName(rbClause);
+            for (var x = 0; x < theRadioButtonSet.length; x++) 
+            {
+                if (theRadioButtonSet[x].checked) {
+                    rbClauseVal = theRadioButtonSet[x].value;
+                }
+            }
+            if(rbClauseVal == '{!$Label.apttus__new}') {
+                if(document.getElementById(clauseTextName).value == null 
+                    || document.getElementById(clauseTextName).value.trim() == "") {
+                    document.getElementById('errEmptyClauseName').classList.remove('hidden');  
+                    validationSuccess = false;
+                }
+            }
+            else if(rbClauseVal == '{!$Label.apttus__select}') {
+                if(document.getElementById(rbClauseDropdownId).value == null 
+                    || document.getElementById(rbClauseDropdownId).value.trim() == ""
+                    || document.getElementById(rbClauseDropdownId).value.trim() == "-1") {
+                    document.getElementById('errEmptyClauseNamedrp').classList.remove('hidden');  
+                    validationSuccess = false;
+                }
+                else {
+                    document.getElementById('errEmptyClauseNamedrp').classList.add('hidden');  
+                }
+            }
+            
+            if(document.getElementById(clauseTextArea).value == null 
+                || document.getElementById(clauseTextArea).value.trim() == "") {
+                document.getElementById('errEmptyClauseText').classList.remove('hidden');  
+                validationSuccess = false;
+            }            
+            
+            if(validationSuccess) {                
+                if(actionType == '{!overlayPopupAddAction}') {                    
+                    addClause();
+                } else if(actionType == '{!overlayPopupEditAction}') {                    
+                    saveClause();
+                }      
+            }
+            return false;       
+        }
+
+        /**
+         * function to load the pdf.js asynchronously.
+         */
+        function asyncLoad() {
+            // set the Agreement Detail tab as active on initial page load.
+            document.getElementById("AgreementTabId").click();
+            
+            // load the pdf file after the onload.
+            loadPDF();
+        }
+        
+        /**
+         * function to expand the pdf viewer section to full width.
+         */
+        function expandPDFViewerSection(elem, parentElem){
+            parentElem.style.width = '99%'; 
+            document.getElementById('detailnClauseSectionId').style.display = 'none';
+            document.getElementById('resetPDFViewer').style.display = 'block';            
+            elem.style.display = 'none';
+        }
+        
+         /**
+         * function to redirect to PDF download link on click on cancel button on Progress bar
+         */
+        function cancelLoad(event){
+        
+        expandAgreementDetailAndClauseSection(null, null);
+        document.getElementById('resetClauseViewer').style.display = 'none';
+        hideProgressBar();
+        
+        return false;
+                               
+        }
+    
+        /**
+         * function to reset the pdf viewer section to original width.
+         */
+        function resetPDFViewerSection(elem, parentElem){
+            parentElem.style.width = '49.5%'; 
+            document.getElementById('detailnClauseSectionId').style.display = 'block';
+            document.getElementById('expandPDFViewer').style.display = 'block';            
+            elem.style.display = 'none';
+        }
+        
+        /**
+         * function to expand the clauses and detail section to full width.
+         */
+        function expandAgreementDetailAndClauseSection(elem, parentElem){
+            
+            if(parentElem == null) {
+                document.getElementById('detailnClauseSectionId').style.width = '99%'; 
+            } else {
+                parentElem.style.width = '99%'; 
+            }
+            document.getElementById('pdfViewerSectionId').style.display = 'none';
+            document.getElementById('resetClauseViewer').style.display = 'block';                        
+            if(elem == null) {
+                document.getElementById('expandClauseViewer').style.display = 'none'; 
+            } else {
+                elem.style.display = 'none';            
+            }
+        }
+        
+        /**
+         * function to reset the clauses and detail section to original width.
+         */
+        function resetAgreementDetailAndClauseSection(elem, parentElem){
+            parentElem.style.width = '49.5%'; 
+            document.getElementById('pdfViewerSectionId').style.display = 'block';
+            document.getElementById('expandClauseViewer').style.display = 'block';            
+            elem.style.display = 'none';
+        }
+
+        function setAddClause(){      
+            document.getElementById("pdfFrame").contentWindow.document.getElementById('viewerContainer').addEventListener("contextmenu", function(event){
+                
+                document.getElementById('addClauseId').style.display = 'none';
+
+                event.preventDefault();
+             
+                document.getElementById('addClauseId').style.display = 'block';
+                document.getElementById('addClauseId').style.top = document.getElementById("pdfFrame").offsetTop + event.clientY + 'px';
+                document.getElementById('addClauseId').style.left = document.getElementById("pdfFrame").offsetLeft + event.clientX + 'px';
+              
+            });
+
+            document.getElementById("pdfFrame").contentWindow.document.getElementById('viewerContainer').addEventListener("click", function(event){
+                document.getElementById('addClauseId').style.display = 'none';
+            });
+        }
+        
+    </script>
+    
+    <!--Markup starts here-->
+    <div class="mainContainer">
+        <apex:form >
+            <apex:actionFunction name="openPopUpSelectedClause" action="{!showPopup}" rerender="popup">
+                <apex:param value="" name="overlayPopupAction" assignTo="{!overlayPopupAction}"/>
+                <apex:param value="" name="clauseValue" assignTo="{!clauseValue}"/>
+            </apex:actionFunction>
+            
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Initiation_Type__c}" rendered="false"></apex:outputText> 
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Status_Category__c}" rendered="false"></apex:outputText> 
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Status__c}" rendered="false"></apex:outputText> 
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__VersionAware__c}" rendered="false" />
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Agreement_Number__c}" rendered="false" />
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__FF_Agreement_Number__c}" rendered="false" />
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Account__c}" rendered="false" />
+            <apex:outputText value="{!Apttus__APTS_Agreement__c.Name}" rendered="false"></apex:outputText> 
+            <apex:repeat value="{!$ObjectType.Apttus__APTS_Agreement__c.FieldSets.Apttus__UpdateFieldsIntelligentImportFieldSet}"
+                                                            var="fld">
+                <apex:outputText value="{!Apttus__APTS_Agreement__c[fld]}" rendered="false"></apex:outputText> 
+            </apex:repeat>
+            <apex:repeat value="{!$ObjectType.Apttus__APTS_Agreement__c.FieldSets.Apttus__ReviewIntelligentImportFieldSet}"
+                                                            var="fld1">
+                <apex:outputText value="{!Apttus__APTS_Agreement__c[fld1]}" rendered="false"></apex:outputText> 
+            </apex:repeat>
+            
+            <!-- panel to display error messages -->
+            <apex:outputPanel id="pageMsgId">                
+                <apex:outputPanel rendered="{!displayError}">   
+                    <apex:pageMessages />   
+                </apex:outputPanel> 
+                <apex:pageMessage rendered="{!AND(NOT(displayError) , errorsPresent)}" summary="{!$Label.apttus__idereviewerrormessage}" 
+                    severity="error" strength="3" />
+                </apex:outputPanel>
+            
+            <!-- header container -->
+            <div class="headerContainer"> 
+
+                <!-- fields container -->
+                <!-- @ displays fields from FieldSet - ReviewIntelligentImportFieldSet -->
+                <div class="headerfieldsContainer"> 
+                    <apex:repeat value="{!$ObjectType.Apttus__APTS_Agreement__c.FieldSets.Apttus__ReviewIntelligentImportFieldSet}" var="f">
+                        <div class="fieldCls"> 
+                            <apex:outputLabel styleClass="labelCls" value="{!$ObjectType.Apttus__APTS_Agreement__c.fields[f].label}:"></apex:outputLabel> <br/>                         
+                            <apex:outputField value="{!Apttus__APTS_Agreement__c[f]}"/>                        
+                        </div>
+                    </apex:repeat>
+                </div>
+                
+                <!-- Actions/Buttons container -->
+                <!-- contains buttons for Save, Cancel -->
+                <div class="headerBtnContainer"> 
+                    
+                    <!-- panel containing action buttons -- save and cancel -->
+                    <apex:outputPanel id="actionBtnId">
+                        <button type="button" class="cancelBtn" onclick="openPopUp('{!overlayPopupCancelAction}')" title="Cancel">
+                            <span>{!$Label.Cancel}</span>
+                        </button>
+                        <apex:actionFunction name="openPopUp" action="{!showPopup}" rerender="popup">
+                            <apex:param value="" name="overlayPopupAction" assignTo="{!overlayPopupAction}"/>
+                        </apex:actionFunction>
+                        
+                        <button type="button" class="saveBtn" title="Save" onclick="this.disabled = true; saveAgreement()">
+                            <span>{!$Label.Save}</span>
+                        </button>
+                        <apex:actionFunction name="saveAgreement" action="{!saveAgreement}" rerender="pageMsgId, popup, actionBtnId, renderFields"/>
+                    </apex:outputPanel>
+                </div>
+            </div><!-- end of header container -->
+            
+            <!--Download Link container-->            
+            <div class="linkContainer">
+               <apex:outputPanel rendered="{!isLargeFile}">
+                    <apex:outputlink target="_blank" value="{!downloadUrl}">{!$Label.apttus__downloadfilefromkira}</apex:outputlink>
+                </apex:outputPanel> 
+            </div>
+             
+            
+            <!-- Content Container : contains two sections - PDF Viewer, AgreementDetail and Clauses Tab. -->
+            <div id="contentId" class="contentContainer">
+                
+                <!-- PDF Viewer container --> 
+               
+                <div id="pdfViewerSectionId" class="pdfViewerContainer" style="overflow:hidden;" >
+                
+                    <div class="material-icons iconsCls" id="expandPDFViewer" onclick="expandPDFViewerSection(this, this.parentElement)" style="float:right">chevron_right</div>
+                    <div class="material-icons iconsCls" id="resetPDFViewer" onclick="resetPDFViewerSection(this, this.parentElement)" style="float:right; display:none">chevron_left</div>
+                    
+                    <div style="width: 80%;">
+                        <div class="scanQuality" id="leftalign" style="float: left;width: 30%;"> Language :
+                            <b>{!languageText}</b>
+                        </div>
+                        <div class="scanQuality" id="rightalign" style="width: 50%;float: right;"> OCR Quality :
+                            <b>{!ocrQualityText}</b>
+                        </div>
+                    </div>
+                    
+                    <div id="addClauseId" class="addClause" onclick="getSelectionText()">{!$Label.IDEReviewScreen_AddClause}</div>
+                    
+                    <iframe style="border: none; height:80vh;" scrolling="no"  id="pdfFrame" 
+                            src="{!URLFOR($Resource.PDFViewerJS, 'web/viewer.html')}" class="pdfFrame" width="100%"></iframe>
+                    <div id="overlay"  Class="overlaymodal">
+                            <div id="text"   >
+                                <div class="slds" >
+                                    <div class="slds-p-around--medium modalHeaderSize">
+                                        <div class="slds-modal__header modalheaderstyle">
+                                                                                                             
+                                            {!$label.LoadingDocumentProgressBar}                                                                                                                                  
+                                        </div>
+                                        <div class="modaltextstyle">
+                                            <div class="errorPanelClass" >
+                                                <div class="slds-scoped-notification slds-media slds-media_center slds-theme_error errorPanelStyle" style="margin: 15px;" role="status">
+                                                    <div class="slds-media__figure">
+                                                    <span class="slds-icon_container slds-icon-utility-error" title="error">
+                                                      
+                                                        <svg aria-hidden="true" class="iconSize slds-icon_x-small">
+                                                            <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#error')}"></use>
+                                                         </svg>
+                                                     
+                                                      <span class="slds-assistive-text">error</span>
+                                                    </span>
+                                                  </div>
+                                                    <div class="slds-media__body">
+                                                        <p >
+                                                            {!$Label.NoPreviewAvailableForLargeFile}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div Class="modalBody">
+                                                <div class="progressBarTextStyle">
+                                                    <b>{!$label.ProgressbarText}</b>
+                                                    <br></br>
+                                                </div>
+                                                <div style="display: flex;">
+                                                    <div class="loadStyle">
+                                                            {!$label.XACUCChatterwbChatterFeedProgressChanged1}
+                                                    </div>
+                                                    <div class="percent">
+                                                            {!$label.progressbarPercent}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="progBarClass" id="progress_bar" >
+                                                        <div class="percentBar" style="color: transparent;">
+                                                            <div> 0 </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slds-modal__footer footerStyle">
+                                        <button type="button" Class="cancelBtnLoad" onclick="return cancelLoad();" title="Cancel">
+                                            <span >Cancel</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                </div><!-- end of pdfviewer container -->         
+                
+                <!-- detail and clause container -->
+                <div id="detailnClauseSectionId" class="detailnClauseContainer">
+                    
+                    <div class="material-icons iconsCls" id="expandClauseViewer" onclick="expandAgreementDetailAndClauseSection(this, this.parentElement)" style="float:right">chevron_left</div>
+                    <div class="material-icons iconsCls" id="resetClauseViewer" onclick="resetAgreementDetailAndClauseSection(this, this.parentElement)" style="float:right; display:none">chevron_right</div>
+                    
+                    <!-- Tab Panel  1. AGREEMENT DETAIL, 2. CLAUSES  -->
+                    <div class="tab">
+                        <div id="AgreementTabId" class="tablinks active" onclick="openTab(event, 'AgreementDetailId')">
+                            {!$Label.IDEReviewScreen_AgreementDetailTab}
+                        </div>
+                        <div class="tablinks " onclick="openTab(event, 'ClausesId')">
+                            {!$Label.IDEReviewScreen_ClausesTab}
+                        </div>
+                    </div>
+
+                    <!-- Agreement Detail Tab -->
+                    <div id="AgreementDetailId" class="tabcontent">
+                        <apex:pageMessage severity="warning" strength="3" summary="{!$Label.apttus__idereviewinvaliddatatypeextraction}"/>
+                        <div style="margin:20px">
+                            <div class="detailsEditHeaderCls">
+                                {!$Label.apttus__idereviewscreen_contractinformationtitle}
+                            </div>
+
+                             <apex:outputPanel id="renderFields">
+                                                            <apex:repeat value="{!$ObjectType.Apttus__APTS_Agreement__c.FieldSets.Apttus__UpdateFieldsIntelligentImportFieldSet}"
+                                                            var="fld">
+                                                                <div class="fieldClsClauseTab">
+                                                                    <apex:outputLabel styleClass="labelCls"
+                                                                        value="{!$ObjectType.Apttus__APTS_Agreement__c.fields[fld].label}">
+                                                                     </apex:outputLabel>
+                                                                      <br/>
+                                                                        <apex:outputPanel rendered="{!CONTAINS(agreementRefinedFieldsKey,fld)}"  style="height:23px;width:23px">
+                                                                             <apex:outputText value="Extracted Text : " style="font-weight: bold;font-size: small;"/>
+                                                                             <apex:outputText value="{!agreementRefinedFields[fld]}"/>
+                                                                             <br/>
+                                                                         </apex:outputPanel>
+                                                                                      <apex:outputPanel rendered="{!CONTAINS(multipleAgreementFieldsKey,fld) && multipleAgreementFields[fld] != Null}">
+                                                                                      
+                                                                                      <apex:outputText value="Extracted Value(s) : " style="font-weight: bold;font-size: small;" rendered="{!NOT(CONTAINS(agreementRefinedFieldsKey,fld))}"/>
+                                                                                      <apex:outputText value="Refined Value(s) : " style="font-weight: bold;font-size: small;" rendered="{!CONTAINS(agreementRefinedFieldsKey,fld)}"/>
+                                                                                      <apex:selectList id="inpList" size="1" value="{!selectedValue[fld]}" styleClass="selectCls" enabledClass="optionCls">
+                                                                                      <apex:selectOptions value="{!multipleAgreementFields[fld]}"/>
+                                                                                      <apex:actionSupport event="onchange"
+                                                                                                                                                              action="{!refreshRenderFields}"
+                                                                                                                                                              reRender="renderFields"/>
+                                                                                      </apex:selectList>
+                                                                                      <script>
+        
+                                                                                      var selectlistlength = document.getElementsByClassName('optionCls').length;
+                                                                                      if (selectlistlength && selectlistlength > 0) {
+                                                                                           for (let i = 0; i < selectlistlength; i++) {
+                                                                                                document.getElementsByClassName('optionCls')[i].title = document.getElementsByClassName('optionCls')[i].value;
+                                                                                                var optionValuechar = document.getElementsByClassName('optionCls')[i].value.length;
+                                                                                                if (optionValuechar && optionValuechar > 40) {
+                                                                                                     document.getElementsByClassName('optionCls')[i].innerText = document.getElementsByClassName('optionCls')[i].value.substring(0, 38) + '...';
+                                                                                                }
+                                                                                           }
+                                                                                      }
+        
+                                                                                      </script>
+                                                                                      </apex:outputPanel>
+                                                                    <apex:inputField rendered="{!NOT(CONTAINS(agreementFieldsKey, fld))}" styleClass="{!If(($ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type=='date'),'inputValueClsDate','inputValueCls')}" value="{!Apttus__APTS_Agreement__c[fld]}"/>
+
+                                                                        <apex:outputPanel rendered="{!CONTAINS(agreementFieldsKey,fld) && agreementFields[fld] != 'N/A' && (NOT(CONTAINS(multipleAgreementFieldsKey, fld)) || !displayEmptyText )}">
+                                                                          <apex:outputPanel rendered="{!NOT(CONTAINS(multipleAgreementFieldsKey, fld))}" title="{!agreementFields[fld]}">
+                                                                          <apex:outputText value="Extracted Text : " style="font-weight: bold;font-size: small;" rendered="{!NOT(CONTAINS(agreementRefinedFieldsKey,fld))}"/>
+                                                                          <apex:outputText value="Refined Text : " style="font-weight: bold;font-size: small;" rendered="{!CONTAINS(agreementRefinedFieldsKey,fld)}"/>
+                                                                          <apex:outputText value="{!IF(LEN(agreementFields[fld]) > 100, LEFT(agreementFields[fld],97) + '...', agreementFields[fld] )}" escape="true"/>
+                                                                    </apex:outputPanel>
+                                                                        <apex:inputField id="inpId" styleClass="{!If(($ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type=='date'),'inputValueClsDate','inputValueCls')}" value="{!Apttus__APTS_Agreement__c[fld]}"/>
+
+                                                                        <script>
+                                                                        var agreementfieldTypeforSingleValue = '';
+                                                                        agreementfieldTypeforSingleValue = '{!$ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type}';
+                                                                        if (!(agreementfieldTypeforSingleValue == 'boolean' || agreementfieldTypeforSingleValue == 'picklist' || agreementfieldTypeforSingleValue == 'reference')) {
+                                                                            document.getElementById('{!$Component.inpId}').value = '{!agreementFields[fld]}'.replace(/<br>/g, '\n');
+                                                                        }
+                                                                        </script>
+                                                                    </apex:outputPanel>
+                                                                          <apex:outputPanel rendered="{!CONTAINS(agreementFieldsKey,fld)  && agreementFields[fld] == 'N/A' && $ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type=='date'  && NOT(CONTAINS(multipleAgreementFieldsKey, fld))}">
+                                                                          <apex:inputField html-placeholder="mm/dd/yyyy" styleClass="{!If(($ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type=='date'),'inputValueClsDate','inputValueCls')}" value="{!Apttus__APTS_Agreement__c[fld]}"/>
+
+                                                                    </apex:outputPanel>
+
+                                                                        <apex:outputPanel rendered="{!CONTAINS(agreementFieldsKey,fld) && agreementFields[fld] == 'N/A' && $ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type=='double'  && NOT(CONTAINS(multipleAgreementFieldsKey, fld))}">
+                                                                              <apex:inputField html-placeholder="# of months" value="{!Apttus__APTS_Agreement__c[fld]}"/>
+                                                                    </apex:outputPanel>
+
+                                                                        <apex:outputPanel rendered="{!CONTAINS(agreementFieldsKey,fld) && agreementFields[fld] == 'N/A' && $ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type=='currency'  && NOT(CONTAINS(multipleAgreementFieldsKey, fld))}">
+                                                                              <apex:inputField html-placeholder="0" value="{!Apttus__APTS_Agreement__c[fld]}"/>
+                                                                        </apex:outputPanel>
+
+                                                                        <apex:outputPanel id="emptyField"  rendered="{!CONTAINS(multipleAgreementFieldsKey,fld) && multipleAgreementFields[fld] != Null && displayEmptyText}">
+                                                                        <apex:inputField id="inpText" styleClass="{!If(($ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type=='date'),'inputValueClsDate','inputValueCls')}" value="{!Apttus__APTS_Agreement__c[fld]}"/>
+                                                                        <script>
+                                                                        var agreementfieldType = '{!$ObjectType.Apttus__APTS_Agreement__c.fields[fld].Type}';
+                                                                        if (!(agreementfieldType == 'boolean' || agreementfieldType == 'picklist' || agreementfieldType == 'reference')) {
+                                                                            document.getElementById('{!$Component.inpText}').value = '{!selectedValue[fld]}';
+                                                                        }
+                                                                        </script>
+
+                                                                    </apex:outputPanel>
+
+
+                                                                </div>
+                                                            </apex:repeat>
+                                                        </apex:outputPanel>
+                        </div>
+                    </div> <!-- end of Agreement Detail Tab -->
+
+                    <!-- Clauses Tab -->
+                    <div id="ClausesId" class="tabcontent">
+                        <div class="clausePanelCls">
+                            <button type="button" class="cancelBtn" onclick="openPopUp('{!overlayPopupAddAction}')">
+                                <span>{!$Label.IDEReviewScreen_AddClause}</span>
+                            </button>
+                            <apex:actionFunction name="openPopUp" action="{!showPopup}" rerender="popup">
+                                <apex:param value="" name="overlayPopupAction" assignTo="{!overlayPopupAction}"/>
+                            </apex:actionFunction>                            
+                        </div><br/>
+        
+                        <apex:outputPanel id="clauseRefreshPanel">
+                            <apex:repeat value="{!lstIDEClauseExtraction}" var="objClause">
+                                <div class="clauseCls" id="clauseId">
+                                    <div style="float:right">
+                                    
+                                        <button type="button" style="font-size:20px!important" 
+                                            onclick="openClauseOverlay('{!overlayPopupEditAction}','{!objClause.Id}'); 
+                                            return false;" class="material-icons iconsCls">{!overlayPopupEditAction}</button>
+                                            
+                                        <button type="button" style="font-size:20px!important" 
+                                            onclick="openClauseOverlay('{!overlayPopupDeleteAction}','{!objClause.Id}'); 
+                                            return false;" class="material-icons iconsCls">{!overlayPopupDeleteAction}</button>
+                                    </div>                                    
+                                    <div onclick="passvalueToFind('{!JSEncode(objClause.ExtractedValue__c)}', '.clauseCls', this.parentElement, '{!JSEncode(objClause.PageNumber__c)}')" 
+                                        class="clauseHeaderCls">
+                                        <apex:outputField value="{!objClause.Apttus__ClauseHeader__c}"/>
+                                    </div>
+                                        
+                                    <div onclick="passvalueToFind('{!JSEncode(objClause.ExtractedValue__c)}', '.clauseCls', this.parentElement, '{!JSEncode(objClause.PageNumber__c)}')"
+                                        class="clauseValueCls">
+                                        <apex:outputField value="{!objClause.Apttus__ExtractedValue__c}"/>
+                                    </div>
+                                </div>
+                            </apex:repeat>
+
+                            <apex:actionFunction name="openClauseOverlay" action="{!showPopup}" rerender="popup">
+                                <apex:param assignTo="{!overlayPopupAction}" value="" name="overlayPopupAction"/>
+                                <apex:param assignTo="{!selectedClauseId}" value="" name="selectedClauseId"/>
+                            </apex:actionFunction>
+                            
+                        </apex:outputPanel>
+                    </div>
+                </div><!-- end of detail and clause container -->
+            </div><!-- end of Content Container -->
+            
+            
+           <apex:outputPanel id="popup">               
+                <apex:outputPanel styleClass="popupBackground" layout="block" rendered="{!displayOverlayPopup}"/>
+                
+                <apex:outputPanel styleClass="addClausePopuUpCls" layout="block" rendered="{!displayOverlayPopup}">
+                    <div class="addClauseHeaderPanel">
+                        <h3 class="addClauseHeaderText">{!overlayPopupTitle}</h3>
+
+                        <button type="button" style="float:right; font-size:20px!important" onclick="No(); return false;" 
+                                class="material-icons iconsCls">
+                            {!overlayPopupCloseAction}
+                        </button>
+                        
+                    </div>
+                    <div class="addClauseInputContainer">
+                        <apex:outputPanel rendered="{!overlayPopupAction = overlayPopupCancelAction}">
+                            {!$Label.apttus__idereviewscreen_cancelactionwarningmsg}
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel rendered="{!OR(overlayPopupAction = overlayPopupEditAction, overlayPopupAction = overlayPopupAddAction, overlayPopupAction = overlayPopupAddActionFromRightclick)}">
+                            <div style="padding-bottom:10px;" class="addClauseInputLabel">
+                                {!$Label.IDEReviewScreen_ClauseNameTitle}
+                            </div>
+                           
+                            <div>
+                                <apex:selectRadio id="rbClause"  styleClass="radioOpt" value="{!rbClauseValue}">
+                                    <apex:selectOption itemLabel="{!$Label.apttus__select}" itemValue="{!$Label.apttus__select}"></apex:selectOption>
+                                    <apex:selectOption itemLabel="{!$Label.apttus__new}" itemValue="{!$Label.apttus__new}"></apex:selectOption>
+                                    <apex:actionsupport event="onchange" rerender="rbClauseChangeSection" action="{!doClauseRadioChange}"/>
+                                </apex:selectRadio>    
+                            </div>
+                           
+                            <apex:outputPanel id="rbClauseChangeSection">   
+                                <apex:selectList size="1" rendered="{!rbClauseDropdown}" styleClass="addClauseInputValue" value="{!selectedClauseValue}" id="rbClauseDropdownId" onmouseup="javascript:drpClauseChangeJs('{!$Component.rbClauseDropdownId}');" >
+                                    <apex:selectOptions value="{!clauseList}"></apex:selectOptions>
+                                    <apex:actionSupport event="onchange" rerender="drpClauseCategorysection" action="{!doClauseDropdownChange}"/>
+                                </apex:selectList>
+
+                               <apex:inputText maxlength="255" id="clauseTextName" 
+                                    onblur="onBlurClauseInput(this, 'maxCharClauseName', 'errEmptyClauseName')" 
+                                    onfocus="onFocusClauseInput(this, 'maxCharClauseName')" value="{!clauseTitle}" 
+                                    styleClass="addClauseInputValue"  rendered="{!rbClauseTextBox}"/>
+                                
+                                <div style="min-height:25px">
+                                    <span id="errEmptyClauseNamedrp" class="hidden" style="color:red">
+                                        {!$Label.ClauseSelectErrorMssage}
+                                    </span>
+                                    <span id="errEmptyClauseName" class="hidden" style="color:red">
+                                        {!$Label.IDEReviewScreen_ClauseNameErrMsg}
+                                    </span>
+                                    <span id="maxCharClauseName" style="float:right" class="hidden">
+                                        {!$Label.IDEReviewScreen_ClauseNameMaxChars}
+                                    </span>
+                                </div>
+                                <apex:outputPanel rendered="{!rbClauseDropdown}" id="drpClauseCategorysection">
+                                    <h5>
+                                        <b translate="" aria-label="Mapped Clause Details" id="MappedClauseDetails">{!$Label.IDEReviewScreenMappedClauseDetails}</b>
+                                    </h5>
+                                    <div class="clause-details">
+                                        <div class="category"><span translate="" aria-label="Category">{!$Label.IDEReviewScreenCategory}</span>&nbsp;:&nbsp;
+                                            <span>
+                                                <b id="Category">
+                                                <apex:outputText value="{!drpClauseCategoryValue}" />
+                                                </b>
+                                            </span>
+                                        </div>
+                                        <div class="sub-category"><span translate="" aria-label="Sub Category">{!$Label.IDEReviewScreenSubCategory}</span>&nbsp;:&nbsp;
+                                            <span>
+                                                <b id="SubCategory">
+                                                    <apex:outputText value="{!drpClauseSubCategoryValue}" />
+                                                </b>
+                                            </span>
+                                        </div>
+                                        <div class="clausedetail">
+                                            <div>
+                                                <apex:outputText value="{!drpClauseContentValue}" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                            
+                            <div style="padding-top:25px;" class="addClauseInputLabel"> 
+                                {!$label.IDEReviewScreen_ClauseTextTitle} 
+                            </div>
+                            <apex:inputTextArea style="resize: none;" html-maxlength="2000" rows="5" id="clauseTextArea" 
+                                onblur="onBlurClauseInput(this, 'maxCharClauseText', 'errEmptyClauseText')" 
+                                onfocus="onFocusClauseInput(this, 'maxCharClauseText')"  
+                                value="{!clauseValue}" styleClass="addClauseInputValue"/>
+
+                            <div style="min-height:25px">
+                                <span id="errEmptyClauseText" class="hidden" style="color:red">
+                                    {!$Label.IDEReviewScreen_ClauseTextErrMsg}
+                                </span>
+                                <span id="maxCharClauseText" style="float:right" class="hidden">
+                                    {!$Label.IDEReviewScreen_ClauseTextMaxChars}
+                                </span>
+                            </div>
+
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel rendered="{!overlayPopupAction = overlayPopupDeleteAction}">
+                            {!$Label.apttus__idereviewscreen_deleteactionwarningmsg} {!ClauseTitle} ?
+                        </apex:outputPanel>
+                    </div>
+                
+                    <div class="addClauseButtonContainer">
+                        <apex:outputPanel rendered="{!OR(overlayPopupAction = overlayPopupCancelAction, overlayPopupAction = overlayPopupDeleteAction)}">
+                            <button type="button" class="cancelBtn" onclick="No()">
+                                <span>{!$Label.No}</span>
+                            </button>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!overlayPopupAction = overlayPopupCancelAction}">   
+                            <button type="button" class="saveBtn" onclick="CancelYes()">
+                                <span>{!$Label.Yes}</span>
+                            </button>
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel rendered="{!overlayPopupAction = overlayPopupDeleteAction}">                           
+                            <button type="button" class="saveBtn" onclick="this.disabled=true;confirmDeleteYes()">
+                                <span>{!$Label.Yes}</span>
+                            </button>
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel rendered="{!OR(overlayPopupAction = overlayPopupAddAction, overlayPopupAction = overlayPopupAddActionFromRightclick)}">
+                            <button type="button" class="saveBtn" onclick="ValidateClause('{!overlayPopupAddAction}', '{!$Component.clauseTextName}', '{!$Component.clauseTextArea}', '{!$Component.rbClause}', '{!$Component.rbClauseDropdownId}')">
+                                <span>{!$Label.IDEReviewScreen_AddClause}</span>
+                            </button>
+                        </apex:outputPanel>
+                        
+                        
+                        <apex:outputPanel rendered="{!overlayPopupAction = overlayPopupEditAction}">
+                            <button type="button" class="saveBtn" onclick="ValidateClause('{!overlayPopupEditAction}', '{!$Component.clauseTextName}', '{!$Component.clauseTextArea}', '{!$Component.rbClause}', '{!$Component.rbClauseDropdownId}')">
+                                <span>{!$Label.Save}</span>
+                            </button>
+                        </apex:outputPanel>
+                                                
+                        <apex:actionFunction name="No" action="{!closePopup}" rerender="popup" />
+                        <apex:actionFunction name="CancelYes" action="{!Cancel}" rerender="popup" />                        
+                        <apex:actionFunction name="confirmDeleteYes" action="{!deleteClause}" rerender="popup,clauseRefreshPanel"/>
+                        <apex:actionFunction name="addClause" action="{!addClause}" rerender="popup,clauseRefreshPanel" />
+                        <apex:actionFunction name="saveClause" action="{!saveClause}" rerender="popup,clauseRefreshPanel" />
+                    </div>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            
+            <apex:actionFunction name="onload" oncomplete="asyncLoad()" />
+        </apex:form>
+    </div> <!-- end of Main container -->
+    <!-- Markup end here-->    
+</html>
+</apex:page>

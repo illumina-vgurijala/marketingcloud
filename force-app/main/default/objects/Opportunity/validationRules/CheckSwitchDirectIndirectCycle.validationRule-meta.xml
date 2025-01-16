@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckSwitchDirectIndirectCycle</fullName>
+    <active>true</active>
+    <description>As part of DCP-814, this validation rule is used to prevent the user from switching to Indirect Cycle from Standard Cycle and Vice versa.</description>
+    <errorConditionFormula>AND (
+    OR ( 
+        AND ( 
+            OR ( 
+                PRIORVALUE ( RecordTypeName__c ) = $Label.IndirectFieldServices, 
+                PRIORVALUE ( RecordTypeName__c ) = $Label.IndirectReOrder, 
+                PRIORVALUE ( RecordTypeName__c ) = $Label.OpportunityRTIndirectStandard
+            ), 
+            OR ( 
+                RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+                RecordType.DeveloperName = $Label.OpportunityRTDirectStandard, 
+                RecordType.DeveloperName = $Label.FieldServices 
+            ) 
+        ), 
+        AND ( 
+            OR ( 
+               PRIORVALUE ( RecordTypeName__c ) = $Label.OpportunityRTDirectReOrder, 
+               PRIORVALUE ( RecordTypeName__c ) = $Label.OpportunityRTDirectStandard, 
+               PRIORVALUE ( RecordTypeName__c ) = $Label.FieldServices
+            ), 
+            OR ( 
+                RecordType.DeveloperName = $Label.IndirectReOrder, 
+                RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard, 
+                RecordType.DeveloperName = $Label.IndirectFieldServices 
+            ) 
+        ) 
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>Cannot switch Opportunity between Indirect and Direct selling channels.</errorMessage>
+</ValidationRule>

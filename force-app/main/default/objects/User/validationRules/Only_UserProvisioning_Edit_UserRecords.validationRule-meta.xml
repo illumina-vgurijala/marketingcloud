@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Only_UserProvisioning_Edit_UserRecords</fullName>
+    <active>true</active>
+    <description>---Only runs in Prod---- 
+GIS User provisioning profile, Channel Partner profiles and Integration users can update user record. Autorabit is also bypassed of this validation to enable code migration. Custom Setting used to manage profile/user reference</description>
+    <errorConditionFormula>/* ONLY FIRES IN PRODUCTION -- ORG ID INCLUDED IN LOGIC---
+THROWS ERROR IF EDITS MADE TO USER RECORD WHEN USER DOES NOT MEET AT LEAST ONE OF THE FOLLOWING CRITERIA
+A. DOES NOT HAVE &quot;MODIFY USERS&quot; ASSIGNED TO THEM OR THEIR PROFILE IN THE APEX CUSTOM SETTING -- NOTE: TEST CLASSES WITH &quot;NO ACCESS&quot; TO DATA CANNOT REFERENCE CUSTOM SETTINGS&quot;
+B. USER&apos;S PROFILE NAME DOES NOT INCLUDE &quot;INTEGRATION&quot; IN THE NAME
+C. USER&apos;S PROFILE NAME DOES NOT INCLUDE &quot;CHANNEL PARTNER&quot; IN THE NAME - INC0442042
+D. USER IS NOT THE &quot;GIS ILLUMINA&quot; USER THAT&apos;S USED FOR DEPLOYMENTS
+E. USER DOES NOT HAVE THE &quot;MANAGE PARTNER PORTAL USERS&quot; PERMISSION SET
+F. USER IS NOT THE &quot;THE COMMUNITY AT ILLUMINA SITE GUEST USER&quot; THAT&apos;s USED TO ALLOW SELF-REGISTRATION ON COMMUNITY, 
+
+*/
+
+AND( 
+/*1 ORG IS PRODUCTION , LOGGED IN USER IS NOT GIS USER PROVISIONING, CHANNEL PARTNERS OR INTEGRATION USER, USER EDITING OWN USER RECORD */ 
+	$Organization.Id = &quot;00D1N000002Dojm&quot;,
+	NOT($Setup.cs_Apex_Settings__c.Modify_Users__c), 
+	NOT(CONTAINS( $Profile.Name , &quot;Integration&quot;)), 
+	NOT(CONTAINS( $Profile.Name , &quot;Channel Partner&quot;)),
+	$User.Id != &quot;0051N000005F3VK&quot;, 
+	NOT($Permission.CP_Manage_Partner_Portal_Users),
+        $User.Id != &quot;0053l00000CKbSf&quot;, 
+	Id &lt;&gt; $User.Id
+)</errorConditionFormula>
+    <errorMessage>The user record can only be modified by the GIS User Provisioning team. Please submit a SNOW request to the GIS SFDC Access team to request any changes.</errorMessage>
+</ValidationRule>

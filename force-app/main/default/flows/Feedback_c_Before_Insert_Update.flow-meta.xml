@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>To_populate_Feedback_Close_Date</name>
+        <label>To populate Feedback Close Date</label>
+        <locationX>50</locationX>
+        <locationY>695</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Feedback_Close_Date__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>$Flow.CurrentDateTime</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Decision_3</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Update_Assignment_Date</name>
+        <label>Update Assignment Date</label>
+        <locationX>50</locationX>
+        <locationY>995</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Feedback_Assignment_Date__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>$Flow.CurrentDate</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.Feedback_Disposition__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Assigned</stringValue>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <assignments>
+        <name>Update_Reopen_Reason_To_Nulls</name>
+        <label>Update Reopen Reason To Null</label>
+        <locationX>50</locationX>
+        <locationY>395</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Reopen_Reason__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue></stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Check_if_Feedback_Is_Closed</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Check_if_Feedback_Is_Closed</name>
+        <label>Check if Feedback Is Closed</label>
+        <locationX>182</locationX>
+        <locationY>587</locationY>
+        <defaultConnector>
+            <targetReference>Decision_3</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>FALSE_Check if Feedback Is Closed</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_myRule_8</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Feedback_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Closed</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Feedback_Status__c</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>To_populate_Feedback_Close_Date</targetReference>
+            </connector>
+            <label>TRUE_Check if Feedback Is Closed</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Decision_3</name>
+        <label>Decision 3</label>
+        <locationX>182</locationX>
+        <locationY>887</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Outcome_1_of_Decision_3</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>ifFeedbackischanged</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Assignment_Date</targetReference>
+            </connector>
+            <label>Outcome 1 of Decision 3</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Update_Reopen_Reason_To_Null</name>
+        <label>Update Reopen Reason To Null</label>
+        <locationX>182</locationX>
+        <locationY>287</locationY>
+        <defaultConnector>
+            <targetReference>Check_if_Feedback_Is_Closed</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>FALSE_Update Reopen Reason To Null</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_Update_Reopen_Reason_To_Null</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Feedback_Disposition__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Reopened</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Reopen_Reason__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Reopen_Reason_To_Nulls</targetReference>
+            </connector>
+            <label>TRUE_Update Reopen Reason To Null</label>
+        </rules>
+    </decisions>
+    <formulas>
+        <name>formula_3_myRule_8_A1_0689596656</name>
+        <dataType>DateTime</dataType>
+        <expression>NOW()</expression>
+    </formulas>
+    <formulas>
+        <name>ifFeedbackischanged</name>
+        <dataType>Boolean</dataType>
+        <expression>ISCHANGED({!$Record.OwnerId}) &amp;&amp; 
+NOT(ISNULL( {!$Record.OwnerId})) &amp;&amp;  ISNULL({!$Record.Feedback_Assignment_Date__c} ) &amp;&amp;
+ISPICKVAL( {!$Record.Feedback_Status__c}   , &apos;Open&apos;)</expression>
+    </formulas>
+    <formulas>
+        <name>Today</name>
+        <dataType>Date</dataType>
+        <expression>TODAY()</expression>
+    </formulas>
+    <interviewLabel>Feedback__c: Before Insert &amp; Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Feedback__c: Before Insert &amp; Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Update_Reopen_Reason_To_Null</targetReference>
+        </connector>
+        <object>Feedback__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Obsolete</status>
+    <variables>
+        <name>FeedbackObjCollectionVar</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Feedback__c</objectType>
+    </variables>
+    <variables>
+        <name>FeedbackObjInsVar</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Feedback__c</objectType>
+    </variables>
+</Flow>

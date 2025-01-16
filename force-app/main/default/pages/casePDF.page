@@ -1,0 +1,697 @@
+<apex:page controller="CasePDFController" action="{!getLayouts}" renderAs="pdf" applyBodyTag="false" standardStylesheets="false">
+
+    <!--Header and Footer  Start  !-->
+
+    <head>
+        <style type="text/css" media="print">
+            @page {
+                @top-center {
+                    content: element(header);
+                }
+                @bottom-left {
+                    content: element(footer);
+                }
+            }
+
+            div.header {
+                text-align: center;
+                margin: auto;
+                padding: 5px;
+                padding-bottom: 20px;
+                position: running(header);
+            }
+
+            div.footer {
+                display: block;
+                padding: 5px;
+                position: running(footer);
+            }
+
+            .pagenumber:before {
+                content: counter(page);
+            }
+
+            .pagecount:before {
+                content: counter(pages);
+            }
+        </style>
+    </head>
+
+    <div class="header">
+        <apex:panelGrid columns="2" width="100%">
+            <small>Generated On:{!userDateTime} GMT</small>
+            <br/>
+
+            <apex:panelGrid columns="1" width="100%">
+                <small>Case : {!caseData.CaseNumber }</small>
+            </apex:panelGrid>
+        </apex:panelGrid>
+    </div>
+    <div class="footer">
+        <div>Page
+            <span class="pagenumber" /> of
+            <span class="pagecount" />
+        </div>
+    </div>
+    <div class="content">
+        <p></p>
+    </div>
+    <!--Header and Footer  End  !-->
+
+
+    <apex:pageBlock >
+        <h1 style="font-size:medium">Case : {!caseData.CaseNumber }</h1>
+        <br></br>
+        <apex:repeat value="{!layoutSections}" var="section">
+            <apex:outputPanel rendered="{!IF(CONTAINS(chkSkipSections,section.label),false,true)}">
+                <div style="width:100%;overflow:hidden">
+                    <table id="box-table-a" align="center" width="95%" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+                font-size: 10px;
+                text-align: left;
+                border-collapse: collapse;">
+
+                        <tr>
+                            <th colspan="2">{!section.label}</th>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div style="column-count: 2 ">
+
+                                    <apex:repeat value="{!section.layoutColumns}" var="columns">
+                                        <apex:outputPanel layout="block" style="float:left;padding-top:10px;padding-left:10px;width:45%;">
+                                            <table border="0">
+                                                <apex:repeat value="{!columns.layoutItems}" var="items">
+                                                    <apex:variable value="{!caseData}" var="cas" />
+                                                    <apex:variable value="{!items.field}" var="fieldAPIName" />
+                                                    <tr>
+                                                        <td width="50%">
+
+                                                            <apex:outputPanel rendered="{!IF(CONTAINS(chkMapKey,'~'+fieldAPIName+'~'),false,true)}">
+                                                                <strong>  {!mapFieldLabel[fieldAPIName]}</strong> : &nbsp;
+                                                                <apex:outputText value="{! If(caseStatus=='CLOSED',If(cas[fieldAPIName]==null || cas[fieldAPIName] == '' , 'N/A', 
+                                                                                    If(cas[fieldAPIName] == false , 'false', If(cas[fieldAPIName] == true ,   
+                                                                                    'true', IF(CONTAINS(chkMapID,fieldAPIName),cas[apiNameMap[fieldAPIName]],cas[fieldAPIName])))),
+                                                                                    IF(CONTAINS(chkMapID,fieldAPIName),cas[apiNameMap[fieldAPIName]],cas[fieldAPIName]))}"
+                                                                />
+                                                            </apex:outputPanel>
+                                                        </td>
+                                                    </tr>
+                                                </apex:repeat>
+
+                                            </table>
+                                        </apex:outputPanel>
+                                    </apex:repeat>
+
+                                </div>
+                            </td>
+                        </tr>
+
+
+                    </table>
+                    
+
+                </div>
+            </apex:outputPanel>
+        </apex:repeat>
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        font-size: 10px;
+        position:relative;left:32px;">
+            <strong>Last Modified Date </strong> : &nbsp;
+        <apex:outputText value="{!caseData.LastModifiedDate}"></apex:outputText>
+        </div>
+
+        <br/>
+        <br/>
+
+        <!-- Contact Information -->
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+                        font-size: 10px;">
+            <apex:repeat value="{!caseData}" var="con">
+                <strong>Contact Information</strong>
+                <br/>
+                <medium> Contact Details </medium>
+                <br/>
+                <div style="text-align: left;
+                table-layout: fixed;
+                width: 100%;">
+                    <table>
+                        <tr>
+                            <td width="40%">
+                                <strong>Contact Record Type</strong>: &nbsp;
+                                <apex:outputtext value="{! con.Contact.Contact_Record_Type__c}" />
+                                <br/>
+                            </td>
+                            <td width="40%">
+                                <strong>Other Phone</strong>: &nbsp;
+                                <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.OtherPhone==null || con.Contact.OtherPhone == '' , 'N/A', con.Contact.OtherPhone)),con.Contact.OtherPhone)}"
+                                />
+                                <br/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td width="40%">
+                                <strong>Name</strong>: &nbsp;
+                                <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.Name==null || con.Contact.Name == '' , 'N/A', con.Contact.Name)),con.Contact.Name)}"
+                                />
+                            </td>
+                            <td width="40%">
+                                <strong>Alternate Email</strong>: &nbsp;
+                                <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.Alternate_Email__c==null || con.Contact.Alternate_Email__c == '' , 'N/A', con.Contact.Alternate_Email__c)),con.Contact.Alternate_Email__c)}"
+                                />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <br/> Address Information
+                <br/>
+                <div style="text-align: left;
+                table-layout: fixed;
+                width: 100%;">
+                <br/>
+                    Shipping Address
+                    <br/>
+                    <strong>Shipping Country:</strong> &nbsp;
+                    <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.OtherCountry==null || con.Contact.OtherCountry == '' , 'N/A', con.Contact.OtherCountry)),con.Contact.OtherCountry)}"
+                    />
+                    <br/>
+                    <br/>
+                    <strong>Shipping Country Code:</strong> &nbsp;
+                    <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.OtherCountryCode==null || con.Contact.OtherCountryCode == '' , 'N/A', con.Contact.OtherCountryCode)),con.Contact.OtherCountryCode)}"
+                    />
+                    <br/>
+                    <br/>
+                    <strong>Shipping Street:</strong> &nbsp;
+                    <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.OtherStreet==null || con.Contact.OtherStreet == '' , 'N/A', con.Contact.OtherStreet)),con.Contact.OtherStreet)}"
+                    />
+                    <br/>
+                    <br/>
+                    <strong>Shipping City:</strong> &nbsp;
+                    <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.OtherCity==null || con.Contact.OtherCity == '' , 'N/A', con.Contact.OtherCity)),con.Contact.OtherCity)}"
+                    />
+                    <br/>
+                    <br/>
+                    <strong>Shipping State:</strong> &nbsp;
+                    <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.OtherState==null || con.Contact.OtherState == '' , 'N/A', con.Contact.OtherState)),con.Contact.OtherState)}"
+                    />
+                    <br/>
+                    <br/>
+                    <strong>Shipping Zip/Postal Code:</strong> &nbsp;
+                    <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.OtherPostalCode==null || con.Contact.OtherPostalCode == '' , 'N/A', con.Contact.OtherPostalCode)),con.Contact.OtherPostalCode)}"
+                    />
+                    <br/>
+
+                </div>
+
+                <br/>
+                <strong>System Information</strong>
+                <br/>
+                <div style="text-align: left;
+                table-layout: fixed;
+                width: 100%;">
+                    <table>
+                        <tr>
+                            <td width="40%">
+                                <strong>Created By</strong>: &nbsp;
+                                <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.CreatedBy.Name==null || con.Contact.CreatedBy.Name == '' , 'N/A', con.Contact.CreatedBy.Name)),con.Contact.CreatedBy.Name)}"
+                                />
+                                <br/>
+                            </td>
+                            <td width="40%">
+                                <strong>Last Modified By </strong>: &nbsp;
+                                <apex:outputtext value="{! If(caseStatus=='CLOSED',(If(con.Contact.LastModifiedBy.Name==null || con.Contact.LastModifiedBy.Name == '' , 'N/A', con.Contact.LastModifiedBy.Name)),con.Contact.LastModifiedBy.Name)}"
+                                />
+                                <br/>
+                            </td>
+                        </tr>
+
+                    </table>
+                </div>
+
+            </apex:repeat>
+        </div>
+
+        <br/>
+        <br/>
+
+        <!-- Associated Codes -->
+
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            font-size: 10px;">
+            <strong>Associated Codes</strong>
+            <apex:outputPanel rendered="{!IF(Codes.size != 0,true,false)}">
+                <apex:repeat value="{!Codes}" var="index">
+                    <table border="0">
+                        <div style="width:100%; height:3px; background:black;"></div>
+                        <br/>
+                        <strong>Code Name</strong>:
+                        <apex:outputText value="{! index.Name}" />
+                        <br/>
+                        <div style="width:100%; height:3px; background:black;"></div>
+                        <div style="text-align: left;
+                        table-layout: fixed;
+                        width: 100%;">
+                            <table>
+    
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Code Id</strong>: &nbsp;
+                                        <apex:outputText value="{! index.Code_ID__c}" />
+                                        <br/>
+                                    </td>
+                                    <td width="60%">
+                                        <strong>Work Order</strong>: &nbsp;
+                                        <apex:outputText value="{! index.Work_Order__r.Name}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Code Title</strong>: &nbsp;
+                                        <apex:outputText value="{! index.Code_Title_Name__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                    <td width="60%">
+                                        <strong>Parent Code</strong>: &nbsp;
+                                        <apex:outputText value="{! index.Parent_Code_ID__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Code Type</strong>: &nbsp;
+                                        <apex:outputText value="{! index.Code_Type__c}" />
+                                        <br/>
+                                    </td>
+                                    <td width="60%">
+                                        <strong>Product Category</strong>: &nbsp;
+                                        <apex:outputText value="{! index.Product_Category__c}"
+                                        />
+                                        <br/>
+                                    </td>
+    
+                                </tr>
+                            </table>
+                        </div>
+                    </table>
+                </apex:repeat>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(Codes.size == 0,true,false)}">
+                <div style="width:100%; height:3px; background:black;"></div>
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+        </div>
+
+        <br/>
+        <br/>
+
+        <!--******************Quality Records**************-!-->
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+       font-size: 10px;">
+            <strong>Quality Records</strong>
+            <div style="width:100%; height:3px; background:black;"></div>
+            <apex:outputPanel rendered="{!IF(qrData.size != 0,true,false)}">
+                <table border=".1px">
+                    
+                    <tr>
+                        <th>Quality Record ID</th>
+                        <th>Problem Title</th>
+                    </tr>
+                    <apex:repeat value="{!qrData}" var="qr">
+                        <tr>
+                            <td>{! qr.Quality_Record__r.EtQ_Number__c}</td>
+                            <td>{! qr.Quality_Record__r.Problem_Title__c}</td>
+                        </tr>
+                    </apex:repeat>
+    
+                </table>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(qrData.size == 0,true,false)}">
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+        </div>
+        <br/>
+        <br/>
+
+
+        <!--******************Files***************-!-->
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        font-size: 10px;">
+            <strong>Attachments</strong>
+            <div style="width:100%; height:3px; background:black;"></div>
+            <apex:outputPanel rendered="{!IF(filesData.size != 0,true,false)}">
+                <table border=".1px">
+                    <tr>
+                        <th>Name</th>
+                        <th>Size</th>
+                        <th>Last Modified</th>
+                    </tr>
+                    <apex:repeat value="{!filesData}" var="file">
+                        <tr>
+                            <td>{! file.ContentDocument.Title}</td>
+                            <td>{! file.ContentDocument.ContentSize} Bytes</td>
+                            <td>{! file.ContentDocument.LastModifiedDate}</td>
+                        </tr>
+                    </apex:repeat>
+    
+                </table>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(filesData.size == 0,true,false)}">
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+        </div>
+
+        <br/>
+        <br/>
+        <!--******************Emails***************-!-->
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        font-size: 10px;">
+            <strong>Emails</strong>
+            <br/>
+            <apex:outputPanel rendered="{!IF(emailData.size != 0,true,false)}">
+                <apex:repeat value="{!emailData}" var="email">
+                    <table border=".1px">
+                        <div style="width:100%; height:3px; background:black;"></div>
+                        <br/>
+                        <strong>Subject</strong>:
+                        <apex:outputText value="{!email.Subject}" />
+                        <br/>
+                        <div style="width:100%; height:3px; background:black;"></div>
+    
+                        <div style= "text-align: left;
+                        table-layout: fixed;
+                        width: 100%;">
+                                 <!-- Email Fields -->
+                            <table border=".1px">
+                                <tr>
+                                    <td width="60%" style="width:70%">
+                                        <strong>Message Date</strong>: &nbsp;
+                                        <apex:outputText value="{!email.MessageDate}" />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>    
+                                    <td width="60%" style="width:30%">
+                                        <strong>Email Address</strong>: &nbsp;
+                                        <apex:outputText value="{!email.FromAddress}" />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%" style="width:70%">
+                                        <strong>Has Attachment</strong>: &nbsp;
+                                        <apex:outputText value="{!email.HasAttachment}" />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                   <td width="100%" style="word-wrap:break-word;width:70%">
+                                        <strong>Text Body</strong>: &nbsp;
+                                        <apex:outputText value="{!email.TextBody}" style="word-wrap: break-all;" escape="false" />
+                                        <br/>
+                                    </td>
+                                </tr>
+                            </table>
+                                <!-- Email Fields -->
+                        </div>
+                    </table>
+                </apex:repeat>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(emailData.size == 0,true,false)}">
+                <div style="width:100%; height:3px; background:black;"></div>
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+        </div>
+        <br/>
+        <br/>
+
+        <!--******************CaseComments***************-!-->
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+               font-size: 10px;">
+            <strong>Case Comments</strong>
+            <div style="width:100%; height:3px; background:black;"></div>
+            <apex:outputPanel rendered="{!IF(caseComentData.size != 0,true,false)}">
+                <table border=".1px" >
+                    <tr>
+                        <th>User</th>
+                        <th>Public</th>
+                        <th>CreatedDate</th>
+                        <th>Comment</th>
+                    </tr>
+                    <apex:repeat value="{!caseComentData}" var="comments">
+                        <tr>
+                            <td>{! comments.CreatedBy.Name}</td>
+                            <td>{! If(comments.IsPublished==true , ' true ', ' false ')} </td>
+                            <td>{! comments.CreatedDate}</td>
+                            <td><apex:outputText value="{! comments.CommentBody}" escape="false" /></td>
+                        </tr>
+                    </apex:repeat>
+                </table>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(caseComentData.size == 0,true,false)}">
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+            <br/>
+            <br/>
+        </div>
+
+        <!--******************Parts Orders***************-!-->
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+               font-size: 10px;">
+            <strong>Parts Orders</strong>
+            <div style="width:100%; height:3px; background:black;"></div>
+            <apex:outputPanel rendered="{!IF(partsOrderData.size != 0,true,false)}">
+                <table border=".1px">
+                    <tr>
+                        <th>Parts Order </th>
+                        <th>Account</th>
+                        <th>Order Status</th>
+                        <th>From Location</th>
+                        <th>To Location</th>
+                    </tr>
+                    <apex:repeat value="{!partsOrderData}" var="partsOrder">
+                        <tr>
+                            <td>{! partsOrder.Name}</td>
+                            <td>{! partsOrder.SVMXC__Company__r.Name} </td>
+                            <td>{! partsOrder.SVMXC__Order_Status__c}</td>
+                            <td>{! partsOrder.SVMXC__Source_Location__r.Name}</td>
+                            <td>{! partsOrder.SVMXC__Destination_Location__r.Name}</td>
+                        </tr>
+                    </apex:repeat>
+                </table>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(partsOrderData.size == 0,true,false)}">
+                <!-- <strong>N/A</strong> -->
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+            <br/>
+            <br/>
+        </div>
+
+        <!--********************* Work Orders ******************************* -->
+
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        font-size: 10px;">
+            <strong>Work Orders</strong>
+            <apex:outputPanel rendered="{!IF(workOrderData.size != 0,true,false)}">
+                <apex:repeat value="{!workOrderData}" var="WOdata">
+                    <table border=".1px">
+                        <div style="width:100%; height:3px; background:black;"></div>
+                        <br/>
+                        <strong>Work Order Number</strong>:
+                        <apex:outputText value="{! WOdata.Name}" />
+                        <br/>
+                        <div style="width:100%; height:3px; background:black;"></div>
+                        <div style= "text-align: left;
+                    table-layout: fixed;
+                    width: 100%;">
+                            <table border=".1px">
+    
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Record Type</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.RecordType.Name}"
+                                        />
+                                        <br/>
+                                    </td>
+                                    <td width="60%">
+                                        <strong>Contact</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.SVMXC__Contact__r.Name}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Order Type</strong>: &nbsp;
+                                        <apex:outputText value="{!WOdata.SVMXC__Order_Type__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                    <td width="60%">
+                                        <strong>Account</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.SVMXC__Company__r.Name}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Status</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.SVMXC__Order_Status__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                    <td width="60%">
+                                        <strong>Created Date</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.CreatedDate}" />
+                                        <br/>
+                                    </td>
+    
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Field Support</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.SVMXC__Group_Member__r.Name}"
+                                        />
+                                        <br/>
+                                    </td>
+                                    <td width="60%">
+                                        <strong>Subject</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.SVMX_PS_Subject__c}"
+                                        />
+                                        <br/>
+                                    </td>
+    
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Description</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.SVMXC__Problem_Description__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Evaluation</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.Evaluation__c}" />
+                                        <br/>
+                                    </td>
+                                </tr>
+    
+                                <tr>
+                                    <td width="60%">
+                                        <strong>English Translation Evaluation </strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.English_Translation_Evaluation__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Work Performed</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.SVMXC__Work_Performed__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>English Translation Work Performed</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.English_Translation_Work_Performed__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Verification Result</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.Verification_Result__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>English Translation Verification Result</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.English_Translation_Verification_Result__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Abandoned Reason</strong>: &nbsp;
+                                        <apex:outputText value="{!WOdata.Abandoned_Reason__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td width="60%">
+                                        <strong>Other Abandoned Reason</strong>: &nbsp;
+                                        <apex:outputText value="{! WOdata.Other_Abandoned_Reason__c}"
+                                        />
+                                        <br/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </table>
+                </apex:repeat>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(workOrderData.size == 0,true,false)}">
+                <div style="width:100%; height:3px; background:black;"></div>
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+        </div>
+
+        <br/>
+        <br/>
+
+        <!--******************Case History***************-!-->
+        <div style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+                   font-size: 10px;">
+            <strong>Case History</strong>
+            <div style="width:100%; height:3px; background:black;"></div>
+            <apex:outputPanel rendered="{!IF(caseHistoryData.size != 0,true,false)}">
+                <table border=".1px">
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>User</th>
+                        <th>Field</th>
+                        <th>Original Value</th>
+                        <th>New Value</th>
+                    </tr>
+                    <apex:repeat value="{!caseHistoryData}" var="history">
+                        <tr>
+                            <td>{! history.CreatedDate}</td>
+                            <td>{! history.CreatedBy.Name} </td>
+                            <td>{! history.Field}</td>
+                            <td>{! history.OldValue}</td>
+                            <td>{! history.NewValue}</td>
+                        </tr>
+                    </apex:repeat>
+                </table>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!IF(caseHistoryData.size == 0,true,false)}">
+                <apex:outputText value="{!If(caseStatus=='CLOSED' , 'N/A', '')}" />
+            </apex:outputPanel>
+
+            <br/>
+            <br/>
+        </div>
+
+    </apex:pageBlock>
+</apex:page>

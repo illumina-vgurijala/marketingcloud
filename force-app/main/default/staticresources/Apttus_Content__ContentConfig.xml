@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentConfig>
+	<AgreementSpec>
+		<Description>AgreementSpec contains agreement mapping specification</Description>
+		<FieldMappings>
+			<Description>FieldMappings holds the map of agreement fields to copy to the content object.</Description>
+			<FieldMapping>
+				<FromField>
+					<Name>Id</Name>
+				</FromField>
+				<ToField>
+					<Name>Agreement__c</Name>
+				</ToField>
+			</FieldMapping>
+		</FieldMappings>
+	</AgreementSpec>
+</ContentConfig>

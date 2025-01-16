@@ -1,0 +1,650 @@
+<!-- 
+    Apttus Config & Pricing
+    RelatedFeatureToProduct
+     
+    @2010-2013 Apttus Inc. All rights reserved. 
+
+ -->
+<apex:page controller="Apttus_Config2.RelateFeatureToProductController"
+			sidebar="{!ShowAdminSidebar}" >
+
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JSTreeLibrary, 'jstree-v.pre1.0/jquery.jstree.js')}"/>
+	<apex:includeScript value="{!$Resource.Apttus_Config2__JQueryUITouch0_2_2}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+		
+		
+		j$(document).on('click', '.fieldCreationLink', function(){
+		
+			j$( "#idfieldCreationDialog").dialog({
+				modal: true,
+				height: 200,
+      			width: 300,
+				buttons: {
+				  Done: function() {
+				  	refreshFeaturesSection();
+				    j$(this).dialog( "close" );
+				  }
+				}
+		    }); 
+		})
+		
+		function showLoadingDiv() {
+			determineLocationAndSizeOfOveraly();
+			j$('.aptLoadingOverlay').show();
+		}
+		function hideLoadingDiv() {
+			j$('.aptLoadingOverlay').hide();
+		}
+		function determineLocationAndSizeOfOveraly() {
+       		var position = j$('.selectedNodeOptionsSection').position();
+		    j$('.aptLoadingOverlay').css( { position: 'absolute', left: position.left, top: position.top });
+		    j$('.aptLoadingOverlay').width(j$('.selectedNodeOptionsSection').width());
+		    j$('.aptLoadingOverlay').height(j$('.selectedNodeOptionsSection').height());
+        }
+
+	</script>
+	<style>
+		.btnDisabled {
+			background: gray !important;
+		}
+		.btnDisabled:Hover {
+			color: white !important;
+		}
+		.aptRoundedDiv {
+			padding-bottom: 5px;
+			background-color: white;
+			border: 1px solid #DDD;
+			-webkit-border-radius: 6px; /* Safari 3-4, iOS 1-3.2, Android ≤1.6 */
+			border-radius: 6px;
+			/* IE Stuff */
+			zoom: 1;
+			filter: progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=0, strength=2 ), progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=45, strength=2 ), progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=90, strength=2 ), progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=135, strength=2 ), progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=180, strength=2 ), progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=225, strength=2 ), progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=270, strength=2 ), progid:DXImageTransform.Microsoft.Shadow(color=#000000,
+				direction=315, strength=2 );
+			display: table;
+			width: 100%;
+		}
+		
+		div.aptProductListSubHeader {
+			cursor: pointer;
+			padding: 4px 0px;
+			font-size: 1em;
+			line-height: 1.5em;
+			color: #6f6f6f;
+			float: left;
+			background: url('{!$Resource.CPQNewSprites}') repeat-x;
+			background-position: 0px -150px;
+			border-spacing: 10px;
+			width: 100%
+		}
+		
+		.aptPanelGrid {
+			width: 100%;
+			border-spacing: 0px;
+		}
+		
+		.aptPanelGrid tr {
+			border-spacing: 0px;
+		}
+		
+		.aptPanelGrid td {
+			border-spacing: 0px;
+		}
+		
+		.aptPanelColumn {
+			width: 100%;
+			border-spacing: 0px;
+		}
+		
+		.aptPanelColumn a {
+			margin-left: 10px;
+			font-size: 11px;
+		}
+		
+		
+		.aptGroupHeader {
+			background: -moz-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(211,
+				211, 211, 0.65) ), color-stop(100%, rgba(255, 255, 255, 0) ) );
+			background: -webkit-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: -o-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: -ms-linear-gradient(top, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			background: linear-gradient(to bottom, rgba(211, 211, 211, 0.65) 0%,
+				rgba(255, 255, 255, 0) 100% );
+			filter: progid:DXImageTransform.Microsoft.gradient(  startColorstr='#a6d3d3d3',
+				endColorstr='#00ffffff', GradientType=0 );
+			height: 40px;
+			padding-top: 10px;
+			padding-left: 10px;
+		}
+		
+		.aptLoadingOverlay {
+			background-color: rgba(240, 240, 240, 0.9);
+			background-image: url('/img/loading32.gif');
+			background-repeat: no-repeat;
+			background-position: center center;
+			display: none;
+			z-index: 10000;
+			opacity: 0.7;
+			filter:alpha(opacity=50);
+		    -moz-opacity:0.5;
+		    -khtml-opacity: 0.5;
+		}
+		
+		
+		
+		.dataList, .availableFeatureSetsDataList, .featuresDataList, .featureSetDataList {
+			list-style-type: none;
+			padding-left: 0px;
+		}
+		
+		ul.dataList li, ul.availableDataList li, ul.featuresDataList li, ul.featureSetDataList li,{
+			width:100%;
+			
+		}
+		ul li{
+			margin-left: 0px;
+		}
+		
+		.formee .formee-txt,.formee input[type="text"],.formee input[type="password"],.formee input[type="file"],.formee textarea
+			{
+			line-height: 0.7em;
+			padding: 5px;
+			height: 2.0em;
+			width: 75%;
+		}
+		
+		.formee select {
+			line-height: 0.7em;
+			padding: 2px;
+			height: 2.0em;
+			width: 95%;
+		}
+		
+		.formee legend {
+			font-size: 1.5em;
+			font-weight: bold;
+			margin-left: 3%;
+			width: 20%;
+		}
+		
+		.formee-button,.formee input[type="submit"],.formee input[type="button"],.formee input[type="reset"]
+			{
+			font-size: 1.2em;
+			padding: 4px 12px 4px 12px;
+			text-transform: none;
+		}
+		
+		.availableGroupsDataList li, .dataList li, ol li {
+			margin-left: 0em;
+			margin-right: 1.5em;
+			padding-left: 0;
+			border-bottom: 1px solid aliceblue;
+		}
+		 
+		
+		.fullWidth {
+			margin:0px;
+			padding:0px;
+			width:100%;
+		}
+		h2 {
+			display: block;
+			margin-left: 0px !important;
+			font: bold 14px/1.1em Arial, Sans-Serif;
+		}
+		
+		.alignRight {
+			text-align: right;
+		}
+		
+		.jstree-default.jstree-focused {
+			background: transparent;
+		}
+		
+		.bPageBlock{
+			background-color:transaprent !important;
+			-webkit-border-radius: 0px !important;
+			border-radius: 0px !important;
+			border:0px !important;
+		}
+		
+		body .bPageBlock .pbBody .labelCol, body .bPageBlock .pbBody .dataCol, body .bPageBlock .pbBody .data2Col {
+			padding-top: 10px;
+			padding-bottom: 10px;
+		
+		}
+		
+		.apexp .bPageBlock .pbHeader td, .apexp .bPageBlock.apexDefaultPageBlock .pbBottomButtons .pbButtonb {
+			padding: 0px 0px;
+			text-align: left;
+		}
+		
+		.bEditBlock .pbHeader>table, .apexp .bPageBlock.apexDefaultPageBlock .pbHeader>table, #ep.bLayoutBlock .pbHeader>table {
+			border-bottom: transparent !important;
+		}
+		
+		body .bEditBlock .pbBottomButtons, body .apexp .bPageBlock.apexDefaultPageBlock .pbBottomButtons {
+			border-top: transparent;
+		}
+		
+		body .bPageBlock {
+			background: transparent !important;
+		}
+		
+		.ui-state-highlight { height: 3em; line-height: 1.2em; }
+		
+  		.dataList {
+  			-webkit-margin-before: 3.8em;
+  		}
+  		
+  		.ui-widget {
+			font-family: inherit;
+			font-size: inherit;
+		}
+		
+	</style>
+	<apex:form id="idForm" styleClass="formee">
+		<apex:outputPanel id="idErrorBox">
+			<apex:pageMessages />
+		</apex:outputPanel>
+		<apex:outputPanel layout="block"
+							styleClass="aptRoundedDiv"
+							style="margin-top:10px;">
+			<div class="aptGroupHeader" id="idAvailableFeatureSetsHeader">
+				<div class="grid-12-12" style="padding: 0px;">
+					<apex:commandButton value="{!$Label.apttus_config2__back}" 
+										action="{!doCancel}" 
+										immediate="true"/>
+					<apex:outputPanel rendered="{!NOT(ISBLANK(productSO))}"  >
+						<h2 style="margin-left: 1em; display: inline;">{!$ObjectType.Apttus_Config2__ProductFeatureValue__c.labelPlural} for {!productSO.Name}</h2>
+					</apex:outputPanel>					
+				</div>
+			</div>
+			<div class="grid-2-12">
+				<div class="grid-12-12">
+					<div class="grid-10-12">
+						<apex:commandButton value="{!$Label.apttus_config2__manageassociation}" 
+											action="{!manageAssociation}" 
+											rerender="idJSTree, idSelectedNodeOptions" 
+											status="refreshStatus"
+											immediate="true"/>
+					</div>
+					<div class="grid-2-12">
+						<apex:actionStatus id="idStatus3">
+							<apex:facet name="start">
+								<img src="/img/loading.gif" />
+							</apex:facet>
+							<apex:facet name="stop">
+		
+							</apex:facet>
+						</apex:actionStatus>
+					</div>
+				</div>
+				<div class="grid-12-12">
+					<apex:outputPanel id="idJSTree">
+						<script>
+							var data 		= jQuery.makeArray(jQuery.parseJSON('{!JSENCODE(associatedFeatureSetsJSON)}'));
+							var metadataMap = jQuery.parseJSON('{!JSENCODE(metadataMapJSON)}');
+							//console.log('associatedFeature::::');
+							//console.log(data);
+							var numberOfRoots = data.length;
+							var clsNodes = new Array();
+							var theTree = { 
+												"json_data" : {
+												},
+												"plugins" : [ "themes", "json_data", "ui"],
+												"core" : {"html_titles" : true},
+												"themes" : {
+													"icons" : false,
+													"dots" : false
+												}
+											};
+							var selectedNodeId;
+							var selectedNodeType;
+							var isSelectedNodeLeaf = 'false';
+							j$(document).ready(function() {
+								parseJSON(data);
+							    if(numberOfRoots<2) {
+							    	j$('#rootItem').hide();
+							    	j$('#nav').hide();
+							    }
+								theTree.json_data.data = buildHierarchy(clsNodes);
+								j$("#tabs").tabs();
+								loadTree();
+							
+							})
+							var parseJSON = function (items) {
+							    j$.each(items, function (index) {
+							        var clsNode = new Object();
+									clsNode.name 			= this.productFeatureSet.name;
+									clsNode.Id 				= this.productFeatureSet.featureSetSOId;
+									clsNode.type 			= 'FeatureSet__c';
+									clsNode.businessObject 	= 'FeatureSet__c';							
+						          	clsNode.description 	= this.description;
+						          	clsNode.parentId 		= null;
+						          	clsNode.field 			= null;
+						          	clsNode.sequence 		= null;
+
+						          	clsNodes.push(clsNode);
+
+						          	var features = jQuery.makeArray(this.productFeatureSet.features);
+						          	for(var i =0; i < features.length; i++) {
+						          		var clsNodeFeature = new Object();						          		
+						          		clsNodeFeature.name 			= features[i].name;
+										clsNodeFeature.Id 				= features[i].featureSOId;
+										clsNodeFeature.type 			= 'Feature__c';
+										clsNodeFeature.businessObject 	= 'Feature__c';				
+							          	clsNodeFeature.description 		= null;
+							          	clsNodeFeature.parentId 		= clsNode.Id;
+							          	clsNodeFeature.field 			= null;
+							          	clsNodeFeature.sequence 		= features[i].sequence;
+							          	clsNodes.push(clsNodeFeature);
+						          	} 
+							    });
+							}
+							
+							function buildHierarchy(arry) {
+								var roots = [], children = {};
+								
+								// find the top level nodes and hash the children based on parent
+								for (var i = 0, len = arry.length; i < len; ++i) {
+								    var item = arry[i];
+								    var p = item.parentId;
+								    var target = !p ? roots : (children[p] || (children[p] = []));
+									target.push({ value: item });
+									
+								}
+								
+								// function to recursively build the tree
+								var findChildren = function(parent) {
+								        parent.children = children[parent.value.Id];
+								        parent.data = {};
+								        parent.data.title = parent.value.name;
+								        if (parent.value.type == "Feature__c"){
+								        	parent.value.rel = "leafNode";
+								        }
+								       
+								        parent.attr = {"Id" : parent.value.Id,
+								        			 	"type" : parent.value.type, 
+								        			 	"rel" : parent.value.rel,
+								        			 	"businessObject" : parent.value.businessObject, 
+								        			 	"name" : parent.value.name,
+								        			 	"description" : parent.value.description};
+								        if (children[parent.value.Id]) {
+									        for (var i = 0, len = parent.children.length; i < len; ++i) {
+									        	parent.children[i].data = {};
+									        	parent.children[i].data.title = parent.children[i].value.name;
+									        	parent.children[i].attr = {	"Id" : parent.children[i].value.Id, 
+									        								"field" : parent.children[i].value.field, 
+									        								"rel" : parent.children[i].value.rel, 
+									        								"type" : parent.children[i].value.type,
+									        								"parentId" : parent.children[i].value.parentId,
+									        								"sequence" : parent.children[i].value.sequence,
+									        								"name" : parent.children[i].value.name};
+									            findChildren(parent.children[i]);
+									        }
+								        }
+								    //}
+								};
+								
+								// enumerate through to handle the case where there are multiple roots
+								for (var i = 0, len = roots.length; i < len; ++i) {
+								    findChildren(roots[i]);
+								}
+								return roots;
+							}
+							
+							function loadTree() {
+						   		selectedNodeId = undefined;
+						   		j$("#menu").jstree(theTree)
+						   			.bind("select_node.jstree", function (e, data) { 
+											selectedNodeId = data.rslt.obj.attr("Id");
+											isSelectedNodeLeaf = data.rslt.obj.attr("Leaf");
+											selectedNodeType = data.rslt.obj.attr("type");
+											var selectedRootId = data.rslt.obj.attr("rootId");
+											if (selectedNodeType == 'FeatureSet__c') {
+												retrieveFeatureSet(selectedNodeId);
+												
+											}
+											
+									})
+									.bind('loaded.jstree', function(e, data) {
+									    j$('#menu').jstree('open_all');
+									    if(selectedNodeId != undefined){
+									    	j$('#menu').jstree('open_node',j$('#'+selectedNodeId));
+									    	j$('#'+selectedNodeId+' > a').trigger('click');
+									    }
+									    // remove the leaf link
+									    j$('.jstree-leaf').each(function(){
+									    	var leafType = j$(this).attr("type");
+									    	if (leafType != "FeatureSet__c"){
+									    		var parent = j$(this);
+												j$(this).find('a').each(function(){
+													var anchorText = j$(this).text();
+													parent.html('');
+													parent.append("<div>&emsp;" + anchorText + "</div>");
+												
+												})
+									    	
+									    	}
+									    	
+								
+										}) 
+										
+									});
+									
+							}
+
+						</script>
+						<div id="menu" />
+					</apex:outputPanel>					
+				</div>
+			</div>
+			<div class="grid-10-12" style="margin-left: 0px; margin-right: 0px;">
+				<apex:outputPanel id="idSelectedNodeOptions" layout="block" styleClass="selectedNodeOptionsSection">
+					<apex:actionStatus id="refreshStatus" onstart="showLoadingDiv();" onstop="hideLoadingDiv();" />
+					<div class="aptLoadingOverlay" style="text-align:center; vertical-align:center;">
+						<div>
+							<h2>{!$Label.Loading}</h2><br/>
+								&nbsp;
+						</div>
+					</div>					
+					<apex:outputPanel rendered="{!displayAssociationSection}"> 
+						<div id="tabs">
+							<ul>
+								<li><a href="#tabs-1">{!$Label.apttus_config2__add}</a></li>
+								<li><a href="#tabs-2">{!$Label.apttus_config2__remove}</a></li>
+							</ul>
+						
+							<div id="tabs-1">
+								<apex:outputPanel id="idAvailableFeatureSets" 
+													layout="block"
+													styleClass="aptRoundedDiv"
+													style="margin-right:10px; margin-top:10px;">
+									<div class="aptGroupHeader" id="idAvailableFeatureSetsHeader">
+										<h2 style="margin-left: 1em;">{!$Label.AvailableGroups}</h2>
+									</div>
+						
+									<div class="grid-12-12 fullWidth"
+										style="font-weight: bold; background:rgb(212, 239, 248);">
+										<div class="grid-1-12 " style="padding-bottom: 0px;">
+											<apex:outputLabel value="{!$Label.apttus_config2__select}" />
+										</div>
+										<div class="grid-3-12 " style="padding-bottom: 0px;">
+											<apex:outputLabel value="{!$Label.apttus_config2__group}" />
+										</div>
+									</div>
+									<div class="grid-12-12 fullWidth">
+										<apex:dataList value="{!InnerAvailableFeatureSets}" 
+														var="availableFatureSets" 
+														styleClass="availableFeatureSetsDataList">
+											<div class="grid-12-12 fullWidth">
+												<div class="grid-1-12">
+													<apex:inputCheckbox value="{!availableFatureSets.selected}"/>
+												</div>
+												<div class="grid-3-12">
+													<apex:outputLabel value="{!availableFatureSets.Name}"/>
+												</div>
+												<div class="grid-3-12">
+													<apex:outputLabel value="{!availableFatureSets.sequence}"/>
+												</div>		
+											</div>						
+										</apex:dataList>
+									</div>
+									<div class="grid-12-12" style="text-align: center">
+										<apex:actionStatus id="idStatus2">
+											<apex:facet name="start">
+												<img src="/img/loading.gif" />
+											</apex:facet>
+											<apex:facet name="stop">
+						
+											</apex:facet>
+										</apex:actionStatus>
+										<apex:commandButton action="{!doAssociateFeatureSets}"
+															value="{!$Label.apttus_config2__add}"
+															reRender="idAssociatedFeatureSets,idAvailableFeatureSets,idJSTree"
+															status="idStatus2" />
+											
+									</div>
+								</apex:outputPanel>
+							</div>
+							<div id="tabs-2">
+								<apex:outputPanel id="idAssociatedFeatureSets" layout="block"
+									styleClass="aptRoundedDiv container"
+									style="margin-top:10px;">
+									<div class="aptGroupHeader" id="idAssociatedFeatureSetsHeader">
+											<h2 style="margin-left: 1em;">{!$Label.AssociatedGroups}</h2>
+									</div>
+									<div class="grid-12-12 fullWidth"
+										style="font-weight: bold; background: rgb(212, 239, 248);">
+										<div class="grid-1-12" style="padding-bottom: 0px;">
+											<apex:outputLabel value="{!$Label.apttus_config2__select}" />
+										</div>
+										<div class="grid-3-12" style="padding-bottom: 0px;">
+											<apex:outputLabel value="{!$Label.apttus_config2__group}" />
+										</div>
+										<div class="grid-1-12" style="padding-bottom: 0px;">
+											<apex:outputLabel value="{!$Label.apttus_config2__sequence}" />
+										</div>
+									</div>
+									<apex:dataList value="{!InnerAssociatedFeatureSets}" 
+													var="associatedFeatureSet" 
+													styleClass="dataList associatedSortable">
+										<div id="{!associatedFeatureSet.featureSetSOId}" class="grid-12-12 fullWidth">
+											<div class="grid-1-12">
+												<apex:inputCheckbox value="{!associatedFeatureSet.selected}"/>
+											</div>
+											<div class="grid-3-12">
+												<apex:outputLabel value="{!associatedFeatureSet.Name}"/>
+											</div>
+											<div class="grid-3-12">
+												<apex:outputLabel value="{!associatedFeatureSet.sequence}"/>
+											</div>
+										</div>
+						
+									</apex:dataList>
+									<div class="grid-12-12" style="text-align: center">
+										<apex:actionStatus id="idStatus">
+											<apex:facet name="start">
+												<img src="/img/loading.gif" />
+											</apex:facet>
+											<apex:facet name="stop">
+						
+											</apex:facet>
+										</apex:actionStatus>
+										<apex:commandButton action="{!doDisassociateFeatureSets}"
+															value="{!$Label.apttus_config2__remove}"
+															reRender="idAssociatedFeatureSets,idAvailableFeatureSets,idJSTree"
+															status="idStatus" />
+									</div>
+								</apex:outputPanel> 
+								
+							</div> 
+						</div>
+					</apex:outputPanel>
+					<apex:outputPanel rendered="{!NOT(ISNULL(featureInfo)) && displaySingleProductFeatureSetEdit}"> 
+						<apex:pageBlock id="idProductFeatureSetBlock" 
+										title="{!$ObjectType.Apttus_Config2__ProductFeatureValue__c.Label & ' ' & $Label.apttus_config2__edit}" 
+										mode="edit" >
+							<apex:pageMessages />
+							<apex:pageBlockButtons location="bottom">
+								<apex:actionStatus id="idStatus4">
+									<apex:facet name="start">
+										<img src="/img/loading.gif" />
+									</apex:facet>
+									<apex:facet name="stop">
+				
+									</apex:facet>
+								</apex:actionStatus>
+						        <apex:commandButton value="{!$Label.apttus_config2__save}" 
+						        					action="{!doSave}" 
+						        					rerender="idJSTree, idSelectedNodeOptions" 
+						        					status="idStatus4"/>
+						        <!-- <input type="button" class="fieldCreationLink" value="{!$Label.CreateField}"/> -->	
+						    </apex:pageBlockButtons>
+						    <div id="idfieldCreationDialog" style="display:none">	    	
+						    	<apex:outputLabel value="{!$Label.apttus_config2__createcustomfield}"/><br/>
+						    	<apex:outputLink target="_blank" value="/p/setup/custent/CustomObjectsPage">{!$Label.apttus_config2__customobjectspage}</apex:outputLink>
+						    </div>
+						    
+							<apex:pageBlockSection id="idProductFeatureSetSection" 
+						    					   title="{!$Label.apttus_config2__information}" 
+						    					   columns="2" 
+						    					   collapsible="false" >
+								<apex:repeat var="fValue" value="{!featureInfo.productFeatureSet.features}">
+									<apex:pageBlockSectionItem >
+										<apex:outputLabel value="{!fValue.Name}" 
+														  for="idName" />
+										<apex:inputText id="idName" 
+				  										value="{!fValue.Value}" 
+				  										required="false"
+				  										  />			
+									</apex:pageBlockSectionItem>
+									<apex:pageBlockSectionItem >
+										<apex:outputLabel value="Is Included ?" 
+														  for="isIsIncluded" />
+										<apex:inputCheckbox id="isIsIncluded" 
+					  										 value="{!fValue.isIncluded}"
+					  										 selected="{!fValue.isIncluded}"
+					  										 required="false"
+					  										  />				
+									</apex:pageBlockSectionItem>
+								</apex:repeat>									
+						    </apex:pageBlockSection>
+						</apex:pageBlock>
+					</apex:outputPanel>
+				</apex:outputPanel>
+			</div>		
+		</apex:outputPanel>
+		<apex:actionFunction name="retrieveFeatureSet" 
+                             action="{!doRetrieveProductFeatureSet}"
+                             reRender="idSelectedNodeOptions"
+							 status="refreshStatus"
+							 immediate="true">
+			<apex:param name="firstParam" assignTo="{!selectedNodeId}" value="" />
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="refreshFeatureSets" 
+                             reRender="idSelectedNodeOptions" />
+        <apex:actionFunction name="refreshFeaturesSection" 
+                             reRender="idFeaturesSection" />
+	</apex:form>
+</apex:page>

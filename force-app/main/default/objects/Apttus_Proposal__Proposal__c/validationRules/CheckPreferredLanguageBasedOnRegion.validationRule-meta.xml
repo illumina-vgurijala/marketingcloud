@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckPreferredLanguageBasedOnRegion</fullName>
+    <active>true</active>
+    <description>Preferred Language on Quote should be based on the Territory Region of the Ship To Account</description>
+    <errorConditionFormula>AND (
+    NOT ( ISNEW() ),
+    NOT ( 
+        OR ( 
+            ISCHANGED ( Is_Updated_By_System__c ), 
+            Is_Updated_By_System__c, 
+            Invalid_Quote__c 
+        )
+    ),
+    ISCHANGED ( Preferred_Language__c ),
+    OR (
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageDraft,
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageApprovalRequired,
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageInReview,
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuotationApprovalStatusApproved,
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageGenerated,
+        TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStagePresented
+    ),
+    OR (
+        AND (
+	    Territory_Region__c = $Label.TerritoryRegionAMR,
+	    NOT (
+		OR (
+		    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageEnglish,
+                    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguagePortuguese,
+TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageSpanish
+		)
+	    )
+	),
+	AND (
+	    Territory_Region__c = $Label.QuoteRegionEUR,
+	    NOT (
+		OR (
+		    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageEnglish,
+	            TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageFrench,
+		    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageItalian,
+	            TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageGerman,
+		    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageSpanish
+		)
+	    )
+	),
+	AND (
+	    Territory_Region__c = $Label.QuoteRegionAMEA,
+	    NOT (
+	        OR (
+		    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageEnglish,
+	            TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageKorean,
+		    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageJapanese
+		)
+	    )
+	),
+	AND (
+	    Territory_Region__c = $Label.TerritoryRegionChina,
+	    NOT (
+		OR (
+		    TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageEnglish,
+	            TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageChinese,
+	            TEXT ( Preferred_Language__c ) = $Label.QuoteLanguageChinesetrad
+		)
+	    )
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Preferred_Language__c</errorDisplayField>
+    <errorMessage>Selected language is currently not supported for the region of the Sold To. Please select another language.</errorMessage>
+</ValidationRule>

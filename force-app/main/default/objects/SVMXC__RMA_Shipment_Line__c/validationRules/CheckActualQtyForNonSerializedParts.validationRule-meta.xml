@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckActualQtyForNonSerializedParts</fullName>
+    <active>true</active>
+    <description>To check whether the given Actual QTY is greater than available qty on selected product stock if Available Qty and Qty is same on product stock</description>
+    <errorConditionFormula>AND(
+NOT($Profile.Name =$Label.Integration_SAP_Service), 
+NOT($User.FirstName =$Label.Automated_Process_User),
+NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)), 
+NOT($Profile.Name = $Label.Integration_Service_SNAP_Profile),
+TEXT(SVMXC__Product__r.Service_Product_Type__c) = &apos;Spare&apos;, 
+Product_Stock__r.SVMX_PS_VS_Product_Tracking__c != &apos;Serialized&apos;,
+Product_Stock__r.SVMXC__Available_Qty__c = Product_Stock__r.SVMXC__Quantity2__c ,
+SVMXC__Actual_Quantity2__c &gt; 0,SVMXC__Actual_Quantity2__c &gt; Product_Stock__r.SVMXC__Available_Qty__c,
+OR(ISNEW(),ISCHANGED(Product_Stock__c),ISCHANGED(SVMXC__Actual_Quantity2__c))
+)</errorConditionFormula>
+    <errorMessage>Actual Quantity cannot exceed the Available Quantity in the trunk/locker.  Check trunk/locker quantities, then revise the actual quantity for this order.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckBIWithoutMaterialNumber</fullName>
+    <active>true</active>
+    <description>Prevent user to close the Business Issue cases if Material Number is not populated for  Sub-type = General Issues and Category = Logistics / Supply Chain.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    ISCHANGED(Status),
+    OR(
+        TEXT(Status) = $Label.CaseStatusCompleted,
+        TEXT(Status) = $Label.CaseStatusPendingQAReview,
+        TEXT(Status) = $Label.CaseStatusPendingLogisticsReview,
+        TEXT(Status) = $Label.CaseStatusClosed
+      ),
+    TEXT(Sub_Type__c) == $Label.CaseSubTypeGeneralIssue,
+    TEXT(Category__c) == $Label.CaseCategoryLogistics,
+    RecordType.Name == $Label.CaseRecordTypeBusinessIssue,
+    ISBLANK(Material_Number__c)
+)</errorConditionFormula>
+    <errorMessage>General Issue cases with the category Shipping/Logistics require a Material Number for Logistics Review. Fill the Material Number field with the impacted product OR fill in &quot;Not available&quot;.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

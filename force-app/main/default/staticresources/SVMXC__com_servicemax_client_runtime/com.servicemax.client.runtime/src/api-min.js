@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.runtime.api");a.Class("AbstractNamedInstance",com.servicemax.client.lib.api.Object,{__constructor:function(){},initialize:function(b,c,d){}},{});})();

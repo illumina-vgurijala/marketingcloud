@@ -1,0 +1,257 @@
+<!-- 
+    Apttus Config & Pricing
+    IncentiveManager
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+ <apex:page controller="Apttus_Config2.AdvancedSearchController" extensions="Apttus_Config2.IncentiveRemoteActionController" standardStylesheets="false" sidebar="false" showHeader="false" applyHtmlTag="false" docType="html-5.0">
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/incentives-style.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/AdvanceSearch.js')}" />
+
+    <script>
+        var externalCustomData, // custom data from parent page
+            selectedItems,
+            advancedSearch;
+
+        (function($){
+          $(document).ready(function(){
+            var $txtSearchTerm = $('[id$=txtSearchTerm]');
+            $('[id$=txtSearchTerm]').bind("keypress", function search(e) {
+              if (e.keyCode == 13) {
+                searchFunction($txtSearchTerm.val(), parent.agreementId);
+                return false; // prevent the button click from happening
+              }
+            });
+          });
+        })(j$);
+
+        function resizeMe() {
+          window.parent.openingPopup = true;
+          window.parent.resizeIframe(window.frameElement);
+        }
+
+        function setSelectedItemID(itemId, itemName, cb){
+            if(cb.checked){                
+                externalCustomData.selectedItems.push(itemId);
+            } else {
+                // remove deleted element
+                externalCustomData.selectedItems = j$.grep(externalCustomData.selectedItems, function(value) {
+                    return value != itemId;
+                });
+            }
+
+            if(j$(externalCustomData.selectedItems).not(parent.customSearchData.selectedItems).length === 0 && 
+                j$(parent.customSearchData.selectedItems).not(externalCustomData.selectedItems).length === 0) {
+                // values have changed, enable select
+                advancedSearch.setSelectButtonStatus(j$('[id$=tblMilestones]').parent(), true);
+            }            
+        }
+
+        function checkSelectedItems() {
+
+            if(parent.customSearchData !== undefined) {
+                externalCustomData = j$.extend(true,{}, parent.customSearchData);
+            } else {
+                // nothing from parent do not select any items
+                return;
+            }
+
+            if(externalCustomData !== undefined) {
+                var tblMilestones = j$('[id$=tblMilestones]')[0];
+
+                for (var i = 0, row; row = tblMilestones.rows[i]; i++) {
+                    //iterate through rows
+                    // if current milestone found in array of selected milestones trigger click of checkbox
+                    var isSelectedCheckbox = j$(row.cells[0]).find("#singleCheck" + i),
+                        currentRowId = isSelectedCheckbox.data("milestoneid");
+
+                    if(j$.inArray( currentRowId, externalCustomData.selectedItems ) !== -1) {
+                        isSelectedCheckbox.attr("checked", "checked");
+                    } else {
+                        isSelectedCheckbox.removeAttr("checked", "");
+                    }
+
+                    var isSelectedCheckbox = j$(row.cells[0]).find("#singleCheck" + i)
+
+                }
+            }
+        }
+
+
+        function cancel() {
+            // clear all checked boxes and close popup
+            $resultSet = j$("#tblMilestonesHeader").next();
+
+            advancedSearch.setSelectButtonStatus($resultSet, false);
+
+            window.parent.advancedMilestoneSearchDialog.dialog('close');
+        }
+
+        j$(document).ready(function(){
+            checkSelectedItems();
+        });
+
+
+    </script>
+    <style>
+
+        .advanced-search-header > thead > tr > th, .advanced-search-results > tbody > tr > td {
+            text-align: left;
+        }
+
+        .advanced-search-header > thead > tr > th:nth-child(1), .advanced-search-results > tbody > tr > td:nth-child(1) {
+            padding-left: 7px;
+            width: 27px;
+        }
+
+        .advanced-search-header, .advanced-search-results {
+            table-layout: fixed;
+        }
+
+        .description-summarized {
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+    <body>
+        
+        <apex:form styleClass="advanced-search">
+            <apex:inputHidden id="selectedIds" />
+            <div class="advanced-search-container">
+                <div class="search">
+                    <label class="spy-glass">
+                        <i class="fa fa-search"></i>
+                        <div>
+                            <i class="fa fa-times"></i>
+                        </div>
+                    </label>
+                    <apex:inputText id="txtSearchTerm" value="{!searchString}" html-placeholder="{!$Label.apttus_config2__search}" />
+                </div>
+            </div>
+            <apex:outputPanel id="pnlSearchResults">
+                <apex:variable var="rowcount" value="{!0}" />
+                <div class="data-controls top-data-controls">
+                    <div class="paging-status">
+                        <span>Items {!firstResult}-{!lastResult} (of {!resultsCount})</span>
+                    </div>
+                    <!-- Product paging buttons -->
+                    <apex:outputPanel styleClass="paging">
+                      <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                        styleClass="prev">&lt;{!$Label.PreviousPage}
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!previousPage}" 
+                                          rendered="{!NOT(PreviousPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="pnlSearchResults"
+                                          oncomplete="checkSelectedItems();">&lt;{!$Label.PreviousPage}
+                      </apex:commandLink>
+                      <span> | </span>
+                      <apex:outputPanel rendered="{!NextPageStatus}" 
+                                        styleClass="prev">{!$Label.NextPage}&gt;
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!nextPage}" 
+                                          rendered="{!NOT(NextPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="pnlSearchResults"
+                                          oncomplete="checkSelectedItems();">{!$Label.NextPage}&gt;
+                      </apex:commandLink>
+                      
+                    </apex:outputPanel>
+                    
+                    <div style="clear: both;"></div>
+                </div>
+                <table id="tblMilestonesHeader" class="advanced-search-header" border="0" cellpadding="0" cellspacing="0">
+                    <thead>
+                        <th><input type="checkbox" id="checkAll" /><label for="checkAll"> </label></th>
+                        <apex:repeat var="f" value="{!$ObjectType.Apttus_Config2__Milestone2__c.FieldSets.Apttus_Config2__MilestoneAdvancedSearchColumns}">
+                            <th>{!f.Label}</th>
+                        </apex:repeat>
+                    </thead>
+                </table>
+                <div class="scrollable-data">
+                    <apex:dataTable id="tblMilestones" value="{!searchedMilestonesList}" var="item" styleClass="advanced-search-results">
+                        <apex:column >
+                            <input type="checkbox" id="singleCheck{!rowcount}" onchange="setSelectedItemID('{!item.Id}', '{!JSENCODE(item.Name)}', this);" data-milestoneid="{!item.Id}"/><label for="singleCheck{!rowcount}"> </label>
+                            <apex:variable var="rowcount" value="{!rowcount+1}" />
+                        </apex:column>
+                        <apex:repeat var="f" value="{!$ObjectType.Apttus_Config2__Milestone2__c.FieldSets.Apttus_Config2__MilestoneAdvancedSearchColumns}">
+                            <apex:column >
+                                <apex:outputPanel layout="none" rendered="{!f.Type != 'textarea'}">{!item[f]}</apex:outputPanel>
+                                <apex:outputPanel layout="block" rendered="{!f.Type == 'textarea'}" styleClass="description-summarized {!f.Type}" html-data-title="{!item[f]}"></apex:outputPanel>
+                                <!-- <apex:outputPanel layout="none" rendered="{!ISBLANK(item[f])}">&nbsp;</apex:outputPanel> -->
+                            </apex:column>
+                        </apex:repeat>
+                    </apex:dataTable>
+                </div>
+                <div class="data-controls">
+                    <div class="commands">
+                        <a href="#" class="btn disabled" id="idSelect" onclick="parent.updateSelectedItems('milestone', externalCustomData.selectedItems.join('; '), selectedItems);">{!$Label.Save}</a>
+                        <a href="#" class="btn cancel" id="idCancel" onclick="cancel();">Cancel</a>
+                    </div>
+
+                    <apex:outputPanel styleClass="paging">
+                        <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                            styleClass="prev">&lt;{!$Label.PreviousPage}
+                        </apex:outputPanel>
+                        <apex:commandLink action="{!previousPage}" 
+                                              rendered="{!NOT(PreviousPageStatus)}"
+                                              status="idSpinnerStatus"
+                                              reRender="pnlSearchResults"
+                                               oncomplete="checkSelectedItems();">&lt;{!$Label.PreviousPage}
+                        </apex:commandLink>
+                        <span> | </span>
+                        <apex:outputPanel rendered="{!NextPageStatus}" 
+                                            styleClass="prev">{!$Label.NextPage}&gt;
+                        </apex:outputPanel>
+                        <apex:commandLink action="{!nextPage}" 
+                                            rendered="{!NOT(NextPageStatus)}"
+                                            status="idSpinnerStatus"
+                                            reRender="pnlSearchResults"
+                                            oncomplete="checkSelectedItems();">{!$Label.NextPage}&gt;
+                        </apex:commandLink>
+                          
+                    </apex:outputPanel>
+                    <div style="clear: both;"></div>
+                </div>
+                <script>
+                j$(document).ready(function(){
+                    resizeMe();
+
+                    j$(".description-summarized").each(function(){
+                        var $this = j$(this),
+                            $parent = $this.parent(),
+                            rowHeight = $parent.height();
+
+                        $this.html($this.data("title"));
+                        
+                        $parent.on("mouseleave", function(){
+                            $this.height(rowHeight);
+                            $this.css("white-space", "nowrap");
+                        });
+
+                        $parent.on("mouseover", function(){
+                            $this.css({"height" : ""});
+                            $this.css("white-space", "normal");
+                        });
+
+                    });
+                    
+                    advancedSearch = advancedSearchFunctionality(j$, ".advanced-search-header", ".advanced-search-results", true);
+                });
+                </script>
+                <apex:actionFunction action="{!doSearchMilestones}" name="searchFunction" reRender="pnlSearchResults" oncomplete="checkSelectedItems();">
+                  <apex:param id="searchTermValue" name="searchTermValue" value="" />
+                  <apex:param id="agreementId" name="agreementId" value="" />
+                </apex:actionFunction>
+            </apex:outputPanel>
+        </apex:form>
+    </body>
+        
+</apex:page>

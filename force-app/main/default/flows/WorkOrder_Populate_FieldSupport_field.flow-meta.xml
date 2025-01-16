@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>49.0</apiVersion>
+    <decisions>
+        <description>If there exists a record having Field Support as the Owner of the Work Order then assign it.</description>
+        <name>If_Field_Support_Matched_Record_Found</name>
+        <label>If Field Support Matched Record Found</label>
+        <locationX>657</locationX>
+        <locationY>373</locationY>
+        <defaultConnectorLabel>[Default Outcome]</defaultConnectorLabel>
+        <rules>
+            <name>If_Field_Support_field_found</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>objFieldSupport.Id</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue/>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Work_Order_Record</targetReference>
+            </connector>
+            <label>If Field Support field found</label>
+        </rules>
+    </decisions>
+    <description>Fill the Field Support value if found</description>
+    <interviewLabel>WorkOrder: Populate FieldSupport field {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>WorkOrder: Populate FieldSupport field</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <description>Find Field Support record based on Owner Name</description>
+        <name>Fetch_Field_Support_Record</name>
+        <label>Fetch Field Support Record</label>
+        <locationX>485</locationX>
+        <locationY>374</locationY>
+        <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>If_Field_Support_Matched_Record_Found</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>SVMXC__Salesforce_User__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>objUser.Id</elementReference>
+            </value>
+        </filters>
+        <object>SVMXC__Service_Group_Members__c</object>
+        <outputReference>objFieldSupport</outputReference>
+        <queriedFields>SVMXC__Service_Group__c</queriedFields>
+        <queriedFields>SVMXC__Salesforce_User__c</queriedFields>
+        <queriedFields>Name</queriedFields>
+        <queriedFields>SVMXC__Phone__c</queriedFields>
+        <queriedFields>SVMXC__Email__c</queriedFields>
+        <queriedFields>SVMXC__Role__c</queriedFields>
+        <queriedFields>Id</queriedFields>
+    </recordLookups>
+    <recordLookups>
+        <description>Fetch Owner FirstName and LastName of the Owner using OwnerID</description>
+        <name>Fetch_Owner_FirstName_and_LastName</name>
+        <label>Fetch Owner FirstName and LastName</label>
+        <locationX>290</locationX>
+        <locationY>373</locationY>
+        <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Fetch_Field_Support_Record</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>ObjWorkOrder.OwnerId</elementReference>
+            </value>
+        </filters>
+        <object>User</object>
+        <outputReference>objUser</outputReference>
+        <queriedFields>FirstName</queriedFields>
+        <queriedFields>LastName</queriedFields>
+    </recordLookups>
+    <recordLookups>
+        <description>Fetch the fields related to the Record ID</description>
+        <name>Fetch_Work_Order_fields</name>
+        <label>Fetch Work Order fields</label>
+        <locationX>289</locationX>
+        <locationY>255</locationY>
+        <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Fetch_Owner_FirstName_and_LastName</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>IDWorkOrder</elementReference>
+            </value>
+        </filters>
+        <object>SVMXC__Service_Order__c</object>
+        <outputReference>ObjWorkOrder</outputReference>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>SVMXC__Group_Member__c</queriedFields>
+        <queriedFields>OwnerId</queriedFields>
+    </recordLookups>
+    <recordUpdates>
+        <name>Update_Work_Order_Record</name>
+        <label>Update Work Order Record</label>
+        <locationX>659</locationX>
+        <locationY>522</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>IDWorkOrder</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>SVMXC__Group_Member__c</field>
+            <value>
+                <elementReference>objFieldSupport.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>SVMXC__Service_Order__c</object>
+    </recordUpdates>
+    <startElementReference>Fetch_Work_Order_fields</startElementReference>
+    <status>Active</status>
+    <variables>
+        <name>IDWorkOrder</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>objFieldSupport</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>SVMXC__Service_Group_Members__c</objectType>
+    </variables>
+    <variables>
+        <description>Stores Object of type User</description>
+        <name>objUser</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>User</objectType>
+    </variables>
+    <variables>
+        <name>ObjWorkOrder</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>SVMXC__Service_Order__c</objectType>
+    </variables>
+    <variables>
+        <description>FirstName of the Owner</description>
+        <name>OwnerFirstName</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <description>LastName of the Owner</description>
+        <name>OwnerLastName</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <description>Get fields based on Record ID of Work Order</description>
+        <name>WorkOrderFields</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+        <objectType>SVMXC__Service_Order__c</objectType>
+    </variables>
+</Flow>

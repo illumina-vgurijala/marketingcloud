@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tender_Close_Date_GT_Close_Date</fullName>
+    <active>true</active>
+    <description>Tender Close date can&apos;t be greater than Opportunity Close Date.
+CMCM-728 (Q3-2023)</description>
+    <errorConditionFormula>AND(
+	Tender_Close_Date__c &gt;  CloseDate,
+	NOT (
+		OR (
+                        OR(
+                           Text(StageName)=&apos;Closed Lost&apos;,
+                           Text(StageName)=&apos;Closed Abandoned&apos;
+                        ),
+			ISCHANGED ( Is_Updated_By_System__c ),
+			Is_Updated_By_System__c = true,
+			$Profile.Name = $Label.ProfileSystemAdmin,
+			$Profile.Name = $Label.ProfileDataSteward,
+			$Profile.Name = $Label.ProfileIntegrationSalesSnapLogic,
+			CONTAINS($Label.Bypassed_Sales_Integration_Profiles_Id,$Profile.Id),
+			$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+		)
+	)
+)</errorConditionFormula>
+    <errorDisplayField>Tender_Close_Date__c</errorDisplayField>
+    <errorMessage>Tender Close Date can&apos;t be greater than the Opportunity Close Date</errorMessage>
+</ValidationRule>

@@ -1,0 +1,1096 @@
+<apex:page controller="openq.MappingModule"  showHeader="true" standardStylesheets="false" sidebar="false">
+
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></apex:includescript>
+    <apex:includescript value="https://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0&s=1"></apex:includescript>
+    <apex:includescript value="{!URLFOR($Resource.openq__jQueryCheckList, 'jquery.ui.openq.checkList.js')}"></apex:includescript>    
+    <apex:includescript value="{!URLFOR($Resource.openq__StylesScriptsImages,'scripts/jquery.tablesorter.min.js')}"> </apex:includescript>
+    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/common.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style2.css')}"/>    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__FullCalendar, 'cupertino/theme.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__jQueryCheckList, 'openq__checkList.css')}" />
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+     
+    <style>
+ 
+        #bodyTable{
+            background-color: #E6E6E5;
+        }
+        
+        [id$='mainContainer'] {         
+            padding-left: 222px;
+            display: block;
+        }
+        
+        [id$='leftContainer'] {
+            float: left;
+            min-width: 220px;
+            float: left;
+            width: 220px !important;
+            display: inline-block;
+            position: relative;
+            left: -220px; 
+            margin-right: -220px;
+        }
+        
+        #rightContainer {
+            min-width: 665px;            
+            float: none;
+            margin-right: 0px;
+            margin-left: 20px;
+            margin-top: 0px;
+            font-family: Verdana, sans-serif;   
+        }
+        
+        .buttonDisabled {
+            cursor: default !important;
+            opacity: 0.5;
+            filter: alpha(opacity=50); /* For IE8 and earlier */
+        }
+        
+        .clearfix{
+            clear: both;
+        }
+        
+        table tr.odd{
+            background-color: #E5E2FF;
+        }
+        
+        #tabs div h2 {
+            font-size: 14px;
+        }
+        
+        #cdiv {
+            visibility: hidden; 
+            left: 50px;
+            background-color: #FFF; 
+            position:absolute; 
+            z-index:1000;
+            border: 1px solid #000;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            
+            -webkit-border-bottom-left-radius: 10px;
+            -webkit-border-bottom-right-radius: 10px;
+            -webkit-border-top-left-radius: 10px;
+            -webkit-border-top-right-radius: 10px;
+            
+            -moz-border-bottom-left-radius: 10px;
+            -moz-border-bottom-right-radius: 10px;
+            -moz-border-top-left-radius: 10px;
+            -moz-border-top-right-radius: 10px;
+        }
+    
+        #pic {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            margin-top: 5px;
+            margin-left: 5px;
+            height: 100%;
+            float: left;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        
+        #imgWrapper{
+            position: relative;
+        }
+        
+        #info {
+            height: 100%;
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+            position: relative;
+            float: left;
+            padding: 5px;
+        }
+        
+        #info table tr {
+            line-height: 15px;
+        }
+        
+        #specdiv{
+            font-size: 11px;
+        }
+        
+        .liFilter {
+            margin-left: 0px;           
+        }
+        
+        .liFilter input[type="checkbox"]{
+            float: left;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        
+        .liFilter label {
+            float: left;
+            cursor: pointer;
+            margin-left: 5px;
+            text-decoration: none; 
+            word-wrap: break-word;
+            font-weight: bold;
+        }
+        
+        .txtSearch {
+            float: left;
+            width: 140px;
+        }
+        
+        .btnCustom {
+            cursor: pointer;
+        }
+        
+        .ddlens {
+            float: right;
+        }
+        
+        #lensList {
+            font-family: Verdana, sans-serif !important;
+        }
+        
+        .printview {
+            float: right;
+            cursor:pointer;
+            margin-left: 10px;
+            width: 22px;
+            height: 19px;
+            background-position: 0px 0px;          
+            background-image: url({!URLFOR($Resource.MappingModuleImages,'print.png')});
+        }
+        
+        .tableview {
+            float: right;
+            cursor:pointer;
+            margin-left: 10px;
+            width: 24px;
+            height: 24px;
+            background-position: 0px -3px;          
+            background-image: url({!URLFOR($Resource.MappingModuleImages,'table.png')});
+        }
+        
+        #mappingViewPort{
+            padding: 1px 1.4em;
+        }
+        
+        #map {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #000;
+            position: relative;
+        }
+        
+        .ct-infobox-body {
+            padding-bottom: 2px;
+        }
+        
+        .ct-infobox-title {
+            font-family: Verdana;
+            font-size: 10pt;
+            line-height: 1.1;
+            margin-right: 10px;
+            font-weight: bold;
+            padding: 5px;
+            color: #333;
+            float: left;
+        }
+        
+        #connContactInfoBoxDataTable th {
+            line-height: 15px;
+        }   
+        
+        #connContactInfoBoxDataTable tr {
+            line-height: 13px;
+        }       
+        
+        #connContactInfoBoxDataTable td {
+            padding: 0px;
+        }
+        
+        .rounded-corners {
+            border: 1px solid #000;
+             -moz-border-radius: 10px;
+            -webkit-border-radius: 10px;
+            -khtml-border-radius: 10px;
+            border-radius: 10px;
+            behaviour: url({!URLFOR($Resource.BorderRadiusIE,'border-radius.htc')});
+        }
+        
+        .geo-results-table {
+            margin-top: 10px;
+            font-size: 11px;
+            font-family: Verdana, sans-serif;
+        }
+        
+        .geo-results-table th, td{            
+            padding: 3px;
+        }
+        
+        .geo-results-table th {
+            color: #245c8a;
+        }
+        
+        .geo-results-table td {        
+            font-size: 11px;
+        }
+        
+        .left-ct-pictures {
+            padding-top:10px;
+            text-align: center;
+        }
+        
+        .left-ct-pictures img {
+            width: 150px;
+            height: auto;
+        }
+        
+        .nowrap {        
+            white-space: nowrap;    
+        }
+        
+        .results-table {        
+            font-size: 11px;
+            font-family: Verdana, sans-serif;
+        }
+        
+        .results-table th, td{            
+            padding: 3px;
+        }
+        
+        .results-table th {
+            color: #245c8a;
+        }
+        
+        .results-table td {        
+            font-size: 11px;
+        }        
+        
+        .tablesorter .odd {
+            background-color: #E5E2FF;
+        }
+        
+        .matchResult {        
+            width: 45%;
+        }
+        
+        .matchResult p {
+            margin-top: 0;
+        }
+        
+        .highlight {
+            color: orange;
+        }
+        
+    </style>    
+    
+    <script type="text/javascript">
+    
+        var map = null;
+        var timer = null;
+        var connectionFilters = new Array();
+        var pinInfobox = null;
+        
+        function setIE8Hacks(){
+            var lensElem = document.getElementById('{!$Component.lensForm.lensList}');
+            $(lensElem.children).remove('[value="Network Map"]');       
+            setIE8();
+        }
+    
+        $(document).ready(function(){
+            installContactSearch();
+            installConnectionFilters();
+            installPrintingFeatures();
+            installLensFeatures();
+            installSearchFeatures();
+            Microsoft.Maps.loadModule('Microsoft.Maps.Themes.BingTheme');
+            $("#viewMore").click(function(ev){
+                y = ev.clientY;
+                show();
+                window.setTimeout(function() {
+                    hide();
+                }, 3000);
+            });            
+        });
+        
+    </script>
+
+    <script type="text/javascript">
+    
+        // start & finish: required Microsoft.Maps.Location objects
+        // arcHeight: required double latitude degrees
+        // skew: required double left-right degrees
+        // color: optional Microsoft.Maps.Color for line; default = red
+        // width: optional integer line width; default = 2
+        // upDown: optional string 'up' or 'down'; default = 'up'
+        // numSegments: optional int number of segments to use for line; default = 10
+        // see http://mathforum.org/library/drmath/view/54434.html for the math
+        function generateBezierCurve(start, finish, arcHeight, skew, color, width, upDown, numSegments)
+        {
+            if (typeof color == 'undefined') { var color = new Microsoft.Maps.Color(255,255,0,0); }
+            if (typeof width == 'undefined') { var width = 2; }
+            if (typeof upDown == 'undefined') { var upDown = 'up'; }
+            if (typeof numSegments == 'undefined') { var numSegments = 10; }
+            
+            if (start.longitude > finish.longitude) { // adjust so start is to the left of finish
+                var temp = start;
+                start = finish;
+                finish = temp;
+            }
+            
+            if (numSegments < 2) numSegments = 2;
+            
+            var midLon = (finish.longitude - start.longitude) / 2.0;
+            var midLat = (finish.latitude - start.latitude) / 2.0;
+            
+            if (Math.abs(start.longitude - finish.longitude) < 0.0001) { // nearly vertical
+                if (upDown == 'up')
+                    midLon -= arcHeight;
+                else
+                    midLon += arcHeight;
+                midLat += skew;
+            } else { // 'normal' case, not vertical
+                if (upDown == 'up')
+                    midLat += arcHeight;
+                else
+                    midLat -= arcHeight;
+                midLon += skew;
+            }
+            
+            var tDelta = 1.0 / numSegments;
+            
+            var lons = new Array(); // 'x' values
+            for (t = 0.0; t <= 1.0; t += tDelta) {
+                var firstTerm = (1.0 - t * t) * start.longitude;
+                var secondTerm = 2.0 * (1.0 - t) * t * midLon;
+                var thirdTerm = t * t * finish.longitude;
+                var B = firstTerm + secondTerm + thirdTerm;
+                lons.push(B);
+            }
+            
+            var lats = new Array(); // 'y' values
+            for (t = 0.0; t <= 1.0; t += tDelta) {
+                var firstTerm = (1.0 - t * t) * start.latitude;
+                var secondTerm = 2.0 * (1.0 - t) * t * midLat;
+                var thirdTerm = t * t * finish.latitude;
+                var B = firstTerm + secondTerm + thirdTerm;
+                lats.push(B);
+            }
+            
+            var points = new Array();
+            for (i = 0; i < lats.length; ++i) {
+                points.push(new Microsoft.Maps.Location(lats[i], lons[i]));
+            }
+            
+            var curve = new Microsoft.Maps.Polyline(points, {
+                strokeColor: color,
+                strokeThickness: width,
+                visible: true
+            });
+            
+            return curve;
+        }
+        
+    </script>
+    
+    <script type="text/javascript">
+    
+        function refreshColumnSorting() {
+            $( '.tablesorter' ).tablesorter( { cssHeader : 'tableHeader', widgets: ['zebra']});
+        }
+    
+        function installSearchFeatures(){
+            $("input[type='text']").on("click", function () {
+               $(this).select();
+            });
+        }
+    
+        function installPrintingFeatures(){
+            $(".printview").click(function(){
+                var contactId = $.trim(document.getElementById("{!$Component.myForm.contactId}").value);
+                if(contactId != ''){
+                    var lensElem = document.getElementById('{!$Component.lensForm.lensList}');
+                    var divContentToPrint = '';
+                    var divToPrintWidth = 400;
+                    var divToPrintHeight = 400;
+                    switch($(lensElem).val()){
+                        case "Network Map":
+                            toPDF();
+                            break;
+                            
+                        case "Geo Map":
+                            // Print geo map 
+                            divToPrintWidth = $("#map").width();
+                            divToPrintHeight = $("#map").height();
+                            divContentToPrint = $("#map").html();
+                            break;
+                    }
+                    
+                    if(divContentToPrint != ''){
+                        var newWin=window.open('','Print-Window','width=' + divToPrintWidth + ',height=' + divToPrintHeight + ',top=100,left=100');
+                        newWin.document.open();
+                        newWin.document.write('<html><body onload="window.print()">' + divContentToPrint + '</body></html>');
+                        newWin.document.close();
+                        setTimeout(function(){newWin.close();},10); 
+                    }   
+                }
+            });
+        }
+    
+        function installConnectionFilters(){
+            $(".checkbox-filter").each(function(i, elem){
+                $(elem).prop('checked', true);
+                connectionFilters.push($(elem).val());
+            });
+        }
+    
+        function setConnectionFilter(connection, selected){
+            if(selected){
+                connectionFilters.push(connection);
+            }
+            else {
+                connectionFilters = jQuery.grep(connectionFilters, function(elementOfArray, indexInArray){
+                    return elementOfArray != connection;
+                });
+            }
+            
+            var jsonFiltersElem = document.getElementById('{!$Component.myForm.jsonFilters}');
+            $(jsonFiltersElem).val(JSON.stringify(connectionFilters));          
+            
+            var lensElem = document.getElementById('{!$Component.lensForm.lensList}');
+            var lensValue = $(lensElem).val();
+            switch(lensValue){
+                case "Network Map":
+                    callNetworkMap();
+                    break;
+                    
+                case "Geo Map":
+                    var nmElem = document.getElementById('{!$Component.networkMap}');
+                    $(nmElem).css('display', 'none');
+                    doGeoSearch();
+                    break;
+            }
+        }
+    
+        function doGeoSearch(){
+            var filtersJSON = JSON.stringify(connectionFilters);
+            var searchTerm = $.trim($(".txtSearch").val());
+            var contactId = $.trim(document.getElementById("{!$Component.myForm.contactId}").value);
+            if(contactId != ''){
+                Visualforce.remoting.Manager.invokeAction(
+                    '{!$RemoteAction.MappingModule.retrieveContactConnections}', 
+                    contactId, filtersJSON, searchTerm,
+                    function(result, event){
+                        if(event.status) {
+                            var connectedContacts = JSON.parse(result.replace(/(&quot\;)/g,"\""));
+                            var contactPins = new Microsoft.Maps.EntityCollection(); 
+                            var contactConnLines = new Microsoft.Maps.EntityCollection();
+                            var contactInfoboxes = new Microsoft.Maps.EntityCollection();
+                            var selectedContactLocation = getSelectedContactLocation();
+                            
+                            // Connections table
+                            // Table header
+                            var contactName = $.trim(document.getElementById("{!$Component.myForm.contactName}").value);
+                            var tableMarkup = '<table class="tablesorter" style="border-spacing: 0; width: 100%; border: 2px solid #245c8a; border-radius: 10px; padding: 5px; border-collapse: separate;">\r\n';
+                            tableMarkup += '<thead><tr><th>KOL</th><th>Connection</th><th>Object</th>';
+                            //var $table = $('<table class="tablesorter" style="border-spacing: 0; width: 100%; border: 2px solid #245c8a; border-radius: 10px; padding: 5px; border-collapse: separate;">');
+                            //$table.append('<thead>').children('thead').append('<tr />').children('tr').append('<th>KOL</th><th>Connection</th><th>Object</th>');
+                            if(searchTerm != ''){
+                                //$table.children('thead').children('tr').append('<th>Matches</th>');
+                                tableMarkup += '<th>Matches</th>';
+                            }
+                            tableMarkup += '<th>&nbsp;</th></tr></thead>\r\n';
+                            //$table.children('thead').children('tr').append('<th></th>');
+                            
+                            // Table body
+                            //var $tbody = $table.append('<tbody />').children('tbody');
+                            tableMarkup += '<tbody>\r\n';
+                            
+                            // Will generate a pushpin and a line for each connected contact
+                            for(var i=0; i < connectedContacts.length; i++){
+                                var contact = connectedContacts[i];
+                                if(contact.longitude != 0 || contact.latitude != 0){
+                                    var contactLocation = new Microsoft.Maps.Location(contact.latitude, contact.longitude);
+                                                                    
+                                    // Generate the html for the infobox
+                                    // Contact title
+                                    $("#connContactInfoBoxTitle").html(contact.name);
+                                    
+                                    // Contact image
+                                    if(typeof contact.image_id !== 'undefined' && contact.image_id != ''){
+                                        $("#connContactInfoBoxImage").attr("src", "/servlet/servlet.FileDownload?file=" + contact.image_id);
+                                        $("#connContactInfoBoxImage").css("display", "block");
+                                        $("#imgNotAvailable").css("display", "none");
+                                    }
+                                    else {
+                                        $("#imgNotAvailable").attr("src", contact.unknownperson_image);
+                                        $("#imgNotAvailable").css("display", "block");
+                                        $("#connContactInfoBoxImage").css("display", "none");
+                                    }
+                                    
+                                    // Phisician Speciality
+                                    $("#connContactInfoBoxSpec").html(contact.speciality);
+                                    
+                                    // Contact address line 1 and 2
+                                    if($.trim(contact.address_line_1) == '' && $.trim(contact.address_line_2) == '' && $.trim(contact.city) == '' && $.trim(contact.state) == '' && $.trim(contact.postal_code) == '' && $.trim(contact.country) == ''){
+                                        $("#connContactInfoBoxAddr1").html('No address known');
+                                    }
+                                    else {
+                                        $("#connContactInfoBoxAddr1").html(contact.address_line_1);
+                                        $("#connContactInfoBoxAddr2").html(contact.address_line_2);
+                                        // Contact city, state, postal code and country
+                                        $("#connContactInfoBoxCity").html(contact.city);
+                                        $("#connContactInfoBoxState").html(contact.state);
+                                        $("#connContactInfoBoxPostalCode").html(contact.postal_code);                               
+                                        $("#connContactInfoBoxCountry").html(contact.country);  
+                                    }
+                                    
+                                    // Info about the connections
+                                    var connInfo = '';
+                                                                    
+                                    // Loop through connections
+                                    $.each(contact.connections, function(index, connElem){
+                                        connInfo += '<div style="width:auto;">' + connElem.name + ': ' + connElem.count + '</div>';
+                                        
+                                        $.each(connElem.connectionsList, function(cIndex, item){
+                                            // add row
+                                            /*
+                                            $tbody.append('<tr />').children('tr:last')
+                                            .append('<td><a href="/' + contactId + '" target="_blank">' + contactName + '</a></td>')
+                                            .append('<td><a href="/' + contact.id + '" target="_blank">' + contact.name + '</a></td>')
+                                            .append("<td>" + connElem.name + "</td>");*/
+                                            
+                                            tableMarkup += '<tr><td><a href="/' + contactId + '" target="_blank">' + contactName + '</a></td>\r\n';
+                                            tableMarkup += '<td><a href="/' + contact.id + '" target="_blank">' + contact.name + '</a></td>\r\n';
+                                            tableMarkup += '<td>' + connElem.name + '</td>\r\n';
+                                            
+                                            if(searchTerm != ''){
+                                                // Each match
+                                                var matches = '';
+                                                if(typeof item.matches !== 'undefined'){
+                                                    $.each(item.matches, function(mIndex, matchElem){
+                                                        matches += '<p>' + matchElem.content + '</p>'; 
+                                                    });
+                                                }
+                                                tableMarkup += '<td class="matchResult">' + matches + '</td>\r\n';                                      
+                                                //$tbody.children('tr:last').append('<td class="matchResult">' + matches + '</td>');
+                                            }
+                                            //$tbody.children('tr:last').append('<td><a href="/' + item.recordId + '" target="_blank">View</a></td>');
+                                            tableMarkup += '<td><a href="/' + item.recordId + '" target="_blank">View</a></td></tr>\r\n';
+                                        });
+                                        
+                                    });
+                                    $("#connContactInfoBoxConnections").html(connInfo);
+                                    // add table to dom
+                                    $("#geoSearchResults").html(tableMarkup);
+                                    //$table.appendTo('#geoSearchResults')
+                                    refreshColumnSorting();
+                                    $('.matchResult p:containsIgnoreCase(' + searchTerm + ')').each(function() {
+                                        var text = $(this).text();
+                                        text = text.highLight(searchTerm);
+                                        $(this).html(text);
+                                    });
+                                    
+                                    var infoboxHtml = '<div id="connContactInfoBox' + contact.id + '" style="background-color: #FFF; width:auto;font-size: 11px;" class="rounded-corners">' + $("#connContactInfoBox").html() + '</div>';                               
+                                    
+                                    var infobox = new Microsoft.Maps.Infobox(contactLocation, {
+                                        visible: false,
+                                        showCloseButton: true, 
+                                        showPointer: true,
+                                        htmlContent: infoboxHtml
+                                    });
+                                    contactInfoboxes.push(infobox);
+                                    
+                                    // Now we create the point 
+                                    var pin = new Microsoft.Maps.Pushpin(contactLocation, {
+                                        draggable: false,
+                                        width: 32,
+                                        height: 32,
+                                        icon: "{!JSENCODE(contactMapIcon)}",
+                                        infobox: infobox
+                                    });
+                                    
+                                    // Attach click event handler to the pin, which will show the Infobox
+                                    Microsoft.Maps.Events.addHandler(pin, 'click', function(e){
+                                        var iBox = e.target.getInfobox();
+                                        iBox.setOptions({visible: true});
+                                        if(pinInfobox != null){
+                                            hideInfobox(null);
+                                        }
+                                        pinInfobox = iBox;
+                                        
+                                        //A buffer limit to use to specify the infobox must be away from the edges of the map.
+                                        var buffer = 25;
+                                        
+                                        var infoboxOffset = pinInfobox.getOffset();
+                                        var infoboxAnchor = pinInfobox.getAnchor();
+                                        var infoboxLocation = map.tryLocationToPixel(e.target.getLocation(), Microsoft.Maps.PixelReference.control);
+                                        
+                                        var dx = infoboxLocation.x + infoboxOffset.x - infoboxAnchor.x;
+                                        var dy = infoboxLocation.y - 25 - infoboxAnchor.y;
+                                        
+                                        if (dy < buffer) { //Infobox overlaps with top of map.
+                                            //Offset in opposite direction.
+                                            dy *= -1;
+                                        
+                                            //add buffer from the top edge of the map.
+                                            dy += buffer;
+                                        } else {
+                                            //If dy is greater than zero than it does not overlap.
+                                            dy = 0;
+                                        }
+                                        
+                                        if (dx < buffer) { //Check to see if overlapping with left side of map.
+                                            //Offset in opposite direction.
+                                            dx *= -1;
+                                        
+                                            //add a buffer from the left edge of the map.
+                                            dx += buffer;
+                                        } else { //Check to see if overlapping with right side of map.
+                                            
+                                            dx = map.getWidth() - infoboxLocation.x + infoboxAnchor.x - pinInfobox.getWidth();
+                                        
+                                            //If dx is greater than zero then it does not overlap.
+                                            if (dx > buffer) {
+                                                dx = 0;
+                                            } else {
+                                                //add a buffer from the right edge of the map.
+                                                dx -= buffer;
+                                            }
+                                        }
+                                        
+                                        //Adjust the map so infobox is in view
+                                        if (dx != 0 || dy != 0) {
+                                            map.setView({
+                                                center: e.target.getLocation()
+                                            });
+                                        }
+                                    });
+                                    contactPins.push(pin);
+                                    
+                                    var line = generateBezierCurve(selectedContactLocation, contactLocation, 10, 10, Microsoft.Maps.Color.fromHex(contact.color), 3);
+                                    contactConnLines.push(line);
+                                }
+                            }
+                            
+                            if(map != null){
+                                var selectedContactPin = map.entities.removeAt(0);
+                                map.entities.clear();
+                                map.entities.push(selectedContactPin);
+                                map.entities.push(contactPins);
+                                map.entities.push(contactConnLines);
+                                map.entities.push(contactInfoboxes);
+                            }
+                        }
+                    }
+                );
+            }           
+        }
+        
+        function hideInfobox(e)
+        {
+            if(pinInfobox != null){
+                pinInfobox.setOptions({ visible: false });
+                pinInfobox = null;
+            }           
+        }
+        
+        function installContactSearch(){
+            var contactField = document.getElementById("{!$Component.myForm.contactName}");
+            $(contactField).autocomplete({
+                source: function(request, response){
+                    Visualforce.remoting.Manager.invokeAction(
+                        '{!$RemoteAction.MappingModule.retrieveContacts}', 
+                        request.term,
+                        function(result, event){                                
+                            if(event.status) {
+                                response($.parseJSON(event.result.replace(/(&quot\;)/g,"\"")));
+                            }
+                        }
+                    );
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    document.getElementById("{!$Component.myForm.contactId}").value = ui.item.id;
+                    document.getElementById("{!$Component.myForm.contactName}").value = ui.item.value;
+                    getContactData();
+                    return false;
+                }
+            });
+        }
+        
+        function openContactLookup(){
+            var elContactNameDomId = "{!$Component.myForm.contactName}";
+            var elContactIdDomId = "{!$Component.myForm.contactId}";
+            var elContactName = document.getElementById(elContactNameDomId);            
+            var contactName = $(elContactName).val();
+            var theFormDomId = "{!$Component.myForm}";
+            var baseUrl = 'ContactLookup?lksrch=' + contactName + '&frm=' + theFormDomId + '&txt=' + elContactNameDomId + '&id=' + elContactIdDomId;
+            var w = window.open(baseUrl, 'lookup', 'width=350,height=480,toolbar=no,status=no,directories=no,menubar=no,resizable=yes,scrollable=no', false);
+        }
+        
+        function on_contact_lookup_close(){
+            var id = document.getElementById("{!$Component.myForm.contactId}").value;               
+            if(typeof id !== 'undefined' && $.trim(id) != ''){
+                getContactData();
+            }
+        }
+        
+        function contactDataComplete(){
+            // Contact Picture
+            var contactPictureDiv = document.getElementById("{!$Component.myForm.contactPicture}");
+            $(contactPictureDiv).css("display", "block");           
+            $("#viewMore").css("display", "block");
+            installMap();
+            doGeoSearch();
+            
+            var lensElem = document.getElementById('{!$Component.lensForm.lensList}');
+            var lensValue = $(lensElem).val();
+            switch(lensValue){
+                case "Network Map":
+                    callNetworkMap();
+                    break;
+                    
+                case "Geo Map":
+                    var nmElem = document.getElementById('{!$Component.networkMap}');
+                    $(nmElem).css('display', 'none');
+                    break;
+            }
+        }
+        
+        function installLensFeatures(){
+            var lensElem = document.getElementById('{!$Component.lensForm.lensList}');
+            var nmElem = document.getElementById('{!$Component.networkMap}');
+            var lensValue = $(lensElem).val();
+            switch(lensValue){
+                case "Network Map":
+                    // Switch to network map view
+                    $("#map").css('display', 'none');
+                    $(nmElem).css('display', 'block');
+                    break;
+                    
+                case "Geo Map":
+                    // Switch to geo-map view
+                    $("#map").css('display', 'block');
+                    $(nmElem).css('display', 'none');
+                    break;
+            }
+            
+            $(lensElem).change(function(){
+                var lensValue = $(lensElem).val();
+                var nmElem = document.getElementById('{!$Component.networkMap}');
+                switch(lensValue){
+                    case "Network Map":
+                        // Switch to network map view
+                        $("#map").css('display', 'none');
+                        $(nmElem).css('display', 'block');
+                        callNetworkMap();
+                        break;
+                        
+                    case "Geo Map":
+                        // Switch to geo-map view
+                        $("#map").css('display', 'block');
+                        $(nmElem).css('display', 'none');
+                        installMap();
+                        doGeoSearch();
+                        break;
+                }
+            });
+        }
+                
+        function hide() {
+           $("#cdiv").css("visibility", "hidden");      
+        }
+        
+        function show() {
+            $("#cdiv").css("top", (y - $("#cdiv").height())+"px");
+            $("#cdiv").stop().css("visibility", "visible");
+        }
+        
+        function installMap(){
+            var elContactName = document.getElementById("{!$Component.myForm.contactName}");            
+            var contactName = $(elContactName).val();
+            var ctLatEl = document.getElementById("{!$Component.myForm.contactLatitude}");
+            var ctLonEl = document.getElementById("{!$Component.myForm.contactLongitude}");         
+            var contactLocation = getSelectedContactLocation();
+            var isTypeAerial = {!isAerialView};
+            var isTypeAuto = {!isAutomaticView};
+            var isTypeRoad = {!isRoadView};
+            var mapType = Microsoft.Maps.MapTypeId.road;
+            if(isTypeAerial){
+                mapType = Microsoft.Maps.MapTypeId.aerial;
+            }
+            if(isTypeAuto){
+                mapType = Microsoft.Maps.MapTypeId.auto;
+            }
+            if(isTypeAerial){
+                mapType = Microsoft.Maps.MapTypeId.road;
+            }
+            
+            var mapOptions = {
+                credentials:"Amvs_biQswIjgCf9E8FcStmdzXCIcZF8P8TEiV69rja917DIE50UUIB3-z-o5X-s",
+                mapTypeId: mapType,
+                disableBirdseye: true,
+                enableSearchLogo: false,
+                zoom: 3,
+                center: contactLocation
+            };
+            
+            map = new Microsoft.Maps.Map(document.getElementById("map"), mapOptions);
+            
+            if(contactLocation.longitude != 0 || contactLocation.latitude != 0){
+                // Add a pin to the center of the map, that is, the contact location
+                var pin = new Microsoft.Maps.Pushpin(contactLocation, {
+                    draggable: false,
+                    width: 32,
+                    height: 32,
+                    icon: "{!JSENCODE(contactMapIcon)}"
+                }); 
+                map.entities.push(pin);
+            }           
+        }
+        
+        function getSelectedContactLocation(){
+            var ctLatEl = document.getElementById("{!$Component.myForm.contactLatitude}");
+            var ctLonEl = document.getElementById("{!$Component.myForm.contactLongitude}");
+            var contactLocation = new Microsoft.Maps.Location($(ctLatEl).val(), $(ctLonEl).val());
+            return contactLocation;
+        }
+        
+        function callNetworkMapJs(){
+            callNetworkMap();
+        }
+        
+        function takeToConnectionsTable(){
+            var lensElem = document.getElementById('{!$Component.lensForm.lensList}');
+            var lensValue = $(lensElem).val();
+            switch(lensValue){
+                case "Network Map":
+                    var tblId = $(".results-table").attr("id");
+                    break;
+                    
+                case "Geo Map":
+                    var tblId = $(".geo-results-table").attr("id");
+                    break;
+            }
+            
+            window.location = '#' + tblId;
+        }
+        
+        function doSearch(){
+            var lensElem = document.getElementById('{!$Component.lensForm.lensList}');
+            //var nmElem = document.getElementById('{!$Component.networkMap}');
+            var lensValue = $(lensElem).val();
+            switch(lensValue){
+                case "Network Map":
+                    callNetworkMap();
+                    break;
+                    
+                case "Geo Map":
+                    doGeoSearch();
+                    break;
+            }
+        }
+        
+    </script>
+    
+    <div id="cdiv">   
+        <div id="info">            
+            <table>
+                <tr>
+                    <th style="padding-bottom: 2px; border-bottom: 1px solid #000;">
+                        <b><apex:outputText id="spec" value="{!contactSelected.openq__Physician_Specialities__c}"/></b>                        
+                    </th>
+                </tr>
+                <tr>
+                    <td>
+                        <apex:outputPanel layout="block" style="font-size: 11px;" id="address">
+                            <apex:outputText value="{!contactSelected.openq__Physician_Address_Line_1__c}" /><br/>
+                            <apex:outputText value="{!contactSelected.openq__Physician_Address_Line_2__c}"/><br/>
+                            <apex:outputText value="{!contactSelected.openq__Physician_Address_City__c}"/><br/>
+                            <apex:outputText value="{!contactSelected.openq__Physician_Address_State__c}"/>&nbsp;<apex:outputText value="{!contactSelected.openq__Physician_Address_Postal_Code__c}"/><br/>                               
+                            <apex:outputText value="{!contactSelected.openq__Physician_Address_Country__c}"/>
+                       </apex:outputPanel>
+                    </td>
+                </tr>
+            </table>
+        </div>        
+    </div>
+    
+    <div id="connContactInfoBox" style="display:none;">     
+            <div class="ct-infobox-body">
+                <div class="ct-infobox-title" id="connContactInfoBoxTitle"></div>
+                <div style="float: right; margin-right: 10px;">
+                    <a href="javascript:hideInfobox(null);" title="Close">Close</a>
+                </div>
+            </div>
+            <table style="clear:both;">
+                <tr>
+                    <td align="center" style="padding: 0px 5px 5px 5px;" valign="top">
+                        <img alt="No image available" id="imgNotAvailable" style="height:auto;" width="100" />
+                        <img alt="Picture" id="connContactInfoBoxImage" style="height:auto;" width="150" />
+                    </td>
+                    <td align="left" style="padding-left: 5px; padding-right: 5px; vertical-align: top; padding-top: 0px;">
+                        <table id="connContactInfoBoxDataTable">
+                            <tr>
+                                <th>
+                                    <b><span id="connContactInfoBoxSpec"></span></b>
+                                </th>
+                            </tr>
+                            <tr>
+                                <td><hr style="border-top: none;border-bottom: 1px solid;" /></td>
+                            </tr>
+                            <tr>
+                                <td align="left"><span id="connContactInfoBoxAddr1"></span></td>
+                            </tr>
+                            <tr>
+                                <td align="left"><span id="connContactInfoBoxAddr2"></span></td>
+                            </tr>
+                            <tr>
+                                <td align="left"><span id="connContactInfoBoxCity"></span></td>
+                            </tr>
+                            <tr>
+                                <td align="left"><span id="connContactInfoBoxState"></span>&nbsp;<span id="connContactInfoBoxPostalCode"></span></td>
+                            </tr>
+                            <tr>
+                                <td align="left"><span id="connContactInfoBoxCountry"></span></td>
+                            </tr>
+                            <tr>
+                                <td align="left" style="padding-top:5px;text-align: left;">
+                                    <table style="width:100%">
+                                        <tr>
+                                            <th style="text-align:left; border-bottom: 1px solid #000;">Connected by</th>
+                                        </tr>
+                                        <tr>
+                                            <td id="connContactInfoBoxConnections" style="padding-top:5px;"></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>        
+                </tr>
+            </table>        
+    </div>
+    
+    <apex:outputPanel id="mainContainer" styleClass="default clearFix order-sm layout-order" layout="block">
+        <div id="topHeader" style="margin-left: -222px;">
+            <apex:outputPanel id="breadCrumbsWrapper">
+                <div class="breadcrumbs">
+                    You're here:&nbsp;
+                    <apex:outputLink value="{!$Page.openq__MappingModule}">Mapping</apex:outputLink>       
+                    <apex:outputpanel rendered="{!contactSelected.id!=null}">
+                    &nbsp;/&nbsp; 
+                    </apex:outputpanel>
+                    <apex:outputLink value="/{!contactSelected.id}" rendered="{!contactSelected.id!=null}"> 
+                    {!contactSelected.LastName}{!IF(contactSelected.FirstName != null, ',', '')} {!contactSelected.FirstName} {!contactSelected.openq__OPENQ_Middle_Name__c}
+                    </apex:outputLink>  
+                </div>
+            </apex:outputPanel>
+        </div>
+        <apex:form id="myForm">
+            <apex:outputPanel layout="block" id="leftContainer">
+                <div id="leftLeft" class="shadow-wrap">
+                    <div id="leftLeftInner1" class="wi-gen gr shado" style="margin-top: 0;">
+                        <a class="btn b-c-minimize" style="right: 0px; top: 0px; position: absolute; background: none; border: none; padding: 0; margin: 0;" onclick="switchDir();">
+                            <span id="minimizeMe"></span>
+                        </a>
+                        <div id="leftLeftInner" style="font-family: Verdana,sans-serif; font-size: 11px; color: #555555; padding-left: 5px;">
+                            <apex:outputPanel >
+                                <h2>{!contactTermSingular}:&nbsp;</h2>
+                                <apex:outputPanel styleClass="lookupInput" rendered="{!$Objecttype.Contact.fields.Name.Accessible}">
+                                    <apex:inputText value="{!contactSelected.Name}" id="contactName"/>
+                                    <apex:inputHidden value="{!contactSelected.Id}" id="contactId" />
+                                    <a  onclick="openContactLookup();">
+                                        <img src="/s.gif" alt="Search" class="lookupIcon" onblur="this.className = 'lookupIcon';" onfocus="this.className = 'lookupIconOn';" onmouseout="this.className = 'lookupIcon';this.className = 'lookupIcon';" onmouseover="this.className = 'lookupIconOn';this.className = 'lookupIconOn';" title="Search {!contactTermSingular}" />
+                                    </a>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                            
+                            <apex:outputPanel id="contactPicture" layout="block" styleClass="left-ct-pictures" style="display:{!IF(contactSelected.Id != null, 'block', 'none')};">
+                                <apex:image value="{!URLFOR($Resource.openq__PictureUploader, '/images/unknownperson.jpg')}" rendered="{!NOT( contactHasPicture )}" height="172" width="202" />
+                                <apex:image value="/servlet/servlet.FileDownload?file={!contactImage.Id}" rendered="{!contactHasPicture}"  id="contactImage" alt="{!contactSelected.Name}" />
+                            </apex:outputPanel>
+                            
+                            <apex:outputPanel style="float: right;margin-right: 10px;" id="viewMorePanel">
+                                <a href="javascript:;" title="View more" id="viewMore" style="text-decoration: none; display:{!IF(contactSelected.Id != null, 'block', 'none')};">[+]</a>
+                                <apex:inputHidden value="{!contactLatitude}" id="contactLatitude"/>
+                                <apex:inputHidden value="{!contactLongitude}" id="contactLongitude"/>
+                            </apex:outputPanel>
+                            
+                            <div id="divFilters" style="margin-top: 15px;">
+                                <h2 style="float:left;">Filters</h2>
+                                <!-- Filter items  -->                                
+                                <ul style="clear: both;">                                    
+                                    <apex:repeat value="{!connectionTypes}" var="connType">
+                                    <li style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="liFilter">
+                                        <input type="checkbox" value="{!connType.apiName}" class="{!IF(connType.isSelected, 'checkbox-filter', '')}" id="{!connType.connectionName}" onclick="setConnectionFilter('{!JSENCODE(connType.apiName)}', this.checked);" />
+                                        <label for="{!connType.connectionName}" style="color: {!HTMLENCODE(connType.colorCode)};">{!connType.connectionName}</label>
+                                    </li>
+                                    </apex:repeat>   
+                                    <li style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="liFilter">
+                                        <input type="checkbox" disabled="disabled" id="multipleconn" checked="checked" />
+                                        <label for="multipleconn" style="color: {!HTMLENCODE(multipleConnectionColor)};">Multiple connections</label>
+                                    </li>                                             
+                                </ul>
+                                <apex:inputHidden value="{!jsonFilters}" id="jsonFilters"/>
+                            </div>
+                                                        
+                            <div id="Search" style="margin-top: 15px;margin-bottom: 20px;">
+                                <h2>Keyword</h2><br />                              
+                                <apex:inputText styleClass="txtSearch" id="txtSearch" value="{!searchText}" />
+                                <a href="javascript:doSearch();" class="btnCustom default gr btnOverride" style="margin-left:5px;">Go</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </apex:outputPanel>
+        
+            <apex:actionFunction name="getContactData" rerender="breadCrumbsWrapper,contactPicture,cdiv,address,spec,noAddressText,image,viewMorePanel,networkMap,backToTop" action="{!retrieveContactData}" oncomplete="contactDataComplete();" />
+            <apex:actionFunction name="updateFilters" action="{!updateFilters}" oncomplete="callNetworkMap()"/> 
+            <apex:actionFunction name="callNetworkMap" />
+            <apex:actionFunction name="setIE8" action="{!setIE8}" rerender="" />
+        </apex:form>
+            
+        <div id="rightContainer" class="wi-gen gr b-card shado conc" style="margin-top: 0;">
+            <apex:outputPanel id="rightContentPanel">
+                <div id="mappingViewPort">
+                    <apex:form id="lensForm">
+                        <div style="overflow: auto; margin-bottom: 5px; height: 38px;">
+                            <apex:outputPanel styleClass="printview" />
+                            <apex:outputPanel styleClass="tableview">
+                                <a href="javascript:;" onclick="takeToConnectionsTable();" title="Connections Table">
+                                    <img src="{!URLFOR($Resource.MappingModuleImages,'table.png')}" alt="Connections Table" style="margin-top: -3px;" />
+                                </a>
+                            </apex:outputPanel>
+                            <apex:outputPanel styleClass="ddlens" layout="block">
+                                <h2>Lens:</h2>
+                                <apex:selectList value="{!lens}" size="1" id="lensList" style="Verdana, sans-serif;">
+                                    <apex:selectOptions value="{!lensItems}" />
+                                </apex:selectList>
+                            </apex:outputPanel>
+                        </div>
+                    </apex:form>
+                    
+                    <div id="map"></div>
+                    
+                    <div id="geoSearchResults" class="geo-results-table"></div>
+                    
+                    <apex:outputPanel id="networkMap" layout="block">
+                        <c:NetworkMap rendered="{!contactSelected.Id != null && !iE8}" contactId="{!contactSelected.Id}" filterObjects="{!filters}" searchTerm="{!searchText}" />   
+                    </apex:outputPanel> 
+                </div>                  
+            </apex:outputPanel>
+            <apex:outputPanel style="text-align:center; width:100%; display:{!IF(contactSelected.Id != null, 'block', 'none')};" id="backToTop" layout="block">
+                <a href="javascript:window.scrollTo(0, 0);">Back to top</a>
+            </apex:outputPanel>
+        </div>
+    </apex:outputPanel>
+    
+    <!--[if IE 8]><script>setIE8Hacks();</script><![endif]-->
+</apex:page>

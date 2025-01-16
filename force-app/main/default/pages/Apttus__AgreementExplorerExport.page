@@ -1,0 +1,154 @@
+<!-- 
+    Apttus Contract Management
+    AgreementExplorerExport
+     
+    @2009-2015 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus__AgreementExplorer__c" extensions="Apttus.AgreementExplorerResultsController" contentType="application/vnd.ms-excel#HierarchyReport.xls" cache="true">
+        <head>
+          <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+        </head>
+        <apex:pageBlock >
+        <header><apex:outputText style="font-weight:bold;font-size:200%;" value="{!$Label.apttus__exporttoexceltitle}"/></header>
+        </apex:pageBlock>
+        <apex:outputPanel id="thePanel">
+            <apex:outputText style="font-weight:bold;" value="{!$ObjectType.Apttus__AgreementExplorer__c.fields.Name.Label}: "/> 
+            <apex:outputLink value="{!exportReturnURL}">{!newHierarchyProp.Name} </apex:outputLink> 
+            <br/>
+            <apex:outputText style="font-weight:bold;" value="{!$ObjectType.Apttus__AgreementExplorer__c.fields.Apttus__Context__c.Label}: "/> 
+            <apex:outputText value="{!newHierarchyProp.Apttus__Context__c}"/> 
+            <br/>
+            <apex:outputText style="font-weight:bold;" value="{!$ObjectType.Apttus__AgreementExplorer__c.fields.Apttus__Keywords__c.Label}: "/> 
+            <apex:outputText value="{!newHierarchyProp.Apttus__Keywords__c}"/>
+             <br/>
+             <apex:outputText style="font-weight:bold;" value="{!$ObjectType.Apttus__AgreementExplorer__c.fields.OwnerId.Label}: "/>
+             <apex:outputField value="{!newHierarchyProp.OwnerId}"  />
+             <br/>
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!display == 'Hierarchy'}">
+            <apex:repeat value="{!listFilterWraps}" var="singleFilter">
+                <apex:outputText value="{!singleFilter.sequence}   "/>
+                <apex:outputText value="{!singleFilter.inputLabel}   "/> 
+                <apex:outputText value="{!singleFilter.comparison}   "/>
+                <apex:outputText value="{!singleFilter.value}   " rendered="{!singleFilter.dataType!='REFERENCE' && singleFilter.dataType!='DATE' &&singleFilter.dataType!='DATETIME'}"/>
+                <apex:outputField value="{!singleFilter.listFilterAgreement[singleFilter.lookUpField]}   " rendered="{!singleFilter.dataType=='REFERENCE'}"/>
+                <apex:outputText value="{!singleFilter.dateField}" rendered="{!singleFilter.dataType=='DATE' || singleFilter.dataType=='DATETIME'}"/>
+                <br></br>
+            </apex:repeat>
+        </apex:outputPanel>
+        <br></br>
+
+      <!--agreement table-->
+      <apex:pageBlock rendered="{!display == 'Hierarchy' && (newHierarchyProp.Apttus__Context__c == 'Agreement'||newHierarchyProp.Apttus__Context__c == 'Agreement Search')}">
+           <apex:outputText value="{!$Label.apttus__agreements}"  rendered="{!newHierarchyProp.Apttus__AgreementId__c == null}" style="font-weight:bold;font-size:150%;margin-left:20px;"/>        
+            <apex:outputText value="{!$Label.apttus__agreementhierarchyfor}: {!AgreementExplorerAgreementName}" rendered="{!newHierarchyProp.Apttus__AgreementId__c != null}" style="font-weight:bold;font-size:150%;margin-left:20px;"/>  
+          <apex:pageBlockTable value="{!exportToExcel}" var="singleRow">
+              <apex:repeat value="{!fieldNameLabelTuple}" var="singleKey" rows="24">
+                <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Name'}">
+                     <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__c}"/>
+                </apex:column>
+
+               <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel != 'Agreement Name' && singleKey.fieldLabel != 'Related To Agreement' && singleKey.fieldLabel != 'Related From Agreement' && singleKey.fieldLabel != 'Agreement Hierarchies'}">
+                    <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                </apex:column>
+
+                 <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related To Agreement'}">
+                    <apex:outputLabel value="{!$Label.apttus__viewtoagreements}" rendered="{!singleRow['hasRelatedTo'] == true}"/>
+                    <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedTo'] == false}"/>
+                  </apex:column>
+
+                  <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related From Agreement'}">
+                    <apex:outputLabel value="{!$Label.apttus__viewfromagreements}" rendered="{!singleRow['hasRelatedFrom'] == true}"/>
+                    <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedFrom'] == false}"/>
+                  </apex:column>
+
+              </apex:repeat>
+            </apex:pageBlockTable>
+      </apex:pageBlock>
+
+       <!--Agreement Hierarchies Link table-->
+      <apex:pageBlock rendered="{!display == 'Agreement Hierarchies'}">
+          <div style="padding:10px 0px">
+          <apex:outputPanel layout="block" style="padding:10px 0px">
+            <apex:outputText value="{!$Label.apttus__agreementhierarchyfor}: {!AgreementHierarchyName}" style="font-weight:bold;font-size:150%;margin-left:20px"/>
+           </apex:outputPanel>   
+            </div>
+              <apex:pageBlockTable value="{!agreementHierarchies.fullData}" var="singleRow">
+                  <apex:repeat value="{!fieldNameLabelTuple}" var="singleKey" rows="24">
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Name'}">
+                        <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__c}"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Account'}">
+                        <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!((singleKey.fieldLabel != 'Agreement Name' && singleKey.fieldLabel != 'Account')) && singleKey.fieldLabel != 'Related To Agreement' && singleKey.fieldLabel != 'Related From Agreement' && singleKey.fieldLabel != 'Agreement Hierarchies'}">
+                        <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                    </apex:column>
+
+                   <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related To Agreement'}">
+                      <apex:outputLabel value="{!$Label.apttus__viewtoagreements}" rendered="{!singleRow['hasRelatedTo'] == true}"/>
+                      <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedTo'] == false}"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related From Agreement'}">
+                      <apex:outputLabel value="{!$Label.apttus__viewfromagreements}" rendered="{!singleRow['hasRelatedFrom'] == true}"/>
+                      <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedFrom'] == false}"/>
+                    </apex:column>
+
+                </apex:repeat>
+            </apex:pageBlockTable>
+        </apex:pageBlock>
+
+        <!--related TO/FROM table-->
+        <apex:pageBlock rendered="{!display == 'Related'}">
+          <div>
+            <apex:outputLabel value="{!linkType}: {!linkName}" style="font-weight:bold;margin-left:20px"/>
+          </div>
+          <div>
+              <apex:pageBlockTable value="{!RelatedAgreementData}" var="singleRow">
+                <apex:repeat value="{!relatedAgreementResultFields}" var="field">
+                    <apex:column headerValue="{!field.member.Label}" value="{!singleRow[field.member.FieldPath]}"/>
+                </apex:repeat>
+              </apex:pageBlockTable>
+          </div>
+        </apex:pageBlock>
+
+        <!--acc agg table-->
+       <apex:pageBlock rendered="{!display = 'Hierarchy' && newHierarchyProp.Apttus__Context__c = 'Agreement By Account(s)'}">
+           <apex:outputText value="{!$Label.apttus__agreementhierarchybyaccounts}" style="font-weight:bold;font-size:150%;margin-left:20px"/>
+            <div class="accordionItem">
+              <apex:pageBlock >
+                <apex:outputText value="{!LEFT(exportAccountToExcel.accountName,80)}" style="font-weight:bold;font-size:125%;margin-left:30px;"/>
+                  <apex:pageBlockTable value="{!exportAccountToExcel.accounts.fullData}" var="singleRow">
+                    <apex:repeat value="{!fieldNameLabelTuple}" var="singleKey" rows="24">
+                        
+                        <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Name'}">
+                          <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__c}"/>
+                        </apex:column>
+    
+                        <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel != 'Agreement Name'&&
+                                      singleKey.fieldLabel != 'Related To Agreement' && 
+                                      singleKey.fieldLabel != 'Related From Agreement' && 
+                                      singleKey.fieldLabel != 'Agreement Hierarchies'}">
+                            <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                        </apex:column>
+    
+                       <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related To Agreement'}">
+                          <apex:outputLabel value="{!$Label.apttus__viewtoagreements}" rendered="{!singleRow['hasRelatedTo'] == true}"/>
+                          <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedTo'] == false}"/>
+                        </apex:column>
+    
+                        <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related From Agreement'}">
+                          <apex:outputLabel value="{!$Label.apttus__viewfromagreements}" rendered="{!singleRow['hasRelatedFrom'] == true}"/>
+                          <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedFrom'] == false}"/>
+                        </apex:column>
+    
+                    </apex:repeat>
+                  </apex:pageBlockTable>  
+                </apex:pageBlock>
+            </div>
+        </apex:pageBlock>
+</apex:page>

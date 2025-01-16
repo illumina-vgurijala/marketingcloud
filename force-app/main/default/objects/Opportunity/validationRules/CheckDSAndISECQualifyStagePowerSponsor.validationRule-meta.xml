@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSAndISECQualifyStagePowerSponsor</fullName>
+    <active>true</active>
+    <description>Power Sponsor contact role is required to progress past Qualify. Direct Standard and Indirect Standard Opportunity only.</description>
+    <errorConditionFormula>AND (
+    OR (
+        $RecordType.DeveloperName = $Label.OpportunityRTDirectStandard,
+        $RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard
+    ),
+    NOT (
+        OR (
+            TEXT ( StageName ) = $Label.OpportunityStageClosedLost,
+            TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedLost,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned,
+            TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedAbandoned,
+            TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedWon,
+            TEXT ( StageName ) = $Label.OpportunityStageCreate,
+            TEXT ( StageName ) = $Label.OpportunityStageQualify,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon, 
+            $Profile.Name = $Label.ProfileSystemAdmin, 
+            $Profile.Name = $Label.ProfileDataSteward,
+ CONTAINS($Label.Bypassed_Sales_Integration_Profiles_Id,$Profile.Id),
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+            ISCHANGED ( Is_Updated_By_System__c ), 
+            Is_Updated_By_System__c = true, 
+            /* Bypassing update of below fields since they are updated systematically*/
+            ISCHANGED ( Is_Customer_Readiness_Section_1_Complete__c ), 
+            ISCHANGED ( Is_Customer_Readiness_Section_2_Complete__c ), 
+            ISCHANGED ( Is_Customer_Readiness_Section_3_Complete__c ), 
+            ISCHANGED ( Desired_Shipment_Install_Timelines_CRF__c ), 
+            ISCHANGED ( Amount ), 
+            ISCHANGED ( Proposal_Sent_On__c ), 
+            ISCHANGED ( Are_Products_Added__c ), 
+            ISCHANGED ( First_Proposal_Id__c ), 
+            ISCHANGED ( Quote_Generated_Qualify_or_Develop__c ), 
+            ISCHANGED ( check_First_Proposal__c ), 
+            ISCHANGED ( Clinical_Type__c ), 
+            ISCHANGED ( Market_Segment__c ), 
+            ISCHANGED ( ByPass_LockSentProposalDate__c ),
+            ISCHANGED ( Are_Products_Added_by_Channel_Partner__c ),
+            ISCHANGED ( Primary_Contact__c),
+            AND (
+                $RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard,
+                ISCHANGED ( Number_Of_Opportunity_Line_Items__c )
+            )
+        )     
+    ), 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    Is_Power_Sponsor_Identified__c = false  
+)</errorConditionFormula>
+    <errorDisplayField>Is_Power_Sponsor_Identified__c</errorDisplayField>
+    <errorMessage>Please add a Main Contact (click Related then Manage Contact Roles, make sure one Role value is Main Contact).</errorMessage>
+</ValidationRule>

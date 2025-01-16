@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckPartOrderParentCaseStatus</fullName>
+    <active>true</active>
+    <description>Prevent child part order creation for cases which are closed or completed or Pending QA Review</description>
+    <errorConditionFormula>AND( 
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    NOT(ISNULL(SVMXC__Case__c)),
+    OR(
+        SVMXC__Case__r.IsClosed, 
+        TEXT(SVMXC__Case__r.Status) == $Label.ReopenRequested,
+        TEXT(SVMXC__Case__r.Status) == $Label.Completed,
+        TEXT(SVMXC__Case__r.Status) == $Label.CaseStatusPendingQAReview,
+        TEXT(SVMXC__Case__r.Status) == $Label.CaseStatusCanceled
+    ),
+    OR(
+        ISNEW(), 
+        ISCHANGED(SVMXC__Case__c)
+    ),
+    $Profile.Name &lt;&gt; $Label.ProfileQualityAssurance 
+)</errorConditionFormula>
+    <errorMessage>A Part Order cannot be created/edited from a Work Order with status &quot;Closed&quot; or &quot;Completed&quot; or &quot;Pending QA Review&quot; or  &quot;Canceled&quot; or &quot;Reopened Requested&quot;.    Request Reopen and await the reopening to create a Parts Order.</errorMessage>
+</ValidationRule>

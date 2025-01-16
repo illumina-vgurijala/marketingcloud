@@ -1,0 +1,120 @@
+<!--
+    Apttus Config & Pricing
+    AddMilestonesFromTemplates
+
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+ <apex:page controller="Apttus_Config2.AddMilestonesFromTemplatesController" 
+ 			lightningStylesheets="true"
+ 			tabStyle="Apttus_Config2__Milestone2__c" 
+ 			showHeader="true" 
+ 			sidebar="false">
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/FullPageSearch.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/FullPageSearch.js')}" />
+    <apex:sectionHeader title="Milestone Templates" />
+    <a class="back-link" href="{!returnURL}">&lt; {!backLabel}</a>
+
+    <apex:form styleClass="full-page-main">
+        <apex:pageMessages id="pageMsgs" />
+
+        <ul class="entity-tabs">
+            <li class="selected"><a onclick="toggleSelected('false');">{!$Label.Available}</a></li>
+            <li class="not-selected"><a onclick="toggleSelected('true');">{!$Label.Selected}</a></li>
+        </ul>
+        <apex:outputPanel layout="block" styleClass="search-container">
+            <i class="fa fa-search"></i><input id="searchText" type="text" placeholder="Search" />
+        </apex:outputPanel>
+        <div class="entity-wrap">
+        <apex:outputPanel layout="block" id="alphaMount" styleClass="alpha-mount">
+            <apex:outputPanel layout="block" rendered="{!showAlphabet}">
+                <script>
+                    j$(document).ready(function() {
+                        for(var letter = 65; letter < 91; letter++) {
+                            var _char = String.fromCharCode(letter);
+                            j$('#alphaMount').append('<a class="alpha' + _char + '" onclick="searchEntities(\'' + _char + '%\',true);selectedAlpha=\'alpha' + _char + '\';">' + _char + '</a>');
+                        }
+                        if (selectedAlpha != '') {
+                            j$('.' + selectedAlpha).addClass('selected');
+                        }
+                        j$('#alphaMount').append('<a onclick="searchEntities(\'%%\',false);">All</a>');
+                    });
+                </script>
+                <div id="alphaMount"></div>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <apex:pageBlock id="mainBlock">
+            <apex:pageBlockSection >
+                <apex:pageBlockSectionItem >
+                    <apex:commandButton value="{!$Label.apttus_config2__addcopytoagreement}" action="{!doAction}" />
+                    <apex:commandButton value="{!$Label.apttus_config2__cancel}" action="{!cancel}" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockTable id="entityTable" var="entity" value="{!entityList}" styleClass="entity-table">
+                <apex:column >
+                    <apex:facet name="header"><input type="checkbox" class="select-all" /></apex:facet>
+                    <apex:inputCheckbox value="{!entity.checked}" />
+                </apex:column>
+                <apex:repeat var="f" value="{!fieldList}">
+                    <apex:column >
+                        <apex:facet name="header"><a class="entitySort {!f}" onclick="sortEntities('{!f}')">{!f.label}</a></apex:facet>
+                        <apex:outputField value="{!entity.entitySO[f]}" />
+                    </apex:column>
+                </apex:repeat>
+            </apex:pageBlockTable>
+            <apex:pageBlockSection >
+                <apex:pageBlockSectionItem >
+                    <apex:commandButton value="{!$Label.apttus_config2__addcopytoagreement}" action="{!doAction}" />
+                    <apex:commandButton value="{!$Label.apttus_config2__cancel}" action="{!cancel}" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        <apex:outputPanel layout="block" id="pagination" styleClass="pagination-panel">
+            <div style="display: inline-block; margin-right: 20px;">
+                {!$Label.Show}
+                <apex:selectList value="{!entitiesPerPage}" size="1" onchange="moveToPageNum();">
+                    <apex:selectOptions value="{!EntitiesPerPageOptions}" />
+                </apex:selectList>
+                {!$Label.Items}
+            </div>
+
+            <apex:outputPanel rendered="{!selectedPage != 1}">
+                <a class="move-page move-previous" onclick="moveToPage('previous');">&lt;</a>
+            </apex:outputPanel>
+            <apex:inputText value="{!selectedPage}" onchange="moveToPageNum();"/>
+            <apex:outputPanel rendered="{!selectedPage < lastPage}">
+                <a class="move-page move-next" onclick="moveToPage('next');">&gt;</a>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        </div>
+        <apex:actionFunction name="searchAF"
+                             action="{!search}"
+                             reRender="entityTable, alphaMount, pagination"
+                             oncomplete="setSelectedSort();">
+            <apex:param id="searchText" name="searchText" value="" />
+            <apex:param id="sortOrder" name="sortOrder" value="" />
+            <apex:param id="usingAlpha" name="usingAlpha" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="moveToPageNum"
+                             action="{!moveToPageNum}"
+                             reRender="entityTable, alphaMount, pagination"
+                             status="loadingStatus" />
+        <apex:actionFunction name="moveToPage"
+                             action="{!moveToPage}"
+                             reRender="entityTable, alphaMount, pagination"
+                             oncomplete="setSelectedSort();"
+                             status="loadingStatus">
+            <apex:param id="direction" name="direction" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="toggleSelected"
+                             action="{!toggleSelected}"
+                             reRender="entityTable, alphaMount, pagination"
+                             status="loadingStatus">
+            <apex:param id="showSelected" name="showSelected" value="" />
+        </apex:actionFunction>
+        <apex:actionStatus id="loadingStatus" onstart="displaySpinner();" onstop="hideSpinner();"/>
+        <div class="overlay"><img src="/img/loading32.gif" align="loading..." /></div>
+    </apex:form>
+</apex:page>

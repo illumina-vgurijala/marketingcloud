@@ -1,0 +1,532 @@
+/**************************************************************************************************************************************************************
+ * Apttus CPQ CSS file
+ * @2010-2013 Apttus Inc. All rights reserved.
+ * SelectConfigOptionsDetailView ------------------------------------------------------------------------------------------------------------------------------
+ *************************************************************************************************************************************************************/
+
+
+		
+		.title {
+			background: #069;
+			width:100%;
+			font-size:1.5em;
+		}
+		
+		h2.title {
+			padding:5px;
+		}
+		
+		.aptSidebarSection {
+			width:100%;
+			float:left;
+			padding:5px;
+		}
+		
+		.aptGroupHeader {
+			background: -moz-linear-gradient(top,  rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%); /* FF3.6+ */
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0))); /* Chrome,Safari4+ */
+			background: -webkit-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* Chrome10+,Safari5.1+ */
+			background: -o-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* Opera 11.10+ */
+			background: -ms-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* IE10+ */
+			background: linear-gradient(to bottom,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* W3C */
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6d3d3d3', endColorstr='#00ffffff',GradientType=0 ); /* IE6-9 */
+			
+			height:30px;
+				
+		}
+		
+		.aptGroupLineage {
+			text-align: left;
+			font-weight: bold;
+			color: #015ba7;
+			padding-left: 5px;	
+		}
+
+		.aptGroupHeaderHeaderPadding {
+			padding:5px;
+		}
+		
+		.aptProductHeader {
+			background: -moz-linear-gradient(top,  rgba(30,87,153,1) 0%, rgba(125,185,232,0) 100%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(30,87,153,1)), color-stop(100%,rgba(125,185,232,0)));
+			background: -webkit-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -o-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -ms-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: linear-gradient(to bottom,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#007db9e8',GradientType=0 );
+			border-radius: 3px;
+			height:30px;
+		}
+		
+		.aptLeafItemContainer {
+			/*width:100%;*/
+			/*float:left;*/
+/*			margin-right: 1em;
+			margin-left: 1em;*/
+			padding-top:10px;
+			padding-bottom:10px;
+		}
+
+		.aptLeafItemImageContainer {
+			width:98%;
+			margin: 10px;
+			margin-bottom:0;
+		}
+
+		img.aptLeafItemImage {
+			height:100px;
+		}
+
+		.aptLeafProductsTableContainer {
+			/*width:80%; */
+			/*float:left;*/
+		}
+
+		.aptLeafProductsTableContainerBorder {
+			border:1px solid #BBB; 
+			/*width:98%;*/
+			/*float:left;*/
+		}
+
+		.aptLeafProductsTable {
+			width:100%; 
+			float:left;
+		}
+		
+		.aptLeafProductsTable tr {
+			height: 2em;
+		}
+		
+		.aptLeafProductsTableLongDescription {
+			width:100%; 
+			float:left; 
+			/*background-color:#CCC*/
+		}
+
+		
+		.aptSelectedOptionsTable {
+			padding-left: 10px
+		}
+		
+		.aptProductSelTable tr {
+			height: 3em;
+		}
+
+		.usageTiersTable{
+			width:100%;
+			border-collapse: collapse;
+		}
+		.usageTiersTable td{
+			height:1em !important;
+		}   	 	
+
+		
+		.aptTopButtons {
+			display: inline;
+			list-style-type: none;
+			
+		}
+		
+		.aptTopButtons li {
+			display: inline;
+		}
+		
+		.aptCurrency, .aptPercentage, .aptQuantity {
+			display: inline;
+		}
+		
+		div.aptSelectedProductAttrFields {
+/*			width:100%; 
+			float:left; */
+			padding: 0.2em 1em;
+		}
+		
+		 .aptSelectedProductAttrFields .dateFormat {
+		 	display:none;
+		 }
+		 
+		 .aptSelectedProductAttrFields input {
+		 	width: 100%;
+		 	text-align: right;
+		 }
+		
+		div.aptProductRichTextContainer {
+			width:100%; 
+			float:left; 
+			background-color:#CCC;
+		}
+		
+		
+		 
+       .rampsTable {
+            width:100%;
+            text-align:center;
+            border-collapse: collapse;
+            border-top:1px solid #aaa;
+        }
+        
+        .rampsTable thead {
+            background-color: #d6dfeb;
+            color: #6f6f6f;
+            text-align: center;
+            line-height:25px;
+            border: 1px solid #aaa;
+            
+            
+        }
+        
+        .rampsTable th {
+            text-align:center;
+            padding: 2px 3px;
+            border-bottom: 1px solid #aaaaaa;
+			border-right: 1px solid #aaaaaa;
+        }
+        
+        .rampsTable td{
+            vertical-align: middle !important;
+            padding: 1px;
+            border: 1px solid #e3e9ef;
+            vertical-align: middle !important;
+        }
+        
+         .rampsTable input{
+            width:80%;
+        }
+        
+        .rampsTable tbody tr{
+            height:50px;
+        }
+        
+        .rampsTable .dateFormat{
+            display:none;
+        }
+        
+        
+        .tiersTable {
+            width:100%;
+            text-align:center;
+            border-collapse: collapse;
+            border-top:1px solid #aaa;
+        }
+        
+        .tiersTable thead {
+            background-color: #d6dfeb;
+            color: #6f6f6f;
+            text-align: center;
+            line-height:25px;
+            border: 1px solid #aaa;
+            
+            
+        }
+        
+        .tiersTable th {
+            text-align:center;
+            padding: 2px 3px;
+            border-bottom: 1px solid #aaaaaa;
+			border-right: 1px solid #aaaaaa;
+        }
+        
+        .tiersTable td{
+            vertical-align: middle !important;
+            padding: 1px;
+            border: 1px solid #e3e9ef;
+            vertical-align: middle !important;
+        }
+        
+         .tiersTable input{
+            width:80%;
+        }
+        
+        .tiersTable tbody tr{
+            height:50px;
+        }
+        
+        .tiersTable tbody td{
+            background-color:white;
+        }
+        
+        .tiersTable .dateFormat{
+            display:none;
+        }
+        
+        .aptNoClick a{
+        	pointer-events: none !important;
+        	text-decoration:none !important;
+        }
+		
+		.aptSelectedOptionsItems {
+			float: left;
+		}
+
+		#aptSelectedProducts {
+			float:left;
+			width: 100%;
+		}
+
+		.aptProductListHeader a {
+			text-decoration: none;
+			color: inherit;
+		}
+
+		.aptProductListHeader a:hover {
+			text-decoration: none;
+			color: inherit;
+		}
+
+
+		.aptActiveRampsRow {
+			background: #E6F7FF !important;
+		}
+
+		.aptActiveRampsRow td {
+			background: #E6F7FF !important;
+		}
+
+		.actionsMenu {
+			cursor: pointer;
+		}
+
+		.no-close .ui-dialog-titlebar-close {
+  			display: none;
+		}
+		
+		.actionsMenuDialog .ui-dialog-titlebar{
+			display: none;
+		}
+
+		.actionsMenuDialog {
+  			border: 1px solid #CCC;
+  			padding: 0.5em 0;
+		}
+
+		.actionsMenuDialog ul{
+  			list-style-type: none;
+  			padding: 0;
+  			margin: 0;
+		}
+
+		.actionsMenuDialog li{
+  			padding: 0;
+  			margin: 0;
+		}
+
+		.actionsMenuDialog a{
+  			text-decoration: none;
+  			cursor: pointer;
+		}
+
+		#productDetailPanel {
+    		overflow:hidden !important;
+    	}
+
+		.aptListButton {
+			cursor: pointer;
+		}
+
+		.ui-menu {
+			position: absolute;
+			border: 1px solid gray !important;
+			text-align: left;
+			margin-left: 20px;
+		}
+		
+		.aptButtonDisabled {
+			background: gray !important;
+		}
+		
+		.aptButtonDisabled:hover {
+			background: gray !important;
+
+		}
+		
+		td.no-border-right {
+			border: 0 !important;
+			border-left: 1px solid #e3e9ef !important;
+			border-top: 1px solid #e3e9ef !important;
+			border-bottom: 1px solid #e3e9ef !important;
+			border-right: 0 !important;
+
+			padding-left: 0.5em;
+		}
+		td.no-border-left {
+			border: 0 !important;
+			border-right: 1px solid #e3e9ef !important;
+			border-top: 1px solid #e3e9ef !important;
+			border-bottom: 1px solid #e3e9ef !important;
+			border-left: 0 !important;
+		}
+
+		th.no-border-right {
+			border: 0 !important;
+			border-left: 1px solid #aaa !important;
+			border-top: 1px solid #aaa !important;
+			border-bottom: 1px solid #aaa !important;
+			border-right: 0 !important;
+		}
+		th.no-border-left {
+			border: 0 !important;
+			border-right: 1px solid #aaa !important;
+			border-top: 1px solid #aaa !important;
+			border-bottom: 1px solid #aaa !important;
+			border-left: 0 !important;
+		}
+
+		.actionsColumn {
+			width:38px;
+		}
+
+		.includedTier td{
+			background-color: #93d65f !important;
+			color: white;
+		}
+
+		.commitedTier td{
+			background-color: #6894b5 !important;
+			color: white;
+		}
+
+		.aptRightAligned td {
+			text-align: right;
+			padding-right: 0.5em;
+		}
+
+		.aptRightAligned {
+			text-align: right;
+			padding-right: 0.5em;
+		}
+
+		.hiddenColumn td{
+			display:none;
+		}
+
+		.hiddenColumn th{
+			display:none;
+		}
+
+		.aptGroupAnchors a {
+			text-decoration: none;
+			cursor: pointer;
+		}
+
+		.jstree-default.jstree-focused {
+			background: none !important;
+		}
+		
+		.tree-commands{
+			font-size:12px;
+		} 
+		
+		.jstree{
+			width:100%;
+			overflow:auto;
+		}
+		
+		.jstree li.noImage > a ins{ 
+			background:#efefef;
+		}
+
+		.jstree li[type="topbundle"] > a { font-weight:bold; text-transform: uppercase; }
+
+		.jstree li[type="bundle"] > a { font-weight:bold; }
+
+		.jstree li[type="group"] > a { font-style: italic; }
+
+		.jstree li[type="option"] > a { 
+			cursor:default; 
+			text-decoration:none; 
+			background: none !important;
+			border: none !important;
+			color:inherit !important;
+		}
+
+		.jstree li[type="option"] > a:hover { 
+			text-decoration:none; 
+			background: none !important;
+			border: none !important;
+			color:inherit !important;
+		}
+
+		.jstree li[hasError="true"] > a { 
+			color: red;
+
+		}
+
+		.jstree li[hasError="true"] > a:before { 
+			content: "! ";
+			font-weight: bolder;
+			font-style: normal;
+						
+		}
+
+		.selectedBundle { 
+			background: #beebff;
+			border: 1px solid #99defd;
+			padding: 0 2px 0 1px;
+		}
+
+		.aptOptionGroupTable {
+			border-spacing: 0 6px !important;
+		}
+		
+		.attributesDialog .ui-dialog-titlebar{
+	    	background: #428BCA;
+			border-color: #428BCA;
+			color: white;
+			font-size: 1em;
+			border-bottom-left-radius: 0px;
+			border-bottom-right-radius: 0px;
+	    }
+	
+	    .attributesDialog .ui-dialog-titlebar-close{
+	    	position: absolute;
+			margin-top: -30px;
+			margin-right: -12px;
+			right: -.2em;
+			top: 45%;
+			width: 28px;
+			height: 28px;
+	    }
+	    
+	    .attributesDialog .ui-dialog-content{
+	    	background:white;
+	    	padding: 0px;
+	    }
+	    
+	    .attributesDialog .ui-state-hover{
+	    	border:none;
+	    	background:none;
+	    }
+	    
+	    .attributesDialog{
+	    	background:transparent;
+	    	padding: 0px;
+			border: 0px;
+			overflow:visible !important;
+			box-shadow: 5px 5px 20px #888888;
+	    }
+		
+		.aptPaddingRightAndLeft{
+			padding-right: 2px;
+			padding-left: 2px;
+			display: inline;
+			
+		}
+
+/**************************************************************************************************************************************************************
+* RecommendedProducts Component ------------------------------------------------------------------------------------------------------------------------------
+*************************************************************************************************************************************************************/
+
+			.aptRelatedProductsList {
+		    	display: inline;
+		        list-style-type: none;
+		            
+			}
+		        
+		    .aptRelatedProductsList  li{
+				display: inline-block;
+		        list-style-type: none;
+		        padding-right:3px;
+		        text-align:center;
+		            
+			}
+		       

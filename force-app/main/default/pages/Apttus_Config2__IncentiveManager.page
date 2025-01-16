@@ -1,0 +1,455 @@
+<!--
+    Apttus Config & Pricing
+    IncentiveManager
+
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page lightningStylesheets="true" standardStylesheets="false"
+            sidebar="false"
+            showHeader="false"
+            docType="html-5.0"
+            standardController="Apttus_Config2__Incentive__c"
+            extensions="Apttus_Config2.IncentiveManagerController"
+            action="{!addIncentive}" >
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jQueryUIStyle.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/incentives-style.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jQueryDatePicker.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/jQueryDateTimePicker.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/navigation.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/optionController.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/autoCompleteWidget.js')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jquery-ui.multipickSearch-1.0.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/jquery-ui.multipickSearch-1.0.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/angular-1.4.8.min.js')}"/>
+    <script>
+    var remoteMethodMilestoneSearch,
+        j$ = jQuery.noConflict(),
+        hasCoupons = {!hasCoupons},
+        calendarDateFormat,
+        mController, // handle on main controller allowing components to reference angular $compile
+        // globally instantiate object containing page labels
+        customLabels = {
+            lblAvailableItems: "{!$Label.AvailableItems}",
+            lblSelectedItems: "{!$Label.SelectedItems}",
+            lblClose: "{!$Label.Close}",
+            lblNoResultsAvailable: "{!$Label.NoResultsAvailable}",
+            lblShowAdvancedSearch: "{!$Label.ShowAdvancedSearch}",
+            lblShowDetails: "{!$Label.ShowDetails}"
+        },
+        nsPrefix = '{!nsPrefix}';
+
+    var collapsibleFunct = function() {
+            var $head = j$(this);
+            j$(this).next().toggle(300, function() {
+                var isVisible = j$(this).is(':visible');
+
+                // animation complete
+                if (isVisible) {
+                    // is hidden, on animation completion change font awesome arrow icon to facing down
+                    $head.find(".fa").attr('class', 'fa fa-caret-down');
+                } else {
+                    // is visible, on animation completion change font awesome arrow icon to facing right
+                    $head.find(".fa").attr('class', 'fa fa-caret-right');
+                }
+            });
+            return false;
+        };
+
+    j$('body').on('click', '.nav > li', function() {
+        if (useCustomAction()) return false;
+        var selectedStep = j$(this).index();
+        gotoSelectedStep(selectedStep);
+    });
+
+    j$('body').on('click', '.previous.incentive-save', function(){
+        if (useCustomAction()) return false;
+
+        performSave('previous');
+    });
+
+    j$('body').on('click', '.next.incentive-save', function(){
+        if (useCustomAction()) return false;
+
+        performSave('next');
+    });
+
+    j$('body').on('click', '.save.incentive-save', function(){
+        if (useCustomAction()) return false;
+
+        performSave(null);
+    });
+
+    j$('body').on('click', '.save.incentive-close', function(){
+        if(j$('.header h2').html() == '{!$Label.Criteria}') {
+            performSave(null);
+        }
+    });
+
+    function useCustomAction(){
+        return j$('.header h2').html().indexOf('{!$Label.Limits}') > -1
+            || j$('.header h2').html() == '{!$Label.Benefits}'
+            || j$('.header h2').html() == '{!$Label.PointAccrual}'
+            || j$('.header h2').html() == '{!$Label.Coupons}'
+            || j$('.header h2').html() == '{!$Label.Tiers}';
+    }
+
+    function performSave(saveAction) {
+        var isValid = true;
+
+        // perform criteria client-side validation
+        if(j$('.header h2').html() == '{!$Label.Criteria}') {
+            // [Component ID]isExprCriteriaValid
+            var inclusionCriteriaValid = criteriaComponentisExprCriteriaValid();
+            var exclusionCriteriaValid = true;
+            if ({!showExclusionCriteria}) {
+                exclusionCriteriaValid = exclusionComponentisExprCriteriaValid();
+            }
+
+            isValid = (inclusionCriteriaValid && exclusionCriteriaValid);
+        }
+
+        if(isValid) {
+            switch(saveAction) {
+                case 'next':
+                    gotoNextStep();
+                    break;
+                case 'previous':
+                    gotoPreviousStep();
+                    break;
+                default:
+                    doUpsertIncentive();
+            }
+        }
+    }
+
+    function closeMe(selector) {
+        j$(selector).dialog('close');
+    }
+
+    function closeDialog(dialog) {
+        j$("#" + dialog).dialog('close');
+    }
+
+    j$(document).ready(function(){
+        // get handle on main controller
+        mController = angular.element(document.getElementById("divMainAngularAppElement"));
+    });
+
+    // called when component is done rendering
+    function onRenderComponentComplete() {
+        j$(document).ready(function() {
+            j$('.date-input').datetimepicker({timepicker:false, format: calendarDateFormat});
+            j$('.section .collapsible').on("click", collapsibleFunct);
+        });
+
+        hideSpinner();
+    }
+    function displaySpinner(){
+        j$('.overlay').show();
+        disableScroll();
+    }
+
+    function hideSpinner(){
+        j$('.overlay').hide();
+        enableScroll();
+    }
+    var keys = {37: 1, 38: 1, 39: 1, 40: 1};
+
+    function preventDefault(e) {
+      e = e || window.event;
+      if (e.preventDefault)
+          e.preventDefault();
+      e.returnValue = false;
+    }
+
+    function preventDefaultForScrollKeys(e) {
+        if (keys[e.keyCode]) {
+            preventDefault(e);
+            return false;
+        }
+    }
+
+    function disableScroll() {
+      if (window.addEventListener) // older FF
+          window.addEventListener('DOMMouseScroll', preventDefault, false);
+      window.onwheel = preventDefault; // modern standard
+      window.onmousewheel = document.onmousewheel = preventDefault; // older browsers, IE
+      window.ontouchmove  = preventDefault; // mobile
+      document.onkeydown  = preventDefaultForScrollKeys;
+    }
+
+    function enableScroll() {
+        if (window.removeEventListener)
+            window.removeEventListener('DOMMouseScroll', preventDefault, false);
+        window.onmousewheel = document.onmousewheel = null;
+        window.onwheel = null;
+        window.ontouchmove = null;
+        document.onkeydown = null;
+    }
+
+    function getDateTemplate() {
+        var dateTemplate = '01/23/45';
+        var templateText = Apttus.utils.getOutputFieldText('idDateTemplate');
+        if (!templateText) {
+            return dateTemplate;
+
+        }
+        dateTemplate = templateText;
+        return dateTemplate;
+
+    }
+
+    var builtUserDateSettings;
+
+    j$(document).ready(function(){
+        j$('label').each(function(index) {
+            j$(this).html(j$(this).html().replace('Incentive', '{!IF(ISBLANK(incentiveSO.SubUseType__c), incentiveSO.UseType__c, incentiveSO.SubUseType__c)}'));
+        });
+
+        builtUserDateSettings = Apttus.utils.buildUserDateSettings(getDateTemplate());
+
+        calendarDateFormat = "";
+
+        for(var i = 0; i < builtUserDateSettings.ordering.length; i++){
+            var ymdSymbol = builtUserDateSettings.ordering[i],
+                    symbolIndex = i;
+
+            ymdSymbol = ymdSymbol[0].toLowerCase();
+
+            if (ymdSymbol === 'y') {
+                calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "Y"
+            } else if (ymdSymbol === 'm') {
+                calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "m"
+            } else if (ymdSymbol === 'd') {
+                calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "d"
+            }
+        }
+
+        var $dateInputs = j$('.date-input');
+        if($dateInputs.length > 0) {
+            $dateInputs.datetimepicker({timepicker: false, format: calendarDateFormat});
+
+        }
+
+    });
+
+    </script>
+    <style>
+        div.hideCurrDate span.dateInput span.dateFormat{
+           display:none;
+        }
+
+        .overlay{
+            display:none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1000000px;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.5); /*dim the background*/
+        }
+        .overlay img{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+        }
+        .criteria-buttons {
+            margin: 0 0 0 -20px;
+            overflow: auto;
+        }
+        .criteria-buttons li{
+            padding: 0;
+            position: relative;
+            float: left;
+        }
+        .criteria-buttons li input {
+            height: 37px;
+        }
+        .criteria-buttons input[disabled="disabled"]{
+            color: #FFFFFF;
+            background-color: #2a94d7;
+        }
+        .criteria-buttons input{
+            background-color: #FFFFFF;
+            border-bottom: none;
+            padding: 10px;
+        }
+    </style>
+    <apex:include pageName="Apttus_Config2__IncentiveAngularConfig" />
+    <apex:form id="incentiveForm" styleClass="managerForm">
+        <div id="idUserSettingsSection" style="display:none;">
+            <div id="idDateTemplate">
+                <apex:outputField value="{!templateIncentive.Apttus_Config2__EffectiveDate__c}"/>
+            </div>
+        </div>
+        <apex:outputpanel id="pnlHeader" layout="block" styleClass="primary">
+            <div class="back-nav">
+                <a href="{!returnURL}">
+                    <i class="fa fa-arrow-left"></i>
+                </a>
+            </div>
+            <div class="sub-title">
+                <h2>{!incentiveSubTitle}:</h2>&nbsp;&nbsp;
+                <apex:outputPanel layout="none" rendered="{!NOT(ISBLANK(incentiveSO.Name)) || NOT(ISBLANK(incentiveSO.Apttus_Config2__IncentiveCode__c))}">
+                    <h1>{!incentiveSO.IncentiveCode__c} {!incentiveSO.Name}</h1>&nbsp;&nbsp;
+                </apex:outputPanel>
+                <h3>{!incentiveSO.Status__c}</h3>
+            </div>
+        </apex:outputpanel>
+        <div id="divMainAngularAppElement" class="main" ng-app="incentivesApp" ng-controller="mainController">
+            <table>
+            <tbody>
+                <td>
+                    <apex:outputPanel id="leftSection" styleClass="nav-container" layout="block">
+                        <ul class="nav">
+                            <apex:repeat value="{!navMgr.steps}" var="step">
+                                <li class="{!IF(navMgr.CurrentStep.code == step.code, 'active ', '')}{!LOWER(step.code)}-nav"><i class="fa {!step.fontAwesomeIconClass}"></i><h4>{!step.label}</h4></li>
+                            </apex:repeat>
+                        </ul>
+                    </apex:outputPanel>
+                </td>
+                <td style="vertical-align: top;">
+                    <div class="main-sub">
+                        <apex:outputPanel id="middleSection">
+                        <script>
+                        var incentiveUseType = '{!JSENCODE(incentiveSO.UseType__c)}';
+                        </script>
+                        <div class="header">
+                            <h2>{!navMgr.CurrentStep.label}</h2>
+                        </div>
+                        <div class="content">
+                            <apex:pageMessages id="pageMsgs" />
+                            <apex:outputpanel id="incentiveInfoPanel" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeInformation, true, false)}" layout="block">
+                                <c:IncentiveInformation IncentiveSO="{!IncentiveSO}"
+                                                        priceRuleSO="{!priceRuleSO}"
+                                                        radioList="{!radioList}"
+                                                        incentiveNameList="{!incentiveNames}"
+                                                        agreementId="{!agreementId}"
+                                                        relatedIncentives="{!relatedIncentivesList}" />
+                            </apex:outputpanel>
+                            <apex:outputpanel id="incentiveScopePanel" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeScope, true, false)}" layout="block">
+                                <c:IncentiveScope IncentiveSO="{!IncentiveSO}" PriceRuleSO="{!priceRuleSO}" scopeOperators="{!scopeOperators}" />
+                            </apex:outputpanel>
+                            <apex:outputpanel id="incentiveCriteriaPanel" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeCriteria, true, false)}" layout="block">
+                                    <script>
+                                        // supporting function for criteria component
+                                        function criteriaRowChange(rowAdd, isValid) {
+                                            if(isValid) { // criteria expression validated?
+                                                // this will attempt to save the criteria component and trigger server-side validation
+                                                doUpsertCriteria();
+                                            }
+                                        }
+                                    </script>
+                                    <div class="section information">
+                                        <h3 class="collapsible three-col"><i class="fa fa-caret-down"></i> {!$Label.Inclusion} {!$Label.Criteria}</h3>
+                                        <div class="inner-container collapsible-cont inner-container-criteria" layout="block">
+                                            <apex:outputpanel id="pnlInclusionCriteria">
+                                                <c:Criteria id="criteriaComponent"
+                                                            rendered="{!navMgr.CurrentStep.code == NavStepCodeCriteria}"
+                                                            thePageController="{!this}"
+                                                            componentKey="criteriaComponent"
+                                                            onLoadStart="displaySpinner"
+                                                            onLoadComplete="hideSpinner"
+                                                            onRowChange="criteriaRowChange"
+                                                            theCriteriaInfo="{!inclusionCriteriaInfo}"
+                                                            ValueTypeOptions="{!CriteriaValueTypeOptions}" />
+                                            </apex:outputpanel>
+                                        </div>
+                                        <apex:variable rendered="{!navMgr.CurrentStep.code == 'C' && showExclusionCriteria}" var="a" value="">
+                                            <h3 class="collapsible three-col"><i class="fa fa-caret-down"></i> {!$Label.Exclusion} {!$Label.Criteria}</h3>
+                                            <div class="inner-container collapsible-cont inner-container-criteria">
+                                                <apex:outputpanel id="pnlExclusionCriteria">
+                                                    <c:Criteria id="exclusionComponent"
+                                                                thePageController="{!this}"
+                                                                componentKey="exclusionCC"
+                                                                onLoadStart="displaySpinner"
+                                                                onLoadComplete="hideSpinner"
+                                                                onRowChange="criteriaRowChange"
+                                                                theCriteriaInfo="{!exclusionCriteriaInfo}"
+                                                                ValueTypeOptions="{!CriteriaValueTypeOptions}" />
+                                                </apex:outputpanel>
+                                            </div>
+                                        </apex:variable>
+                                    </div>
+                            </apex:outputpanel>
+                            <apex:outputpanel id="incentiveLoyaltyTiersPanel" styleClass="loyaltytiers-component-wrapper" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeTiers, true, false)}" layout="block">
+                                <c:IncentiveLoyaltyTiers theIncentiveSO="{!IncentiveSO}"
+                                                         rendered="{!isLoyalty}" />
+                            </apex:outputpanel>
+                            <apex:outputpanel id="incentiveBenefitsPanel" styleClass="benefits-component-wrapper" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeBenefits || navMgr.CurrentStep.code == NavStepCodePointAccrual, true, false)}" layout="block">
+                                <script>
+                                    var allowedDecimals = {!IF (ISBLANK(incentiveCustomDisplaySetting.AllowedDecimals__c), 0, incentiveCustomDisplaySetting.AllowedDecimals__c)};
+                                </script>
+                                <c:IncentiveBenefits theIncentiveSO="{!IncentiveSO}"
+                                                     thePriceRuleSO="{!priceRuleSO}"
+                                                     thePriceRulesetSO="{!priceRulesetSO}"
+                                                     thePriceRuleEntrySO="{!priceRuleEntrySO}"
+                                                     rendered="{!NOT(isMilestone)}"
+                                                     theBenefitType="Benefit" />
+
+                                <c:IncentiveMilestoneBenefits theIncentiveSO="{!IncentiveSO}"
+                                                     thePriceRuleSO="{!priceRuleSO}"
+                                                     thePriceRulesetSO="{!priceRulesetSO}"
+                                                     thePriceRuleEntrySO="{!priceRuleEntrySO}"
+                                                     theAgreementId="{!agreementId}"
+                                                     theBenefitType=""
+                                                     rendered="{!isMilestone}" />
+                            </apex:outputpanel>
+                            <apex:outputpanel id="incentiveDeductionsPanel" styleClass="deductions-component-wrapper" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeDeductions, true, false)}" layout="block">
+                                <c:IncentiveDeductions theIncentiveSO="{!IncentiveSO}"
+                                                     thePriceRuleSO="{!priceRuleSO}"
+                                                     thePriceRulesetSO="{!priceRulesetSO}"
+                                                     thePriceRuleEntrySO="{!priceRuleEntrySO}"
+                                                     theAgreementId="{!agreementId}"
+                                                     isMilestone="{!isMilestone}"
+                                                     theBenefitType="Deduction" />
+                            </apex:outputpanel>
+                            <apex:outputpanel id="incentiveLimitsPanel" styleClass="limits-component-wrapper" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeLimit, true, false)}" layout="block">
+                                <c:IncentiveLimits theIncentiveSO="{!IncentiveSO}" thePriceRulesetSO="{!priceRulesetSO}" />
+                            </apex:outputpanel>
+                            <apex:outputpanel id="incentiveCouponsPanel" styleClass="coupons-component-wrapper" rendered="{!if (navMgr.CurrentStep.code == NavStepCodeCoupons, true, false)}" layout="block">
+                                <c:IncentiveCoupons theIncentiveSO="{!IncentiveSO}" />
+                            </apex:outputpanel>
+                        </div>
+                        </apex:outputPanel>
+                    </div>
+                </td>
+            </tbody>
+            </table>
+        </div>
+
+        <apex:outputpanel id="navFooter" styleClass="footer" layout="block">
+            <div class="inner-footer">
+                <apex:outputpanel layout="block" rendered="{!navMgr.CurrentStep.code != NavStepCodeInformation}" styleClass="previous-container">
+                    <a class="primary-btn secondary previous incentive-save"><i class="fa fa-caret-left"></i> {!$Label.Previous}</a>
+                </apex:outputPanel>
+                <div class="primary-commands">
+                    <a class="primary-btn secondary save incentive-close" href="{!returnURL}">{!$Label.Close}</a>
+                    <a class="primary-btn secondary save incentive-save">{!$Label.Save}</a>
+                    <apex:outputpanel layout="none" rendered="{!navMgr.HasNextStep}" styleClass="previous-container">
+                    <a class="primary-btn primary-action next incentive-save">{!$Label.SaveAndContinue} <i class="fa fa-caret-right"></i></a>
+                    </apex:outputpanel>
+                </div>
+            </div>
+        </apex:outputpanel>
+        <apex:actionFunction action="{!doUpsertCriteria}" name="doUpsertCriteria" id="doUpsertCriteria" reRender="pnlInclusionCriteria, pnlExclusionCriteria" />
+        <apex:actionFunction action="{!gotoPreviousStep}" name="gotoPreviousStep" id="gotoPreviousStep" reRender="navFooter,middleSection,pnlHeader,leftSection" oncomplete="onRenderComponentComplete();" status="loadingStatus" />
+        <apex:actionFunction action="{!gotoNextStep}" name="gotoNextStep" id="gotoNextStep" reRender="navFooter,middleSection,pnlHeader,leftSection" oncomplete="onRenderComponentComplete();" status="loadingStatus" />
+        <apex:actionFunction action="{!saveIncentive}" name="doUpsertIncentive" id="doUpsertIncentive" reRender="navFooter,middleSection,pnlHeader,leftSection" oncomplete="onRenderComponentComplete();" status="loadingStatus" />
+
+        <apex:actionFunction action="{!gotoSelectedStep}" name="gotoSelectedStep" id="gotoSelectedStep" reRender="navFooter,middleSection,pnlHeader,leftSection" oncomplete="onRenderComponentComplete();" status="loadingStatus">
+            <apex:param id="selectedStep" name="selectedStep" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!queryAndSetSobjects}" name="refreshBenefitsComponent" id="refreshBenefitsComponent" reRender="incentiveBenefitsPanel" status="loadingStatus" />
+        <apex:actionStatus id="loadingStatus" onstart="displaySpinner();" onstop="hideSpinner();"/>
+        <apex:actionStatus id="loadingStatusStart" onstart="displaySpinner();" onstop=""/>
+
+    </apex:form>
+    <div class="overlay"><img src="/img/loading32.gif" align="loading..." /></div>
+</apex:page>

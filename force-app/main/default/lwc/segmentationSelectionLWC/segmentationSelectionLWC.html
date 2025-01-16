@@ -1,0 +1,129 @@
+<template>
+    <template if:true={isSpinnerActive}>
+        <lightning-spinner alternative-text="Loading" variant="brand"></lightning-spinner>
+    </template>
+    <template if:true={mapLabels}>
+        <!--Info Section -->
+		<template if:false={boolUSUnverified}>
+			<lightning-layout horizontal-align="space">
+				<lightning-layout-item
+					class="slds-card_boundary slds-var-p-around_x-small slds-var-m-bottom_x-small messagebox" size="12">
+					<div class="slds-size_12-of-12 slds-clearfix">
+						<button class="slds-float_right slds-button slds-button_icon slds-button_icon-inverse"
+							title="Close" onclick={handleClose}>
+							<lightning-icon icon-name="utility:close" size="x-small" alternative-text="Close"
+								title="Close"></lightning-icon>
+						</button>
+						<div class="slds-text-align_center slds-float_none">
+							<template if:true={boolUS}>
+								<h2>{mapLabels.UI_Message_Segmentation_Change_Guidance_US}</h2>
+							</template>
+							<template if:false={boolUS}>
+								<h2>{mapLabels.UI_Message_Segmentation_Change_Guidance}</h2>
+							</template>
+						</div>
+					</div>
+				</lightning-layout-item>
+			</lightning-layout>
+        </template>
+        <!-- Market Segment section -->
+        <lightning-layout>
+            <lightning-layout-item flexibility="grow" size="12" large-device-size="12" medium-device-size="12"
+                small-device-size="12" class="slds-card_boundary slds-var-p-around_x-small slds-var-p-left_small">
+                <lightning-card icon-name="standard:action_list_component"
+                    title={mapLabels.UI_Label_Segmentation_Selection_Heading}>
+                    <template for:each={lstMarketSegments} for:item="marketsegment">
+                        <c-segmentation-row-component-l-w-c key={marketsegment.index}
+                            market-segment-record={marketsegment} row-index={marketsegment.index} map-labels={mapLabels}
+                            lst-market-segment-picklist-values={lstMarketSegmentPicklistValues}
+                            market-segment-to-sub-segment={marketSegmentToSubSegment} boo-read-only={booReadOnly}
+                            onmarketsegmentchange={handleMarketSegmentChange}></c-segmentation-row-component-l-w-c>
+                    </template>
+                    <lightning-layout>
+                        <lightning-layout-item
+                            class="slds-size_1-of-12 slds-var-p-around_x-small slds-var-p-left_small">
+                            <lightning-button-icon icon-name="utility:add" variant="container" size="medium"
+                                alternative-text={mapLabels.UI_Label_Segmentation_Add_Row} onclick={addRow}
+                                disabled={booDisabled}><label>{mapLabels.UI_Label_Segmentation_Add_Row}</label>
+                            </lightning-button-icon>
+                        </lightning-layout-item>
+                        <lightning-layout-item
+                            class="slds-size_2-of-12 slds-var-p-around_x-small slds-var-p-left_small">
+                            <lightning-button variant="neutral" onclick={evenSplit} disabled={booDisabled}
+                                label={mapLabels.UI_Button_Segmentation_Selection_Even_Split}></lightning-button>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                </lightning-card>
+            </lightning-layout-item>
+        </lightning-layout>
+        <br />
+        <!-- Additional Segmentation Selection Section -->
+        <lightning-layout>
+            <lightning-layout-item flexibility="grow" size="12" large-device-size="12" medium-device-size="12"
+                small-device-size="12" class="slds-card_boundary slds-var-p-around_x-small slds-var-p-left_small">
+                <lightning-card icon-name="standard:action_list_component"
+                    title={mapLabels.UI_Label_Segmentation_Selection_Additional_Heading}>
+                    <lightning-layout horizontal-align="space" multiple-rows>
+                        <!-- Clinical Type -->
+                        <lightning-layout-item padding="around-small" size="12" small-device-size="12"
+                            medium-device-size="12" large-device-size="4">
+                            <lightning-combobox name={mapLabels.UI_Label_Segmentation_Selection_Field_Clinical_Type}
+                                label={mapLabels.UI_Label_Segmentation_Selection_Field_Clinical_Type}
+                                value={accountRecord.Clinical_Type__c} onchange={handleChange}
+                                options={lstClinicalTypePicklistValues}
+                                placeholder={mapLabels.UI_Label_Segmentation_Selection_Select_Clinical_Type}
+                                disabled={booDisabled}></lightning-combobox>
+                        </lightning-layout-item>
+                        <!-- Customer Type -->
+                        <lightning-layout-item padding="around-small" size="12" small-device-size="12"
+                            medium-device-size="12" large-device-size="4">
+                            <lightning-combobox name={mapLabels.UI_Label_Segmentation_Selection_Field_Customer_Type}
+                                label={mapLabels.UI_Label_Segmentation_Selection_Field_Customer_Type}
+                                value={accountRecord.Customer_Type__c} onchange={handleChange}
+                                options={lstCustomerTypePicklistValues}
+                                placeholder={mapLabels.UI_Label_Segmentation_Selection_Select_Customer_Type}
+                                disabled={booDisabled}></lightning-combobox>
+                        </lightning-layout-item>
+                        <!-- Customer Sub Type -->
+                        <lightning-layout-item padding="around-small" size="12" small-device-size="12"
+                            medium-device-size="12" large-device-size="4">
+                            <lightning-combobox name={mapLabels.UI_Label_Segmentation_Selection_Field_Customer_Sub_Type}
+                                label={mapLabels.UI_Label_Segmentation_Selection_Field_Customer_Sub_Type}
+                                value={accountRecord.Customer_Sub_Type__c} onchange={handleChange}
+                                options={lstCustomerSubTypePicklistValues}
+                                placeholder={mapLabels.UI_Label_Segmentation_Selection_Select_Customer_Sub_Type}
+                                disabled={booDisabled}></lightning-combobox>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                </lightning-card>
+            </lightning-layout-item>
+        </lightning-layout>
+
+        <!-- Open Offer Comparison Customer Section -->
+        <template if:true={boolUS}>
+            <c-open-offer-comparison-customer-details map-labels={mapLabels}
+                purchases-products-shipping-options={lstPurchasesProductsShippingToUS}
+                for-profit-company-options={lstForProfitCompany} account-record={accountRecord}
+                clinical-oncology-screening-dx-testing-options={lstClinicalOncologyScreeningDxTesting}
+                lst-oncology-lab-manufacturer-comparison-options={lstOncologyLabManufacturerComparison}
+                lst-sequencing-liquid-bx-cancer-screening={lstSequencingLiquidBxCancerScreening}
+                component-disabled={boolHideComparisonCustomerFields} onopenofferchange={handleOpenOfferSectionChange}
+                conditional-readonly={conditionalReadOnlyForOO}></c-open-offer-comparison-customer-details>
+        </template>
+        <!-- buttons for save and cancel -->
+        <lightning-layout>
+            <lightning-layout-item flexibility="grow" size="12" large-device-size="12" medium-device-size="12"
+                small-device-size="12" class="slds-var-p-around_x-small slds-var-p-left_small">
+                <div class="slds-size_12-of-12 slds-clearfix">
+                    <lightning-button class="slds-float_right slds-var-m-around_small" onclick={handleSave}
+                        disabled={booDisabled} label={mapLabels.Save} variant="brand"></lightning-button>
+                    <lightning-button class="slds-float_right slds-var-m-around_small" onclick={handleCancel}
+                        disabled={booDisabled} label={mapLabels.Cancel} variant="neutral"></lightning-button>
+                    &nbsp;&nbsp;
+                    <lightning-button class="slds-float_left slds-var-m-around_small" onclick={handleNavigate}
+                        disabled={boolHideSubmit} label={mapLabels.Submit} variant="brand"></lightning-button>
+                </div>
+            </lightning-layout-item>
+        </lightning-layout>
+    </template>
+</template>

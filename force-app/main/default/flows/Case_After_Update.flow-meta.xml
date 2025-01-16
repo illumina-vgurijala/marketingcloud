@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Case_Send_Email_to_Superuser_for_Case_Reopen_Customer_Service</name>
+        <label>Case: Send Email to Superuser for Case Reopen Customer Service</label>
+        <locationX>50</locationX>
+        <locationY>539</locationY>
+        <actionName>Case.Case_Send_Email_to_Superuser_for_Case_Reopen_CustomerService</actionName>
+        <actionType>emailAlert</actionType>
+        <faultConnector>
+            <targetReference>Assign_Current_Error_Element4</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Case.Case_Send_Email_to_Superuser_for_Case_Reopen_CustomerService</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>Case_Send_Email_to_Superuser_for_Case_Reopen_TechnicalSuppor</name>
+        <label>Case: Send Email to Superuser for Case Reopen_TechnicalSuppor</label>
+        <locationX>578</locationX>
+        <locationY>539</locationY>
+        <actionName>Case.Case_Send_Email_to_Superuser_for_Case_Reopen_TechnicalSupport</actionName>
+        <actionType>emailAlert</actionType>
+        <faultConnector>
+            <targetReference>Assign_Current_Error_Element5</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Case.Case_Send_Email_to_Superuser_for_Case_Reopen_TechnicalSupport</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Assign_Current_Error_Element4</name>
+        <label>Assign Current Error Element</label>
+        <locationX>314</locationX>
+        <locationY>647</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Send Email to AMR Logistics User</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Assign_Current_Error_Element5</name>
+        <label>Assign Current Error Element</label>
+        <locationX>842</locationX>
+        <locationY>647</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Send Email to AMR Logistics User</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Case_Reopen_Decision</name>
+        <label>Case Reopen Decision</label>
+        <locationX>578</locationX>
+        <locationY>431</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_Check_Request_Reopen_Case_by_Customer_Service_User</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>ReopenbyCustomerService</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Case_Send_Email_to_Superuser_for_Case_Reopen_Customer_Service</targetReference>
+            </connector>
+            <label>TRUE_Check Request Reopen Case by Customer Service User</label>
+        </rules>
+        <rules>
+            <name>TRUE_Check_Request_Reopen_Case_by_Technical_Support_User</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>ReopenbyTechnicalUser</leftValueReference>
+                <operator>EqualTo</operator>
+            </conditions>
+            <connector>
+                <targetReference>Case_Send_Email_to_Superuser_for_Case_Reopen_TechnicalSuppor</targetReference>
+            </connector>
+            <label>TRUE_Check Request Reopen Case by Technical Support User</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Is_Update_Reopen_Requester_Decision</name>
+        <label>Is Update Reopen Requester Decision</label>
+        <locationX>974</locationX>
+        <locationY>323</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Update_Reopen_Requester</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>UpdateReopenRequesterFormula</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Case_Reopen_Decision</targetReference>
+            </connector>
+            <label>Update Reopen Requester</label>
+        </rules>
+    </decisions>
+    <description>Migrated from the Case : Notification for Logistics &amp; Case Update Reopen Requester And Send Email process using multiple criteria.
+To notify the logistics user when the case has moved to pending logistics user.
+Case Update Reopen Requester And Send Email
+Removed Send Email Functionality as per CMCM-5142</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>FlowandFaultElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Case : After Update&apos;+{!currentElement}</expression>
+    </formulas>
+    <formulas>
+        <name>NotificationForLogisticsDecision</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(NOT(ISBLANK({!$Record.AccountId})),ISCHANGED({!$Record.Status}),TEXT({!$Record.Status})=$Label.CaseStatusPendingLogisticsReview)</expression>
+    </formulas>
+    <formulas>
+        <name>ReopenbyCustomerService</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.Owner:User.Profile.Name}=={!$Label.ProfileCustomerService}</expression>
+    </formulas>
+    <formulas>
+        <name>ReopenbyTechnicalUser</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.Owner:User.Profile.Name} &lt;&gt;{!$Label.ProfileCustomerService}</expression>
+    </formulas>
+    <formulas>
+        <name>TerritoryRegionEqualsAMEA</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.Account.Territory_Region__c} = $Label.TerritoryRegionAMEA</expression>
+    </formulas>
+    <formulas>
+        <name>TerritoryRegionEqualsAMR</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.Account.Territory_Region__c} = $Label.TerritoryRegionAMR</expression>
+    </formulas>
+    <formulas>
+        <name>TerritoryRegionEqualsChina</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.Account.Territory_Region__c} = $Label.TerritoryRegionChina</expression>
+    </formulas>
+    <formulas>
+        <name>TerritoryRegionEqualsEUR</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.Account.Territory_Region__c} = $Label.TerritoryRegionEUR</expression>
+    </formulas>
+    <formulas>
+        <name>UpdateReopenRequesterFormula</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(PRIORVALUE({!$Record.Status}) &lt;&gt; $Label.ReopenRequested,TEXT({!$Record.Status}) == $Label.ReopenRequested)</expression>
+    </formulas>
+    <interviewLabel>Case : After Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Case : After Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>848</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Update_Reopen_Requester_Decision</targetReference>
+        </connector>
+        <object>Case</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>314</locationX>
+        <locationY>755</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFaultElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Service</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <variables>
+        <name>currentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

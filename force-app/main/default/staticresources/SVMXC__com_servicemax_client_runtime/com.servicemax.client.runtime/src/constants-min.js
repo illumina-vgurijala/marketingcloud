@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.runtime.constants");a.Class("Constants",com.servicemax.client.lib.api.Object,{__constructor:function(){}},{PREF_KEY_THEME:"CURRENT-THEME"});})();

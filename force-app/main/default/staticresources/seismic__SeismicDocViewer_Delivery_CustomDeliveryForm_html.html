@@ -1,0 +1,9 @@
+<div class="modal-header">
+    <h4 class="modal-title">Custom Delivery</h4>
+    <img class="modal-header-close-button" ng-src="{{closeIconUrl}}" ng-click="dialogClose()"/>
+</div>
+<div style="height: 580px">
+    <seismic-busy is-busy="!deliveryFormReady" visible-mode="true">
+        <iframe allow="autoplay; fullscreen" style="height: 580px" class="embed-iframe" ng-src="{{deliveryFormUrl}}"></iframe>
+    </seismic-busy>
+</div>

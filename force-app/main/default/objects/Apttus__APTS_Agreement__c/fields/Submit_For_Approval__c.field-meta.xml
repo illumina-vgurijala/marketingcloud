@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Submit_For_Approval__c</fullName>
+    <description>Button to submit Agreement for approval</description>
+    <externalId>false</externalId>
+    <formula>IF(
+AND (
+OR(
+ISPICKVAL( Apttus_Approval__Approval_Status__c , &apos;Approval Required&apos;),
+ISPICKVAL(Apttus_Approval__Approval_Status__c , &apos;Not Submitted&apos;)
+),
+Approval_Matrix_Not_Found__c&lt;&gt; True,
+Approval_Hierarchy_Not_Found__c &lt;&gt; True,
+Is_Agreement_under_Approvals_submission__c &lt;&gt; True
+),
+IF(
+AND(
+
+RecordType.DeveloperName == $Label.AgreementRecordTypeDevNameOpenOffer,
+Apttus__Account__r.Open_Offer_Comparison_Customer__c &lt;&gt; true
+),
+$Label.ErrorMessageForOpenOfferAgreement,
+IF(Number_Of_Agreement_Line_Items__c &gt; 0,
+IF(
+OR(
+AND(
+RecordType.DeveloperName == $Label.RecordTypeChannelPartnerAgreement,
+OR($Permission.SL_Allow_CP_Agreement_Submission,$Profile.Name ==$Label.Profile_System_Administrator)
+),
+RecordType.DeveloperName != $Label.RecordTypeChannelPartnerAgreement
+), HYPERLINK(&quot;/apex/Apttus_Approval__PreviewSubmitApprovals?Id=&quot;&amp;Id, IMAGE(&quot;/resource/Apttus_Proposal__Button_SubmitForApproval&quot;, &quot;Submit For Approval&quot;),&quot;_self&quot;),NULL
+),
+
+IF(
+AND(
+OR(
+AND(
+RecordType.DeveloperName == $Label.RecordTypeChannelPartnerAgreement,
+OR($Permission.SL_Allow_CP_Agreement_Submission,$Profile.Name ==$Label.Profile_System_Administrator)
+),
+RecordType.DeveloperName != $Label.RecordTypeChannelPartnerAgreement
+),
+ISPICKVAL(Line_Items_Required_Optional__c,&apos;Optional&apos;)
+), HYPERLINK(&quot;/apex/Apttus_Approval__PreviewSubmitApprovals?Id=&quot;&amp;Id, IMAGE(&quot;/resource/Apttus_Proposal__Button_SubmitForApproval&quot;, &quot;Submit For Approval&quot;),&quot;_self&quot;),
+IF(
+AND(
+AND(
+RecordType.DeveloperName == $Label.RecordTypeChannelPartnerAgreement,
+AND(NOT($Permission.SL_Allow_CP_Agreement_Submission),$Profile.Name &lt;&gt;$Label.Profile_System_Administrator)
+),
+ISPICKVAL(Line_Items_Required_Optional__c,&apos;Optional&apos;)
+)
+,null,
+$Label.UI_Error_Message_To_Upload_Agreement_Line_Items_For_Approval)
+
+)
+
+)
+),
+IF(
+AND(
+ISPICKVAL( Apttus_Approval__Approval_Status__c , &apos;Approved&apos;),
+Approval_Matrix_Not_Found__c &lt;&gt; True,
+Approval_Hierarchy_Not_Found__c &lt;&gt; True,
+RecordType.DeveloperName &lt;&gt; $Label.AgreementRecordTypeDevNameOpenOffer
+
+),
+$Label.NoApprovalRequiredIfApproved,
+IF(
+AND(
+Approval_Hierarchy_Not_Found__c == True,
+Approval_Matrix_Not_Found__c&lt;&gt; True,
+RecordType.DeveloperName &lt;&gt; $Label.AgreementRecordTypeDevNameOpenOffer
+
+),
+$Label.UI_ErrorMessageAgreementApprovalHierarchyNotFound,
+IF(
+AND(    
+Approval_Matrix_Not_Found__c== True,
+RecordType.DeveloperName &lt;&gt; $Label.AgreementRecordTypeDevNameOpenOffer
+),
+$Label.UI_ErrorMessageAgreementApprovalMatrixNotFound,
+null
+)
+)))</formula>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <label>Submit For Approval</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

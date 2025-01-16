@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckROAndFSProductInterestValues</fullName>
+    <active>true</active>
+    <description>Checks for the Valid Product Interest for the Direct and Indirect ReOrder, Field Services record type.</description>
+    <errorConditionFormula>AND (
+OR(   
+    AND ( 
+        OR (
+            RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+            RecordType.DeveloperName = $Label.IndirectReOrder,
+            RecordType.DeveloperName = $Label.IndirectFieldServices,
+            RecordType.DeveloperName = $Label.FieldServices
+        ),
+        TEXT ( Type ) = $Label.OpportunityTypeRenewalServiceContractNoUpsell,
+        NOT ( INCLUDES ( Product_Interest__c, &apos;Service Contracts&apos; ) )
+    ),
+    AND ( 
+        OR (
+            RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+            RecordType.DeveloperName = $Label.IndirectReOrder
+        ),
+        TEXT ( Type ) = $Label.OpportunityTypeRenewalSoftwareNoUpsell,
+        NOT ( INCLUDES ( Product_Interest__c, &apos;Software&apos; ) )
+    ),
+    AND (
+        OR (
+            RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+            RecordType.DeveloperName = $Label.IndirectReOrder
+        ), 
+        OR (
+            TEXT ( Type ) = $Label.OpportunityTypeReorderConsortiumConsumable,
+            TEXT ( Type ) = $Label.OpportunityTypeReorderNonConsortiumConsumable
+        ),	
+        NOT ( INCLUDES ( Product_Interest__c, &apos;Consumables&apos; ) )   
+    ),    
+    AND (
+        OR (
+            RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+            RecordType.DeveloperName = $Label.IndirectReOrder,
+            RecordType.DeveloperName = $Label.IndirectFieldServices,
+            RecordType.DeveloperName = $Label.FieldServices
+        ),
+        OR (
+TEXT ( Type ) = $Label.OpportunityTypeBillableService,
+TEXT ( Type ) = $Label.OpportunityTypeProfessionalServices
+),
+NOT ( 
+OR (
+INCLUDES(Product_Interest__c, &apos;Relocation&apos;),
+INCLUDES(Product_Interest__c, &apos;Break Fix&apos;),
+INCLUDES(Product_Interest__c, &apos;Other Services (Including Professional Services)&apos;)
+
+)
+  )
+)
+),
+TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Product_Interest__c</errorDisplayField>
+    <errorMessage>Please change the Product Interest value to match your Record Type and Type selections.</errorMessage>
+</ValidationRule>

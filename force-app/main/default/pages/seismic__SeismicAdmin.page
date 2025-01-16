@@ -1,0 +1,1932 @@
+<apex:page controller="seismic.SeismicAdminController" action="{!init}">
+    <apex:stylesheet value="{!URLFOR($Resource.seismic__SeismicAdmin)}"/>
+
+    <script type="text/javascript">
+        __sfdcSessionId = "{!$API.Session_ID}";
+
+        window.$Label = window.$Label || {};
+        $Label.messageInsufficientAccess = '{!JSENCODE($Label.messageInsufficientAccess)}';
+        $Label.messageUnknownIssue = '{!JSENCODE($Label.messageUnknownIssue)}';
+        $Label.messageConfirmClearFilters = '{!JSENCODE($Label.messageConfirmClearFilters)}';
+        $Label.filterLabelEdit = '{!JSENCODE($Label.filterLabelEdit)}';
+        $Label.filterLabelProperty = '{!JSENCODE($Label.filterLabelProperty)}';
+        $Label.filterLabelOperator = '{!JSENCODE($Label.filterLabelOperator)}';
+        $Label.filterLabelField = '{!JSENCODE($Label.filterLabelField)}';
+        $Label.operatorEquals = '{!JSENCODE($Label.operatorEquals)}';
+        $Label.operatorDiffers = '{!JSENCODE($Label.operatorDiffers)}';
+        $Label.operatorGreaterOrEqual = '{!JSENCODE($Label.operatorGreaterOrEqual)}';
+        $Label.operatorGreater = '{!JSENCODE($Label.operatorGreater)}';
+        $Label.operatorLessOrEqual = '{!JSENCODE($Label.operatorLessOrEqual)}';
+        $Label.operatorLess = '{!JSENCODE($Label.operatorLess)}';
+        $Label.operatorStartsWith = '{!JSENCODE($Label.operatorStartsWith)}';
+        $Label.operatorEndsWith = '{!JSENCODE($Label.operatorEndsWith)}';
+        $Label.operatorContains = '{!JSENCODE($Label.operatorContains)}';
+        $Label.operatorDoesNotContain = '{!JSENCODE($Label.operatorDoesNotContain)}';
+        $Label.operatorContainsAll = '{!JSENCODE($Label.operatorContainsAll)}';
+        $Label.operatorContainsAny = '{!JSENCODE($Label.operatorContainsAny)}';
+        $Label.commonOk = '{!JSENCODE($Label.commonOk)}';
+
+        function format(string) {
+          	var outerArguments = arguments;
+          	return string.replace(/\{(\d+)\}/g, function () {
+            	return outerArguments[parseInt(arguments[1]) + 1];
+          	});
+        }
+
+		function decodeBase64(text) {
+            return decodeURIComponent(atob(text).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+		}
+    </script>
+    <script type="text/javascript" src="/soap/ajax/27.0/connection.js"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.SFConnectionPatch)}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.json2)}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.jquery_base64_js)}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.SalesforceMetadata)}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.SeismicAdminSetting)}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.SeismicFilterDialog)}"></script>
+    <apex:includeScript value="{!URLFOR($Resource.seismic__jszip, '/jszip.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.seismic__jszip, '/jszip-load.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.seismic__jszip, '/jszip-deflate.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.seismic__jszip, '/jszip-inflate.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.seismic__jquery_1_11_3_min_js)}" />
+
+    <script>
+    	jQuery.noConflict();
+
+    	function disableAllButtons() {
+            var allBtns = [].slice.apply(document.getElementsByClassName("btn"));
+
+            for (var i = 0; i < allBtns.length; i++) {
+                var btn = allBtns[i];
+                if (btn) {
+                    btn.className = 'btnDisabled';
+                    btn.disabled = 'disabled';
+                }
+            }
+        }
+
+        function enableAllButtons() {
+            var allBtns = [].slice.apply(document.getElementsByClassName("btnDisabled"));
+
+            for (var i = 0; i < allBtns.length; i++) {
+                var btn = allBtns[i];
+                if (btn) {
+                    btn.className = 'btn';
+                    btn.removeAttribute('disabled');
+                }
+            }
+        }
+
+        function showError(msg) {
+            showGlobalMessage('error', msg);
+        }
+
+        function checkCanDelete(objectDisplayName, buttonName, buttonApiName, objectTypeMappingInstanceName, visualforcePageId) {
+            var msg = '';
+            if(buttonName && objectDisplayName) {
+                msg = format('{!$Label.messageConfirmDeleteObject}', buttonName, objectDisplayName);
+            } else {
+                msg = '{!$Label.messageConfirmDelete}';
+            }
+
+            if (window.confirm(msg)) {
+                if(visualforcePageId) {
+                    deleteVisualforcePage(visualforcePageId, function(){
+                        _delete();
+                    });
+                } else {
+                    _delete();
+                }
+            }
+
+            function _delete() {
+                sforce.connection.query("SELECT ID from WebLink WHERE WebLink.Name = '" + buttonApiName.replace("'", "\\'") + "'", {
+                    onSuccess : function(result){
+                        if(result.getArray("records").length == 0){
+                            Visualforce.remoting.Manager.invokeAction(
+                                '{!$RemoteAction.SeismicAdminController.deleteObjectTypeMapping}',
+                                objectTypeMappingInstanceName,
+                                function(result){
+                                    if(!result) {
+                                        window.location.href = window.location.href;
+                                        return;
+                                    }
+
+                                    if(typeof result == 'string'){
+                                        showError(result);
+                                    } else if(result.statusCode != 200) {
+                                        showError(result.message);
+                                    }
+                                }
+                            );
+                        } else {
+                            var idToDel = result.getArray("records")[0].Id;
+                            sforce.connection.deleteIds([result.getArray("records")[0].Id], {
+                                onSuccess : function(result){
+                                    if(result && result[0] && result[0].success == 'true') {
+                                        Visualforce.remoting.Manager.invokeAction(
+                                            '{!$RemoteAction.SeismicAdminController.deleteObjectTypeMapping}',
+                                            objectTypeMappingInstanceName,
+                                            function(result){
+                                                if(!result) {
+                                                    window.location.href = window.location.href;
+                                                    return;
+                                                }
+
+                                                if(typeof result == 'string'){
+                                                    showError(result);
+                                                } else if(result.statusCode != 200) {
+                                                    showError(result.message);
+                                                }
+                                            }
+                                        );
+                                    } else if(result[0] && result[0].errors && result[0].errors.message){
+                                        var msg = result[0].errors.message;
+                                        if(msg.indexOf('Please delete the reference before deleting the button or link') > -1) {
+                                            msg += '<a target="_blank" href="https://login.salesforce.com/_ui/common/config/link/WeblinkImpactAnalysis/d?id=' + idToDel.substr(0, 15) + '&delete=1">Click to see where this button is used</a>';
+                                        }
+
+                                        showError(format('{!$Label.messageDeleteButtonFailure}', msg));
+                                    }
+                                },
+                                onFailure : function(error){
+                                    showError(format('{!$Label.messageDeleteButtonFailure}', error.message));
+                                }
+                            });
+                        }
+                    },
+                    onFailure : function(error){
+                        showError(format('{!$Label.messageDeleteButtonFailure}', error.message));
+                    }
+                });
+            }
+        }
+        function getAllObjects(){
+			var allObjectsResult = sforce.connection.describeGlobal();
+			var allLayoutableObjects = [];
+			var sobjects = allObjectsResult.getArray("sobjects");
+			for (var i=0; i<sobjects.length; i++) {
+				if(sobjects[i].layoutable == "false" || sobjects[i].customSetting == "true")continue;
+				if(sobjects[i].name == 'Note' || sobjects[i].name == 'Idea' || sobjects[i].name == 'OpportunityContactRole' )continue;
+				var eachObject = {};
+				eachObject.name = sobjects[i].name;
+				eachObject.label = sobjects[i].label;
+				allLayoutableObjects.push(JSON.stringify(eachObject));
+			}
+			allLayoutableObjects = '[' + allLayoutableObjects + ']';
+			return allLayoutableObjects;
+		}
+    </script>
+    <apex:sectionHeader id="seismicAdminHeader" title="{!$Label.seismic__seismicadminheader}" rendered="{!isListView}" />
+    <apex:pageMessages id="messages" rendered="{!isListView}" escape="false" />
+
+	<apex:tabPanel switchType="client" value="{!tabInFocus}" rendered="{!isListView}" id="tabPanel" tabClass="activeTab" inactiveTabClass="inactiveTab">
+		<apex:tab label="{!$Label.seismic__tabglobalsetting}" name="global" id="globalSetting">
+			<apex:form id="subscription" rendered="{!isListView}">
+		        <apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true">
+		            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+		            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+		        </apex:actionFunction>
+
+		        <apex:pageBlock title="{!$Label.seismic__globalheadersubscription}" id="page" rendered="{!adminSettingAccessable}">
+		            <apex:pageBlockButtons location="top" id="buttons">
+		                <apex:commandButton id="checkAndSave" value="{!$Label.seismic__buttoncheckandsave}" rendered="{!adminSettingManagable}" disabled="{!checkingSubscription}" onclick="this.disabled='disabled';this.className='btnDisabled'" action="{!saveAndValidateSubscription}" rerender="subscriptionSetting, messages, checkSubscriptionBlock"/>
+		            </apex:pageBlockButtons>
+
+		            <apex:pageBlockSection id="section"  columns="1">
+		                <apex:inputText id="subscription" label="{!$Label.seismic__globallabelsubscription}" value="{!seismicAdminSettings.seismic__Subscription__c}" onkeypress="if(event.keyCode==13){saveAndValidateSubscription();return false;}" disabled="{!NOT(adminSettingManagable)}">
+		                    <apex:actionFunction name="saveAndValidateSubscription" action="{!saveAndValidateSubscription}" rerender="subscriptionSetting, messages, checkSubscriptionBlock" />
+		                </apex:inputText>
+
+		                <apex:inputCheckbox id="disableSingleSignOnAutoRedirection" label="{!$Label.seismic__globallabelsso}" value="{!seismicAdminSettings.seismic__DisableSingleSignOnAutoRedirection__c}" disabled="{!NOT(adminSettingManagable)}" title="{!$Label.seismic__globallabelssoinfo}">
+		                </apex:inputCheckbox>
+
+		                <apex:inputCheckbox id="enableCartContext" label="{!$Label.seismic__globallabelcontext}" value="{!seismicAdminSettings.seismic__EnableCartContext__c}" disabled="{!NOT(adminSettingManagable)}" title="{!$Label.seismic__globallabelcontextinfo}">
+		                </apex:inputCheckbox>
+
+		                <apex:inputCheckbox id="disableRememberMe" label="{!$Label.seismic__globallabelremember}" value="{!seismicAdminSettings.seismic__DisableRememberMe__c}" disabled="{!NOT(adminSettingManagable)}" title="{!$Label.seismic__globallabelrememberinfo}">
+		                </apex:inputCheckbox>
+
+		                <apex:inputCheckbox id="hideLogOutButton" label="{!$Label.seismic__globallabelhidelogout}" value="{!seismicAdminSettings.seismic__HideLogOutButton__c}" disabled="{!NOT(adminSettingManagable)}" title="{!$Label.seismic__globallabelhidelogout}">
+		                </apex:inputCheckbox>
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+
+		        <div style="display: none;">
+		            <apex:pageBlock id="checkSubscriptionBlock">
+		                <apex:pageBlockSection rendered="{!checkingSubscription && adminSettingManagable}">
+		                    <apex:actionFunction name="saveSubscription" action="{!saveSubscription}" rerender="messages, subscriptionSetting">
+		                        <apex:param name="subscription" assignTo="{!subscription}" value=""/>
+		                        <apex:param name="tenant" assignTo="{!tenant}" value=""/>
+		                        <apex:param name="serverBaseUrl" assignTo="{!serverBaseUrl}" value=""/>
+		                        <apex:param name="disableSingleSignOnAutoRedirection" assignTo="{!disableSingleSignOnAutoRedirection}" value=""/>
+		                        <apex:param name="enableCartContext" assignTo="{!enableCartContext}" value=""/>
+		                        <apex:param name="disableRememberMe" assignTo="{!disableRememberMe}" value=""/>
+		                        <apex:param name="hideLogOutButton" assignTo="{!hideLogOutButton}" value=""/>
+		                    </apex:actionFunction>
+		                    <apex:actionFunction name="showErrorMessage" action="{!showErrorMessage}" rerender="messages, subscriptionSetting">
+		                        <apex:param name="errorMessage" assignTo="{!errorMessage}" value=""/>
+		                    </apex:actionFunction>
+		                    <c:CheckSubscription devTenant="{!devTenant}" 
+                            disableSSOAutoRedirection="{!seismicAdminSettings.seismic__DisableSingleSignOnAutoRedirection__c}" 
+                            enableCartContext="{!seismicAdminSettings.seismic__EnableCartContext__c}" 
+                            disableRememberMe="{!seismicAdminSettings.seismic__DisableRememberMe__c}" 
+                            hideLogOutButton="{!seismicAdminSettings.seismic__HideLogOutButton__c}">{!seismicAdminSettings.seismic__Subscription__c}</c:CheckSubscription>
+		                </apex:pageBlockSection>
+		            </apex:pageBlock>
+		        </div>
+		    </apex:form>
+		</apex:tab>
+		<apex:tab label="{!$Label.seismic__tablegacycomponents}" name="old" id="oldSetting">
+			<apex:form id="mappings" rendered="{!isListView}">
+		        <!-- adds a page message (messageToShow) at various severties (messageTypeToShow) -->
+		        <apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true">
+		            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+		            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+		        </apex:actionFunction>
+
+		        <apex:pageBlock title="{!$Label.seismic__legacyheadersubscription}" id="legacySubscriptionSetting" rendered="{!adminSettingAccessable}">
+		            <apex:pageBlockButtons location="top" id="buttons">
+		                <apex:commandButton id="saveButton" value="{!$Label.seismic__buttonsave}" rendered="{!adminSettingManagable}" disabled="{!checkingSubscription}" action="{!saveLegacySubscription}" rerender="legacySubscriptionSetting, messages"/>
+		            </apex:pageBlockButtons>
+		            <apex:pageBlockSection id="settings" columns="1">
+		                <apex:inputCheckbox id="openPredictiveContentInNewWindow" label="{!$Label.seismic__legacylabelnewwindow}" value="{!seismicAdminSettings.seismic__OpenPredictiveContentInNewWindow__c}" disabled="{!NOT(adminSettingManagable)}" title="{!$Label.seismic__legacylabelnewwindowinfo}"></apex:inputCheckbox>
+		                <apex:inputCheckbox id="enableUniversalContentDetailPage" label="{!$Label.seismic__legacylabeluniversalcontent}" value="{!seismicAdminSettings.seismic__EnableUniversalContentDetailPage__c}" disabled="{!NOT(adminSettingManagable)}" title="{!$Label.seismic__legacylabeluniversalcontentinfo}"></apex:inputCheckbox>
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+
+		        <apex:outputPanel >
+		            <script>
+		                function createdVisualforcePage(visualforcePage, SObject) {
+		                    showMessage('info', format('{!$Label.messageCreateVfPage}', '<a target="_blank" href="/09D/e?type=' + SObject + '&setupid=' + SObject + 'Links&PageOrSobjectType=' + SObject + '&retURL=">', '</a>'));
+		                }
+		            </script>
+
+		            <apex:actionFunction name="generatePublisherActionComplete" action="{!saveVisualforcePage}" rerender="messages, mappings, subscription" onbeforedomupdate="createdVisualforcePage(visualforcePage, SObject)">
+		                <apex:param name="visualforcePage" assignTo="{!visualforcePage}" value=""/>
+		                <apex:param name="objectTypeMappingInstanceNameName" assignTo="{!objectTypeMappingInstanceNameName}" value=""/>
+		                <apex:param name="SObject" value=""/>
+		            </apex:actionFunction>
+
+		            <apex:actionFunction name="showMessage" action="{!showMessage}" rerender="messages" immediate="true">
+		                <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+		                <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+		            </apex:actionFunction>
+
+		            <c:GeneratePublisherAction oncomplete="generatePublisherActionComplete(visualforcePage, objectTypeMappingInstanceNameName, SObject);" oninfo="showMessage('info', infoMessage)"
+		                onerror="showMessage('error', errorMessage)" isEditObjectDocMapping="{!isEditObjectDocMapping}"  canvasAppDeveloperName="{!CANVAS_APP_DEVELOPER_NAME}" packageNameSpace="{!PACKAGE_NAMESPACE}"></c:GeneratePublisherAction>
+		        </apex:outputPanel>
+
+		        <apex:inputHidden id="allLayoutableObjectsHidden" value="{!allLayoutableObjectTypesString}"/>
+		       	<script>
+					document.getElementById("{!$Component.allLayoutableObjectsHidden}").value = getAllObjects();
+		       	</script>
+
+		        <apex:pageBlock id="systemDefinedPredictive" title="{!$Label.seismic__legacyheadersystempredictive}">
+		            <apex:pageBlockButtons id="buttons" location="top">
+		                <apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!AddSystemDefinedPredictiveMapping}"/>
+		            </apex:pageBlockButtons>
+
+		            <apex:variable value="{!0}" var="index" />
+
+		            <!-- table of existing mappings -->
+		            <apex:pageBlockTable value="{!systemDefinedPredictiveMappings}" var="mapping" rendered="{! NOT(systemDefinedPredictiveMappings.empty) }" id="table">
+		                <apex:variable value="" var="objectDisplayName" />
+		                <apex:variable value="" var="pageName" />
+		                <apex:variable value="  " var="emptyContent" />
+
+		                <apex:column id="actionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}" styleClass="actionColumn">
+		                    <apex:variable value="{!IF(NOT(ISBLANK(mapping.seismic__Object_Label__c)), mapping.seismic__Object_Label__c, mapping.seismic__Object_Name__c)}" var="objectDisplayName" />
+		                    <apex:variable value="{!IF(ISBLANK(mapping.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, mapping.seismic__Button_Name__c )}" var="pageName" />
+		                    <apex:variable value="{!index+1}" var="index" />
+
+		                    <apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+
+		                    <apex:commandLink id="editLink" value="{!$Label.seismic__buttonedit}" action="{!EditSystemDefinedPredictiveMapping}" rendered="{!objectTypeMappingUpdatable}">
+		                        <apex:param name="objectTypeMappingInstanceNameName" value="{!mapping.Name}" assignTo="{!objectTypeMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" onclick="checkCanDelete('{!JSINHTMLENCODE(objectDisplayName)}', '{!JSINHTMLENCODE(pageName)}', '{!JSINHTMLENCODE(mapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(mapping.Name)}', '{!JSINHTMLENCODE(pageName)}'); return false;" rendered="{!objectTypeMappingDeleteable}" />
+		                </apex:column>
+
+		                <apex:column id="relatedObjectColumn" value="{!objectDisplayName}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonrelated}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="predictiveComponentNameColumn" value="{!pageName}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">{!$Label.seismic__legacysystempredictivecomponentname}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="predictiveSettingTitleColumn" value="{!mapping.seismic__Team_Site__c}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">{!$Label.seismic__legacysystempredictivesettingtitle}</apex:facet>
+		                </apex:column>
+
+		                <!--
+		                <apex:column value="{!mapping.VisualforceParameter__c}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">Visualforce Parameter</apex:facet>
+		                </apex:column>
+		                 -->
+		            </apex:pageBlockTable>
+
+		            <apex:pageBlockSection id="emptyMappings" rendered="{!systemDefinedPredictiveMappings.empty}" columns="1">
+		                <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+
+		        <apex:pageBlock id="predictiveContent" title="{!$Label.seismic__legacyheaderpredictivecontent}">
+		            <apex:pageBlockButtons id="buttons" location="top">
+		                <apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!AddVisualforcePageMapping}"/>
+		            </apex:pageBlockButtons>
+
+		            <apex:variable value="{!0}" var="index" />
+
+		            <!-- table of existing mappings -->
+		            <apex:pageBlockTable value="{!vfPageMappings}" var="mapping" rendered="{! NOT(vfPageMappings.empty) }" id="table">
+		                <apex:variable value="" var="objectDisplayName" />
+		                <apex:variable value="" var="pageName" />
+		                <apex:variable value="  " var="emptyContent" />
+
+		                <apex:column id="actionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}" styleClass="actionColumn">
+		                    <apex:variable value="{!IF(NOT(ISBLANK(mapping.seismic__Object_Label__c)), mapping.seismic__Object_Label__c, mapping.seismic__Object_Name__c)}" var="objectDisplayName" />
+		                    <apex:variable value="{!IF(ISBLANK(mapping.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, mapping.seismic__Button_Name__c )}" var="pageName" />
+		                    <apex:variable value="{!index+1}" var="index" />
+
+		                    <apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+
+		                    <apex:commandLink id="editLink" value="{!$Label.seismic__buttonedit}" action="{!EditVisualforcePageMapping}" rendered="{!objectTypeMappingUpdatable}">
+		                        <apex:param name="objectTypeMappingInstanceNameName" value="{!mapping.Name}" assignTo="{!objectTypeMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" onclick="checkCanDelete('{!JSINHTMLENCODE(objectDisplayName)}', '{!JSINHTMLENCODE(pageName)}', '{!JSINHTMLENCODE(mapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(mapping.Name)}', '{!JSINHTMLENCODE(pageName)}'); return false;" rendered="{!objectTypeMappingDeleteable}" />
+		                </apex:column>
+
+		                <apex:column id="nameColumn" value="{!pageName}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">{!$Label.seismic__commonname}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="relatedObjectColumn" value="{!objectDisplayName}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonrelated}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="profileColumn" value="{!mapping.seismic__Team_Site__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonprofile}</apex:facet>
+                        </apex:column>
+
+		                <apex:column id="pathColumn" value="{!mapping.seismic__Filter_List_Name__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonfolderpath}</apex:facet>
+                        </apex:column>
+
+		                <apex:column id="filtersColumn" value="{!mapping.Id}" styleClass="dataCell js-filters-column" >
+		                    <apex:facet name="header">{!$Label.seismic__commonfilters}</apex:facet>
+		                </apex:column>
+
+		            </apex:pageBlockTable>
+
+		            <apex:pageBlockSection id="emptyTable" rendered="{!vfPageMappings.empty}" columns="1">
+		                <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+
+		        <!-- Folder Button start -->
+		        <apex:pageBlock id="folderButton" title="{!$Label.seismic__legacyheaderfolderbutton}" rendered="{!objectTypeMappingAccessable}">
+
+		            <apex:pageBlockButtons id="folderButtons" location="top">
+		                <apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!addObjectFolderMapping}" rendered="{!objectTypeMappingInsertable}"/>
+		            </apex:pageBlockButtons>
+
+		            <apex:variable value="{!1}" var="index" />
+
+		            <apex:pageBlockTable value="{!objFolderMappings}" rendered="{!NOT(objFolderMappings.empty)}" var="otm" id="table">
+		                <apex:variable value="" var="objectDisplayName" />
+		                <apex:variable value="" var="buttonName" />
+		                <apex:variable value="  " var="emptyContent" />
+
+		                <apex:column id="actionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}" styleClass="actionColumn">
+		                    <apex:variable value="{!IF(NOT(ISBLANK(otm.seismic__Object_Label__c)), otm.seismic__Object_Label__c, otm.seismic__Object_Name__c)}" var="objectDisplayName" />
+		                    <apex:variable value="{!IF(ISBLANK(otm.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, otm.seismic__Button_Name__c )}" var="buttonName" />
+		                    <apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+
+		                    <apex:commandLink id="editLink" value="{!$Label.seismic__buttonedit}" action="{!editObjectFolderMapping}" rendered="{!objectTypeMappingUpdatable}">
+		                        <apex:param name="objectTypeMappingInstanceNameName" value="{!otm.Name}" assignTo="{!objectTypeMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" onclick="checkCanDelete('{!JSINHTMLENCODE(objectDisplayName)}', '{!JSINHTMLENCODE(buttonName)}', '{!JSINHTMLENCODE(otm.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(otm.Name)}'); return false;" rendered="{!objectTypeMappingDeleteable}" />
+
+		                    <apex:variable value="{!index+1}" var="index" />
+		                </apex:column>
+
+		                <apex:column id="buttonNameColumn" value="{!buttonName}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">{!$Label.seismic__commonbuttonname}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="relatedObjectColumn" value="{!objectDisplayName}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonrelated}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="profileColumn" value="{!otm.seismic__Team_Site__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonprofile}</apex:facet>
+                        </apex:column>
+
+		                <apex:column id="folderPathColumn" value="{!otm.seismic__Filter_List_Name__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonfolderpath}</apex:facet>
+                        </apex:column>
+
+		                <apex:column id="filtersColumn" value="{!otm.Id}" styleClass="dataCell js-filters-column" >
+		                    <apex:facet name="header">{!$Label.seismic__commonfilters}</apex:facet>
+		                </apex:column>
+
+		            </apex:pageBlockTable>
+		            <apex:pageBlockSection id="emptyTable" rendered="{!objFolderMappings.empty}" columns="1">
+		                <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+
+		        <script type="text/javascript">
+		            jQuery(function(){
+		                var filtersDatas = JSON.parse(decodeBase64("{!filtersDatas}"));
+		                var filterLogics = JSON.parse(decodeBase64("{!filterLogics}"));
+		                jQuery(".js-filters-column").each(function(){
+
+		                    var id = jQuery(this).text();
+		                    jQuery(this).empty();
+
+		                    var filterData = filtersDatas[id];
+		                    var filterLogic = filterLogics[id];
+		                    if (!filterData || filterData.length == 0)
+		                        return;
+
+		                    var $tbody = jQuery('<tbody>').appendTo(
+		                        jQuery('<table class="list">')
+		                            .append(jQuery('<tbody>')
+		                            .append(jQuery('<tr class=headerRow>')
+		                                .append(
+		                                    jQuery('<th class=headerRow>').html('{!$Label.filterLabelProperty}'),
+		                                    jQuery('<th class=headerRow>').html('{!$Label.filterLabelOperator}'),
+		                                    jQuery('<th class=headerRow>').html('{!$Label.filterLabelField}')
+		                                )
+		                            )
+		                        ).appendTo(this));
+
+		                    for(var i = 0; i < filterData.length; i ++) {
+		                        var item = filterData[i];
+		                        var seismicField = item[0],
+		                            operator = item[1],
+		                            sfFieldLabel = item[2];
+
+		                        $tbody.append(jQuery('<tr class="dataRow">').append(
+		                            jQuery('<td class="seismicFieldColumn dataCell">').text(seismicField),
+		                            jQuery('<td class="operatorColumn dataCell">').text(operator),
+		                            jQuery('<td class="sfFieldLabelColumn dataCell">').text(sfFieldLabel)
+		                        ));
+		                    }
+
+		                    var filterMatching = filterLogic == 'OR' ? '{!$Label.filterLabelAny}' : '{!$Label.filterLabelAll}';
+		                    jQuery('<div style="height: 20px; line-height: 20px;"></div>').text('{!$Label.filterLabelMatching}' + ' ' + filterMatching).appendTo(this);
+		                });
+		            })
+		        </script>
+
+		        <!-- Folder Button end -->
+
+		        <!-- Document Button start -->
+		        <apex:pageBlock id="documentButton" title="{!$Label.seismic__commondocumentbutton}" rendered="{!objectTypeMappingAccessable}">
+		            <apex:pageBlockButtons id="buttons" location="top">
+		                <apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!addObjectDocMapping}" rendered="{!objectTypeMappingInsertable}"/>
+		            </apex:pageBlockButtons>
+		            <apex:variable value="{!1}" var="index" />
+		            <apex:pageBlockTable value="{!objDocMappings}" rendered="{!NOT(objDocMappings.empty)}" var="otm" id="table">
+		                <apex:variable value="" var="objectDisplayName" />
+		                <apex:variable value="" var="buttonName" />
+		                <apex:column id="actionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}" styleClass="actionColumn">
+		                    <apex:variable value="{!IF(NOT(ISBLANK(otm.seismic__Object_Label__c)), otm.seismic__Object_Label__c, otm.seismic__Object_Name__c)}" var="objectDisplayName" />
+		                    <apex:variable value="{!IF(ISBLANK(otm.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, otm.seismic__Button_Name__c )}" var="buttonName" />
+		                    <apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+		                    <apex:commandLink id="editLink" value="{!$Label.seismic__buttonedit}" action="{!editObjectDocMapping}" rendered="{!objectTypeMappingUpdatable}">
+		                        <apex:param name="objectTypeMappingInstanceNameName" value="{!otm.Name}" assignTo="{!objectTypeMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" onclick="checkCanDelete('{!JSINHTMLENCODE(objectDisplayName)}', '{!JSINHTMLENCODE(buttonName)}', '{!JSINHTMLENCODE(otm.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(otm.Name)}', '{!JSINHTMLENCODE(otm.seismic__Related_Visualforce_Page_Name__c)}'); return false;" rendered="{!objectTypeMappingDeleteable}" />
+		                    <apex:variable value="{!index+1}" var="index" />
+		                </apex:column>
+		                <apex:column id="buttonNameColumn" value="{!buttonName}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">{!$Label.seismic__commonbuttonname}</apex:facet>
+		                </apex:column>
+		                <apex:column id="relatedObjectColumn" value="{!objectDisplayName}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonrelated}</apex:facet>
+		                </apex:column>
+		                <apex:column id="profileColumn" value="{!otm.seismic__Team_Site__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonprofile}</apex:facet>
+                        </apex:column>
+		                <apex:column id="documentPathColumn" value="{!otm.seismic__Document_Name__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commondocumentpath}</apex:facet>
+                        </apex:column>
+		                <apex:column id="defaultFormatColumn" value="{!otm.seismic__Generate_Format__c}" styleClass="dataCell" width="200">
+		                	<apex:facet name="header">{!$Label.seismic__legacydocumentbuttontitleformat}</apex:facet>
+		                </apex:column>
+		                <apex:column id="vfPageActionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}">
+		                    <apex:facet name="header">{!$Label.seismic__commonvfpageforaction}</apex:facet>
+		                    <apex:outputpanel rendered="{!ISNULL(otm.seismic__Related_Visualforce_Page_Name__c)}">
+		                        <a href="javascript: createVisualforcePage('{!JSINHTMLENCODE(otm.Button_Value__c)}', '{!JSINHTMLENCODE(otm.Button_Name__c)}', '{!JSINHTMLENCODE(otm.Object_Name__c)}', 'createVisualforcePageLink{!FLOOR(index)}', '{!JSINHTMLENCODE(otm.Name)}'); void(0);"
+		                            id="createVisualforcePageLink{!FLOOR(index)}">{!$Label.commonCreateVfPage}</a>
+		                    </apex:outputpanel>
+		                    <apex:outputpanel rendered="{!NOT(ISNULL(otm.seismic__Related_Visualforce_Page_Name__c))}">
+		                        {!otm.seismic__Related_Visualforce_Page_Name__c}
+		                    </apex:outputpanel>
+		                </apex:column>
+		                <apex:column />
+		            </apex:pageBlockTable>
+		            <apex:pageBlockSection id="emptyTable" rendered="{!objDocMappings.empty}" columns="1">
+					  <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+		        <!-- Document Button end -->
+
+		        <!-- custom tab mapping start -->
+		        <apex:pageBlock id="customTabMappings" title="{!$Label.seismic__legacyheadercustomtab}" rendered="{!customTabMappingAccessable}">
+		            <apex:pageBlockButtons id="buttons" location="top">
+		                <apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!addCustomTabMapping}" rendered="{!customTabMappingInsertable}"/>
+		            </apex:pageBlockButtons>
+		            <apex:variable value="{!1}" var="index" />
+		            <apex:pageBlockTable value="{!customTabMappings}" rendered="{!NOT(customTabMappings.empty)}" var="ctm" id="table">
+		                <apex:column id="actionColumn" rendered="{!customTabMappingUpdatable && customTabMappingDeleteable}" styleClass="actionColumn">
+		                    <apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+		                    <apex:commandLink id="editLink" value="{!$Label.seismic__buttonedit}" action="{!editCustomTabMapping}" rendered="{!customTabMappingUpdatable}">
+		                        <apex:param name="customTabMappingInstanceNameName" value="{!ctm.Name}" assignTo="{!customTabMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" action="{!deleteCustomTabMapping}" onclick="return window.confirm(format('{!$Label.seismic__messageconfirmdeletemapping}', '{!JSINHTMLENCODE(ctm.seismic__Custom_Tab__c)}', '{!JSINHTMLENCODE(ctm.seismic__Team_Site__c)}'))" rendered="{!customTabMappingDeleteable}">
+		                        <apex:param name="customTabMappingInstanceNameName" value="{!ctm.Name}" assignTo="{!customTabMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    <apex:variable value="{!index+1}" var="index" />
+		                </apex:column>
+		                <!--
+		                <apex:column value="{!ctm.Custom_Tab_Id__c}" />
+		                 -->
+		                <apex:column id="customTabColumn" value="{!ctm.seismic__Custom_Tab__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commoncustomtab}</apex:facet>
+		                </apex:column>
+		                <apex:column id="profileColumn" value="{!ctm.seismic__Team_Site__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonprofile}</apex:facet>
+                        </apex:column>
+		                <apex:column id="customTabMappingsFolderPathColumn" value="{!ctm.seismic__Filter_List_Name__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonfolderpath}</apex:facet>
+                        </apex:column>
+		                <apex:column />
+		            </apex:pageBlockTable>
+		            <apex:pageBlockSection id="emptyTable" rendered="{!customTabMappings.empty}" columns="1">
+		                <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+		        <!-- custom tab mapping end -->
+		    </apex:form>
+		</apex:tab>
+		<apex:tab label="{!$Label.seismic__tabnewcomponents}" name="new" id="newSetting">
+			<apex:form id="newMappings" rendered="{!isListView}">
+	        	<apex:inputHidden id="allLayoutableObjectsHidden" value="{!allLayoutableObjectTypesString}"/>
+		       	<script>
+					document.getElementById("{!$Component.allLayoutableObjectsHidden}").value = getAllObjects();
+		       	</script>
+				<!-- New Predictive start -->
+				<apex:pageBlock id="embeddedAppForClassicTitle" title="{!$Label.seismic__newheaderembedded}">
+					<apex:pageBlockButtons id="buttonsBlock" location="top">
+						<apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!addNewPredictiveMapping}" />
+					</apex:pageBlockButtons>
+
+					<apex:variable value="{!0}" var="index" />
+
+					<!-- table of existing mappings -->
+					<apex:pageBlockTable value="{!newPredictiveMappings}" var="mapping" rendered="{! NOT(newPredictiveMappings.empty) }" id="table">
+						<apex:variable value="" var="objectDisplayName" />
+						<apex:variable value="" var="pageName" />
+						<apex:variable value="  " var="emptyContent" />
+
+						<apex:column id="actionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}"
+							styleClass="actionColumn">
+							<apex:variable value="{!IF(NOT(ISBLANK(mapping.seismic__Object_Label__c)), mapping.seismic__Object_Label__c, mapping.seismic__Object_Name__c)}"
+								var="objectDisplayName" />
+							<apex:variable value="{!IF(ISBLANK(mapping.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, mapping.seismic__Button_Name__c )}"
+								var="pageName" />
+							<apex:variable value="{!index+1}" var="index" />
+
+							<apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+
+							<apex:commandLink id="editLink" value="{!$Label.seismic__buttonedit}" action="{!editNewPredictiveMapping}" rendered="{!objectTypeMappingUpdatable}">
+								<apex:param name="objectTypeMappingInstanceNameName" value="{!mapping.Name}" assignTo="{!objectTypeMappingInstanceNameName}" />
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" onclick="checkCanDelete('{!JSINHTMLENCODE(objectDisplayName)}', '{!JSINHTMLENCODE(pageName)}', '{!JSINHTMLENCODE(mapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(mapping.Name)}', '{!JSINHTMLENCODE(pageName)}'); return false;" rendered="{!objectTypeMappingDeleteable}" />
+						</apex:column>
+
+						<apex:column id="nameColumn" value="{!pageName}" styleClass="dataCell" width="200">
+							<apex:facet name="header">{!$Label.seismic__commonname}</apex:facet>
+						</apex:column>
+
+						<apex:column id="relatedObjectColumn" value="{!objectDisplayName}" styleClass="dataCell"
+							width="200">
+							<apex:facet name="header">{!$Label.seismic__commonrelated}</apex:facet>
+						</apex:column>
+
+						<apex:column id="embeddedApplicationColumn" value="{!mapping.seismic__Embedded_Application__c}"
+							styleClass="dataCell" width="200">
+							<apex:facet name="header">{!$Label.seismic__commonembeddedapp}</apex:facet>
+						</apex:column>
+
+						<apex:column id="hideApplicationHeaderColumn" value="{!mapping.seismic__Hide_Header__c}"
+							styleClass="dataCell" width="200">
+							<apex:facet name="header">{!$Label.seismic__newembeddedtitlehide}</apex:facet>
+						</apex:column>
+
+						<apex:column id="openContentInlineColumn" value="{!mapping.seismic__Open_Content_Inline__c}"
+							styleClass="dataCell" width="200">
+							<apex:facet name="header">{!$Label.seismic__newembeddedtitleinline}</apex:facet>
+						</apex:column>
+
+					</apex:pageBlockTable>
+
+					<apex:pageBlockSection id="emptyTable" rendered="{!newPredictiveMappings.empty}" columns="1">
+		                <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+				</apex:pageBlock>
+				<!-- New Predictive end -->
+				<!-- Tab Shortcut start -->
+		        <apex:pageBlock id="tabShortcutButtons" title="{!$Label.seismic__newheadertabbutton}" rendered="{!objectTypeMappingAccessable}">
+
+		            <apex:pageBlockButtons id="buttons" location="top">
+		                <apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!addObjectFolderMappingLightning}" rendered="{!objectTypeMappingInsertable}"/>
+		            </apex:pageBlockButtons>
+
+		            <apex:variable value="{!1}" var="index" />
+
+		            <apex:pageBlockTable value="{!objFolderMappingsLightning}" rendered="{!NOT(objFolderMappingsLightning.empty)}" var="otm" id="table">
+		                <apex:variable value="" var="objectDisplayName" />
+		                <apex:variable value="" var="buttonName" />
+		                <apex:variable value="  " var="emptyContent" />
+
+		                <apex:column id="actionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}" styleClass="actionColumn">
+		                    <apex:variable value="{!IF(NOT(ISBLANK(otm.seismic__Object_Label__c)), otm.seismic__Object_Label__c, otm.seismic__Object_Name__c)}" var="objectDisplayName" />
+		                    <apex:variable value="{!IF(ISBLANK(otm.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, otm.seismic__Button_Name__c )}" var="buttonName" />
+		                    <apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+
+		                    <apex:commandLink id="editLink" action="{!editObjectFolderMappingLightning}" value="{!$Label.seismic__buttonedit}" rendered="{!objectTypeMappingUpdatable}">
+		                        <apex:param name="objectTypeMappingInstanceNameName" value="{!otm.Name}" assignTo="{!objectTypeMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" onclick="checkCanDelete('{!JSINHTMLENCODE(objectDisplayName)}', '{!JSINHTMLENCODE(buttonName)}', '{!JSINHTMLENCODE(otm.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(otm.Name)}'); return false;" rendered="{!objectTypeMappingDeleteable}" />
+		                    <apex:variable value="{!index+1}" var="index" />
+		                </apex:column>
+
+		                <apex:column id="buttonNameColumn" value="{!buttonName}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">{!$Label.seismic__commonbuttonname}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="relatedObjectColumn" value="{!objectDisplayName}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonrelated}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="embeddedApplicationColumn" value="{!otm.seismic__Embedded_Application__c}" styleClass="dataCell" width="200">
+		                	<apex:facet name="header">{!$Label.seismic__commonembeddedapp}</apex:facet>
+		                </apex:column>
+
+		                <apex:column id="selectedTabColumn" value="{!otm.seismic__Selected_Tab__c}" styleClass="dataCell" width="200">
+		                	<apex:facet name="header">{!$Label.seismic__newtabtitletab}</apex:facet>
+		                </apex:column>
+
+		            </apex:pageBlockTable>
+		            <apex:pageBlockSection id="emptyTable" rendered="{!objFolderMappingsLightning.empty}" columns="1">
+		                <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+		        <!-- Folder Button end -->
+
+		        <!-- New Document Button start -->
+		        <apex:pageBlock id="newDocumentButton" title="{!$Label.seismic__commondocumentbutton}" rendered="{!objectTypeMappingAccessable}">
+		            <apex:pageBlockButtons id="buttons" location="top">
+		                <apex:commandButton id="newButton" value="{!$Label.seismic__buttonnew}" action="{!addObjectNewDocMapping}" rendered="{!objectTypeMappingInsertable}"/>
+		            </apex:pageBlockButtons>
+		            <apex:variable value="{!1}" var="index" />
+		            <apex:pageBlockTable value="{!objNewDocMappings}" rendered="{!NOT(objNewDocMappings.empty)}" var="otm" id="newDocumentButtonTable">
+		                <apex:variable value="" var="objectDisplayName" />
+		                <apex:variable value="" var="buttonName" />
+		                <apex:column id="actionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}" styleClass="actionColumn">
+		                    <apex:variable value="{!IF(NOT(ISBLANK(otm.seismic__Object_Label__c)), otm.seismic__Object_Label__c, otm.seismic__Object_Name__c)}" var="objectDisplayName" />
+		                    <apex:variable value="{!IF(ISBLANK(otm.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, otm.seismic__Button_Name__c )}" var="buttonName" />
+		                    <apex:facet name="header">{!$Label.seismic__commonaction}</apex:facet>
+		                    <apex:commandLink id="editLink" value="{!$Label.seismic__buttonedit}" action="{!editObjectNewDocMapping}" rendered="{!objectTypeMappingUpdatable}">
+		                        <apex:param name="objectTypeMappingInstanceNameName" value="{!otm.Name}" assignTo="{!objectTypeMappingInstanceNameName}"/>
+		                    </apex:commandLink>
+		                    |&nbsp;
+		                    <apex:commandLink id="deleteLink" value="{!$Label.seismic__buttondelete}" onclick="checkCanDelete('{!JSINHTMLENCODE(objectDisplayName)}', '{!JSINHTMLENCODE(buttonName)}', '{!JSINHTMLENCODE(otm.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(otm.Name)}', '{!JSINHTMLENCODE(otm.seismic__Related_Visualforce_Page_Name__c)}'); return false;" rendered="{!objectTypeMappingDeleteable}" />
+		                    <apex:variable value="{!index+1}" var="index" />
+		                </apex:column>
+		                <apex:column id="buttonNameColumn" value="{!buttonName}" styleClass="dataCell" width="200" >
+		                    <apex:facet name="header">{!$Label.seismic__commonbuttonname}</apex:facet>
+		                </apex:column>
+		                <apex:column id="relatedObjectColumn" value="{!objectDisplayName}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonrelated}</apex:facet>
+		                </apex:column>
+		                <apex:column id="profileColumn" value="{!otm.seismic__Team_Site__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commonprofile}</apex:facet>
+                        </apex:column>
+		                <apex:column id="documentPathColumn" value="{!otm.seismic__Document_Name__c}" styleClass="dataCell" width="200">
+		                    <apex:facet name="header">{!$Label.seismic__commondocumentpath}</apex:facet>
+                        </apex:column>
+		                <!-- apex:column value="{!otm.seismic__Generate_Format__c}" styleClass="dataCell" width="200">
+		                	<apex:facet name="header">{!$Label.seismic__legacydocumentbuttontitleformat}</apex:facet>
+		                </apex:column -->
+		                <apex:column id="vfPageActionColumn" rendered="{!objectTypeMappingUpdatable && objectTypeMappingDeleteable}">
+		                    <apex:facet name="header">{!$Label.seismic__commonvfpageforaction}</apex:facet>
+		                    <apex:outputpanel rendered="{!ISNULL(otm.seismic__Related_Visualforce_Page_Name__c)}">
+		                        <a href="javascript: createVisualforcePage('{!JSINHTMLENCODE(otm.Button_Value__c)}', '{!JSINHTMLENCODE(otm.Button_Name__c)}', '{!JSINHTMLENCODE(otm.Object_Name__c)}', 'createVisualforcePageLink{!FLOOR(index)}', '{!JSINHTMLENCODE(otm.Name)}'); void(0);"
+		                            id="createVisualforcePageLink{!FLOOR(index)}">{!$Label.commonCreateVfPage}</a>
+		                    </apex:outputpanel>
+		                    <apex:outputpanel rendered="{!NOT(ISNULL(otm.seismic__Related_Visualforce_Page_Name__c))}">
+		                        {!otm.seismic__Related_Visualforce_Page_Name__c}
+		                    </apex:outputpanel>
+		                </apex:column>
+		                <apex:column />
+		            </apex:pageBlockTable>
+		            <apex:pageBlockSection id="emptyTable" rendered="{!objNewDocMappings.empty}" columns="1">
+		                <apex:outputText value="{!$Label.seismic__commonnorecords}" />
+		            </apex:pageBlockSection>
+		        </apex:pageBlock>
+		        <!-- New Document Button end -->
+			</apex:form>
+		</apex:tab>
+	</apex:tabPanel>
+
+    <c:DeleteVisualforcePage oninfo="showMessage('info', infoMessage)" onerror="showMessage('error', errorMessage)" ></c:DeleteVisualforcePage>
+
+    <apex:form id="editObjectMapping" rendered="{!isEditObjectMapping}">
+        <apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true" oncomplete="enableAllButtons&&enableAllButtons()">
+            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+        </apex:actionFunction>
+        <apex:sectionHeader id="editHeader" title="{!IF(isEditObjectDocMapping || isEditObjectNewDocMapping, $Label.seismic__commondocumentbutton, $Label.seismic__legacyheaderfolderbutton)}" subtitle="{!IF(NOT(ISBLANK(newObjectTypeMapping.seismic__Object_Label__c)), newObjectTypeMapping.seismic__Object_Label__c, newObjectTypeMapping.seismic__Object_Name__c)}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}"/>
+        <apex:sectionHeader id="newHeader" title="{!IF(isEditObjectDocMapping || isEditObjectNewDocMapping, $Label.seismic__commondocumentbutton, $Label.seismic__legacyheaderfolderbutton)}" subtitle="{!$Label.seismic__legacyheaderfolderbuttonsubtitle}" rendered="{!ISNULL(newObjectTypeMapping.Id)}"/>
+        <apex:pageMessages id="messages" escape="false" />
+        <apex:pageBlock id="settings" title="{!IF(isEditObjectDocMapping||isEditObjectNewDocMapping, $Label.seismic__legacyeditdocumentbuttonheader, $Label.seismic__legacyeditfolderbuttonheader)}" rendered="{!objectTypeMappingAccessable}">
+            <apex:pageBlockButtons id="buttons" >
+                <script type="text/javascript">
+                    function getMissedFields () {
+                        var fieldsToCheck = {};
+
+                        if({!isEditObjectDocMapping || isEditObjectNewDocMapping}) {
+                            fieldsToCheck[buttonNameId] = '{!$Label.seismic__commonbuttonname}';
+                            if({!ISNULL(newObjectTypeMapping.Id)}) {
+                                fieldsToCheck[objectName] = '{!$Label.seismic__commonrelated}';
+                            }
+
+                            fieldsToCheck[teamSite] = '{!$Label.seismic__commonprofile}';
+                            fieldsToCheck[documentName] = '{!$Label.seismic__commondocumentpath}';
+                        } else {
+                            fieldsToCheck[buttonNameId] = '{!$Label.seismic__commonbuttonname}';
+                            if({!ISNULL(newObjectTypeMapping.Id)}) {
+                                fieldsToCheck[objectName] = '{!$Label.seismic__commonrelated}';
+                            }
+
+                            fieldsToCheck[teamSite] = '{!$Label.seismic__commonprofile}';
+                            fieldsToCheck[folderName] = '{!$Label.seismic__commonfolderpath}';
+                        }
+
+                        var missedFields = [];
+                        for(var id in fieldsToCheck) {
+                            var label = fieldsToCheck[id];
+
+                            var input = document.getElementById(id);
+                            if(!input) continue;
+
+                            var value = input.value;
+                            if(!value) {
+                                missedFields.push(label);
+                            }
+                        }
+
+                        return missedFields;
+                    }
+
+                    function findButtonInMappings(isUpdate, objMappings, currentObjectName, buttonLabel, buttonValue) {
+                        for (var i = 0; i < objMappings.length; i++) {
+                            var dm = objMappings[i];
+                            dm['{!PACKAGE_NAME}' + 'Button_Name__c'] = dm['{!PACKAGE_NAME}' + 'Button_Name__c'] || "";
+                            dm['{!PACKAGE_NAME}' + 'Button_Name__c'] = dm['{!PACKAGE_NAME}' + 'Button_Name__c'].toLowerCase();
+                            buttonLabel = buttonLabel || "";
+                            buttonLabel = buttonLabel.toLowerCase();
+                            if (dm['{!PACKAGE_NAME}' + 'Object_Name__c'] == currentObjectName && dm['{!PACKAGE_NAME}' + 'Button_Name__c'] == buttonLabel) {
+                                if(isUpdate) {
+                                    if(buttonValue != dm['{!PACKAGE_NAME}' + 'Button_Value__c']) {
+                                        return true;
+                                    }
+                                } else {
+                                    return true;
+                                }
+                            }
+                        }
+
+                        return false;
+                    }
+
+                    function hasDuplicateButton(isUpdate) {
+                        return false;
+                        // Remove validation for assembla #1094
+                        /*var buttonLabel = getButtonLabel();
+                        var buttonValue = getButtonValue();
+                        var currentObjectName = getCurrentObjectName();
+
+                        var objDocMappings = {!objDocMappingsJson};
+                        var objFolderMappings = {!objFolderMappingsJson};
+
+                        var found = findButtonInMappings(isUpdate, objDocMappings, currentObjectName, buttonLabel, buttonValue);
+                        if(found) {
+                            return true;
+                        }
+
+                        found = findButtonInMappings(isUpdate, objFolderMappings, currentObjectName, buttonLabel, buttonValue);
+
+                        return found;*/
+                    }
+
+                    function getButtonLabel() {
+                        var input = document.getElementById(buttonNameId);
+
+                        return input && input.value;
+                    }
+
+                    function getButtonValue() {
+                        var input = document.getElementById(buttonValueId);
+
+                        return input && input.value;
+                    }
+
+                    function checkAndSaveButton(callback) {
+                        disableAllButtons();
+                        var missedFields = getMissedFields();
+                        if(missedFields.length > 0) {
+                            showError(format('{!$Label.messageEmptyField}', missedFields.join(', ')));
+                            return false;
+                        }
+
+                        var dupliate = hasDuplicateButton();
+                        if ('EXCEPTION' == dupliate) {
+                            enableAllButtons();
+                            return false;
+                        } else if(dupliate) {
+                            showError('{!$Label.messageButtonExists}');
+                            return false;
+                        }
+
+                        var wl = new sforce.SObject("WebLink");
+
+                        wl.DisplayType = 'B';
+                        wl.EncodingKey = 'UTF-8';
+                        wl.LinkType = 'url';
+                        wl.Description = format('* {0}\n* {1}', '{!$Label.messageGeneratedAutomatically}', '{!$Label.messageDoNotChange}');
+
+                        wl.MasterLabel = getButtonLabel();
+                        wl.Name = 'SeismicButton_' + Math.random().toString().replace(".", "");
+                        wl.PageOrSobjectType = jQuery("#objectTypeSelector").val();
+                        wl.OpenType = 'replace';
+
+                        if ({!isEditObjectDocMapping}) {
+                            //wl.OpenType = 'onClickJavaScript';
+                            //var jsTemplate = "{" + "!REQUIRESCRIPT('/resource/' &  LEFT(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(TEXT(NOW()),':',''),'-',''),' ',''),10) & '000/" + "{!PACKAGE_NAME}" + "SeismicRequesterDialog_js')}\n\n/**\n * Generated by Seismic automatically.\n * \n * Please do NOT change anything manually unless you know what you are doing.\n */\nvar title = 'Seismic',\n  objectId = '{" + "![!sobject].Id}',\n  apexBaseUrl = '[!hostName]',\n  buttonApiName = '[!btnApiName]',\n  pageUrl = window.location.href;\n\nopenSeismicRequesterDialog(title, apexBaseUrl, objectId, buttonApiName, pageUrl);";
+                            //jsTemplate = jsTemplate.replace("[!sobject]", wl.PageOrSobjectType);
+                            //jsTemplate = jsTemplate.replace("[!hostName]", window.location.hostname);
+                            //jsTemplate = jsTemplate.replace("[!btnApiName]", wl.Name);
+                            //wl.Url = jsTemplate;
+                            wl.Url = 'https://' + window.location.hostname + '/apex/SeismicRequester?id={' + '!' + wl.PageOrSobjectType + '.Id}&btnName=' + wl.Name + '&miniDistribution=1';
+                        } else if ({!isEditObjectNewDocMapping}) {
+                        	wl.Url = 'https://' + window.location.hostname + '/apex/SeismicNewDocRequester?id={' + '!' + wl.PageOrSobjectType + '.Id}&btnName=' + wl.Name;
+                        } else {
+                            //wl.OpenType = 'replace';
+                            wl.Url = 'https://' + window.location.hostname + '/apex/SeismicRequester?id={' + '!' + wl.PageOrSobjectType + '.Id}&btnName=' + wl.Name;
+                        }
+
+                        try {
+                            var result = sforce.connection.create([wl], {
+                                onSuccess : function(result){
+                                    if(result && result[0] && result[0].success == 'true') {
+                                        document.getElementById(buttonValueId).value = wl.Name;
+                                        callback();
+                                    } else if(result && result[0] && result[0].errors
+                                            && result[0].errors.statusCode == "INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST"
+                                            && result[0].errors.fields == "PageOrSobjectType") {
+                                        showError(format('{!$Label.messageCreateButtonOnObjectFailure}', wl.PageOrSobjectType));
+                                    } else if(result[0] && result[0].errors && result[0].errors.message){
+                                        showError(format('{!$Label.messageCreateButtonFailure}', result[0].errors.message));
+                                    }
+                                },
+                                onFailure : function(error){
+                                    showError(format('{!$Label.messageCreateButtonFailure}', error.message));
+                                }
+                            });
+                        } catch(e) {
+                            showError(format('{!$Label.messageError}', e.faultstring));
+                        }
+                    }
+
+                    function checkAndUpdateButton(callback) {
+                        disableAllButtons();
+                        var missedFields = getMissedFields();
+                        if(missedFields.length > 0) {
+                          	showError(format('{!$Label.messageEmptyField}', missedFields.join(', ')));
+                            return false;
+                        }
+
+                        var dupliate = hasDuplicateButton(true);
+                        if('EXCEPTION' == dupliate) {
+                            enableAllButtons();
+                            return false;
+                        } else if(dupliate) {
+                          	showError('{!$Label.messageButtonExists}');
+                            return false;
+                        }
+
+                        var records = [];
+                        var result = sforce.connection.query("SELECT ID from WebLink WHERE WebLink.Name='{!JSENCODE(newObjectTypeMapping.Button_Value__c)}'", {
+                            onSuccess : function(result){
+                                var wl = new sforce.SObject("WebLink");
+                                wl.id = result.getArray("records")[0].Id;
+
+                                wl.MasterLabel = getButtonLabel();
+
+                                var result = sforce.connection.update([wl], {
+                                    onSuccess : function(result){
+                                        if(result && result[0] && result[0].success == 'true') {
+                                            callback();
+                                        } else if(result[0] && result[0].errors && result[0].errors.message){
+                                            showError(format('{!$Label.messageUpdateButtonFailure}', result[0].errors.message));
+                                        }
+                                    },
+                                    onFailure : function(error){
+                                        showError(format('{!$Label.messageUpdateButtonFailure}', error.message));
+                                    }
+                                });
+                            },
+                            onFailure : function(error){
+                                showError(format('{!$Label.messageCreateButtonFailure}', error.message));
+                            }
+                        });
+                    }
+                </script>
+                <apex:actionFunction action="{!saveNewObjectTypeMapping}" name="saveNewObjectTypeMapping" />
+                <apex:commandButton id="saveButton" value="{!$Label.seismic__buttonsave}" rendered="{!ISNULL(newObjectTypeMapping.Id) && objectTypeMappingInsertable}" onclick="checkAndSaveButton(saveNewObjectTypeMapping);return false;"/>
+                <apex:actionFunction action="{!updateObjectTypeMapping}" name="updateObjectTypeMapping" />
+                <apex:commandButton id="updateButton" value="{!$Label.seismic__buttonsave}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable}" onclick="checkAndUpdateButton(updateObjectTypeMapping);return false;"/>
+                <apex:commandButton id="deleteButton" value="{!$Label.seismic__buttondelete}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingDeleteable}" onclick="checkCanDelete(null, null, '{!JSINHTMLENCODE(newObjectTypeMapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(newObjectTypeMapping.Name)}', '{!JSINHTMLENCODE(newObjectTypeMapping.seismic__Related_Visualforce_Page_Name__c)}'); return false;" />
+                <apex:commandButton id="cancelButton" action="{!backToList}" value="{!$Label.seismic__buttoncancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+
+            <apex:outputPanel rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable}">
+                <script>
+                    function createdVisualforcePage(visualforcePage) {
+                      	showMessage('info', format('{!$Label.messageCreateVfPage}', '<a target="_blank" href="/09D/e?type={!newObjectTypeMapping.seismic__Object_Name__c}&setupid={!newObjectTypeMapping.seismic__Object_Name__c}Links&PageOrSobjectType={!newObjectTypeMapping.seismic__Object_Name__c}&retURL=">', '</a>'));
+                    }
+                </script>
+                <apex:actionFunction name="generatePublisherActionComplete" action="{!saveVisualforcePage}" rerender="messages, editObjectMapping" immediate="true" onbeforedomupdate="createdVisualforcePage(visualforcePage)">
+                    <apex:param name="visualforcePage" assignTo="{!visualforcePage}" value=""/>
+                    <apex:param name="objectTypeMappingInstanceNameName" assignTo="{!objectTypeMappingInstanceNameName}" value=""/>
+                </apex:actionFunction>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable && ISBLANK(newObjectTypeMapping.seismic__Related_Visualforce_Page_Name__c)}">
+                <apex:actionFunction name="showMessage" action="{!showMessage}" rerender="messages" immediate="true">
+                    <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+                    <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+                </apex:actionFunction>
+                <c:GeneratePublisherAction oncomplete="generatePublisherActionComplete(visualforcePage);" oninfo="showMessage('info', infoMessage)" onerror="showMessage('error', errorMessage)" isEditObjectDocMapping="{!isEditObjectDocMapping}"  canvasAppDeveloperName="{!CANVAS_APP_DEVELOPER_NAME}"  packageNameSpace="{!PACKAGE_NAMESPACE}"></c:GeneratePublisherAction>
+            </apex:outputPanel>
+
+            <apex:pageBlockSection id="settings" columns="1">
+                <apex:pageBlockSectionItem id="buttonName">
+                    <apex:outputLabel value="{!$Label.seismic__commonbuttonname}" for="newButtonName" id="label"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Button_Name__c}" id="newButtonName"/>
+                        <apex:inputHidden value="{!newObjectTypeMapping.seismic__Button_Value__c}" id="newButtonValue" />
+                        <script>
+                            var buttonNameId = '{!$Component.newButtonName}';
+                            var buttonValueId = '{!$Component.newButtonValue}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="pageForAction" rendered="{!(isEditObjectDocMapping||isEditObjectNewDocMapping)  && NOT(ISBLANK(newObjectTypeMapping.seismic__Related_Visualforce_Page_Name__c))}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonvfpageforaction}" />
+                    <apex:outputpanel layout="block">{!newObjectTypeMapping.seismic__Related_Visualforce_Page_Name__c}</apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="pageForActionLink" rendered="{!(isEditObjectDocMapping||isEditObjectNewDocMapping) && NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable && ISBLANK(newObjectTypeMapping.seismic__Related_Visualforce_Page_Name__c)}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonvfpageforaction}"/>
+                    <apex:outputpanel layout="block">
+                        <a href="javascript: createVisualforcePage('{!JSINHTMLENCODE(newObjectTypeMapping.Button_Value__c)}', '{!JSINHTMLENCODE(newObjectTypeMapping.Button_Name__c)}', '{!JSINHTMLENCODE(newObjectTypeMapping.Object_Name__c)}'); void(0);"
+                            id="createVisualforcePageLink">{!$Label.commonCreateVfPage}</a>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="relatedObject" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}">
+                    <apex:outputLabel value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block">{!newObjectTypeMapping.seismic__Object_Label__c}
+                        <script>
+                            function getCurrentObjectName() {
+                                return '{!JSENCODE(newObjectTypeMapping.seismic__Object_Name__c)}';
+                            }
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="relatedObjectList" rendered="{!ISNULL(newObjectTypeMapping.Id)}">
+                    <apex:outputLabel value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"></apex:outputpanel>
+                        <select val="{!newObjectTypeMapping.seismic__Object_Name__c}" id="objectTypeSelector">
+                            <apex:repeat value="{!displayAllObjectTypes}" var="list">
+                                <apex:repeat value="{!list}" var="o">
+                                    <option value="{!o.value}" >{!o.label}</option>
+                                </apex:repeat>
+                            </apex:repeat>
+                        </select>
+                        <apex:inputHidden id="objectTypeSelectorHidden" value="{!newObjectTypeMapping.seismic__Object_Name__c}"/>
+                        <script type="text/javascript">
+                            var objectName = '{!$Component.objectTypeSelectorHidden}';
+                            function getCurrentObjectName() {
+                                var input = document.getElementById(objectName);
+                                return input && input.value;
+                            }
+
+                            jQuery(function(){
+                                var $objectTypeSelctor = jQuery("#objectTypeSelector");
+                                $objectTypeSelctor.children("option").each(function(k, v){
+                                    if(jQuery(v).val() == $objectTypeSelctor.attr("val")){
+                                        jQuery(v).attr("selected", "selected");
+                                    }
+                                });
+
+                                document.getElementById('{!$Component.objectTypeSelectorHidden}').value = jQuery("#objectTypeSelector").val();
+
+                                jQuery("#objectTypeSelector").change(function(){
+                                    document.getElementById('{!$Component.objectTypeSelectorHidden}').value = jQuery(this).val();
+                                });
+                            });
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="filter" rendered="{!NOT(isEditObjectDocMapping || isEditObjectNewDocMapping)}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonfilters}"/>
+                    <apex:outputpanel layout="block">
+                        <span style="display:none" class="filtersData">
+                            <apex:inputHidden id="filtersData" value="{!filtersData}" />
+                        </span>
+                        <span style="display:none" class="filterLogic">
+                            <apex:inputHidden id="filterLogic" value="{!newObjectTypeMapping.seismic__FilterLogic__c}" />
+                        </span>
+                        <table class="filtersTable list" style="width: 500px;">
+                            <thead class="rich-table-thead">
+                                <tr class="headerRow">
+                                    <th class="headerRow">{!$Label.seismic__filterlabelproperty}</th>
+                                    <th class="headerRow">{!$Label.seismic__filterlabeloperator}</th>
+                                    <th class="headerRow">{!$Label.seismic__filterlabelfield}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <div style="height: 25px; line-height: 25px;">
+                          	{!$Label.seismic__filterlabelmatching}
+                            <select id="filterLogicSelector" val="{!newObjectTypeMapping.seismic__FilterLogic__c}">
+                                <option value="AND">{!$Label.seismic__filterlabelall}</option>
+                                <option value="OR">{!$Label.seismic__filterlabelany}</option>
+                            </select>
+                        </div>
+                        <button class="editFilters btn">
+                            {!$Label.seismic__buttonedit}
+                        </button>
+                        <button class="clearFilters btn">
+                            {!$Label.seismic__buttonclear}
+                        </button>
+
+
+                        <script type="text/javascript">
+                            jQuery(function(){
+                                var $filterLogicSelector = jQuery("#filterLogicSelector");
+                                $filterLogicSelector.children("option").each(function(k, v){
+                                    if (jQuery(v).val() == $filterLogicSelector.attr("val")){
+                                        jQuery(v).attr("selected", "selected");
+                                    }
+                                });
+
+                                jQuery("#filterLogicSelector").change(function(){
+                                    document.getElementById('{!$Component.filterLogic}').value = jQuery(this).val();
+                                });
+                            });
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageblocksectionitem id="profile">
+                    <apex:outputLabel id="profileLabel" value="{!$Label.seismic__commonprofile}" for="newTeamSite"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Team_Site__c}" id="newTeamSite"/>
+                        <script>
+                            var teamSite = '{!$Component.newTeamSite}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+                <apex:pageblocksectionitem id="folderPath" rendered="{!NOT(isEditObjectDocMapping || isEditObjectNewDocMapping)}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonfolderpath}" for="newFolderName"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Filter_List_Name__c}" id="newFolderName"/>
+                        <script>
+                            var folderName = '{!$Component.newFolderName}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+                <apex:pageblocksectionitem id="documentPath" rendered="{!isEditObjectDocMapping || isEditObjectNewDocMapping}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commondocumentpath}" for="newDocumentName"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Document_Name__c}" id="newDocumentName"/>
+                        <script>
+                            var documentName = '{!$Component.newDocumentName}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+                <apex:pageblocksectionitem id="defaultFormat" rendered="{!isEditObjectDocMapping}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__legacydocumentbuttontitleformat}" for="newGenerateFormat"/>
+                    <apex:outputpanel layout="block">
+                        <apex:outputpanel layout="block"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Generate_Format__c}" id="newGenerateFormat"/>
+                        <script>
+                            var generateFormat = '{!$Component.newGenerateFormat}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+
+    <apex:form id="editSystemDefinedPredictive" rendered="{!isEditSystemDefinedPredictiveMapping}">
+        <apex:actionFunction name="showMessage" action="{!showMessage}" rerender="messages" immediate="true">
+            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+        </apex:actionFunction>
+
+        <apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true" oncomplete="enableAllButtons&&enableAllButtons()">
+            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+        </apex:actionFunction>
+
+        <apex:sectionHeader id="editHeader" title="{!$Label.seismic__commonvfpage}" subtitle="{!IF(NOT(ISBLANK(newObjectTypeMapping.seismic__Object_Label__c)), newObjectTypeMapping.seismic__Object_Label__c, newObjectTypeMapping.seismic__Object_Name__c)}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}"/>
+
+        <apex:sectionHeader id="newHeader" title="{!$Label.seismic__commonvfpage}" subtitle="{!$Label.seismic__commonnewpage}" rendered="{!ISNULL(newObjectTypeMapping.Id)}"/>
+
+        <apex:pageMessages id="messages" escape="false" />
+
+        <apex:pageBlock id="settings" title="{!$Label.seismic__legacyeditsystempredictiveheader}" rendered="{!objectTypeMappingAccessable}">
+            <apex:pageBlockButtons id="buttons">
+                <apex:variable value="{!IF(ISBLANK(newObjectTypeMapping.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, newObjectTypeMapping.seismic__Button_Name__c )}" var="pageName" />
+                <apex:commandButton id="saveButton" value="{!$Label.seismic__buttonsave}" rendered="{!ISNULL(newObjectTypeMapping.Id) && objectTypeMappingInsertable}" action="{!SaveSystemDefinedPredictivePage}"/>
+                <apex:commandButton id="updateButton" value="{!$Label.seismic__buttonsave}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable}" action="{!updateSystemDefinedPredictivePage}"/>
+                <apex:commandButton id="deleteButton" value="{!$Label.seismic__buttondelete}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingDeleteable}"  onclick="checkCanDelete(null, null, '{!JSINHTMLENCODE(newObjectTypeMapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(newObjectTypeMapping.Name)}', '{!JSINHTMLENCODE(pageName)}'); return false;"  />
+                <apex:commandButton action="{!backToList}" id="cancelButton" value="{!$Label.seismic__buttoncancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="fields" columns="1">
+
+                <apex:pageBlockSectionItem id="relatedObject" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block">{!newObjectTypeMapping.seismic__Object_Label__c}
+                        <script>
+                            function getCurrentObjectName() {
+                                return '{!JSENCODE(newObjectTypeMapping.seismic__Object_Name__c)}';
+                            }
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="relatedOjectList" rendered="{!ISNULL(newObjectTypeMapping.Id)}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"></apex:outputpanel>
+                        <select val="{!newObjectTypeMapping.seismic__Object_Name__c}" id="objectTypeSelector">
+                            <apex:repeat value="{!displayAllObjectTypes}" var="list">
+                                <apex:repeat value="{!list}" var="o">
+                                    <option value="{!o.value}" >{!o.label}</option>
+                                </apex:repeat>
+                            </apex:repeat>
+                        </select>
+                        <apex:inputHidden id="objectTypeSelectorHidden" value="{!newObjectTypeMapping.seismic__Object_Name__c}"/>
+                        <script>
+                            var objectName = '{!$Component.objectTypeSelectorHidden}';
+                            function getCurrentObjectName() {
+                                var input = document.getElementById(objectName);
+                                return input && input.value;
+                            }
+
+                            jQuery(function(){
+                                var $objectTypeSelctor = jQuery("#objectTypeSelector");
+                                $objectTypeSelctor.children("option").each(function(k, v){
+                                    if(jQuery(v).val() == $objectTypeSelctor.attr("val")){
+                                        jQuery(v).attr("selected", "selected");
+                                    }
+                                });
+
+                                document.getElementById('{!$Component.objectTypeSelectorHidden}').value = jQuery("#objectTypeSelector").val();
+
+                                jQuery("#objectTypeSelector").change(function(){
+                                    document.getElementById('{!$Component.objectTypeSelectorHidden}').value = jQuery(this).val();
+                                });
+                            });
+
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="predictiveComponentName">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__legacysystempredictivecomponentname}" for="newPageName"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputtext value="{!newObjectTypeMapping.seismic__Button_Name__c}" id="newPageName" maxlength="80" />
+                        <apex:inputHidden value="{!newObjectTypeMapping.seismic__Button_Value__c}" id="newButtonValue" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageblocksectionitem id="predictiveContentSettingTitle">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__legacysystempredictivesettingtitle}" for="newTeamSite"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Team_Site__c}" id="newTeamSite"/>
+                        <script>
+                            var teamSite = '{!$Component.newTeamSite}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+
+                <apex:pageblocksectionitem id="additonalVFParameter">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__legacysystempredictivevisualforceparameter}" />
+                    <apex:outputpanel layout="block">
+                        <apex:outputpanel layout="block"/>
+                        <apex:inputtext id="newVisualforceParameter" value="{!newObjectTypeMapping.seismic__VisualforceParameter__c}" maxlength="255" />
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+
+    <apex:form id="editVisualforcePageMapping" rendered="{!isEditVisualforcePageMapping}">
+        <apex:actionFunction name="showMessage" action="{!showMessage}" rerender="messages" immediate="true">
+            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+        </apex:actionFunction>
+
+        <apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true" oncomplete="enableAllButtons&&enableAllButtons()">
+            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+        </apex:actionFunction>
+
+        <apex:sectionHeader id="editVFPageHeader" title="{!$Label.seismic__commonvfpage}" subtitle="{!IF(NOT(ISBLANK(newObjectTypeMapping.seismic__Object_Label__c)), newObjectTypeMapping.seismic__Object_Label__c, newObjectTypeMapping.seismic__Object_Name__c)}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}"/>
+
+        <apex:sectionHeader id="newVFPageHeader" title="{!$Label.seismic__commonvfpage}" subtitle="{!$Label.seismic__commonnewpage}" rendered="{!ISNULL(newObjectTypeMapping.Id)}"/>
+
+        <apex:pageMessages id="messages" escape="false" />
+
+        <apex:pageBlock id="settings" title="{!$Label.seismic__legacyeditpredictivecontentheader}" rendered="{!objectTypeMappingAccessable}">
+            <apex:pageBlockButtons >
+                <apex:variable value="{!IF(ISBLANK(newObjectTypeMapping.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, newObjectTypeMapping.seismic__Button_Name__c )}" var="pageName" />
+                <apex:commandButton id="saveButton" value="{!$Label.seismic__buttonsave}" rendered="{!ISNULL(newObjectTypeMapping.Id) && objectTypeMappingInsertable}" action="{!SaveNewVisualforcePage}"/>
+                <apex:commandButton id="updateButton" value="{!$Label.seismic__buttonsave}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable}" action="{!updateVisualforcePage}"/>
+                <apex:commandButton id="deleteButton" value="{!$Label.seismic__buttondelete}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingDeleteable}"  onclick="checkCanDelete(null, null, '{!JSINHTMLENCODE(newObjectTypeMapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(newObjectTypeMapping.Name)}', '{!JSINHTMLENCODE(pageName)}'); return false;"  />
+                <apex:commandButton action="{!backToList}" id="cancelButton" value="{!$Label.seismic__buttoncancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="fields" columns="1">
+
+                <apex:pageBlockSectionItem id="name">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonname}" for="newPageName"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputtext value="{!newObjectTypeMapping.seismic__Button_Name__c}" id="newPageName" maxlength="80" />
+                        <apex:inputHidden value="{!newObjectTypeMapping.seismic__Button_Value__c}" id="newButtonValue" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="relatedObject" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block">{!newObjectTypeMapping.seismic__Object_Label__c}
+                        <script>
+                            function getCurrentObjectName() {
+                                return '{!JSENCODE(newObjectTypeMapping.seismic__Object_Name__c)}';
+                            }
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="relatedObjectList" rendered="{!ISNULL(newObjectTypeMapping.Id)}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"></apex:outputpanel>
+                        <select val="{!newObjectTypeMapping.seismic__Object_Name__c}" id="objectTypeSelector">
+                            <apex:repeat value="{!displayAllObjectTypes}" var="list">
+                                <apex:repeat value="{!list}" var="o">
+                                    <option value="{!o.value}" >{!o.label}</option>
+                                </apex:repeat>
+                            </apex:repeat>
+                        </select>
+                        <apex:inputHidden id="objectTypeSelectorHidden" value="{!newObjectTypeMapping.seismic__Object_Name__c}"/>
+                        <script>
+                            var objectName = '{!$Component.objectTypeSelectorHidden}';
+                            function getCurrentObjectName() {
+                                var input = document.getElementById(objectName);
+                                return input && input.value;
+                            }
+
+                            jQuery(function(){
+                                var $objectTypeSelctor = jQuery("#objectTypeSelector");
+                                $objectTypeSelctor.children("option").each(function(k, v){
+                                    if(jQuery(v).val() == $objectTypeSelctor.attr("val")){
+                                        jQuery(v).attr("selected", "selected");
+                                    }
+                                });
+
+                                document.getElementById('{!$Component.objectTypeSelectorHidden}').value = jQuery("#objectTypeSelector").val();
+
+                                jQuery("#objectTypeSelector").change(function(){
+                                    document.getElementById('{!$Component.objectTypeSelectorHidden}').value = jQuery(this).val();
+                                });
+                            });
+
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="filters" rendered="{!NOT(isEditObjectDocMapping || isEditObjectNewDocMapping)}">
+                    <apex:outputLabel id="labels" value="{!$Label.seismic__commonfilters}"/>
+                    <apex:outputpanel layout="block">
+                        <span style="display:none" class="filtersData">
+                            <apex:inputHidden id="filtersData" value="{!filtersData}" />
+                        </span>
+
+                        <table id="table" class="filtersTable list" style="width: 500px;">
+                            <thead id="tableHeader" class="rich-table-thead">
+                                <tr id="headerRow" class="headerRow">
+                                    <th id="customPropertyColumn" class="headerRow">{!$Label.filterLabelProperty}</th>
+                                    <th id="operatorColumn" class="headerRow">{!$Label.filterLabelOperator}</th>
+                                    <th id="fieldInSFColumn" class="headerRow">{!$Label.filterLabelField}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+
+                        <button id="editButton" class="editFilters btn">
+                            {!$Label.seismic__buttonedit}
+                        </button>
+                        <button id="ClearButton" class="clearFilters btn">
+                            {!$Label.buttonClear}
+                        </button>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageblocksectionitem id="profile">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonprofile}" for="newTeamSite"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Team_Site__c}" id="newTeamSite"/>
+                        <script>
+                            var teamSite = '{!$Component.newTeamSite}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+
+                <apex:pageblocksectionitem id="folderPath" rendered="{!NOT(isEditObjectDocMapping||isEditObjectNewDocMapping)}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonfolderpath}" for="newFolderName"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Filter_List_Name__c}" id="newFolderName"/>
+                        <script>
+                            var folderName = '{!$Component.newFolderName}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+
+                <apex:pageblocksectionitem id="documentPath" rendered="{!isEditObjectDocMapping||isEditObjectNewDocMapping}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commondocumentpath}" for="newDocumentName"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Document_Name__c}" id="newDocumentName"/>
+                        <script>
+                            var documentName = '{!$Component.newDocumentName}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+
+                <apex:pageblocksectionitem id="defaultFormat" rendered="{!isEditObjectDocMapping ||isEditObjectNewDocMapping}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__legacydocumentbuttontitleformat}" for="newGenerateFormat"/>
+                    <apex:outputpanel layout="block">
+                        <apex:outputpanel layout="block"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Generate_Format__c}" id="newGenerateFormat"/>
+                        <script>
+                            var generateFormat = '{!$Component.newGenerateFormat}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+
+    <apex:form id="editCustomTabMapping" rendered="{!isEditTabMapping}">
+        <apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true">
+            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+        </apex:actionFunction>
+        <apex:sectionHeader id="editHeader" title="{!$Label.seismic__legacyheadercustomtab}" subtitle="{!newCustomTabMapping.seismic__Custom_Tab__c}" rendered="{!NOT(ISNULL(newCustomTabMapping.Id))}"/>
+        <apex:sectionHeader id="newHeader" title="{!$Label.seismic__legacyheadercustomtab}" subtitle="{!$Label.seismic__legacynewmapping}" rendered="{!ISNULL(newCustomTabMapping.Id)}"/>
+        <apex:pageMessages id="messages" escape="false" />
+        <apex:pageBlock id="settings" title="{!$Label.seismic__legacyeditcustomtabheader}" rendered="{!objectTypeMappingAccessable}">
+            <apex:pageBlockButtons id="buttons">
+                <apex:commandButton action="{!saveNewCustomTabMapping}" id="saveButton" value="{!$Label.seismic__buttonsave}" rendered="{!ISNULL(newCustomTabMapping.Id) && customTabMappingInsertable}" disabled="{!isRetrievingCustomTabs}"/>
+                <apex:commandButton action="{!updateCustomTabMapping}" id="updateButton" value="{!$Label.seismic__buttonsave}" rendered="{!NOT(ISNULL(newCustomTabMapping.Id)) && customTabMappingUpdatable}" disabled="{!isRetrievingCustomTabs}"/>
+                <apex:commandButton action="{!deleteCustomTabMapping}" id="deleteButton" value="{!$Label.seismic__buttondelete}" rendered="{!NOT(ISNULL(newCustomTabMapping.Id)) && customTabMappingDeleteable}" onclick="return window.confirm({!$Label.seismic__messageconfirmdelete})" disabled="{!isRetrievingCustomTabs}"/>
+                <apex:commandButton action="{!backToList}" id="cancelButton" value="{!$Label.seismic__buttoncancel}" immediate="true" disabled="{!isRetrievingCustomTabs}" />
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection id="fields" columns="1" rendered="{!NOT(isRetrievingCustomTabs)}">
+                <apex:pageBlockSectionItem id="customTab" rendered="{!NOT(cannotListCustomTab)}">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commoncustomtab}" for="newCustomTab"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"></apex:outputpanel>
+                        <select val="{!newCustomTabMapping.seismic__Custom_Tab_Id__c}" id="customTabSelector"
+                            onchange="document.getElementById('{!$Component.customTabSelectorHidden}').value=this.value;">
+                            <apex:repeat value="{!displayAllCustomTabs}" var="list">
+                                <apex:repeat value="{!list}" var="o">
+                                    <option value="{!o.value}" >{!o.label}</option>
+                                </apex:repeat>
+                            </apex:repeat>
+                        </select>
+                        <apex:inputHidden id="customTabSelectorHidden" value="{!newCustomTabMapping.seismic__Custom_Tab_Id__c}"/>
+                        <script>
+                            jQuery(function(){
+                                var $customTabSelector = jQuery("#customTabSelector");
+                                $customTabSelector.children("option").each(function(k, v){
+                                    if(jQuery(v).val() == $customTabSelector.attr("val")){
+                                        jQuery(v).attr("selected", "selected");
+                                    }
+                                });
+
+                                document.getElementById('{!$Component.customTabSelectorHidden}').value = jQuery("#customTabSelector").val();
+
+                                jQuery("#customTabSelector").change(function(){
+                                    document.getElementById('{!$Component.customTabSelectorHidden}').value = jQuery(this).val();
+                                });
+                            });
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="customTabID" rendered="{!cannotListCustomTab}">
+                    <apex:outputLabel id="label" value="Custom Tab Id" for="customTab_customTabId_for_edit"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newCustomTabMapping.seismic__Custom_Tab_Id__c}" id="customTab_customTabId_for_edit"/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="customTabName" rendered="{!cannotListCustomTab}">
+                    <apex:outputLabel id="label" value="Custom Tab Name" for="customTab_customTabName_for_edit"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputText value="{!newCustomTabMapping.seismic__Custom_Tab__c}" id="customTab_customTabName_for_edit"/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="customProfile">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonprofile}" for="customTab_teamSite_for_edit"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputText value="{!newCustomTabMapping.seismic__Team_Site__c}" id="customTab_teamSite_for_edit"/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="folderPath">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonfolderpath}" for="customTab_filterListName_for_edit"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputText value="{!newCustomTabMapping.seismic__Filter_List_Name__c}" id="customTab_filterListName_for_edit"/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection id="customTab" columns="1" rendered="{!isRetrievingCustomTabs}">
+                <apex:outputField id="label" value="{!newCustomTabMapping.seismic__Custom_Tab__c}" />
+                <apex:pageBlockSectionItem id="profile">
+                    <apex:outputLabel value="{!$Label.seismic__commonprofile}" for="customTab_teamSite_for_display"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputText value="{!newCustomTabMapping.seismic__Team_Site__c}" id="customTab_teamSite_for_display"/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="filter">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonfolderpath}" for="customTab_filterListName_for_display"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputText value="{!newCustomTabMapping.seismic__Filter_List_Name__c}" id="customTab_filterListName_for_display"/>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+
+        <apex:outputPanel rendered="{!isRetrievingCustomTabs}">
+            <apex:actionFunction name="retrieveCustomTabsComplete" action="{!retrieveCustomTabsComplete}" rerender="messages, editCustomTabMapping" immediate="true">
+                <apex:param name="customTabListString" assignTo="{!customTabListString}" value=""/>
+            </apex:actionFunction>
+            <apex:actionFunction name="showMessage" action="{!showMessage}" rerender="messages, editCustomTabMapping" immediate="true">
+                <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+                <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+                <apex:param name="isRetrievingCustomTabs" assignTo="{!isRetrievingCustomTabs}" value="false"/>
+                <apex:param name="cannotListCustomTab" assignTo="{!cannotListCustomTab}" value="true"/>
+            </apex:actionFunction>
+            <c:RetrieveCustomTabs oncomplete="retrieveCustomTabsComplete(customTabListString);" oninfo="showMessage('info', infoMessage)" onwarning="showMessage('warning', warningMessage)" onerror="showMessage('error', errorMessage)" tabType="page" componentType="SeismicRequester"></c:RetrieveCustomTabs>
+        </apex:outputPanel>
+    </apex:form>
+
+	<apex:form id="editObjectMappingLightning" rendered="{!isEditObjectMappingLightning}">
+        <apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true" oncomplete="enableAllButtons&&enableAllButtons()">
+            <apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value=""/>
+            <apex:param name="messageToShow" assignTo="{!messageToShow}" value=""/>
+        </apex:actionFunction>
+        <apex:sectionHeader id="editHeader" title="{!$Label.seismic__legacyheaderfolderbutton}" subtitle="{!IF(NOT(ISBLANK(newObjectTypeMapping.seismic__Object_Label__c)), newObjectTypeMapping.seismic__Object_Label__c, newObjectTypeMapping.seismic__Object_Name__c)}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}"/>
+        <apex:sectionHeader id="newHeader" title="{!$Label.seismic__legacyheaderfolderbutton}" subtitle="{!$Label.seismic__legacyheaderfolderbuttonsubtitle}" rendered="{!ISNULL(newObjectTypeMapping.Id)}"/>
+        <apex:pageMessages id="messages" escape="false" />
+        <apex:pageBlock id="settings" title="{!$Label.seismic__newheaderedittabbutton}" rendered="{!objectTypeMappingAccessable}">
+            <apex:pageBlockButtons id="buttons" >
+                <script type="text/javascript">
+                    function getMissedFieldsLightning () {
+                        var fieldsToCheck = {};
+                        fieldsToCheck[buttonNameId] = '{!$Label.seismic__commonbuttonname}';
+                        if({!ISNULL(newObjectTypeMapping.Id)}) {
+                            fieldsToCheck[objectName] = '{!$Label.seismic__commonrelated}';
+                        }
+
+                        fieldsToCheck[newEmbeddedApplication] = '{!$Label.seismic__commonembeddedapp}';
+
+                        var missedFields = [];
+                        for(var id in fieldsToCheck) {
+                            var label = fieldsToCheck[id];
+
+                            var input = document.getElementById(id);
+                            if(!input) continue;
+
+                            var value = input.value;
+                            if(!value) {
+                                missedFields.push(label);
+                            }
+                        }
+
+                        return missedFields;
+                    }
+
+                    function findButtonInMappingsLightning(isUpdate, objMappings, currentObjectName, buttonLabel, buttonValue) {
+                        for (var i = 0; i < objMappings.length; i++) {
+                            var dm = objMappings[i];
+                            dm['{!PACKAGE_NAME}' + 'Button_Name__c'] = dm['{!PACKAGE_NAME}' + 'Button_Name__c'] || "";
+                            dm['{!PACKAGE_NAME}' + 'Button_Name__c'] = dm['{!PACKAGE_NAME}' + 'Button_Name__c'].toLowerCase();
+                            buttonLabel = buttonLabel || "";
+                            buttonLabel = buttonLabel.toLowerCase();
+                            if (dm['{!PACKAGE_NAME}' + 'Object_Name__c'] == currentObjectName && dm['{!PACKAGE_NAME}' + 'Button_Name__c'] == buttonLabel) {
+                                if(isUpdate) {
+                                    if(buttonValue != dm['{!PACKAGE_NAME}' + 'Button_Value__c']) {
+                                        return true;
+                                    }
+                                } else {
+                                    return true;
+                                }
+                            }
+                        }
+
+                        return false;
+                    }
+
+                    function hasDuplicateButtonLightning(isUpdate) {
+                        return false;
+                    }
+
+                    function getButtonLabelLightning() {
+                        var input = document.getElementById(buttonNameId);
+                        return input && input.value;
+                    }
+
+                    function getNewEmbeddedApplicationLightning(){
+                    	var input = document.getElementById(newEmbeddedApplication);
+                    	return input && input.value;
+                    }
+
+                    function getNewSelectedTabLightning(){
+                    	var input = document.getElementById(newSelectedTab);
+                    	return (input && input.value) || '';
+                    }
+
+                    function getButtonValueLightning() {
+                        var input = document.getElementById(buttonValueId);
+                        return input && input.value;
+                    }
+
+                    function checkAndSaveButtonLightning(callback) {
+                        disableAllButtons();
+                        var missedFields = getMissedFieldsLightning();
+                        if(missedFields.length > 0) {
+                          	showError(format('{!$Label.messageEmptyField}', missedFields.join(', ')));
+                            return false;
+                        }
+
+                        var dupliate = hasDuplicateButtonLightning();
+                        if ('EXCEPTION' == dupliate) {
+                            enableAllButtons();
+                            return false;
+                        } else if(dupliate) {
+                          	showError('{!$Label.messageButtonExists}');
+                            return false;
+                        }
+
+                        var wl = new sforce.SObject("WebLink");
+
+                        wl.DisplayType = 'B';
+                        wl.EncodingKey = 'UTF-8';
+                        wl.LinkType = 'url'; // sControl,javascript,page,flow
+                      	wl.Description = format('* {0}\n* {1}', '{!$Label.messageGeneratedAutomatically}', '{!$Label.messageDoNotChange}');
+
+                        wl.MasterLabel = getButtonLabelLightning();
+                        wl.Name = 'SeismicButton_' + Math.random().toString().replace(".", "");
+                        wl.PageOrSobjectType = jQuery("#objectTypeSelectorLightning").val();
+                        wl.OpenType = 'replace'; // newWindow,sidebar,noSidebar,replace,onClickJavaScript
+                        var backUrl = "https://"+window.location.hostname+"/"+"{"+"!"+wl.PageOrSobjectType+".Id}";
+                        var url = "https://"+window.location.hostname+"/apex/SeismicFolderPage?sObjectId={"+"!"+wl.PageOrSobjectType+".Id}&sObjectType="+wl.PageOrSobjectType+"&applicationName="+getNewEmbeddedApplicationLightning()+"&tabName="+getNewSelectedTabLightning()+"&backUrl="+backUrl;
+                        wl.Url=url;
+
+                        try {
+                            var result = sforce.connection.create([wl], {
+                                onSuccess : function(result){
+                                    if(result && result[0] && result[0].success == 'true') {
+                                        document.getElementById(buttonValueId).value = wl.Name;
+                                        callback();
+                                    } else if(result && result[0] && result[0].errors
+                                            && result[0].errors.statusCode == "INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST"
+                                            && result[0].errors.fields == "PageOrSobjectType") {
+                                        showError(format('{!$Label.messageCreateButtonOnObjectFailure}', wl.PageOrSobjectType));
+                                    } else if(result[0] && result[0].errors && result[0].errors.message){
+                                        showError(format('{!$Label.messageCreateButtonFailure}', result[0].errors.message));
+                                    }
+                                },
+                                onFailure : function(error){
+                                    showError(format('{!$Label.messageCreateButtonFailure}', error.message));
+                                }
+                            });
+                        } catch(e) {
+                            showError(format('{!$Label.messageError}', e.faultstring));
+                        }
+                    }
+
+                    function checkAndUpdateButtonLightning(callback) {
+                        disableAllButtons();
+                        var missedFields = getMissedFieldsLightning();
+                        if(missedFields.length > 0) {
+                          	showError(format('{!$Label.messageEmptyField}', missedFields.join(', ')));
+                            return false;
+                        }
+
+                        var dupliate = hasDuplicateButtonLightning(true);
+                        if('EXCEPTION' == dupliate) {
+                            enableAllButtons();
+                            return false;
+                        } else if(dupliate) {
+                            showError('{!$Label.messageButtonExists}');
+                            return false;
+                        }
+
+                        var records = [];
+                        var result = sforce.connection.query("SELECT ID from WebLink WHERE WebLink.Name='{!JSENCODE(newObjectTypeMapping.Button_Value__c)}'", {
+                            onSuccess : function(result){
+                                var wl = new sforce.SObject("WebLink");
+                                wl.id = result.getArray("records")[0].Id;
+
+                                wl.MasterLabel = getButtonLabelLightning();
+                                var backUrl = "https://"+window.location.hostname+"/"+"{"+"!"+getCurrentObjectName()+".Id}";
+                                var url = "https://"+window.location.hostname+"/apex/SeismicFolderPage?sObjectId={"+"!"+getCurrentObjectName()+".Id}&sObjectType="+getCurrentObjectName()+"&applicationName="+getNewEmbeddedApplicationLightning()+"&tabName="+getNewSelectedTabLightning()+"&backUrl="+backUrl;
+                                wl.Url = url;
+                                var result = sforce.connection.update([wl], {
+                                    onSuccess : function(result){
+                                        if(result && result[0] && result[0].success == 'true') {
+                                            callback();
+                                        } else if(result[0] && result[0].errors && result[0].errors.message){
+                                            showError(format('{!$Label.messageCreateButtonFailure}', result[0].errors.message));
+                                        }
+                                    },
+                                    onFailure : function(error){
+                                        showError(format('{!$Label.messageUpdateButtonFailure}', error.message));
+                                    }
+                                });
+                            },
+                            onFailure : function(error){
+                                showError(format('{!$Label.messageCreateButtonFailure}', error.message));
+                            }
+                        });
+                    }
+                </script>
+                <apex:actionFunction action="{!saveNewObjectTypeMapping}" name="saveNewObjectTypeMappingLightning" />
+                <apex:commandButton id="saveButton" value="{!$Label.seismic__buttonsave}" rendered="{!ISNULL(newObjectTypeMapping.Id) && objectTypeMappingInsertable}" onclick="checkAndSaveButtonLightning(saveNewObjectTypeMappingLightning);return false;"/>
+                <apex:actionFunction action="{!updateObjectTypeMapping}" name="updateObjectTypeMappingLightning" />
+                <apex:commandButton id="updateButton" value="{!$Label.seismic__buttonsave}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable}" onclick="checkAndUpdateButtonLightning(updateObjectTypeMappingLightning);return false;"/>
+                <apex:commandButton id="deleteButton" value="{!$Label.seismic__buttondelete}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingDeleteable}" onclick="checkCanDelete(null, null, '{!JSINHTMLENCODE(newObjectTypeMapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(newObjectTypeMapping.Name)}', '{!JSINHTMLENCODE(newObjectTypeMapping.seismic__Related_Visualforce_Page_Name__c)}'); return false;" />
+                <apex:commandButton action="{!backToList}" id="cancelButton" value="{!$Label.seismic__buttoncancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="fields" columns="1">
+                <apex:pageBlockSectionItem id="buttonName" >
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonbuttonname}" for="newButtonNameLightning"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Button_Name__c}" id="newButtonNameLightning"/>
+                        <apex:inputHidden value="{!newObjectTypeMapping.seismic__Button_Value__c}" id="newButtonValueLightning" />
+                        <script>
+                            var buttonNameId = '{!$Component.newButtonNameLightning}';
+                            var buttonValueId = '{!$Component.newButtonValueLightning}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="relatedObject" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}" >
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block">{!newObjectTypeMapping.seismic__Object_Label__c}
+                        <script>
+                            function getCurrentObjectName() {
+                                return '{!JSENCODE(newObjectTypeMapping.seismic__Object_Name__c)}';
+                            }
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem id="relatedObjectList" rendered="{!ISNULL(newObjectTypeMapping.Id)}" >
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonrelated}" for="newObjectType"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"></apex:outputpanel>
+                        <select val="{!newObjectTypeMapping.seismic__Object_Name__c}" id="objectTypeSelectorLightning">
+                            <apex:repeat value="{!displayAllObjectTypes}" var="list">
+                                <apex:repeat value="{!list}" var="o">
+                                    <option value="{!o.value}" >{!o.label}</option>
+                                </apex:repeat>
+                            </apex:repeat>
+                        </select>
+                        <apex:inputHidden id="objectTypeSelectorHiddenLightning" value="{!newObjectTypeMapping.seismic__Object_Name__c}"/>
+                        <script type="text/javascript">
+                            var objectName = '{!$Component.objectTypeSelectorHiddenLightning}';
+                            function getCurrentObjectName() {
+                                var input = document.getElementById(objectName);
+                                return input && input.value;
+                            }
+                            jQuery(function(){
+                                var $objectTypeSelctor = jQuery("#objectTypeSelectorLightning");
+                                $objectTypeSelctor.children("option").each(function(k, v){
+                                    if(jQuery(v).val() == $objectTypeSelctor.attr("val")){
+                                        jQuery(v).attr("selected", "selected");
+                                    }
+                                });
+
+                                document.getElementById('{!$Component.objectTypeSelectorHiddenLightning}').value = jQuery("#objectTypeSelectorLightning").val();
+
+                                jQuery("#objectTypeSelectorLightning").change(function(){
+                                    document.getElementById('{!$Component.objectTypeSelectorHiddenLightning}').value = jQuery(this).val();
+                                });
+                            });
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageblocksectionitem id="embeddedApp">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__commonembeddedapp}" for="newEmbeddedApplication"/>
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Embedded_Application__c}" id="newEmbeddedApplication"/>
+                        <script>
+                            var newEmbeddedApplication = '{!$Component.newEmbeddedApplication}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+                <apex:pageblocksectionitem id="selectedTab">
+                    <apex:outputLabel id="label" value="{!$Label.seismic__newtabtitletab}" for="newSelectedTab"/>
+                    <apex:outputpanel layout="block">
+                        <apex:outputpanel layout="block"/>
+                        <apex:inputfield value="{!newObjectTypeMapping.seismic__Selected_Tab__c}" id="newSelectedTab"/>
+                        <script>
+                            var newSelectedTab = '{!$Component.newSelectedTab}';
+                        </script>
+                    </apex:outputpanel>
+                </apex:pageblocksectionitem>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+
+    <apex:form id="editEmbeddedAppForClassic" rendered="{!isEditNewPredictiveMapping}">
+		<apex:actionFunction name="showMessage" action="{!showMessage}" rerender="messages" immediate="true">
+			<apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value="" />
+			<apex:param name="messageToShow" assignTo="{!messageToShow}" value="" />
+		</apex:actionFunction>
+
+		<apex:actionFunction name="showGlobalMessage" action="{!showGlobalMessage}" rerender="messages" immediate="true" oncomplete="enableAllButtons&&enableAllButtons()">
+			<apex:param name="messageTypeToShow" assignTo="{!messageTypeToShow}" value="" />
+			<apex:param name="messageToShow" assignTo="{!messageToShow}" value="" />
+		</apex:actionFunction>
+
+		<apex:sectionHeader id="editHeader" title="{!$Label.seismic__commonvfpage}" subtitle="{!IF(NOT(ISBLANK(newObjectTypeMapping.seismic__Object_Label__c)), newObjectTypeMapping.seismic__Object_Label__c, newObjectTypeMapping.seismic__Object_Name__c)}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}" />
+
+		<apex:sectionHeader id="newHeader" title="{!$Label.seismic__commonvfpage}" subtitle="{!$Label.seismic__commonnewpage}" rendered="{!ISNULL(newObjectTypeMapping.Id)}" />
+
+		<apex:pageMessages id="messages" escape="false" />
+
+		<apex:pageBlock id="settings" title="{!$Label.seismic__newheadereditembedded}" rendered="{!objectTypeMappingAccessable}">
+			<apex:pageBlockButtons >
+				<apex:variable value="{!IF(ISBLANK(newObjectTypeMapping.seismic__Button_Name__c), DEFAULT_BUTTON_LABEL, newObjectTypeMapping.seismic__Button_Name__c )}" var="pageName" />
+				<apex:commandButton id="saveButton" value="{!$Label.seismic__buttonsave}" rendered="{!ISNULL(newObjectTypeMapping.Id) && objectTypeMappingInsertable && isEditNewPredictiveMapping}" action="{!SaveNewPredictive}" />
+				<apex:commandButton id="updateButton" value="{!$Label.seismic__buttonsave}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingUpdatable}" action="{!updateNewPredictive}" />
+				<apex:commandButton id="deleteButton" value="{!$Label.seismic__buttondelete}" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id)) && objectTypeMappingDeleteable}" onclick="checkCanDelete(null, null, '{!JSINHTMLENCODE(newObjectTypeMapping.seismic__Button_Value__c)}', '{!JSINHTMLENCODE(newObjectTypeMapping.Name)}', '{!JSINHTMLENCODE(pageName)}'); return false;" />
+				<apex:commandButton action="{!backToList}" id="cancelButton" value="{!$Label.seismic__buttoncancel}" immediate="true" />
+			</apex:pageBlockButtons>
+
+			<apex:pageBlockSection id="fields" columns="1">
+				<apex:pageBlockSectionItem id="name" >
+					<apex:outputLabel id="label" value="{!$Label.seismic__commonname}" for="newPageName" />
+					<apex:outputpanel layout="block" styleClass="requiredInput">
+						<apex:outputpanel layout="block" styleClass="requiredBlock" />
+						<apex:inputtext value="{!newObjectTypeMapping.seismic__Button_Name__c}"
+							id="newPageName" maxlength="80" />
+						<apex:inputHidden value="{!newObjectTypeMapping.seismic__Button_Value__c}"
+							id="newButtonValue" />
+					</apex:outputpanel>
+				</apex:pageBlockSectionItem>
+
+				<apex:pageBlockSectionItem id="relatedObject" rendered="{!NOT(ISNULL(newObjectTypeMapping.Id))}">
+					<apex:outputLabel id="relatedLabel" value="{!$Label.seismic__commonrelated}" for="newObjectType" />
+					<apex:outputpanel layout="block">{!newObjectTypeMapping.seismic__Object_Label__c}
+                        <script>
+                            function getCurrentObjectName() {
+                                return '{!JSENCODE(newObjectTypeMapping.seismic__Object_Name__c)}';
+                            }
+                        </script>
+					</apex:outputpanel>
+				</apex:pageBlockSectionItem>
+
+				<apex:pageBlockSectionItem id="relatedObjectList" rendered="{!ISNULL(newObjectTypeMapping.Id)}">
+					<apex:outputLabel id="label" value="{!$Label.seismic__commonrelated}" for="newObjectType" />
+					<apex:outputpanel layout="block" styleClass="requiredInput">
+						<apex:outputpanel layout="block" styleClass="requiredBlock"></apex:outputpanel>
+						<select val="{!newObjectTypeMapping.seismic__Object_Name__c}" id="objectTypeSelectorNewPredictive">
+							<apex:repeat value="{!displayAllObjectTypes}" var="list">
+								<apex:repeat value="{!list}" var="o">
+									<option value="{!o.value}">{!o.label}</option>
+								</apex:repeat>
+							</apex:repeat>
+						</select>
+						<apex:inputHidden id="objectTypeSelectorHiddenNewPredictive" value="{!newObjectTypeMapping.seismic__Object_Name__c}" />
+						<script>
+                            var objectName = '{!$Component.objectTypeSelectorHiddenNewPredictive}';
+                            function getCurrentObjectName() {
+                                var input = document.getElementById(objectName);
+                                return input && input.value;
+                            }
+
+                            jQuery(function(){
+                                var $objectTypeSelctor = jQuery("#objectTypeSelectorNewPredictive");
+                                $objectTypeSelctor.children("option").each(function(k, v){
+                                    if(jQuery(v).val() == $objectTypeSelctor.attr("val")){
+                                        jQuery(v).attr("selected", "selected");
+                                    }
+                                });
+
+                                document.getElementById('{!$Component.objectTypeSelectorHiddenNewPredictive}').value = jQuery("#objectTypeSelectorNewPredictive").val();
+
+                                jQuery("#objectTypeSelectorNewPredictive").change(function(){
+                                    document.getElementById('{!$Component.objectTypeSelectorHiddenNewPredictive}').value = jQuery(this).val();
+                                });
+                            });
+
+                        </script>
+					</apex:outputpanel>
+				</apex:pageBlockSectionItem>
+
+				<apex:pageblocksectionitem id="embeddedApplication" rendered="{!isEditNewPredictiveMapping}">
+					<apex:outputLabel id="label" value="{!$Label.seismic__commonembeddedapp}"
+						for="newEmbeddedApplicationName" />
+					<apex:outputpanel layout="block" styleClass="requiredInput">
+						<apex:outputpanel layout="block"  styleClass="requiredBlock"/>
+						<apex:inputfield value="{!newObjectTypeMapping.seismic__Embedded_Application__c}"
+							id="newEmbeddedApplicationName" />
+					</apex:outputpanel>
+				</apex:pageblocksectionitem>
+
+				<apex:pageblocksectionitem id="hideAppHeader" rendered="{!isEditNewPredictiveMapping}">
+					<apex:outputLabel id="label" value="{!$Label.seismic__newembeddedtitlehide}" for="newHideHeader" />
+					<apex:outputpanel layout="block">
+		                <apex:inputCheckbox id="newHideHeader" label="" value="{!newObjectTypeMapping.seismic__Hide_Header__c}"  title=""></apex:inputCheckbox>
+					</apex:outputpanel>
+				</apex:pageblocksectionitem>
+
+				<apex:pageblocksectionitem id="openContentInline" rendered="{!isEditNewPredictiveMapping}">
+					<apex:outputLabel id="line" value="{!$Label.seismic__newembeddedtitleinline}" for="newOpenContentInline" />
+					<apex:outputpanel layout="block">
+		                <apex:inputCheckbox id="newOpenContentInline" label="" value="{!newObjectTypeMapping.seismic__Open_Content_Inline__c}"  title=""></apex:inputCheckbox>
+					</apex:outputpanel>
+				</apex:pageblocksectionitem>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+
+</apex:page>

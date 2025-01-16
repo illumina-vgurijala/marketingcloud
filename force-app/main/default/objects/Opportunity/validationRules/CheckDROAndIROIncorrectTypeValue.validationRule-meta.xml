@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDROAndIROIncorrectTypeValue</fullName>
+    <active>true</active>
+    <description>Validation rule to prevent selecting incorrect value for Type field in Re Order Opportunity.</description>
+    <errorConditionFormula>AND (			
+    OR (
+        RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder,
+        RecordType.DeveloperName = $Label.IndirectReOrder
+    ),
+    NOT (
+        OR ( 
+            TEXT ( Type ) = $Label.OpportunityTypeRenewalServiceContractNoUpsell,
+            TEXT ( Type ) = $Label.OpportunityTypeRenewalSoftwareNoUpsell,
+            TEXT ( Type ) = $Label.OpportunityTypeReorderConsortiumConsumable,
+            TEXT ( Type ) = $Label.OpportunityTypeReorderNonConsortiumConsumable,
+            TEXT ( Type ) = $Label.OpportunityTypeRentalReagent,
+            TEXT ( Type ) = $Label.OpportunityTypeCustomProductFirstBuy,
+            TEXT ( Type ) = $Label.OpportunityTypeWebGenerated
+        )    
+    ),
+    OR (
+        ISBLANK ( Product_Type__c ),
+        NOT ( 
+            CONTAINS ( Product_Type__c, $Label.OpportunityProdTypeInstrument ) 
+        ) 
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    TEXT ( Is_Converted_From_Lead__c ) = &apos;No&apos;, 
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+			$Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward,
+            CONTAINS($Label.Bypassed_Sales_Integration_Profiles_Id,$Profile.Id),
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c 
+        )
+    )  
+ )</errorConditionFormula>
+    <errorMessage>Invalid Opportunity &quot;Type&quot; selection. Please select new &quot;Type&quot; value (Opportunity Details section).</errorMessage>
+</ValidationRule>

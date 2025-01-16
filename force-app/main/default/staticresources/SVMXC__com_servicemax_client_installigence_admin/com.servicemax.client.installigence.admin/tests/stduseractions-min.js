@@ -1,0 +1,1 @@
+QUnit.module("UserActionsValidator",{setup:function(){com.servicemax.client.installigence.admin.useractions.init();},teardown:function(){}});test("Standard User Actions Validator",function(){});

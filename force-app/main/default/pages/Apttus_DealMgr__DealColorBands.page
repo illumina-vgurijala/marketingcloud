@@ -1,0 +1,265 @@
+<!-- 
+	Apttus Deal Manager
+	DealColorBands
+	 
+	@2012-2020 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_DealMgr__DealPercentileRange__c" extensions="Apttus_DealMgr.DealPercentileRangeController">
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__FormeeLibrary, '/js/formee.js')}" />
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__FormeeLibrary, '/css/formee-style.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__FormeeLibrary, '/css/formee-structure.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__DealRuleLibrary, '/css/DealGuidancePage.css')}" />
+
+	<script type="text/javascript">
+			var j$ = jQuery.noConflict();
+			j$.APTTUS = {};
+			
+			j$(document).ready(function(){
+				
+				j$('.elem').each(function() {
+				    j$(this).css("color", isDark(j$(this).css("background-color")) ? 'white' : 'black');
+				});
+				
+			});
+
+			function isDark( color ) {
+			    var match = /rgb\((\d+).*?(\d+).*?(\d+)\)/.exec(color);
+			    return parseFloat(match[1])
+			         + parseFloat(match[2])
+			         + parseFloat(match[3])
+			           < (3 * (256 / 2)); // r+g+b should be less than half of max (3 * 256)
+			}				
+		 	function DealColorCodesHandler()
+		 	{
+		 		//alert('hello');
+				doCheckDealColorCodesJs();
+		 	}
+	
+	</script>
+
+<!-- VIEW mode -->
+<apex:form id="wizardForm">
+
+	<apex:outputPanel id="idErrorMsg">
+			<apex:pageMessages />
+	</apex:outputPanel>
+	<div id="contentWrap" class="aptRoundedDiv">
+		<div class="aptGroupHeader">
+			<apex:sectionHeader title="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.LabelPlural}" />
+		</div>
+	
+	<!-- New/Edit Mode -->			
+	<apex:pageBlock mode="edit" id="idDealColorBandsDetailBlock"  rendered="{!NOT(IsViewMode)}">
+
+		<!-- Page block Buttons -->		
+			<apex:pageBlockButtons location="top" >
+				<apex:outputpanel id="buttonBlock">
+					
+					<apex:commandLink action="{!doSave}" value="{!$Label.apttus_dealmgr__save}" styleClass="aptListButton"/> 
+					<apex:commandLink action="{!doCancel}" value="{!$Label.apttus_dealmgr__cancel}" styleClass="aptListButton" immediate="true"/>
+
+				</apex:outputpanel>
+			</apex:pageBlockButtons>
+
+			<!-- Deal Color Bands Entries -->
+			<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+				<div class="aptGroupHeader">
+					<h2>
+						<apex:outputtext value="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Label & ' ' & $Label.apttus_dealmgr__edit}"/>										 
+					</h2>
+				</div>
+
+			<!--     <apex:outputPanel >  -->
+			    
+			    <apex:pageBlockSection id="idDealBandsEntriesSection" 
+			    					   columns="2" 
+			    					   collapsible="false" >
+			        <apex:pageBlockTable id="idDealGuidanceRuleEntriesTable" 
+			        					 value="{!bandEntries}" 
+			        					 var="entryInfo" 
+			        					 columns="11"   
+			        					 width="100%" 
+			        					 rowClasses="oddRow,evenRow"  
+			        					 rendered="{!HasBandEntries}">
+			        	
+			        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__Sequence__c.Label}" 
+			        				 width="5%" >
+			        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+						</apex:column>
+	
+			        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__RangeName__c.Label}" 
+			        				 width="15%" >
+							<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>							        				 
+			        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__RangeName__c}" required="false"/>							        			
+							</apex:outputPanel>			        				 
+			        				 
+						</apex:column>
+	
+			        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__DealColor__c.Label}" 
+			        				 width="10%" >
+							<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>							        				 
+				        		<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__DealColor__c}" 
+				        						onChange="DealColorCodesHandler();"/>
+							</apex:outputPanel>		
+
+						</apex:column>
+						
+						<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__ColorCode__c.Label}" 
+			        				 width="5%" >
+							<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>							        				 
+			        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__ColorCode__c}"/>							        			
+							</apex:outputPanel>			        				 
+
+						</apex:column>
+						
+						<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__DealShape__c.Label}" 
+			        				 width="10%" >
+							<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>							        				 
+				        		<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__DealShape__c}"/>
+							</apex:outputPanel>		
+
+						</apex:column>
+						
+						<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__PercentileFrom__c.Label}" 
+			        				 width="5%" rendered="false">
+			        		<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__PercentileFrom__c}" />
+						</apex:column>
+						
+						<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__PercentileTo__c.Label}" 
+			        				 width="5%" rendered="false">
+			        		<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__PercentileTo__c}" />
+						</apex:column>
+						
+						<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__Description__c.Label}" 
+			        				 width="30%" >
+			        		<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__Description__c}" />
+						</apex:column>
+						
+					   	<apex:column width="5%" >
+					    	<apex:commandLink action="{!doAddEntryRow}" 
+									  	  	  reRender="wizardForm" rendered="{!IsAddingNewRecordAllowed}">
+								<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+								<apex:image url="{!$Resource.Apttus_DealMgr__Image_Plus2}" 
+				                       		title="{!$Label.apttus_dealmgr__add}" 
+				                       		alt="{!$Label.apttus_dealmgr__add}" />		  	  	  
+							</apex:commandLink>
+					   	</apex:column>
+					   	
+					   	<apex:column width="5%" >
+						   	<apex:commandLink action="{!doDeleteEntryRow}" 
+										  	  reRender="wizardForm" 
+										  	  rendered="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c > 1}" >
+								<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+								<apex:image url="{!$Resource.Apttus_DealMgr__Image_Minus2}" 
+				                       		title="{!$Label.apttus_dealmgr__remove}" 
+				                       		alt="{!$Label.apttus_dealmgr__remove}" />		  
+							</apex:commandLink>
+						</apex:column>
+						
+	
+					   	<apex:column width="5%" >
+					   		<apex:outputText value="{!entryInfo.ErrorMsg}" style="color:red;" />
+					   	</apex:column>
+					   
+			        </apex:pageBlockTable>
+			    </apex:pageBlockSection>
+			
+			<!--  </apex:outputPanel>  -->
+			
+		</div>		
+	</apex:pageBlock>
+
+	<!-- View Mode -->
+    <apex:pageBlock id="idDealDealColorBandsDetailBlock"
+                        rendered="{!IsViewMode}"
+                        mode="detail">
+        
+            <apex:pageBlockButtons location="top">
+				<apex:commandLink action="{!doEdit}" value="{!$Label.apttus_dealmgr__edit}" styleClass="aptListButton"/>                
+            </apex:pageBlockButtons>
+			<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+				<div class="aptGroupHeader">
+					<h2>{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Label & ' ' & $Label.apttus_dealmgr__detail}</h2>
+				</div>
+				<!-- Deal Color Bands Entries -->
+				<apex:outputPanel >
+				    
+				    <apex:pageBlockSection id="idDealDealColorBandsSection" 
+				    					   columns="1" 
+				    					   collapsible="false" >
+				        <apex:pageBlockTable id="idDealDealColorBandsTable" 
+				        					 value="{!bandEntries}" 
+				        					 var="entryInfo" 
+				        					 columns="8"   
+				        					 width="100%" 
+				        					 rowClasses="oddRow,evenRow"  
+				        					 rendered="{!HasBandEntries}">
+				        	
+				        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__Sequence__c.Label}" 
+				        				 width="5%" >
+				        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+							</apex:column>
+		
+				        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__RangeName__c.Label}" 
+				        				 width="20%" >
+				        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__RangeName__c}"/>
+							</apex:column>
+		
+				        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__DealColor__c.Label}" 
+				        				 width="15%" >
+				        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__DealColor__c}" />
+							</apex:column>
+							
+							<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__ColorCode__c.Label}" 
+			        				 width="5%" >
+				        		<!-- <apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__ColorCode__c}" />  -->
+				        		<div Class="elem" Style="background-color:{!JSENCODE(entryInfo.entrySO.ColorCode__c)}">
+				        			{!entryInfo.entrySO.Apttus_DealMgr__ColorCode__c}
+				        		</div>				        		
+							</apex:column>
+							
+							<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__DealShape__c.Label}" 
+				        				 width="15%" >
+				        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__DealShape__c}" />
+							</apex:column>
+							
+							<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__PercentileFrom__c.Label}" 
+				        				 width="5%" rendered="false">
+				        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__PercentileFrom__c}" />
+							</apex:column>
+							
+							<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__PercentileTo__c.Label}" 
+				        				 width="5%" rendered="false">
+				        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__PercentileTo__c}" />
+							</apex:column>
+							
+							<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealPercentileRange__c.Fields.Apttus_DealMgr__Description__c.Label}" 
+				        				 width="30%" >
+				        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Description__c}" />
+							</apex:column>
+						
+				        </apex:pageBlockTable>
+				        
+				    </apex:pageBlockSection>
+				
+				</apex:outputPanel>						
+			</div>
+	</apex:pageBlock>
+	
+	</div>
+
+	<apex:actionFunction name="doCheckDealColorCodesJs"
+		action="{!doCheckDealColorCodes}" reRender="idDealBandsEntriesSection"/>
+		        		
+</apex:form>
+
+</apex:page>

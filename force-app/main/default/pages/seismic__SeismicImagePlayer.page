@@ -1,0 +1,193 @@
+<apex:page showHeader="false" sidebar="false" standardStylesheets="false">
+
+<head>
+    <META http-equiv="Content-type" content="text/html; charset=UTF-8"></META>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"></META>
+    <title>Seismic Image Player</title>
+	
+	<link href="//lsqamain1.seismic.com/liveShare/SPlayer/css/supersized.css" rel="stylesheet" type="text/css" media="screen" />
+	<link href="//lsqamain1.seismic.com/liveShare/SPlayer/theme/supersized.shutter.css" rel="stylesheet" type="text/css" media="screen" />        
+	<style type="text/css">
+		body, #supersized li { background-color: white !important; }
+		#slidecounter { height: 30px; float: none !important; color: blank !important; line-height: 30px !important; text-align: left; }
+		#thumb-tray { background: rgba(0, 0, 0, 0.2) !important; -moz-box-shadow: none !important; -webkit-box-shadow: none !important; box-shadow: none !important; }
+		#thumb-back, #thumb-forward { width: 30px !important; height: 30px !important; background-size: 30px auto !important; }
+		ul#demo-block { margin:0 15px 15px 15px; }
+		ul#demo-block li { margin:0 0 10px 0; padding:10px; display:inline; float:left; clear:both; color:#aaa; background:url('view-source://lsqamain1.seismic.com/liveShare/SPlayer/img/bg-black.png'); font:11px Helvetica, Arial, sans-serif; }
+		ul#demo-block li a { color:#eee; font-weight:bold; }
+	</style>
+	
+	<!--<script type="text/javascript">
+        window.onerror = function (message, file, line, col, error) {
+    		var alertMessage = message + "\n" + file + "(line " + line + ", column " + col + ")";
+			if (error && error.stack) {
+				alertMessage += "\n" + error.stack;
+			}
+			alert(alertMessage);
+			return true;
+		};
+    </script>-->
+	<script type="text/javascript" src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script type="text/javascript" src="//lsqamain1.seismic.com/liveShare/SPlayer/js/jquery.easing.min.js"></script>
+	<script type="text/javascript" src="//lsqamain1.seismic.com/liveShare/SPlayer/js/supersized.3.2.7.js"></script>
+	<script type="text/javascript" src="//lsqamain1.seismic.com/liveShare/SPlayer/theme/supersized.shutter.js"></script>
+	<script type="text/javascript">
+	    jQuery(function ($) {
+	        if (parent.slides && parent.slides.length) {
+	        	var slides = parent.slides ? parent.slides : [];
+	        	var startSlide = parent.startPageIndex ? parent.startPageIndex + 1 : 1;
+	            window.player = new $.supersized({
+	
+	                // Functionality
+	                slideshow: 1,           	// Slideshow on/off
+	                autoplay: 0,            	// Slideshow starts playing automatically
+	                start_slide: startSlide,	// Start slide (0 is random)
+	                stop_loop: 0,           	// Pauses slideshow on last slide
+	                random: 0,          		// Randomize slide order (Ignores start slide)
+	                slide_interval: 3000,   	// Length between transitions
+	                transition: 6,          	// 0-None, 1-Fade, 2-Slide Top, 3-Slide Right, 4-Slide Bottom, 5-Slide Left, 6-Carousel Right, 7-Carousel Left
+	                transition_speed: 1000, 	// Speed of transition
+	                new_window: 1,          	// Image links open in new window/tab
+	                pause_hover: 0,         	// Pause slideshow on hover
+	                keyboard_nav: 1,        	// Keyboard navigation on/off
+	                performance: 1,         	// 0-Normal, 1-Hybrid speed/quality, 2-Optimizes image quality, 3-Optimizes transition speed // (Only works for Firefox/IE, not Webkit)
+	                image_protect: 1,       	// Disables image dragging and right click with Javascript
+	
+	                // Size & Position                         
+	                min_width: 0,           	// Min width allowed (in pixels)
+	                min_height: 0,          	// Min height allowed (in pixels)
+	                vertical_center: 1,     	// Vertically center background
+	                horizontal_center: 1,   	// Horizontally center background
+	                fit_always: 1,          	// Image will never exceed browser width or height (Ignores min. dimensions)
+	                fit_portrait: 1,        	// Portrait images will not exceed browser height
+	                fit_landscape: 1,       	// Landscape images will not exceed browser width
+	
+	                // Components                           
+	                slide_links: 'blank',   	// Individual links for each slide (Options: false, 'num', 'name', 'blank')
+	                thumb_links: 1,         	// Individual thumb links for each slide
+	                thumbnail_navigation: 0,    // Thumbnail navigation
+	                slides: slides,
+	
+	                // Theme Options               
+	                progress_bar: 1,            // Timer for each slide                         
+	                mouse_scrub: 0,
+	            });
+	            
+	            function RefreshPrevNextState() {
+					if (vars.current_slide > 0) {
+						$("#prevslide").show();
+					} else {
+						$("#prevslide").hide();
+					}
+					if (vars.current_slide < (slides.length - 1)) {
+						$("#nextslide").show();
+					} else {
+						$("#nextslide").hide();
+					}
+				}
+				
+				var oldInit = theme._init;
+				theme._init = function () {
+	            	RefreshPrevNextState();
+	            	oldInit();
+				};
+				
+				var oldAfterAnimation = theme.afterAnimation;
+	            theme.afterAnimation = function () {
+	            	RefreshPrevNextState();
+	            	oldAfterAnimation();
+				};
+				
+				
+	            if ($.isFunction(window.parent.onImagePlayerWidgetReady)) {
+	                window.parent.onImagePlayerWidgetReady();
+	            }
+	        } else {
+	            if ($.isFunction(window.parent.onPlayerPageReady)) {
+	                window.parent.onPlayerPageReady();
+	            }
+	        }
+	        
+	        if (parent.oneImageMode) {
+	            $("#prevslide, #nextslide, #thumb-tray, #progress-back, #controls-wrapper").remove();
+	        }
+	        
+	        window.isPlayerLoaded = true;
+	    });
+	
+	    document.onclick = function() {
+	        try{
+	            // to trigger top body click
+	            // to solve issue that the menu doesn't close when click page
+	            window.parent.document.body.click();
+	        } catch(e) {
+	        	
+	        }
+	    };
+	
+	    /*
+	     * oneImageMode == true => it will not show navigation button and bar. it just can show one image
+	    */
+	    function setSlides(slides, oneImageMode, startPageIndex) {
+	        parent.slides = slides;
+	        parent.startPageIndex = startPageIndex;
+	        parent.oneImageMode = oneImageMode;
+	
+	        if (parent.slides && parent.slides.length) {
+	            window.location.reload();
+	        }
+	    }
+	
+	    function gotoSlide(slide) {
+	        window.player.goTo(slide);
+	    }
+	    //function onPlayerGoto(slide)
+	    //{
+	    //    //alert(slide);
+	    //}
+	</script>
+</head>
+<body>
+
+    <!--Thumbnail Navigation-->
+    <div id="prevthumb"></div>
+    <div id="nextthumb"></div>
+    
+    <!--Arrow Navigation-->
+    <a id="prevslide" class="load-item"></a>
+    <a id="nextslide" class="load-item"></a>
+    
+    <div id="thumb-tray" class="load-item">
+        <!--Slide counter-->
+        <div id="slidecounter">
+            Page <span class="slidenumber"></span> / <span class="totalslides"></span>
+        </div>
+        <div id="thumb-forward"></div>
+        <div id="thumb-back"></div>
+    </div>
+    
+    <!--Time Bar-->
+    <div id="progress-back" class="load-item" style="visibility:collapse;">
+        <div id="progress-bar"></div>
+    </div>
+    
+    <!--Control Bar-->
+    <div id="controls-wrapper" class="load-item"  style="visibility:collapse;">
+        <div id="controls">
+            
+            <a id="play-button" style="display:none;"><img id="pauseplay" src="//lsqamain1.seismic.com/liveShare/SPlayer/img/pause.png"/></a>
+            
+            <!--Slide captions displayed here-->
+            <div id="slidecaption"></div>
+            
+            <!--Thumb Tray button-->
+            <a id="tray-button"><img id="tray-arrow" src="//lsqamain1.seismic.com/liveShare/SPlayer/img/button-tray-up.png"/></a>
+            
+            <!--Navigation-->
+            <ul id="slide-list"></ul>
+            
+        </div>
+    </div>
+</body>
+
+</apex:page>

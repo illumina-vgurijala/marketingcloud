@@ -1,0 +1,22 @@
+<seismic-busy is-busy="!currentDocument.__initialized">
+    <div class="col-md-12">
+        <div class="doc-content-header">
+        	<div class="doc-content-header-info">
+        	    <div class="doc-content-header-icon">
+	                <img ng-src="{{currentDocument.documentFormatIcon}}" ng-click="sideBarStatus.switch()" />
+	            </div>
+	            <div class="doc-content-header-title">Live Form</div>
+	            <div class="doc-content-header-subtitle">
+	            	<div class="doc-content-header-subtitle-name">
+	            	    <span>{{currentDocument.BasicInfo.Name}}</span>
+	            	</div>
+	            </div>
+	        </div>
+        </div>
+        <seismic-busy is-busy="!isLiveFormReady" visible-mode="true">
+            <div class="text-center" ng-show="currentFormPageUrl">
+                <iframe allow="autoplay; fullscreen" style="height: 650px;" class="embed-iframe" ng-src="{{currentFormPageUrl}}"></iframe>
+            </div>
+        </seismic-busy>
+    </div>
+</seismic-busy>

@@ -1,0 +1,256 @@
+<!-- 
+    Apttus Contract Management
+    OfflineDocumentImport
+     
+    @2009-2020 Apttus Inc. All rights reserved.
+
+	Summary
+ 	-------
+  	The offline document import page may be used to import and attach third party documents to the agreement 
+ 
+	parameters
+    ==========
+    Name			| Required | Description
+    ================|==========|======================================================================================
+    id 				| Yes      | The record id of the agreement
+    				|		   |
+    finishPage		| No	   | The name of the finish page to navigate to after the import process is completed.
+   					|		   | Parameters for the finish page may be passed by prefixing the parameter name with 'finish_'.
+   					|		   | for e.g. if you pass in a parameter finish_id, the finish page will be called 
+   					|		   | with the parameter id. A record id may be passed as the value for the finish page.
+   					|		   | 
+    isCustomImport	| No       | The custom import indicator.
+    				|		   | Indicates whether this is a custom import operation. 
+    				|		   | For this parameter to take effect,the finishPage parameter must be provided.
+                    |          |
+    ===================================================================================================================
+ -->
+<apex:page standardController="Apttus__APTS_Agreement__c" 
+		   extensions="Apttus.OfflineDocumentImportController" 
+		   showHeader="true" 
+		   sidebar="true" >
+	
+	<Apttus_Base2:UsageDataComponent2 ProdName="{!systemSettingforUsageAnalytics['productName']}" ProdVersion="{!systemSettingforUsageAnalytics['productVersion']}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus__LightningResource,'css/page-icon.css')}"/>
+	<script type="text/javascript" src="/soap/ajax/30.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/30.0/apex.js"></script>
+    <apex:include pageName="Apttus__ComplyJSLibInclude" />
+
+	<apex:outputText value="{!Apttus__APTS_Agreement__c.Name}" rendered="false" />
+	<apex:outputPanel rendered="{!!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t')}">
+		<div class="bPageTitle bpageTitleExtra">
+			  <div class="ptBody">
+				<div class="content">
+				  <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/ImportOfflineDocument.png')}" class="pageIconSize" />
+				  <h1 class="pageType">{!pageTitle}</h1>
+				  <h2 class="pageDescription"> {!Apttus__APTS_Agreement__c.Name}</h2>
+				</div>
+			</div>
+		</div>
+	</apex:outputPanel>
+	
+
+	<apex:form id="attachForm">
+		<!--  required fields -->
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Version_Number__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Status__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Status_Category__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__FF_Agreement_Number__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Contract_Start_Date__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Contract_End_Date__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Agreement_Number__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Agreement_Category__c}" rendered="false" />
+		<apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__VersionAware__c}" rendered="false" />
+		
+		<apex:outputPanel id="idImportOfflinePanel">
+		
+			<apex:pageBlock id="idErrorBlock" mode="edit" rendered="{!HasErrors}" >
+				<apex:pageMessages />
+				<apex:pageBlockButtons location="bottom" >
+					<apex:commandButton action="{!doCancel}" value="{!$Label.apttus__cancel}" immediate="true" />
+				</apex:pageBlockButtons>
+			</apex:pageBlock>
+				
+	    	<apex:pageBlock mode="edit" rendered="{!isInitialized && NOT(canEditAgreement)}" >
+				<apex:pageMessages />
+				<apex:outputText value="{!$Label.apttus__insufficientprivileges}" 
+								 style="font-family: Arial, Helvetica, sans-serif;font-weight: bold;font-size: 12pt;" /><p/>
+				<apex:outputText value="{!$Label.apttus__insufficientprivilegesdetail}" /><br/>
+				<apex:pageBlockButtons location="bottom" >
+						<apex:commandButton action="{!doCancel}" value="{!$Label.apttus__return}" immediate="true" />
+					</apex:pageBlockButtons>
+			</apex:pageBlock>
+			
+			<apex:pageBlock id="idAttachBlock" 
+							mode="edit" 
+							rendered="{!(NOT(isInitialized) || canEditAgreement) && 
+										NOT(HasErrors) && 
+									    NOT(ActionPollerEnabled) && 
+									    NOT(IsDone)}" >
+				<apex:pageMessages />
+				<apex:pageBlockButtons location="bottom" >
+					<apex:actionRegion >
+                        <apex:actionStatus id="continueStatus">
+                            <apex:facet name="stop">
+                                <apex:commandButton value="{!buttonLabel}" styleClass="continueButton" action="{!doContinue}" disabled="{!((countOfAttachments <= 0)|| IsDocType)}" status="continueStatus" rerender="attachForm" />
+                            </apex:facet>
+                            <apex:facet name="start">
+                                <apex:outputPanel >
+                                    <apex:commandButton value="{!buttonLabel}" status="continueStatus" disabled="true"/>
+                                </apex:outputPanel>
+                            </apex:facet>
+                        </apex:actionStatus>
+                    </apex:actionRegion>
+					<apex:commandButton value="{!$Label.apttus__cancel}" 
+										action="{!doCancel}" 
+										immediate="true" />
+				</apex:pageBlockButtons>
+				<apex:outputPanel id="upload">
+	                <apex:outputText style="font-weight: bold" value="1. {!$Label.apttus__selectimportfile}" /><br/>
+	                <apex:outputText value="{!$Label.apttus__selectfiletoimportinstruction}" /> <p/>
+	                <apex:inputFile size="80" value="{!filebody}" fileName="{!fileName}" contentType="{!contentType}" /><p/>
+	                <apex:outputText value="{!uploadErrorMsg}" style="font-weight: bold; color: red" /><p/>
+	                <apex:outputText style="font-weight: bold" value="2. {!$Label.apttus__clickattachfile}" escape="true" /> <br/>
+	                <apex:outputText value="{!$Label.apttus__attachimportfileinstruction}" /> <p/>
+					<apex:commandButton value="{!$Label.apttus__attachfile}" action="{!doAttach}" /> <p/>
+					<apex:outputPanel id="DisplayDocType" rendered="{!ShowDocumentTypes}">
+                        <apex:outputText style="font-weight: bold" value="{!'3.' & $Label.apttus__selectdocumenttypeinstruction}" escape="true" /> <br/>
+						<span style="font-weight: bold;font-size: 20px; color: red">*</span>
+						<apex:outputText value="{!$Label.apttus__documenttype}" style="margin-right:5px" id="documentType"> </apex:outputText>
+						<apex:actionRegion >
+							<apex:selectList size="1" id="docTypeText"  value="{!docType}"  >
+								<apex:selectOptions value="{!DocumentTypes}"/>
+								<apex:actionSupport event="onchange" action="{!showHideIntelligentImportSection}" />
+							</apex:selectList>
+						</apex:actionRegion>
+						<p/>
+                    </apex:outputPanel>
+					<!-- Display Intelligent Import Option if Applicable -->
+                    <apex:outputPanel rendered="{!(isIntelligentImportSupported && (DocTypeAgreement || DocTypeExecuted))}" id="IntelligentImport">
+                        <apex:outputText style="font-weight: bold" value="{! TEXT(sectionNumber)&'. ' & $Label.IntelligentImportInstruction}" escape="true" /> <br/>
+                        <apex:outputText value="{!$Label.apttus__intelligentimport}"> </apex:outputText>
+                        <apex:inputCheckbox value="{!intelligentImport}" onchange="doChangeIntelligentImport()" onclick="onChangeImportOffline()"/> <p/>
+                    </apex:outputPanel>
+	            </apex:outputPanel>
+	            <apex:outputPanel >
+					<p>{!$Label.apttus__filesuploaded}</p>
+					<apex:dataList type="square" value="{!attachments}" var="item" rows="6" >
+						<apex:outputText value="{!item.Name}"/>
+					</apex:dataList>
+				</apex:outputPanel> 
+                <!-- Display Intelligent Import Notes -->
+                <apex:outputPanel rendered="{!isIntelligentImportSupported}" id="intelligentImportNote">
+					<apex:outputText value="{!$Label.apttus__intelligentimportnotelabel}"></apex:outputText>
+					<apex:dataList type="square" value="{!notes}" var="item" rows="2">
+						<apex:outputText value="{!item}" />
+					</apex:dataList>
+                </apex:outputPanel>
+                
+				<!-- Display Logo with powered by -->
+                <apex:outputPanel rendered="{!isIntelligentImportSupported && intelligentImportLogo != null}" id="intelligentImportLogo">
+                    <br/>
+                    <apex:outputText value="{!$Label.apttus__poweredbyide}" />
+                    <img id="theImage" src="{!intelligentImportLogo}" height="25" maxheight="50" alt="Logo of IDE Provider" style="padding-bottom: 0.15em"/>
+                    <br/>
+                </apex:outputPanel>
+			</apex:pageBlock>
+	
+			<apex:pageBlock id="idImportBlock" 
+							mode="edit" 
+							rendered="{!(NOT(isInitialized) || canEditAgreement) && 
+										 NOT(HasErrors) && 
+									     (ActionPollerEnabled || IsDone)}" >
+				<apex:pageMessages />
+				<apex:pageBlockButtons location="bottom" >
+					<apex:commandButton value="{!$Label.apttus__return}" 
+										action="{!doReturn}" 
+										immediate="true" 
+										disabled="{!actionPollerEnabled}" />
+				</apex:pageBlockButtons>
+				<apex:outputPanel id="import" rendered="{!NOT(IsDone)}">
+	                <apex:outputText style="font-weight: bold" value="{!$Label.apttus__importdocumentinstruction}" /><br/>
+	                <p/>
+	            </apex:outputPanel>
+				<apex:outputPanel rendered="{!IsDone}">
+					<p>{!$Label.apttus__documentsimported}</p>
+					<apex:dataList type="square" value="{!attachments}" var="item" rows="6" >
+						<apex:outputText value="{!item.Name}"/>
+					</apex:dataList>
+				</apex:outputPanel> 
+				<apex:actionPoller enabled="{!ActionPollerEnabled}" 
+								   interval="5" 
+								   action="{!doImport}" 
+								   reRender="idImportBlock" 
+								   status="idStatus" 
+								   rendered="{!NOT(HasFinishPage)}" oncomplete="invokeIntelligentImport()"/>
+				
+				<apex:actionPoller enabled="{!ActionPollerEnabled}" 
+								   interval="5" 
+								   action="{!doImport}" 
+								   status="idStatus" 
+								   rendered="{!HasFinishPage}" oncomplete="invokeIntelligentImport()"/>
+								   				   
+			    <apex:actionStatus id="idStatus" startText="{!$Label.apttus__importingdocuments}"></apex:actionStatus>
+			</apex:pageBlock>
+		
+		</apex:outputPanel>
+    	<apex:actionFunction name="doChangeIntelligentImport" action="{!doChangeIntelligentImport}" />              				 
+	</apex:form>
+	
+	<script type="text/javascript">
+    
+        /**
+    	 * Handle Disabling Continue Button 
+     	*/
+    	function onChangeImportOffline() {
+            var continueButtons = document.getElementsByClassName("continueButton");
+            continueButtons[0].disabled = true;
+        }
+        /**
+         * Initializes the call
+         */
+        function initCall() {
+        
+            try {
+                sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+            } catch(e) {
+                erroralert(cERROR_UNKNOWN,e);                
+            }        
+        }
+    
+        /**
+         * Callback invoked after the created agreement is saved
+         */
+        function invokeIntelligentImport() {
+            
+            // get parameters
+            var agreementId = "{!JSENCODE(APTS_Agreement__c.Id)}";
+            var intelligentImport = "{!intelligentImport}";
+            var docId = "{!uploadedDocumentId}";
+			var isUploadSignedDocument = "{!isUploadSignedDocument}";
+            var agreementPreviousStatus = "{!JSENCODE(APTS_Agreement__c.Status__c)}";
+            var agreementPreviousStatusCategory = "{!JSENCODE(APTS_Agreement__c.Status_Category__c)}";
+            try {
+                
+                // STEP I - initialize the call
+                initCall();
+				
+                // STEP II - invoke call to IDE                
+                if("true" == intelligentImport) {          
+                    alert("{!$Label.IntelligentImportSuccess}");          
+                    var useCase = "{!$Label.IDEJob_SourceUseCase_ImportOffline}";	
+                    if(isUploadSignedDocument == "true") {	
+						useCase = "{!$Label.UploadSignedDocument}";	
+                    }	
+                    afterCreateIntelligentImport(agreementId, useCase, null);
+                    updateIDEJobRecordAfterCreateIntelligentImport(agreementId,agreementPreviousStatus,agreementPreviousStatusCategory);
+                }
+            } catch(ex) {                
+                // display the error
+                erroralert(cERROR_UNKNOWN, ex);                
+            } 
+        
+        }
+    
+    </script>
+</apex:page>

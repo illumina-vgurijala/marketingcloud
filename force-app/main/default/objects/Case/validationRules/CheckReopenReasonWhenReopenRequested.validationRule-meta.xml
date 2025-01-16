@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckReopenReasonWhenReopenRequested</fullName>
+    <active>true</active>
+    <description>To make Reason for Reopen mandatory when case is reopen requested.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    OR(
+    TEXT(Status) = $Label.CaseStatusInProgress,
+    TEXT(Status) = $Label.CaseStatusReopenRequested),
+    OR(
+	   TEXT(PRIORVALUE(Status)) = $Label.CaseStatusClosed,
+	   TEXT(PRIORVALUE(Status)) = $Label.CaseStatusCompleted,
+           TEXT(PRIORVALUE(Status)) = $Label.CaseStatusClosedDuplicate
+    ),
+    OR(
+        Reason_for_Reopen__c  = &apos;.&apos;,
+    ISBLANK(Reason_for_Reopen__c)
+    )
+)</errorConditionFormula>
+    <errorMessage>Reopen Reasons are required for tracking. Enter a Reopen Reason.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

@@ -1,0 +1,57 @@
+<apex:page title="Trigger Control Configuration" controller="CONF_TriggerControl" standardStylesheets="false" sidebar="true" showHeader="true">
+  <script>
+    window.SVMX_TRC_JSR = {
+      jsrActionMapping: {
+        JsrGetUserInfo: '{!$RemoteAction.CONF_TriggerControl.JsrGetUserInfo}',        
+        JsrGetTRCProcessList: '{!$RemoteAction.CONF_TriggerControl.JsrGetTRCProcessList}',
+        JsrSaveTCRProcessList: '{!$RemoteAction.CONF_TriggerControl.JsrSaveTCRProcessList}',       
+      },
+      makeJsrRequest: function (jsrMappingKey, request, callback, context, jsrActionParams) {
+
+        var requestStr = JSON.stringify(request);
+        Visualforce.remoting.Manager.invokeAction(SVMX_TRC_JSR.jsrActionMapping[jsrMappingKey], requestStr,
+          function (result, event) {
+            SVMX_TRC_JSR.processResult(result, event, callback, context);
+          },
+          jsrActionParams
+        );
+      },
+      processResult: function (result, event, callback, context) {
+        var ret = { success: false };
+        if (event.status == true) {
+          ret = JSON.parse(result);
+        }
+        callback.call(context, ret, event);
+      }
+    }
+  </script>
+  <html lang="en" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="manifest" href="{!URLFOR($Resource.comm_svmx_reactapp, 'COMM_SVMX_ReactApp')}/manifest.json" />
+    <link rel="shortcut icon" href="{!URLFOR($Resource.comm_svmx_reactapp, 'COMM_SVMX_ReactApp')}/favicon.ico" />
+    <link href="{!URLFOR($Resource.comm_svmx_reactapp, 'COMM_SVMX_ReactApp')}/static/css/main.css" rel="stylesheet" />
+    <title>ServiceMax - Trigger Control</title>
+    <apex:slds />
+  </head>
+
+  <body>
+    <div class="slds-scope">
+      <noscript>You need to enable JavaScript to run this app.</noscript>
+      <div id="root"></div>
+    </div>
+    <script>
+      var isRemote = !0;
+      var ASSET_ROOT = "{!URLFOR($Asset.SLDS, '/')}";
+      var PUBLIC_URL = "{!URLFOR($Resource.comm_svmx_reactapp, 'COMM_SVMX_ReactApp')}";
+      var userTimeFormat = window.UserContext.timeFormat;
+    </script>
+    <script type="text/javascript"
+      src="{!URLFOR($Resource.comm_svmx_reactapp, 'COMM_SVMX_ReactApp')}/static/js/main.js"></script>
+  </body>
+
+  </html>
+</apex:page>

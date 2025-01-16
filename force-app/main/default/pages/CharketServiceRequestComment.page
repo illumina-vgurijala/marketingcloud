@@ -1,0 +1,239 @@
+<apex:page showHeader="false" standardStylesheets="false" controller="CharketServiceRequestCommentController" id="page" cache="false"
+    action="{!init}">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="apple-mobile-web-app-capable" content="yes"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>我的案例</title>
+        <link rel="stylesheet" type="text/css" href="https://asset.charket.com.cn/styles/vendor/weui.min.css" />
+        <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.CharketResource,'CharketResources/css/commui.css')}" />
+        <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.CharketResource,'CharketResources/css/casecomment.css')}" />
+        <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.CharketResource,'CharketResources/css/casecommentcustom.css')}" />
+        <script src="{!URLFOR($Resource.CharketResource,'CharketResources/jquery/jquery-3.4.1.min.js')}" />       
+    </head>
+    <body class="main-page">
+        <apex:form id="form">
+            <apex:inputhidden id="caseCommentId" value="{!caseCommentId}" />
+            <apex:inputhidden id="replyCaseCommentId" value="{!replyCaseCommentId}" />
+            <apex:inputhidden id="caseId" value="{!thisCase.caseId}" />
+            <apex:actionFunction action="{!uploadImages}" name="uploadImages"></apex:actionFunction>
+            <apex:actionFunction action="{!refreshComments}" name="refreshComments"></apex:actionFunction>
+            <apex:outputpanel rendered="{!NOT(isWeChatBrowser)}">
+                <article class="slds-card">
+                    <div class="slds-card__body slds-card__body_inner">
+                        <div class="web-content">
+                            <img width="220px" height="220px" class="qrcode-image" alt="WeChat QR Code" src="{!URLFOR($Resource.CharketResource,'CharketResources/QRCode/')}{!qrCodeImage}"
+                            />
+                            <img width="64px" height="64px" class="wechat-logo" alt="WeChat" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/wechat-icon-@2x.png')}"
+                            />
+                            <p class="web-limit1">该表单只限在微信内访问</p>
+                            <p class="web-limit1">请使用微信扫一扫访问表单</p>
+                        </div>
+                    </div>
+                </article>
+            </apex:outputpanel>
+            <apex:outputpanel rendered="{!isWeChatBrowser}">
+                <apex:outputpanel rendered="{!NOT(hasPermission)}">
+                    <div class="no-permission-msg">抱歉，您没有权限查看此页面信息。</div>
+                </apex:outputpanel>
+                <apex:outputpanel rendered="{!hasPermission}">
+                    <input type="hidden" value="{!openId}" id="openId" />
+                    <div class="loading-mask weui-mask_transparent" id="formtast"></div>
+                    <div class="loading-toast weui-toast" id="formloading">
+                        <em class="weui-loading weui-icon_toast"></em>
+                        <p class="weui-toast__content">Waiting...</p>
+                    </div>
+                    <div class="weui-toptips weui-toptips_warn js_tooltips" id="weuiWarn"></div>
+                    <div class="container">
+                        <div class="page icons page-zj casetop">
+                            <!-- 工单图标 -->
+                            <div class="icon-box dd-ms">
+                                <img width="56px" height="56px" alt="Case" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/icon-dd.png')}" class="dd-tb" />
+                                <div class="icon-box__ctn" aria-hidden="true">
+                                    <h3 class="icon-box__title">{!thisCase.caseNumber}</h3>
+                                    <p class="icon-box__desc case-info-label" id="tip_1">创建时间: {!thisCase.createdDate}</p>
+                                </div>
+                            </div>
+                            <div class="ddzt clearfix">
+                                <!-- 序列号&状态 -->
+                                <div class="xlh clearfix">
+                                    <div class="xlh-item">
+                                        <h5 class="case-info-label">机器序列号</h5>
+                                        <p class="case-info-value">{!thisCase.productSerialNumber}</p>
+                                    </div>
+                                    <div class="xlh-item">
+                                        <h5 class="case-info-label">状态</h5>
+                                        <p class="case-info-value">{!thisCase.status}</p>
+                                    </div>
+                                </div>
+                                <!-- 服务需求描述 -->
+                                <div class="fwxq clearfix">
+                                    <span></span>
+                                    <h5 class="case-info-label">服务需求描述</h5>
+                                    <div class="fwxq-nr clearfix case-info-value">
+                                        {!thisCase.description}
+                                    </div>
+                                    <div class="fwxq-more clearfix" id="fw-more-a" style="display:{!IF(LEN(thisCase.description) >=50, '', 'none')}">查看更多</div>
+                                </div>
+                            </div>
+                            <!-- 最近刷新 -->
+                            <div class="zjsx clearfix">
+                                <span class="case-info-label">最近刷新:</span>
+                                <em>{!pageRefreshTime}</em>
+                                <img width="24px" height="24px" alt="refresh" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/icon-sx-btn.png')}" class="refresh-icon" onclick="refreshPage()"
+                                />
+                            </div>
+                            <!-- 回复列表 -->
+                            <div class="hf-cont clearfix" style="display:{!IF(thisCaseComments.size > 0, 'block', 'none')}">
+                                <apex:repeat value="{!thisCaseComments}" var="caseCommentItem">
+                                    <!-- 内容项 -->
+                                    <div class="{!IF(AND(NOT(caseCommentItem.isAuthorGuest), ISBLANK(caseCommentItem.readTime)), 'hf-item hf-item-new clearfix', 'hf-item hf-item-new clearfix')}">
+                                        <div class="hf-tb clearfix">
+                                            <img width="34px" height="34px" alt="Profile Photo" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/tx1.png')}" style="display:{!IF(caseCommentItem.isAuthorGuest, '', 'none')}"
+                                            />
+                                            <img width="34px" height="34px" alt="Profile Photo" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/tx2.png')}" style="display:{!IF(NOT(caseCommentItem.isAuthorGuest), '', 'none')}"
+                                            />
+                                            <h4>{!caseCommentItem.author}</h4>
+                                            <p>{!caseCommentItem.createdDate}</p>
+                                            <em style="background-size: 30px 30px;display:{!IF(AND(NOT(caseCommentItem.isAuthorGuest), ISBLANK(caseCommentItem.readTime)), '', 'none')}"></em>
+                                        </div>
+                                        <div class="hf-nr clearfix">
+                                            <div class="hf-nr-txt clearfix">
+                                                <apex:outputText value="{!caseCommentItem.comment}" escape="false"></apex:outputText>
+                                            </div>
+                                            <div class="fwxq-more clearfix" style="display:{!IF(LEN(caseCommentItem.comment) >=50, '', 'none')};margin-bottom:10px">查看更多</div>
+                                            <div class="hf-nr-wj clearfix" style="border-top:{!IF(caseCommentItem.caseCommentFiels.size > 0, '1px solid #e0e0e0', 'none')}">
+                                                <div class="hf-nr-wj-txt clearfix" style="display:{!IF(caseCommentItem.caseCommentFiels.size > 0, '', 'none')}">
+                                                    <apex:repeat value="{!caseCommentItem.caseCommentFiels}" var="commentFileItem">
+                                                        <!--viewLink-->
+                                                        <span>
+                                                            <img width="16px" height="16px" alt="file" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/hxz.png')}" class="file-icon"/>
+                                                            <a href="{!JSENCODE(commentFileItem.viewLink)}" target="_blank" class="file-name">{!commentFileItem.fileName}</a>
+                                                        </span>
+                                                    </apex:repeat>
+                                                </div>
+                                                <div class="hf-btn clearfix">
+                                                    <input type="hidden" value="{!caseCommentItem.caseCommentId}" />
+                                                    <img width="16px" height="16px" alt="reply" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/hf-btn.png')}" class="file-icon"/> 回复
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </apex:repeat>
+                            </div>
+                        </div>
+                        <div class="comment-box">
+                            <!-- 回复按钮 -->
+                            <div class="hf-box clearfix">
+                                <div class="hf-box-nr clearfix">
+                                    <div class="hf-box-xq clearfix">
+                                        <img width="26px" height="26px" alt="reply" src="{!URLFOR($Resource.CharketResource,'CharketResources/images/tx1.png')}" />
+                                        <input type="text" placeholder="回复" onfocus="showReplyBox()" />
+                                    </div>
+                                </div>
+                                <div class="hf-sc">
+                                    <!-- <input type="file" /> -->
+                                </div>
+                            </div>
+                            <!-- 文件回复框 -->
+                            <div class="wj-box clearfix">
+                                <div class="wj-box-btn clearfix">
+                                    <!--onchange="showDelFileBtn('file1')"-->
+                                    <div class="file-box">
+                                        <apex:inputfile styleclass="file1"
+                                            value="{!contentVersion.VersionData}" onchange="showDelFileBtn('file1')" filename="{!contentVersion.Title}"></apex:inputfile>
+                                    </div>
+                                    <div class="file-remove">
+                                        <label class="label">
+                                            <input type="checkbox" class="checkbox" onclick="removeFileSelect('file1')" />
+                                            <a class="checkbox_faux"></a>
+                                        </label>
+                                    </div>
+                                    <div class="wj-send file-button" onclick="uploadFile('{!JSENCODE(thisCase.caseId)}', '{!JSENCODE(followerName)}')">发 送</div>
+                                </div>
+                                <div class="wj-nr clearfix">
+                                    <textarea placeholder="根据《中华人民共和国人类遗传资源管理条例》有关规定，在未取得人遗办备案之前，您不可以将人类遗传资源信息提供给我司。" id="commentBody"></textarea>
+                                    <div class="wj-send" onclick="saveComment('{!JSENCODE(thisCase.caseId)}', '{!JSENCODE(followerName)}')">发 送</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </apex:outputpanel>
+            </apex:outputpanel>
+        </apex:form>
+        <script>
+            jQuery.noConflict();
+            jQuery(function () {
+                jQuery("#fw-more-a").click(function () {
+                    if (jQuery(this).text() == "查看更多") {
+                        jQuery(this).text("收 起");
+                        jQuery('.fwxq-nr').css("height", "auto");
+                    } else {
+                        jQuery(this).text("查看更多");
+                        jQuery('.fwxq-nr').css("height", "40px");
+                    }
+
+                });
+                jQuery(".hf-nr .fwxq-more").click(function () {
+                    if (jQuery(this).text() == "查看更多") {
+                        jQuery(this).text("收 起");
+                        jQuery(this).parents('.hf-nr').find('.hf-nr-txt').css("height", "auto");
+                    } else {
+                        jQuery(this).text("查看更多");
+                        jQuery(this).parents('.hf-nr').find('.hf-nr-txt').css("height", "40px");
+                    }
+
+                });
+                jQuery(".casetop").click(function () {
+                    jQuery(".wj-box").hide();
+                    jQuery(".wj-nr").show();
+                    jQuery(".file-button").hide();
+                    jQuery(".file-remove").css("float", "right");
+                    jQuery(".hf-box").show();
+                    jQuery(".page-zj").css("margin-bottom", "60px");
+                    jQuery("#commentBody").css("color", "gray");
+                    var replyCaseCommentId = jQuery("[id$='replyCaseCommentId']");
+                    replyCaseCommentId.val("");
+                });
+
+                jQuery(".hf-sc").click(function () {
+                    jQuery(".wj-nr").hide();
+                    jQuery(".wj-box").show();
+                    jQuery(".page-zj").css("margin-bottom", "45px");
+                    jQuery(".hf-box").hide();
+                    jQuery("#commentBody").focus();
+                    jQuery("#commentBody").css("color", "black");
+                    jQuery(".file-button").show();
+                    jQuery(".file-remove").css("float", "left");
+                });
+
+                jQuery(".hf-btn").click(function (e) {
+                    jQuery(".wj-box").show();
+                    jQuery(".wj-nr").show();
+                    jQuery(".page-zj").css("margin-bottom", "145px");
+                    jQuery("#commentBody").focus();
+                    jQuery("#commentBody").css("color", "black");
+                    var commentId = jQuery(this).find('input[type=hidden]').val();
+                    var replyCaseCommentId = jQuery("[id$='replyCaseCommentId']");
+                    replyCaseCommentId.val(commentId);
+                    e.cancelbubble=true
+                    e.stopPropagation();
+                });
+            })
+        </script>
+        <script src="{!URLFOR($Resource.CharketResource,'CharketResources/jquery/servicecomment.js')}" /> 
+        <script>
+            initPage('{!JSENCODE(thisCase.caseId)}');
+
+            var hasUploadFile = Boolean({!JSENCODE(IF(hasUploadFiles,"true", "false"))});
+            var uploadFileSuccessed = Boolean({!JSENCODE(IF(uploadFilesSuccessed,"true", "false"))});
+            if(hasUploadFile && !uploadFileSuccessed) {
+                displayErrorMsg("文件上传失败，请重试");
+            }
+        </script>
+    </body>
+    </html>
+</apex:page>

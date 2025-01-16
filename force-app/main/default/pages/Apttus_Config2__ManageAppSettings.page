@@ -1,0 +1,251 @@
+<!--   
+		Apttus Config & Pricing
+		ManageAppSettings
+			
+		@2014-2015 Apttus Inc. All rights reserved.
+ -->
+<apex:page controller="Apttus_Config2.ManageAppSettingsController" 
+		   title="{!$Label.apttus_config2__manageapplicationsettings}"
+		   sidebar="{!ShowAdminSidebar}"
+		   cache="false">
+		   	
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__AdminCSS)}" />
+	
+	<style>
+		#sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+		#sortable tr { margin: 0 5px 5px 5px; padding: 5px; font-size: 1.2em; height: 1.5em; }
+		html>body #sortable tr { height: 1.5em; line-height: 1.2em; }
+		.ui-state-highlight { height: 1.5em; line-height: 1.2em; }
+		
+		body .bPageBlock .pbBody .pbSubheader{
+     		background-color: #428BCA;
+     		color: white;
+     		
+    	}
+		
+	</style>
+	
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+		
+		j$(function() {
+			bindEvents();        	
+		});
+		
+		function bindEvents() {			
+			j$(".sortable").sortable({
+				helper: function(event, ui) {
+					var itemClone = ui.clone();
+	        itemClone.children().width(ui.children().outerWidth());
+	        return itemClone;
+				},
+				update: function(event, ui) {	  	
+					var reOrderedString = j$(this).sortable('toArray');	
+					reOrderCartColumns(reOrderedString.toString());
+				}
+			});
+			j$(".sortable").disableSelection();
+		}
+			
+		function openFieldSelectionPopup() {
+			reRenderPopup();
+			j$("#idFieldSelectionPopup").dialog({
+					 autoOpen: true,          
+					 modal: true,
+					 resizable: false,          
+					 title: '{!$Label.SelectFieldOptions}',
+					 width: 460,
+					 close: function(event, ui) {
+					},
+				buttons: {
+					'Ok' : function() {
+							//rerender Cart Columns
+							RerenderCartColumns(j$("[id*='rightHidden']").val());    
+							j$(this).dialog("close");
+						}
+					}    
+			});
+		}
+
+		/**
+		 * open spinner
+		 */
+		function openSpinner(spinnerId) {
+		    j$("[id$="+ spinnerId + "]").css("visibility", "visible");
+		    return false;
+
+		}
+
+		/**
+		 * close spinner after save is complete.
+		 */
+		function closeSpinner(spinnerId) {
+		    j$("[id$=" + spinnerId + "]").css("visibility", "hidden");
+		    return false;
+
+		}
+
+	</script>
+
+	<apex:sectionHeader title="{!$Label.apttus_config2__sprintcpq}" subtitle="{!$Label.apttus_config2__manageapplicationsettings}" />
+
+	<apex:form id="idForm">
+		<apex:PageBlock mode="edit" title="{!$Label.apttus_config2__customize}" id="idCustomizeAppPageBlock">
+			<apex:pageBlockButtons >
+				<apex:image id="saveSpinner"
+				            value="/img/loading.gif" 
+				            style="visibility: hidden;" />
+				<apex:commandButton id="idSaveButton" 
+									action="{!doSave}"
+									value="{!$Label.apttus_config2__save}"
+									status="saveStatus"
+									onComplete="bindEvents();"
+									rerender="idCustomizeAppPageBlock, idMessages" />  
+				<apex:commandButton id="idCancelButton" 
+									action="{!doCancel}"
+									value="{!$Label.apttus_config2__cancel}"
+									reRender="idMessages" />
+				<apex:commandLink id="idAdvancedSettings" 
+								  action="{!doAdvancedSettings}"
+								  style="float:right; padding-top:8px;"
+								  value="{!$Label.apttus_config2__advanced}"/>
+			</apex:pageBlockButtons>
+			<apex:PageMessages id="idMessages" />
+			<apex:PageBlockSection id="idOtherSettings" 
+								   columns="1" 
+								   title="{!$Label.apttus_config2__manageproductfieldsets}" 
+								   collapsible="true">
+				<apex:outputLink title="{!$Label.apttus_config2__editproductfieldset}" 
+								 value="{!ProductFieldSetURL}" 
+								 target="_blank">{!$Label.apttus_config2__editproductfieldset}</apex:outputLink>
+			</apex:pageblockSection> <br />
+			
+			<!-- Cart Display Columns Table -->
+			<div style="width:49%;float:left;margin-right:2%;margin-top:6px;">
+				<apex:PageBlockSection id="idCartColumns" columns="1" title="{!$Label.apttus_config2__choosecartcolumns}">
+					<apex:outputPanel >
+						<apex:pageBlockTable value="{!null}" var="nullVar" columnsWidth="10%, 45%, 40%, 5%">
+							<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigCustomDisplayColumns__c.Fields.Apttus_Config2__Sequence__c.Label}" />
+							<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigCustomDisplayColumns__c.Fields.Apttus_Config2__FieldName__c.Label}" />
+							<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigCustomDisplayColumns__c.Fields.Apttus_Config2__IsEditable__c.Label} " />
+							<apex:column headerValue="{!$Label.apttus_config2__remove}" />	
+						</apex:pageBlockTable>
+
+						<table width="100%" >					
+							<tbody class="sortable">
+								<apex:repeat var="displayInfo" value="{!displayInfos}">
+									<tr id="{!displayInfo.displaySO.FieldName__c}">
+										<td>
+											<table width="100%" class="list">
+												<tr class="dataRow odd evenRow">			
+													<td width="10%" class="dataCell">{!displayInfo.displaySO.Apttus_Config2__Sequence__c}</td>			
+													<td width="45%" class="dataCell">{!displayInfo.label}</td>
+													<td width="40%" class="dataCell">
+														<apex:inputField value="{!displayInfo.displaySO.Apttus_Config2__IsEditable__c}"/>
+													</td>			
+													<td width="5%" class="dataCell">
+														<apex:commandLink action="{!doDeleteRow}"  
+																		  status="idActionStatus" 
+																		  onComplete="bindEvents();"
+																		  reRender="idCustomizeAppPageBlock">
+															<apex:param name="rowNum" value="{!displayInfo.displaySO.Apttus_Config2__Sequence__c}" />
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+																		title="{!$Label.apttus_config2__remove}" 
+																		alt="{!$Label.apttus_config2__remove}" />  
+														</apex:commandLink>			            	
+													</td>			
+												</tr>			
+											</table>
+										</td>
+									</tr>
+								</apex:repeat>
+							</tbody>
+						</table>
+					</apex:outputPanel>
+					<apex:commandLink id="idAddField" value="{!$Label.apttus_config2__add}" rerender="idFieldSelectionPopup" onClick="openFieldSelectionPopup(); return false;"/>
+				</apex:pageblockSection>
+			</div>
+
+			<!-- Cart Display Actions Table -->
+			<div style="width:49%;float:right;margin-top:6px;">
+				<apex:PageBlockSection id="idCartActions" columns="1" title="{!$Label.apttus_config2__choosecartactions}">
+					<apex:outputPanel >
+						<apex:pageBlockTable value="{!null}" var="nullVar" columnsWidth="10%, 80%, 10%">
+							<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigCustomDisplayActions__c.Fields.Apttus_Config2__Sequence__c.Label}" />
+							<apex:column headerValue="{!$Label.apttus_config2__action}" />
+							<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigCustomDisplayActions__c.Fields.Apttus_Config2__IsEnabled__c.Label}" style="text-align: center;" />
+						</apex:pageBlockTable>
+
+						<table width="100%" >					
+							<tbody>
+								<apex:repeat var="actionSO" value="{!DisplayActions}">
+									<tr>
+										<td>
+											<table width="100%" class="list">
+												<tr class="dataRow odd evenRow">			
+													<td width="10%" class="dataCell">{!actionSO.Sequence__c}</td>			
+													<td width="80%" class="dataCell">{!actionSO.ActionLabelName__c}</td>
+													<td width="10%" class="dataCell" style="text-align: center;">
+														<apex:inputField rendered="{!NOT(actionSO.Apttus_Config2__ActionLabelName__c == installedProductsLabel)}" value="{!actionSO.Apttus_Config2__IsEnabled__c}" />
+														<apex:inputField rendered="{!AND(actionSO.Apttus_Config2__ActionLabelName__c == installedProductsLabel, IsAssetEnabled)}" value="{!actionSO.Apttus_Config2__IsEnabled__c}" />
+													</td>			
+												</tr>			
+											</table>
+										</td>
+									</tr>
+								</apex:repeat>
+							</tbody>
+						</table>
+					</apex:outputPanel>
+				</apex:pageblockSection>
+			</div>
+		</apex:pageBlock>
+
+		<apex:actionStatus onstart="return openSpinner('saveSpinner');"
+		                   id="saveStatus"
+		                   onstop="return closeSpinner('saveSpinner');">
+		</apex:actionStatus>
+
+		<apex:actionFunction id="idRerenderCartColumns" 
+							name="RerenderCartColumns" 
+							action="{!reRenderCartColumns}" 
+							immediate="true" 
+							onComplete="bindEvents();"
+							reRender="idCartColumns" >
+			<apex:param id="idReOrderedString" 
+						name="reOrderedString"
+						value="" />
+		</apex:actionFunction>
+		<apex:actionFunction id="idReOrderCartColumns" 
+							name="reOrderCartColumns" 
+							action="{!reOrderCartColumns}"
+							immediate="true" 
+							onComplete="bindEvents();"
+							reRender="idCartColumns">
+			<apex:param id="idreOrderedString1" 
+						name="reOrderedString" 
+						value="" />
+		</apex:actionFunction>
+		<apex:actionFunction id="idReRenderPopup"
+							 name="reRenderPopup"
+							 action="{!renderFieldOptions}" 
+							 rerender="idFieldSelectList" />
+		
+		<div id="idFieldSelectionPopup" style="display:none">  
+			<c:SelectList id="idFieldSelectList" 
+							leftLabel="{!$Label.apttus_config2__availablefields}"
+							leftOptions="{!availableFields}"
+							rightLabel="{!$Label.apttus_config2__selected}"
+							rightOptions="{!selectedFields}"
+							size="14"
+							width="170px"/>
+		</div>
+	</apex:form>
+</apex:page>

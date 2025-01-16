@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.triggersetting.ui.desktop.impl");a.Class("Module",com.servicemax.client.lib.api.ModuleActivator,{__constructor:function(){this.__base();},beforeInitialize:function(){},initialize:function(){com.servicemax.client.triggersetting.ui.desktop.api.init();}},{instance:null});})();

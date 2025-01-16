@@ -1,0 +1,1 @@
+window.IS_IN_LIGHTNING_COMPONENT = true

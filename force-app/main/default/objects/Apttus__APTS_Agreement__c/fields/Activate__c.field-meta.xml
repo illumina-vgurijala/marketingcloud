@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Activate__c</fullName>
+    <description>Activates the agreement - [Updated] DCP-46097</description>
+    <externalId>false</externalId>
+    <formula>IF(
+    AND(RecordType.DeveloperName= $Label.AgreementRecordTypeDevNameOpenOffer,
+    TEXT(Apttus__Status__c) = $Label.AgreementStatusFullySigned,
+    Number_Of_Agreement_Line_Items__c = 0),
+    $Label.UI_ErrorMessageOnActivateIfNoLineItemForOpenOffer,
+IF(
+    AND(
+    RecordType.DeveloperName= $Label.AgreementRecordTypeDevNameOpenOffer,
+    TEXT(Apttus__Status__c) = $Label.AgreementStatusFullySigned,
+    Agreement_Lines_No_Customer_Election__c &gt; 0
+    ),
+    $Label.UI_ErrorMessageOnActivateIfNoCustomElections,
+    IF(
+    AND(
+    OR(
+    ISPICKVAL(Apttus__Status_Category__c,&quot;In Authoring&quot;),
+    ISPICKVAL(Apttus__Status_Category__c,&quot;In Signatures&quot;)
+    ),
+    ISPICKVAL(Apttus__Status__c,&quot;Fully Signed&quot;),
+    OR(
+    ISPICKVAL(Apttus_Approval__Approval_Status__c,&quot;Not Submitted&quot;),
+    IsPICKVAL( Apttus_Approval__Approval_Status__c, &quot;Approved&quot;)
+    ),
+    OR(
+    ISBLANK(Validation_Status__c),
+    NOT(CONTAINS(Validation_Status__c,&quot;In Progress&quot;))
+    ),
+    OR(
+    AND(ISPICKVAL(Fully_Signed_Contract_Attached__c, &quot;Yes&quot;),
+    RecordType.DeveloperName == &quot;Tender&quot;),
+    RecordType.DeveloperName != &quot;Tender&quot;
+    ),
+    $Profile.Name != $Label.SalesRepProfileName
+    
+    ),
+    HYPERLINK(&quot;/lightning/cmp/c__agreementActivate?c__recordId=&quot; &amp; Id, IMAGE(&quot;/resource/Apttus__Button_Activate&quot;, &quot;Activate&quot;),&quot;_self&quot;),
+    
+    IF(
+    ISPICKVAL(Apttus_Approval__Approval_Status__c, &quot;Approval Required&quot;),
+    $Label.UI_ErrorMessageonActivateIFApprovalStatusNotApproved,
+    IF(
+    AND(
+    NOT(ISPICKVAL(Fully_Signed_Contract_Attached__c, &quot;Yes&quot;)),
+    RecordType.DeveloperName == &quot;Tender&quot;
+    ),
+    $Label.UI_ErrorMessageonActivateIFFSCAisNOTYES,
+    null
+    )
+    )
+    )
+)
+)</formula>
+    <label>Activate</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

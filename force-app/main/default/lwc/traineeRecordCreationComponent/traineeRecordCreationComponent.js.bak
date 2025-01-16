@@ -1,0 +1,65 @@
+import { LightningElement, wire , api , track  } from 'lwc';
+import { NavigationMixin,CurrentPageReference } from 'lightning/navigation';
+import { getObjectInfo } from 'lightning/uiObjectInfoApi';
+import RELATED_CONTACT from '@salesforce/schema/Related_Contacts__c';
+
+export default class TraineeRecordCreationComponent extends NavigationMixin(LightningElement) {
+   //@track objectInfo;
+   @track traineeRecordTypeId;
+   workOrderId = null;
+   currentPageReference = null; 
+   recordtypeId = null;
+
+   @wire(CurrentPageReference)
+    getStateParameters(currentPageReference) {
+        if(currentPageReference){
+            console.log('WO Id => '+currentPageReference.state.c__workOrderId);
+			if(currentPageReference.state.c__workOrderId){
+				this.workOrderId = currentPageReference.state.c__workOrderId;
+			}else{
+				this.workOrderId = currentPageReference.state.workOrderId;
+			}
+        }
+    }
+     
+   @wire(getObjectInfo, { objectApiName: RELATED_CONTACT })
+      objectInfo({data, error}) {
+         if(data) {
+            let optionsValues = [];
+            const rtInfos = data.recordTypeInfos;
+            let rtValues = Object.values(rtInfos);
+            for(let i = 0; i < rtValues.length; i++) {
+               if(rtValues[i].name == 'Trainee') {
+                  this.recordtypeId= rtValues[i].recordTypeId;
+               }
+            }
+            console.log('==RT=='+this.recordtypeId);
+         }else if(error) {
+            this.ShowTostMessage('Error',error.body.message,'error')
+         }
+   }
+
+   navigateToTraineeRecord(event) {
+      var traineeRecordId = event.detail.id;
+      console.log('=traineeRecordId=='+traineeRecordId);
+      this[NavigationMixin.Navigate]({
+          type: 'standard__recordPage',
+          attributes: {
+              recordId: traineeRecordId,
+              objectApiName:'Related_Contacts__c',
+              actionName: 'view'
+          },
+      });
+  }
+
+   closeModal() {
+      this[NavigationMixin.Navigate]({
+          type: 'standard__recordPage',
+          attributes: {
+              recordId: this.workOrderId,
+              objectApiName:'SVMXC__Service_Order__c',
+              actionName: 'view'
+          },
+      }); 
+   } 
+}

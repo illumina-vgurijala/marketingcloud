@@ -1,0 +1,116 @@
+<!-- 
+    Apttus Contract Management
+    WizardMetaPropertyConfig
+    @2016 Apttus Inc. All rights reserved.    
+ -->
+<apex:page sidebar="false" 
+            showHeader="false" 
+            docType="html-5.0"            
+            controller="Apttus.WizardMetaPropertyConfigController"            
+            title="{!$Label.apttus__configuremetaproperty}">
+	<link type="text/css" href="{!URLFOR($Resource.FontAwesome,'css/font-awesome.min.css')}" rel="stylesheet" />
+	<link type="text/css" href="{!URLFOR($Resource.WizardDesigner,'css/wizard-config.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/wizard-config.js')}"/>           
+    <body class="wizard-config">
+        <apex:form >
+            <apex:outputPanel layout="block">
+                <apex:pageMessages />
+        	</apex:outputPanel>
+            <apex:outputPanel layout="block" styleClass="wizard-config-container"  rendered="{!NOT(errorLoadingWizardDesignConfiguration)}">
+                <table class="config-table-layout">
+                    <thead>
+                         <tr>
+                            <apex:repeat value="{!headers}" var="header">
+                                <th>                                      
+                                    <apex:outputText value="{!header}"  />                                
+                                </th>
+                            </apex:repeat>
+                            <apex:repeat value="{!headersAPINameLabelMap}" var="headerKey">
+                                <th>                                      
+                                    <apex:outputText value="{!headersAPINameLabelMap[headerKey]}"  />                                       
+                                    <apex:outputPanel style="margin-left:10px;" styleClass="fa fa-question-circle"
+                                                      title="{!$ObjectType.Apttus__WizardRuntimeInput__c.fields[headerKey].inlineHelpText}"
+                                                      rendered="{!$ObjectType.Apttus__WizardRuntimeInput__c.fields[headerKey].inlineHelpText != null && $ObjectType.Apttus__WizardRuntimeInput__c.fields[headerKey].inlineHelpText != ''}" />                                    
+                                </th>
+                            </apex:repeat>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <apex:repeat value="{!MetaPropertyDisplayList}" var="stepQuestionResponseMetaPropertyList">
+                        <tr>                            
+                            <td>
+                                <apex:outputPanel layout="block">                                          
+                                    <apex:outputText value="{!stepIDNameMap[stepQuestionResponseMetaPropertyList.stepId]}"></apex:outputText>
+                                </apex:outputPanel>                                     
+                            </td>
+                            <td> 
+                                <apex:repeat value="{!stepQuestionResponseMetaPropertyList.inputControlsList}" var="inputControlDetails">  
+                                    <apex:variable var="tdheight" value="{!(inputControlDetails.ResponseSize) *20 + (inputControlDetails.ResponseSize - 1) * 4 + (inputControlDetails.ResponseSize - 1) * 	1}"/>
+                                    <apex:outputPanel layout="block" style="height: {!tdheight}px">
+                                        <apex:outputText value="{!inputControlDetails.inputControl.Apttus__Question__c}"></apex:outputText>
+                                    </apex:outputPanel>
+                                </apex:repeat>                                    
+                            </td>
+                            <td>
+                                <apex:repeat value="{!stepQuestionResponseMetaPropertyList.inputControlsList}" var="inputControlDetails">   
+                                    <apex:variable var="tdheight" value="{!(inputControlDetails.ResponseSize) *20 + (inputControlDetails.ResponseSize - 1) * 4 + (inputControlDetails.ResponseSize - 1) * 1}"/>
+                                    <apex:outputPanel layout="block" style="height: {!tdheight}px">
+                                        <apex:outputText value="{!inputControlDetails.inputControl.Apttus__FieldType__c}"></apex:outputText>                                            
+                                    </apex:outputPanel>
+                                </apex:repeat>                                    
+                            </td>
+                            <td>                                    
+                                <apex:repeat value="{!stepQuestionResponseMetaPropertyList.inputControlsList}" var="inputControlDetails"> 
+                                    <apex:repeat value="{!inputControlDetails.response}" var="res">                                        	
+                                        <apex:outputPanel layout="block">
+                                            <apex:outputText value="{!res}"></apex:outputText>                                              
+                                        </apex:outputPanel>
+                                    </apex:repeat> 
+                                </apex:repeat>                                                             		    
+                            </td>                            	
+                            <!--<apex:repeat value="{!fieldsList}" var="currentFieldName"> -->
+                            <apex:repeat value="{!headersAPINameLabelMap}" var="currentFieldName">    
+                                <td>
+                                    <apex:repeat value="{!stepQuestionResponseMetaPropertyList.inputControlsList}" var="inputControlDetails">
+                                        <apex:repeat value="{!inputControlDetails.inpControlMetaPropertyFieldsList}" var="metaPropertyField">                                                                                         
+                                            <apex:outputPanel layout="block" style="" rendered="{!metaPropertyField.metaPropertyFieldName == currentFieldName}">                                                        
+                                                <apex:outputPanel rendered="{!metaPropertyField.metaPropertyFieldType == 'picklist' || metaPropertyField.metaPropertyFieldType == 'multipicklist'}">                                            
+                                                    <apex:selectList styleClass="fixed--width" size="1" value="{!metaPropertyField.metaPropertyFieldValue}" disabled="{!IF(inputControlDetails.inputControl.Apttus__FieldType__c != 'Picklist' && inputControlDetails.inputControl.Apttus__FieldType__c != 'MultiPicklist' && inputControlDetails.inputControl.Apttus__FieldType__c != 'Picklist Radio Button' && inputControlDetails.inputControl.Apttus__FieldType__c != 'Checkbox', true, false)}">
+                                                        <apex:selectOptions value="{!metaPropertyField.metaPropertyFieldValueOptions}"></apex:selectOptions>                                                                
+                                                    </apex:selectList>
+                                                </apex:outputPanel>                                                
+                                                <apex:outputPanel rendered="{!metaPropertyField.metaPropertyFieldType != 'picklist' && metaPropertyField.metaPropertyFieldType != 'multipicklist'}">
+                                                    <apex:inputText value="{!metaPropertyField.metaPropertyFieldValue}" disabled="{!IF(inputControlDetails.inputControl.Apttus__FieldType__c != 'Picklist' && inputControlDetails.inputControl.Apttus__FieldType__c != 'MultiPicklist' && inputControlDetails.inputControl.Apttus__FieldType__c != 'Picklist Radio Button' && inputControlDetails.inputControl.Apttus__FieldType__c != 'Checkbox', true, false)}">                                                                
+                                                    </apex:inputText>
+                                                </apex:outputPanel>                                                        
+                                            </apex:outputPanel>                                                                                                                                                                                           
+                                        </apex:repeat>
+                                    </apex:repeat>  
+                                </td>
+                            </apex:repeat>                            	
+                        </tr>
+                        </apex:repeat>
+                    </tbody>
+                </table>                                
+            </apex:outputPanel>
+			<div class="wizard-config-footer" style="">
+                    <span class="controls">                                
+                        <apex:commandLink styleClass="secondary-ctrl alignBtn" value="{!$Label.apttus__cancel}" action="{!onCancel}" immediate="true" ></apex:commandLink>
+                        <apex:commandLink styleClass="secondary-ctrl default" value="{!$Label.apttus__save}" action="{!saveMetaPropertyConfiguration}" status="ajaxStatusContainer" rendered="{!NOT(errorLoadingWizardDesignConfiguration)}"></apex:commandLink>                                
+                    </span>
+		    </div>            
+            <div class="header">
+            	<div class="header-container wizard-config-header-container">                
+                    <div>                
+                        <apex:outputPanel layout="block" styleClass="title" id="titleBanner">                    
+                            <apex:outputText value="{!$Label.apttus__wizardconfigurator}" id="titleHeaderLabel" />
+                             <apex:outputPanel style="margin-left:10px;" styleClass="fa fa-question-circle"/>
+                        </apex:outputPanel>   
+                        <apex:image styleClass="iconPosition" value="{!URLFOR($Resource.Apttus__WizardDesigner, 'images/Wizard.png')}" />						
+                    </div>
+            </div>
+        </div>
+        </apex:form>
+    </body>
+</apex:page>

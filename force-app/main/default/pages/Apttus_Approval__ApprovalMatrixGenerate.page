@@ -1,0 +1,188 @@
+<!-- 
+    Apttus Approvals Management
+    ApprovalMatrixGenerate
+     
+    @2011-2019 Apttus Inc. All rights reserved.
+
+-->
+<apex:page standardController="Apttus_Approval__Approval_Matrix__c"
+            extensions="Apttus_Approval.ApprovalMatrixGenerateController"
+            lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                    $User.UIThemeDisplayed == 'Theme4u' ||
+                                    $User.UIThemeDisplayed == 'Theme4t'}">
+
+    <script type="text/javascript" src="/soap/ajax/50.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/50.0/apex.js"></script>
+
+    <apex:include pageName="Apttus_Approval__ApprovalsJSLibInclude" />
+    
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__JQuery22, 'jquery-2.2.2.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.css')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.js')}" />
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+    <apex:form id="idApprovalMatrixGenerateForm">
+        <style>
+            /* hide the close box on the dialog */
+            .no-close .ui-dialog-titlebar-close {
+                display: none !important;
+            }
+        </style>
+        
+        <apex:outputPanel id="idDoReturnInternal">
+            <script type="text/javascript">
+                // make sure jQuery doesn't conflict with any other JS libraries
+                j$ = jQuery.noConflict();      
+                
+                // call this once the page is ready
+                j$(document).ready(function() {
+                
+                    // build the wait dialog
+                    buildWaitDialog();
+                    
+                    // show the wait dialog
+                    showWaitDialog("{!$Label.apttus_approval__pleasewait}");
+
+                    // generate approval matrix
+                    launchGenerateApprovalMatrix();
+                    
+                });
+
+                /**
+                 * Show wait dialog
+                 */
+                function showWaitDialog(msgText) {
+                    
+                    j$("#idWaitPanel").html('<center><img src="{!URLFOR($Resource.Apttus_Approval__Image_LoadingPage)}" /></center>');
+                    j$("#idWaitPanel").dialog("open");
+                    j$("#idWaitPanel").dialog("option" , "title" , msgText);
+                    j$("#idWaitPanel").dialog("option", "position", "center");
+                    
+                    return false;
+                    
+                }
+           
+                /**
+                 * Hide the wait dialog
+                 */
+                function hideWaitDialog() {
+                
+                    // close the wait dialog
+                    j$("#idWaitPanel").dialog("close");
+                    
+                    return true;
+    
+                }
+                
+                
+                // setup the wait panel and set autoOpen to false
+                function buildWaitDialog() {
+                
+                    j$("#idWaitPanel").dialog({
+                        autoOpen: false,
+                        dialogClass: "no-close",
+                        closeOnEscape: false,
+                        draggable: false,
+                        width: 300,
+                        minHeight: 50,
+                        modal: true,
+                        buttons: {},
+                        resizable: false,
+                        open: function() {
+                            // scrollbar fix for IE
+                            j$('body').css('overflow','hidden');
+                        },
+                        close: function() {
+                            // reset overflow
+                            j$('body').css('overflow','auto');
+                        }
+                    });
+    
+                };
+    
+                /**
+                 * Callback when the action button is clicked
+                 */
+                function onActionClick() {
+                
+                    // show the modal panel
+                    showWaitDialog("{!$Label.apttus_approval__pleasewait}");
+                    
+                    // return false to allow the action to proceed
+                    return false;
+                }
+                
+                /**
+                 * Callback when the action is completed
+                 */
+                function onActionComplete() {
+                
+                    // hide the modal panel
+                    hideWaitDialog();
+                    
+                    return true;
+    
+                }
+            </script>
+        </apex:outputPanel>
+
+        <apex:outputText value="{!Apttus_Approval__Approval_Matrix__c.Apttus_Approval__User__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Matrix__c.Apttus_Approval__Matrix_Owner__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Matrix__c.Apttus_Approval__Approval_Level__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Matrix__c.Apttus_Approval__Next_Level_Approver__c}" rendered="false" />
+        
+        <apex:outputPanel id="idApprovalMatrixGeneratePageBlockPanel">
+            <apex:pageBlock id="idApprovalMatrixGeneratePageBlock" title="{!$Label.apttus_approval__generateapprovalmatrix}" rendered="{!pageLoaded}">
+                <apex:pageMessages />
+                
+                <apex:pageBlockButtons location="top">
+                    <apex:outputPanel >
+                        <apex:commandButton action="{!doReturn}" value="{!$Label.apttus_approval__return}" rendered="{!showReturn}"/>
+                        <apex:commandButton action="{!doSubmitRange}" value="{!$Label.apttus_approval__generatematrix}" rendered="{!enableRange}"/>
+                    </apex:outputPanel>
+                </apex:pageBlockButtons>
+                
+                <apex:pageBlockSection columns="1" rendered="{!enableRange}">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel for="idMatrixStart" value="{!$Label.apttus_approval__approvalmatrixstart}" />
+                        <apex:inputField id="idMatrixStart" value="{!fromMatrix.Apttus_Approval__Matrix_Owner__c}" />
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel for="idMatrixEnd" value="{!$Label.apttus_approval__approvalmatrixend}" />
+                        <apex:inputField id="idMatrixEnd" value="{!toMatrix.Apttus_Approval__Matrix_Owner__c}" />
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                
+                <apex:pageBlockTable value="{!jobInfoList}" var="jobInfo" rendered="{!showJobInfo}">
+                    <apex:column headerValue="{!$Label.apttus_approval__submitteddate}" value="{!jobInfo.submittedDate}"/>   
+                    <apex:column headerValue="{!$Label.apttus_approval__submittedby}" value="{!jobInfo.submittedBy}"/>   
+                    <apex:column headerValue="{!$Label.apttus_approval__apexclass}" value="{!jobInfo.apexClassName}"/>   
+                    <apex:column headerValue="{!$Label.apttus_approval__apexmethod}" value="{!jobInfo.apexMethodName}"/> 
+                    <apex:column headerValue="{!$Label.apttus_approval__status}" value="{!jobInfo.status}"/> 
+                </apex:pageBlockTable>      
+            </apex:pageBlock>
+        </apex:outputPanel>
+            
+        <!-- This panel represents the waiting dialog that will pop up -->
+        <div id="idWaitPanel"></div>
+    
+        <apex:actionFunction name="launchGenerateApprovalMatrix"
+                             action="{!doGenerateApprovalMatrix}"
+                             oncomplete="hideWaitDialog();"
+                             reRender="idApprovalMatrixGeneratePageBlockPanel">
+        </apex:actionFunction>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,180 @@
+<!-- 
+    Apttus Contract Management
+    SendToOtherPartyPostProcess
+     
+    @2019 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus__APTS_Agreement__c" 
+		   extensions="Apttus.SendToOtherPartyPostProcessController" >
+
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/assets/skins/sam/skin.css')}" />
+ 
+	<apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/dragdrop/dragdrop-min.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/container/container-min.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/animation/animation-min.js')}" />
+	<apex:includeScript value="/support/console/45.0/integration.js"/>
+	
+	<script type="text/javascript" src="/soap/ajax/30.0/connection.js"></script>
+	<script type="text/javascript" src="/soap/ajax/30.0/apex.js"></script>
+	<apex:include pageName="Apttus__ComplyJSLibInclude" />
+	
+	<script>
+		 
+		setTimeout(function() {
+			// post save
+			doPostProcess();
+		}, 1000);
+
+	</script> 	
+
+	<script type="text/javascript">	    
+		/**
+		 * Initializes the call
+		 */
+		function initCall() {
+		
+			try {
+				sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+			} catch(e) {
+				erroralert(cERROR_UNKNOWN,e);
+				
+			}
+			
+		}
+		
+		/**
+		 * Callback invoked after send email action to perform status change and log activity
+		 * @param agreementId the id of the agreement object 
+		 * @param action initiated by user send to other party for preview/signatures
+		 * @return <code>true</code> if the callback was successful, <code>false</code> otherwise
+		 */
+		function doPostProcess() {	
+		
+			try {
+
+				// unknown error
+				var cACTION_SEND_FOR_REVIEW = "Send_To_Other_Party_For_Review";
+				var cACTION_SEND_FOR_SIGNATURES = "Send_To_Other_Party_For_Signatures";
+				
+				var cERROR_UNKNOWN_ACTION = "{!$Label.ErrorUnknownAction}";
+				
+				var showConfirmation = "{!showConfirmation}";
+				var agreementId =  "{!JSENCODE(agreementId)}";
+				var templateId =  "{!JSENCODE(templateId)}";
+				var userAction = "{!JSENCODE(userAction)}"; 	
+				
+				initCall();
+				
+				// STEP I - delete the temporary email template
+				//deleteEmailTemplate(templateId);
+				
+				// STEP II - write activity history based on action
+				if (cACTION_SEND_FOR_REVIEW == userAction) {
+					//showMsgProgress(cAFTER_SENT_FOR_REVIEW);
+					afterSentForReview(agreementId);
+
+				} else if (cACTION_SEND_FOR_SIGNATURES == userAction) {
+					//showMsgProgress(cAFTER_SENT_FOR_SIGNATURES);
+					afterSentForSignatures(agreementId);
+				
+				} else {
+					throw(cERROR_UNKNOWN_ACTION + " " + userAction);
+				}
+				
+			} catch(ex) {
+				erroralert(cERROR_UNKNOWN,ex);
+				
+			} finally {
+				//Decide navigation
+				navigateUrl(agreementId);
+			
+			}
+			
+		}
+
+		/**
+		 * method to perform navigation after action is completed
+		 * 
+		 */
+		function navigateUrl (returnId) {
+				if((typeof sforce != 'undefined') && (sforce != null) && (sforce.one) ) {
+					
+					if (sforce.console.isInConsole()) {
+						// close tab
+						closeTab();
+						sforce.one.navigateToSObject(returnId);						
+					} else if(isMobileNavigation()) {
+						// handle mobile
+						sforce.one.navigateToSObject(returnId);
+					} else {
+						navigateTo("/" + returnId);
+					}
+				} else {
+					// return to agreement in view mode
+					navigateTo("/" + returnId);
+				}
+		 }
+
+		/**
+		* Close current tab and open a record in new tab
+		*/
+		function closeTab() {
+			//First find the ID of the current tab to close it
+			sforce.console.getEnclosingPrimaryTabId(closeSubtab);
+		
+		}
+
+		 var closeSubtab = function closeSubtab(result) {
+			//Close the tab when returnId is retrived.
+			var tabId = result.id;
+			sforce.console.closeTab(tabId, callback);
+
+		};
+
+
+		var callback = function callback(result) {
+			if (result.error) {
+				alert("Error in closing tab " + result.error);
+			}
+			var agreementId =  "{!JSENCODE(agreementId)}";
+			navigateTo("/" + agreementId);
+
+		};
+
+		function isMobileNavigation() {
+			return UITheme.getUITheme === "Theme4t";
+		}
+
+		
+	</script>
+	
+	<!-- This is the content of the modal dialog 
+	<div id="confirmationPanel" style="display: none" >
+	    <div class="hd">
+	        <apex:outputText value="{!$Label.EmailConfirmation}" />
+	    </div> 
+	    <div class="bd">
+		    <apex:outputPanel >
+		    	<b>{!$Label.EmailConfirmationInstruction}</b>
+		    </apex:outputPanel>
+	    </div> 
+	    <div class="bd">
+	        <apex:form >
+	            <apex:actionRegion >
+	                <div style="text-align: center;" >
+	                    <apex:commandButton value="{!$Label.Yes}" 
+	                    					onclick="doPostProcess();" 
+	                    					oncomplete="YAHOO.force.com.hideMe();" />
+	                    <apex:commandButton value="{!$Label.No}" 
+	                    					action="{!doCancel}" 
+	                    					immediate="true" 
+	                    					oncomplete="YAHOO.force.com.hideMe();" />
+	                </div>
+	            </apex:actionRegion>
+	        </apex:form>
+	    </div>
+	</div>-->
+
+</apex:page>

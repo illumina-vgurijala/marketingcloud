@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <assignments>
+        <name>Assign_Current_Error_Element</name>
+        <label>Assign Current Error Element</label>
+        <locationX>440</locationX>
+        <locationY>431</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Code Library DML</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <environments>Default</environments>
+    <formulas>
+        <name>CodeIdFormula</name>
+        <dataType>String</dataType>
+        <expression>CASE( {!$Record.Code_Type__c} ,
+&quot;Subject&quot;, &quot;SUB-&quot;+{!$Record.Code_Number__c} ,
+&quot;Consequence&quot;, &quot;CON-&quot;+{!$Record.Code_Number__c},
+&quot;Analysis&quot;, &quot;ANA-&quot;+{!$Record.Code_Number__c},
+&quot;Resolution&quot;, &quot;RES-&quot;+{!$Record.Code_Number__c},
+&quot;Hazard&quot;, &quot;HAZ-&quot;+{!$Record.Code_Number__c} ,
+&quot;Verification&quot;, &quot;VER-&quot;+{!$Record.Code_Number__c} ,
+&quot;Product&quot;, &quot;PRD-&quot;+{!$Record.Code_Number__c} ,
+&quot;Logistics&quot;, &quot;LOG-&quot;+{!$Record.Code_Number__c} ,
+{!$Record.Code_Number__c})</expression>
+    </formulas>
+    <formulas>
+        <name>FlowandFaultElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Code_Library__c: After Insert and Update&apos;+{!currentElement}</expression>
+    </formulas>
+    <interviewLabel>Code_Library__c: After Insert and Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Code_Library__c: After Insert and Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Code_Library_DML</name>
+        <label>Code Library DML</label>
+        <locationX>176</locationX>
+        <locationY>323</locationY>
+        <faultConnector>
+            <targetReference>Assign_Current_Error_Element</targetReference>
+        </faultConnector>
+        <inputAssignments>
+            <field>Code_ID__c</field>
+            <value>
+                <elementReference>CodeIdFormula</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Code_Library_DML</targetReference>
+        </connector>
+        <filterFormula>AND(OR(ISNEW(),ISCHANGED({!$Record.Code_Type__c})), NOT(ISBLANK(TEXT({!$Record.Code_Type__c}))))</filterFormula>
+        <object>Code_Library__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>440</locationX>
+        <locationY>539</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFaultElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Service</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <variables>
+        <name>currentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

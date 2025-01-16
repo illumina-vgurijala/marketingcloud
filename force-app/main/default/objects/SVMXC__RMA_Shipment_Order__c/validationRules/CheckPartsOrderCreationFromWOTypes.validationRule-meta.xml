@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckPartsOrderCreationFromWOTypes</fullName>
+    <active>true</active>
+    <description>To Prevent creation of parts orders for certain Work Orders.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    ISNEW(),
+    SVMXC__Service_Order__r.RecordType.Name   = $Label.WorkOrderRecordTypeServiceSupport,
+    OR(
+        TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c)=$Label.WorkOrderTypeDedicatedOnsiteActivities,
+        TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c)=$Label.WorkOrderTypeAccountMaintenance,
+        TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c)=$Label.WorkOrderTypePresales
+    )
+)</errorConditionFormula>
+    <errorMessage>The Parts Order cannot be created from a Work Order of types Presales, Account Maintenance or Dedicated Onsite.  Change the Work Order type or use a different Work Order to create a Parts order.</errorMessage>
+</ValidationRule>

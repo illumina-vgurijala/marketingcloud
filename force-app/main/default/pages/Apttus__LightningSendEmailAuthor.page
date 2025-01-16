@@ -1,0 +1,302 @@
+<!-- 
+Apttus Contract Management
+LightningSendEmailAuthor
+
+@2017-2019 Apttus Inc. All rights reserved.
+
+-->
+<apex:page docType="html-5.0" controller="Apttus.EmailAuthorController" 
+                                action="{!initEmailAuthor}">   
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">                                                       
+    <head>
+        <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.Apttus__LightningResource, 'css/sendforreview.css')}" />
+        <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" />    
+        <apex:includeScript value="{!URLFOR($Resource.Apttus__EmailAuthor, 'js/email-author.js')}"/> 
+        <script>
+            var imageSource = "{!URLFOR($Resource.SLDS080, '/assets/icons/utility-sprite/svg/symbols.svg#search')}";
+            var tooltips = [];
+            
+                   tooltips.push("{!JSENCODE($Label.apttus__selectattachments)}");  
+                
+                if ('{!(enableAttachmentsFromTooltipFlag )}'== 'true') {
+                   tooltips.push("{!JSENCODE($Label.apttus__showattachmentsfrom)}");				   
+                }                
+                if ('{!(enableProtectionTooltipFlag)}' == 'true') {
+                   tooltips.push("{!JSENCODE($Label.apttus__selectdocumentprotectionoptional)}"); 
+                }          
+                if ('{!(skipEmailTemplateSelection)}' == 'false') {
+                   tooltips.push("{!JSENCODE($Label.apttus__selectemailtemplateoptional)}"); 
+                }
+            
+                   tooltips.push("{!JSENCODE($Label.apttus__emailauthoraddreviewerstitle)}");   
+        </script>
+        <apex:includeScript value="{!URLFOR($Resource.Apttus__LightningResource, 'js/send-email-wizard.js')}" />
+        <link type="text/css" href="{!URLFOR($Resource.EmailAuthor,'css/style.css')}" rel="stylesheet" />  
+		<apex:slds />
+</head>
+    <body>
+        <apex:form >
+         
+            <!-- Wizard header -->
+             <div class="slds">
+             <apex:outputPanel layout="block" styleClass="slds-brand-band slds-brand-band_cover slds-brand-band_medium">
+  
+                <div class="slds-page-header pageHeader sticky-header">
+                <div class="slds-page-header__row">
+                    <div class="slds-page-header__col-title">
+                        <div class="slds-media">
+                            <div class="slds-media__figure">
+                                <span class="slds-icon_container">
+                                
+                                    <!-- image -->
+                                    <img src="{!URLFOR($Resource.ParallelReviewResource, 'ParallelReviewResource/ParallelReview/icons/sendforesignature.svg')}" alt="Review Cycle" class="pageTitleIcon pageIconsize" title="{!$Label.ReviewCycle}"/>
+                                </span>
+                            </div>
+                            
+                            <!-- header title -->
+                            <div class="slds-media__body" style="margin-top:-3px;">  
+                                <div class="slds-page-header__name">
+                                    <div class="slds-page-header__name-title pageHeadertitletext">
+                                        <h1>
+                                           <span>{!reviewTitle}</span>
+                                            <span class="slds-page-header__title slds-truncate">
+                                    <apex:outputText rendered="{!NOT(isFromContentDistributionPage)}" value="{!contextObject['name']}"/>
+                                    <apex:outputText rendered="{!isFromContentDistributionPage}" value="{!$Label.apttus__sendemail}"/>
+                                </span>
+                                        </h1>
+                                    </div>                            
+                                </div> 
+                            </div>
+                            
+                            <!-- cancel button -->
+                            <div class="slds-grid slds-grid_align-end">
+                                <apex:commandButton styleclass="slds-button slds-button--neutral"  value="{!$Label.apttus__cancel}"  action="{!onCancel}" immediate="true" />
+                            </div>
+                             <!-- send email button -->
+                             <div class="rightButtonsPanel">
+                                <apex:commandButton styleclass="slds-button slds-button--brand slds-m-left_xx-small" action="{!onSendEmail}" value="{!$Label.apttus__emailsend}" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- end pageheader -->
+
+            
+                <div class="pageBody">
+                    
+                    <!-- section to display error messages -->
+                  
+                        <apex:outputPanel id="timeSheetNav"  layout="none" rendered="{!isError}">   
+                     <div class="slds-scoped-notification slds-media slds-media_center slds-theme_error" style="margin: 15px;" role="status">
+                      <div class="slds-media__figure">
+                        <span class="slds-icon_container slds-icon-utility-error" title="error">
+                          <svg aria-hidden="true" class="slds-icon slds-icon_x-small">
+                                                <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#error')}"></use>
+                                              </svg>
+                          <span class="slds-assistive-text">error</span>
+                        </span>
+                      </div>
+                      <div class="slds-media__body">
+                        <p><apex:outputText value="{!errorDisplay} " escape="false"></apex:outputText>   
+                        </p>
+                      </div>
+                    </div>
+                    </apex:outputPanel>
+                  
+        
+                    
+                    <!-- section header -->
+                    <div class="pageSectionHeader slds-grid">
+                    
+                        <!-- step title -->
+                        <div class="pageStepTitle">{!stepTitle}</div>
+            
+                        <!-- progress indicator -->                     
+                        <apex:outputPanel rendered="{!AND(NOT(isFromContentDistributionPage) , totalStepsProgressIndicator.size > 0)}" layout="block" styleClass="progressIndicatorPanel slds-progress">
+                            <ol class="slds-progress__list">
+                                <apex:variable var="currentStepNumber" value="{!totalStepsProgressIndicator.size}"/>
+                                <apex:repeat value="{!totalStepsProgressIndicator}" var="Step">
+                                    <li class="slds-progress__item {!IF(currentStepNumber == Step, 'slds-is-active','' )} {!IF(currentStepNumber > Step, 'slds-is-completed','' )}">
+                                        <apex:outputPanel styleClass="tooltip" rendered="{!currentStepNumber == Step}">
+                                            <div class="tooltiptext progressIndicatorToolTip slds-popover slds-popover_tooltip slds-nubbin_bottom-left" role="tooltip" id="step-{!Step}-tooltip">
+                                                <div id="step-{!Step}-tooltiptext" class="slds-popover__body" ></div>
+                                            </div>
+                                            <span class="slds-button slds-progress__marker" aria-describedby="step-{!Step}-tooltip">
+                                                <span class="slds-assistive-text"></span>
+                                            </span>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!Step < currentStepNumber  }" styleClass="tooltip">
+                                            <div class="tooltiptext progressIndicatorToolTip slds-popover slds-popover_tooltip slds-nubbin_bottom-left" role="tooltip" id="step-{!Step}-tooltip">
+                                                <div id="step-{!Step}-tooltiptext" class="slds-popover__body" ></div>
+                                            </div>
+                                            <span onclick="return false;" style="fill:#4bca81" class="slds-progress__marker slds-progress__marker_icon slds-progress__marker_icon-success "  aria-describedby="step-{!Step}-tooltip">
+                                                <svg class="slds-icon_x-small" aria-hidden="true">
+                                                    <use href="{!URLFOR($Resource.SLDS080, '/assets/icons/utility-sprite/svg/symbols.svg#success')}" />
+                                                </svg>
+                                                <span class="slds-assistive-text"></span>
+                                            </span>
+                                        </apex:outputPanel>
+                                    </li>
+                                </apex:repeat>
+                            </ol>
+                            <div class="slds-progress-bar slds-progress-bar_x-small" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" role="progressbar">
+                                <span class="slds-progress-bar__value" style="width: 100%"></span>
+                            </div>
+                        </apex:outputPanel>
+                    </div> <!-- end section header -->
+                    
+                    <!-- help text section -->
+                    <div class="paddingCls">
+						<apex:outputText rendered="{!NOT(isFromContentDistributionPage)}" value="{!recipientTitle}"/>
+                    </div>
+
+                    <!-- email recipient and body section -->
+                    <div class="paddingCls">
+                    
+                        <!-- primary contact field -->
+                        <div style="padding-bottom: .4%;">
+                            <span class="fieldWidth">
+                                <apex:outputLabel value="{!IF(isParallelReview , $Label.apttus__emailcontact, $Label.apttus__emailto)}" /> :    
+                            </span>
+                            <span style="width:40%;padding-right: 0;position: relative;" class="slds-input">
+                                <apex:inputField id="Contact" value="{!agmtEmailTo.Apttus__Primary_Contact__c}" styleClass="emailAddressField"/>    
+                            </span>
+                        </div>
+                        
+                        <!-- additional to field -->
+                        <div>
+                            <span class="fieldWidth">
+                                <apex:outputLabel value="{!IF(isParallelReview, $Label.apttus__emailrecipientuseroremail, $Label.apttus__emailadditionalto)}" styleClass="emailAddressLabel"/> :    
+                            </span>
+                            <span>
+                                <apex:inputTextArea style="width:40%;border: 1px solid rgb(221, 219, 218);" value="{!emailAdditionalTo}" cols="62" id="p24" rows="2" title="CC" styleClass="slds-textarea p24 emailAddressField" />
+                                <apex:outputlink value="{!popupWindowURL}" id="p24_lkwgt" title="{!$Label.apttus__emailadditionaltolookup}">
+                                    <svg class="slds-icon_xx-small slds-search-icon" aria-hidden="true" >
+                                        <use href="{!URLFOR($Resource.SLDS080, '/assets/icons/utility-sprite/svg/symbols.svg#search')}" />
+                                    </svg>
+                                </apex:outputlink> 
+                            </span>
+                        </div>
+                        
+                        <!-- email cc field -->
+                        <apex:outputPanel rendered="{!NOT(isParallelReview)}" >
+                            <div>
+                                <span class="fieldWidth">
+                                    <apex:outputLabel value="{!$Label.apttus__emailcc}" styleClass="emailAddressLabel"/> :    
+                                </span>
+                                <span>
+                                    <apex:inputTextArea style="width:40%;border: 1px solid rgb(221, 219, 218);" value="{!emailCc}" cols="62" id="p4" rows="2" title="CC" styleClass="slds-textarea p4 emailAddressField" />
+                                    <apex:outputlink value="{!popupWindowURL}" id="p4_lkwgt" title="{!$Label.apttus__emailcclookup}">
+                                        <svg class="slds-icon_xx-small slds-search-icon" aria-hidden="true" >
+                                            <use href="{!URLFOR($Resource.SLDS080, '/assets/icons/utility-sprite/svg/symbols.svg#search')}" />
+                                        </svg>
+                                    </apex:outputlink>
+                                </span>
+                            </div>
+                        </apex:outputPanel>
+            
+                        <!-- email bcc field -->
+                        <apex:outputLabel rendered="{!AND(NOT(isParallelReview), !isComplianceBCCEmailEnabled)}">
+                            <div >
+                                <span class="fieldWidth">
+                                    <apex:outputLabel value="{!$Label.apttus__emailbcc}" styleClass="emailAddressLabel"/>  
+                                </span>
+                                <span>
+                                    <apex:inputTextArea style="width:40%;border: 1px solid rgb(221, 219, 218);" value="{!emailBcc}" cols="62" id="p5" rows="2" title="CC" styleClass="slds-textarea p5 emailAddressField" />
+                                    <apex:outputlink value="{!popupWindowURL}" id="p5_lkwgt" title="{!$Label.apttus__emailbcclookup}">
+                                        <svg class="slds-icon_xx-small slds-search-icon" aria-hidden="true" >
+                                            <use href="{!URLFOR($Resource.SLDS080, '/assets/icons/utility-sprite/svg/symbols.svg#search')}" />
+                                        </svg>
+                                    </apex:outputlink>
+                                </span>
+                            </div>
+                        </apex:outputLabel>
+                        
+                        <!-- email subject -->
+                        <div>
+                            <span class="fieldWidth">
+                                <apex:outputLabel value="{!$Label.apttus__emailsubject}" styleClass="emailAddressLabel"/> 
+                            </span>
+                            <span>
+                                <apex:outputPanel styleClass="requiredInput" layout="block">
+                                    <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                    <apex:inputText style="width:40%" value="{!emailSubject}" styleClass="slds-input subjectText" disabled="{!IF((reviewCycleId != null) , true, false)}"/>
+                                </apex:outputPanel>
+                            </span>
+                        </div>
+                        
+                        <!-- Email Body -->
+                        <div>
+                            <div> <br/> </div>
+                            <div>
+                                <!-- TEXT Email Template -->
+                                <apex:inputTextarea value="{!emailBody}" styleClass="emailBody" cols="50" richText="false"  rendered="{!emailTemplateFormat == EMAIL_FORMAT_TEXT}" disabled="{!IF((reviewCycleId != null) , true, false)}"/>
+                                
+                                <!-- HTML Email Template -->
+                                <apex:inputTextarea value="{!emailRichTextBody}" styleClass="emailBody" cols="50" rows="50" richText="true" rendered="{!OR(isFromContentDistributionPage, emailTemplateFormat == EMAIL_FORMAT_HTML)}" disabled="{!IF((reviewCycleId != null) , true, false)}"/>
+                            </div>
+                        </div>
+                        
+                        <!-- upload attachment -->
+                        <apex:outputPanel rendered="{!NOT(isFromContentDistributionPage)}">
+                            <div ><br/>
+                                <apex:outputLabel value="{!$Label.apttus__sendemaildocumentsselectedforreviewlightning}"/>
+                                <span style="float:right">
+                                    <apex:inputFile value="{!newAttachment.body}" filename="{!newAttachment.name}" fileSize="{!newAttachment.BodyLength}" contentType="{!newAttachment.contentType}" id="fileUploaded" style="display:none" onchange="invokeUploadAttachment();" disabled="{!IF((reviewCycleId != null) , true, false)}"/> 
+                                    
+                                    <apex:outputLabel value="{!$Label.apttus__addmore}" for="fileUploaded" styleClass="slds-button slds-button--brand"/>                
+                                    
+                                    <apex:actionFunction name="invokeUploadAttachment" action="{!onUploadAttachment}" /> 
+                                </span>
+                                <br/><br/>
+                            </div>
+                            
+                            <!-- table displaying selected and uploaded attachments -->
+                            <div class="slds-box slds-box_xx-small">
+                                <apex:variable value="{!0}" var="rowNum"/> 
+                                    <apex:outputPanel id="idAttachmentsPanel" layout="block">                    
+                                        <apex:dataTable value="{!attachments}" var="attachData" styleClass="slds-table slds-table--bordered" width="90%" columns="4">
+                                            
+                                            <apex:column >
+                                                <apex:facet name="header">{!$Label.apttus__emailaction}</apex:facet>
+                                                <apex:commandLink action="{!onDeleteAttachment}" id="del" value="{!$Label.apttus__emaildelete}" rendered="{!NOT(ISNULL(attachData.attachment.Id))}"> 
+                                                    <apex:param name="myDeleteId" value="{!attachData.attachmentId}"/>
+                                                    <apex:param name="{!PARAM_DELETE_ATTACHMENT}" value="{!attachData.attachmentId}"/>
+                                                    <apex:param name="{!PARAM_DELETE_ROW}" value="{!rowNum}" />
+                                                </apex:commandLink>
+                                                <apex:variable var="rowNum" value="{!rowNum + 1}"/>
+                                            </apex:column>                    
+                                            
+                                            <apex:column >
+                                                <apex:facet name="header">{!$Label.apttus__emailfilename}</apex:facet>
+                                                <apex:outputLink value="/{!attachData.attachmentId}">{!attachData.attachment.Name}</apex:outputLink>
+                                            </apex:column>                    
+                                            
+                                            <apex:column >
+                                                <apex:facet name="header">{!$Label.apttus__emailfilesize}</apex:facet>
+                                                <apex:outputText value="{!attachData.fileSize}"/>
+                                            </apex:column>
+
+                                            <apex:column rendered="{!NOT(ISNULL($CurrentPage.parameters.protectionLevel))}">
+                                                <apex:facet name="header">{!$Label.apttus__emailauthordocumentpermissionscolumnheader}</apex:facet>
+
+                                                <apex:outputText rendered="{!Contains($CurrentPage.parameters.primaryAttachmentIds, attachData.attachmentId)}" value="{!$CurrentPage.parameters.protectionLevel}"/>
+                                                <apex:outputText rendered="{!NOT(Contains($CurrentPage.parameters.primaryAttachmentIds, attachData.attachmentId))}" value="--"/>
+                                            </apex:column>
+                                        </apex:dataTable>
+                                    </apex:outputPanel><br/>
+                                    <div class="slds-grid slds-p-top_small">
+                                        <div class="slds-col"></div>
+                                    </div>
+                                </div>
+                            </apex:outputPanel>
+                        </div>
+
+                    </div>
+                </apex:outputPanel>
+            </div>
+        </apex:form>
+    </body>
+ </html>
+</apex:page>

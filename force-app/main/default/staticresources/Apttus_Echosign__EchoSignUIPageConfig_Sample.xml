@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UIPageConfig customPageURL="https://na6.salesforce.com">
+	<UIAction name="echosign_send">
+		<CustomPage>
+			<Name>EchoSignSendCustom</Name>
+		</CustomPage>
+	</UIAction>
+	<UIAction name="echosign_send_ui">
+		<CustomPage>
+			<Name>EchoSignSendUICustom</Name>
+		</CustomPage>
+	</UIAction>
+</UIPageConfig>

@@ -1,0 +1,64 @@
+<aura:component controller="PartnerRequestConvertToOppcntl" implements="force:lightningQuickActionWithoutHeader,flexipage:availableForRecordHome,force:hasRecordId,force:hasSObjectName,flexipage:availableForAllPageTypes,lightning:actionOverride" extends="c:BaseSuperComponent">
+    <aura:attribute name="pageLayoutName" type="String" />
+    <aura:attribute name="recordTypeId" type="String" />  
+    <aura:attribute name="pageLayout" type="Object" access="private" />
+    <aura:attribute name="pageReference" type="Object"/>
+    <aura:attribute name="SectionIgnore" type="String" default="System Information"/>
+    <aura:attribute name="OpportunityCreateFieldAPI" type="String" default="StageName"/>
+    <aura:attribute name="OpportunityAccountAPI" type="String" default="AccountId"/>
+    <aura:attribute name="OpportunityUCAPI" type="String" default="Ultimate_Consignee__c"/>
+    <aura:attribute name="OpportunityDistributorAPI" type="String" default="Distributor__c"/>
+    <aura:attribute name="ObjectAPIName" type="String" default="Opportunity"/>
+    <aura:attribute name="UploadFiles" type="Boolean" default="false"/>
+    <aura:attribute name="PartnerAccountId" type="String"/>
+    <aura:attribute name="OpportunityId" type="String"/>    
+    
+    
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    <aura:handler event="force:refreshView" action="{!c.init}" />
+    
+    <aura:if isTrue="{!!v.UploadFiles}">     
+        <lightning:recordEditForm objectApiName="{!v.ObjectAPIName}"                              
+                                  recordTypeId="{!v.recordTypeId}"
+                                  class="slds-card slds-p-around_medium"
+                                  
+                                  onsuccess="{! c.onsuccess}"
+                                  >
+            
+            <lightning:messages />
+            <lightning:inputField fieldName="Partner_Request__c" class="slds-hide" aura:id="inputField" value="{!v.recordId}" disabled="true"/>
+            <aura:iteration items="{! v.pageLayout.Sections }" var="section">
+                <aura:if isTrue="{!v.SectionIgnore!=section.Label}">
+                    <c:CollapsibleSection title="{! section.Label }">
+                        <div class="slds-grid slds-gutters">
+                            <aura:iteration items="{!section.Columns }" var="column">
+                                <div class="slds-col">
+                                    <aura:iteration items="{! column.Fields }" var="field">                                      
+                                        <aura:if isTrue="{!and(v.OpportunityCreateFieldAPI!=field.APIName,v.OpportunityAccountAPI!=field.APIName,v.OpportunityUCAPI!=field.APIName,v.OpportunityDistributorAPI!=field.APIName)}">
+                                            <lightning:inputField fieldName="{! field.APIName }" class="{! if(v.OpportunityUCAPI==field.APIName,'slds-hide', field.Behavior)}"  aura:id="inputField" disabled="{! field.Behavior=='Readonly'}"/>
+                                            
+                                        </aura:if>
+                                        <aura:if isTrue="{!and(v.OpportunityCreateFieldAPI==field.APIName,or(v.OpportunityAccountAPI!=field.APIName,v.OpportunityUCAPI!=field.APIName,v.OpportunityDistributorAPI!=field.APIName))}">
+                                            <lightning:inputField fieldName="{! field.APIName }" class="{!field.Behavior}" aura:id="inputField" value="Create"/>
+                                            
+                                        </aura:if>
+                                        <aura:if isTrue="{!and(v.OpportunityCreateFieldAPI!=field.APIName,or(v.OpportunityAccountAPI==field.APIName,v.OpportunityUCAPI==field.APIName,v.OpportunityDistributorAPI==field.APIName))}">
+                                            <lightning:inputField fieldName="{! field.APIName }" class="{!field.Behavior}" aura:id="inputField" value="{!v.PartnerAccountId}"/>
+                                            
+                                        </aura:if>
+                                    </aura:iteration>
+                                </div>
+                            </aura:iteration>
+                        </div>
+                    </c:CollapsibleSection>
+                </aura:if>
+            </aura:iteration>
+            <lightning:messages />
+            <lightning:navigation aura:id="navService"/>
+            <lightning:button name="myname" class="slds-m-top_small" type="submit" label="Save" variant="brand" aura:id="buttonSubmit" onclick="{! c.onsuccess }"/>
+            <lightning:button name="myname1" class="slds-m-top_small" type="submit" label="Cancel" variant="brand" aura:id="buttonSubmit" onclick="{!c.close}"/>
+            
+            
+        </lightning:recordEditForm>
+    </aura:if>      
+</aura:component>

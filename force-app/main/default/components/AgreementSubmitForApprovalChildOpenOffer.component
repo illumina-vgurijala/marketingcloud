@@ -1,0 +1,146 @@
+<apex:component controller="ApttusAgrementApprovalController" access="global">
+    <apex:attribute name="AgreementId" type="String" description="Id of the Agreement" assignTo="{!strAgreementId}" />
+    <apex:attribute name="ApprovalRequestObject" type="Apttus_Approval__Approval_Request__c" description="Approval Request Object"
+        assignTo="{!objApprovalRequest}" />
+    <apex:attribute name="EmailType" type="String" description="NotifyOnlyEmail" assignTo="{!strEmailType}" />
+    <apex:attribute name="AgreementRecords" type="Apttus__APTS_Agreement__c[]" description="list of agreement" assignTo="{!lstAgreement}"
+    />
+
+    {!LoadAgreementOpenOfferRecord}
+    
+    <apex:outputPanel id="openOfferEmail" rendered="{!IF((strEmailType == 'APPROVALEMAIL'), true, false)}">
+        <p>An Open Offer Agreement has been submitted for Customer. Please review the details below to approve or reject this
+            request.</p>
+        Reply to this email with the word APPROVE or REJECT in the first line of the email message.
+        <br/>
+        <br/>
+        <a href="{!strApproveRejectURL}" target="_top">Approve/Reject</a>
+        <br/>
+        <a href="{!strCommentURL}" target="_top">Add Comment</a>
+        <p>If replying via email you can also add comments on the second line followed by a BLANK line. The comments will be
+            stored with the approval request.</p>
+    </apex:outputPanel>
+    <apex:outputPanel id="CLickHere" rendered="{!IF((strEmailType != 'RECALL'), true, false)}">
+        To review this Agreement directly in SFDC, please click
+        <a href="{!HTMLENCODE(strAgreementUrl)}">here</a>.
+    </apex:outputPanel>
+    <br/>
+    <br/>
+    <div id="main-div">
+        <div id="agreementDetailsDiv" style="margin-top: 1%;">
+            <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                {!$Label.UI_Label_Agreement_Detail}
+            </div>
+            <table id="table-agreement-details" style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; 
+            border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;">
+                <tbody>
+                    <apex:repeat value="{!lstAgreement}" var="agreem">
+                        <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Agreement_Number}</td>
+                            <td style="text-align: right !important;">
+                                <apex:outputText value="{!agreem.Apttus__Agreement_Number__c+'.'+TEXT(agreem.Apttus__Version_Number__c)}" />
+                            </td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Agreement_Region}</td>
+                            <td style="text-align: right !important;">{!agreem.Region__c}</td>
+                        </tr>
+                        <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Agreement_Name}</td>
+                            <td style="text-align: right !important;">{!agreem.Name}</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Agreement_Owner}</td>
+                            <td style="text-align: right !important;">{!agreem.Owner.Name}</td>
+                        </tr>
+                        <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Agreement_Account_Name}</td>
+                            <td style="text-align: right !important;">{!agreem.Apttus__Account__r.Name}</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Agreement_Start_Date}</td>
+                            <td style="text-align: right !important;">
+                                <apex:outputText value="{0,date,M/dd/yyyy}">
+                                    <apex:param value="{!agreem.Apttus__Contract_Start_Date__c}" />
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                        <tr style="width:100%; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Approval_Request_Id}</td>
+                            <td style="text-align: right !important;">{!objApprovalRequest.Id}</td>
+                            <td style="text-align: center !important;"></td>
+                            <td style="text-align: left !important; font-weight: bold;">{!$Label.UI_Label_Agreement_End_Date}</td>
+                            <td style="text-align: right !important;">
+                                <apex:outputText value="{0,date,M/dd/yyyy}">
+                                    <apex:param value="{!agreem.Apttus__Contract_End_Date__c}" />
+                                </apex:outputText>
+                            </td>
+                        </tr>
+                    </apex:repeat>
+                </tbody>
+            </table>
+        </div>
+        <!-- START CMCM-5261-->
+        <apex:outputPanel rendered="{!IF(AND(lstAgreement[0].Freight_Charge__c != null, lstAgreement[0].Freight_Charge__c != '', NOT(ISNULL(lstAgreement[0].Reason_for_Non_Standard_Freight__c))), true, false)}">
+            <div id="submitterDetailsDiv" style="margin-top: 1%;">
+                <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                    {!$Label.UI_Text_Submitter_Details}
+                </div>
+                <table id="table-agreement-details" style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; 
+                    border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;">
+                    <tbody>
+                        <apex:repeat value="{!lstAgreement}" var="agreem">
+                            <tr style="width:100% !important; border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                                <td style="text-align: left !important; font-weight: bold;width:40% !important;">{!$Label.Freight_Charge}</td>
+                                <td style="text-align: right !important; width: 22.5% !important;">{!agreem.Freight_Charge__c}</td>                                
+                                <td style="text-align: center !important; width:0.5% !important"></td>
+                                <td style="text-align: left !important; font-weight: bold;">{!$Label.Reason_for_Non_Standard_Freight}</td>
+                                <td style="text-align: right !important;">{!agreem.Reason_for_Non_Standard_Freight__c}</td>
+                            </tr>
+                        </apex:repeat>
+                    </tbody>
+                </table>
+            </div>
+        </apex:outputPanel>        
+        <!-- END CMCM-5261-->
+        <apex:outputPanel rendered="{!boolAffiliatesAvailable}">
+            <div id="affiliatesDiv">
+                <div style="text-align: center; font-weight: bold; width: 100%; height: 35px; line-height: 35px; color: white; 
+        background: #61b5d1;border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1;">
+                    {!$Label.UI_Label_Agreement_List_Of_Affiliates}
+                </div>
+                <table style="width:100%;border-right-width: 1px; border-right-style: solid;border-right-color: #61b5d1; border-left-width: 1px; border-left-style: solid;border-left-color: #61b5d1; 
+        border-bottom-width: 1px; border-bottom-style: solid;border-bottom-color: #61b5d1; border-top-width: 1px; border-top-style: solid;border-top-color: #61b5d1;"
+                    id="tableApprovalHierarchy">
+                    <thead style="width:100%; !important;">
+                        <tr style="width:100%; !important;">
+                            <th style="text-align: center; font-weight: bold; word-wrap: break-word !important;">{!$Label.UI_Label_Agreement_Account_Name}</th>
+                            <th style="text-align: center; font-weight: bold; word-wrap: break-word !important;">{!$Label.UI_Label_Account_ERP_Number}</th>
+                            <th style="text-align: center; font-weight: bold; word-wrap: break-word !important;">{!$Label.UI_Label_Annual_Cosumable_Spend}</th>
+                            <th style="text-align: center; font-weight: bold; word-wrap: break-word !important;">{!$Label.UI_Label_Opt_In_Receiving_OO_Disc}</th>
+                            <th style="text-align: center; font-weight: bold; word-wrap: break-word !important;">{!$Label.UI_Label_GF_Discount_Calculation}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <apex:repeat value="{!lstAgreementAccountRelationships}" var="agrItem">
+                            <tr id="approvalHierarchyBody" style="width:100%;">
+                                <td style="text-align: center; word-wrap: break-word !important;">
+                                    {!agrItem.Account__r.Name}
+                                </td>
+                                <td style="text-align: center; word-wrap: break-word !important;">
+                                    {!agrItem.Account__r.ERP_Customer_Id__c}
+                                </td>
+                                <td style="text-align: center; word-wrap: break-word !important;">
+                                    {!agrItem.Include_In_Annual_Consumable_Spend__c}
+                                </td>
+                                <td style="text-align: center; word-wrap: break-word !important;">
+                                    {!agrItem.Opt_In_Receiving_Open_Offer_Discount__c}
+                                </td>
+                                <td style="text-align: center; word-wrap: break-word !important;">
+                                    {!agrItem.Consider_for_GF_Discount_Calculation__c}
+                                </td>
+                            </tr>
+                        </apex:repeat>
+                    </tbody>
+                </table>
+            </div>
+        </apex:outputPanel>
+    </div>
+</apex:component>

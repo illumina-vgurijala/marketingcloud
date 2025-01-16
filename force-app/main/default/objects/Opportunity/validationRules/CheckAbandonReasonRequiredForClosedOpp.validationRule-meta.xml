@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckAbandonReasonRequiredForClosedOpp</fullName>
+    <active>false</active>
+    <description>Abandon Reason is mandatory when the user moves the opportunity stage to Closed Abandoned.</description>
+    <errorConditionFormula>IF ( 
+    AND (
+        NOT (
+            $RecordType.DeveloperName = $Label.OpportunityRTStandingQuote
+        ),
+        !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+        NOT (
+            OR (     
+                ISCHANGED ( Is_Updated_By_System__c ),
+                Is_Updated_By_System__c = true,
+                $Profile.Name =  $Label.ProfileSystemAdmin,
+                $Profile.Name =  $Label.ProfileDataSteward 
+            )
+        ),
+        ISPICKVAL ( StageName,&apos;Closed Abandoned&apos; ),
+        ISBLANK ( TEXT ( Abandon_Reason__c ) ),
+        NOT (
+            OR (
+               ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Won&apos; ),
+               ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Lost&apos; )
+            )
+        )
+    ),
+    true,
+    false
+)</errorConditionFormula>
+    <errorDisplayField>Abandon_Reason__c</errorDisplayField>
+    <errorMessage>Please provide an &quot;Abandon Reason&quot; (Abandon/Loss Reasons section).</errorMessage>
+</ValidationRule>

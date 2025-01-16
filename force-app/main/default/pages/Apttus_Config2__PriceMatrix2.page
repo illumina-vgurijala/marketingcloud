@@ -1,0 +1,494 @@
+<!-- 
+		Apttus Config & Pricing
+		PriceMatrix2
+		 
+		@2010-2014 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Config2__PriceMatrix__c" 
+		extensions="Apttus_Config2.PriceMatrixController" 
+		showHeader="false" 
+		sidebar="false" 
+		tabStyle="Apttus_Config2__PriceMatrix__c">	
+		
+	<apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+  <!-- <apex:stylesheet value="{!URLFOR($Resource.FormeeLibrary, '/css/formee-structure.css')}" /> -->
+  <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__AdminCSS)}" />
+						
+				
+	<apex:form id="idPriceMatrixSO" styleClass="formee">
+		<!-- required fields :  matrix details -->
+		<apex:outputPanel id="idPriceMatrixDetailSection">
+				<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Sequence__c}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__PriceListItemId__c}" />
+		    	
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__MatrixType__c}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__InitialRows__c}" />
+		    	
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension1Id__c}" 
+		    					  rendered="{!isDimensionBasedMatrix}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension1ValueType__c}" 
+		    					  rendered="{!isDimensionBasedMatrix}" />
+		    					  
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension2Id__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension2Id__c))}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension2ValueType__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension2Id__c))}" /> 
+		    					  
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension3Id__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension3Id__c))}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension3ValueType__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension3Id__c))}" />
+		    					  
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension4Id__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension4Id__c))}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension4ValueType__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension4Id__c))}" />
+		    					  
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension5Id__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension5Id__c))}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension5ValueType__c}" 
+								  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension5Id__c))}" />
+								  
+				<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension6Id__c}" 
+		    					  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension6Id__c))}" />
+			  	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension6ValueType__c}" 
+								  rendered="{!isDimensionBasedMatrix && NOT(ISBLANK(Apttus_Config2__PriceMatrix__c.Apttus_Config2__Dimension6Id__c))}" />
+				
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__StopProcessingMoreMatrices__c}" />
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__EnableDateRange__c}" />
+				
+		    	<apex:inputHidden value="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__Description__c}"/>
+										 
+		</apex:outputPanel>
+		<apex:pageBlock id="idPriceMatrixBlock" mode="edit" >
+			<apex:pageMessages />
+			
+			<apex:pageBlockButtons location="bottom" rendered="{!NOT(isFilterEditMode)}" style="text-align: right;">	
+				<apex:commandButton value="{!$Label.apttus_config2__save}" action="{!doQuickSave}"/>
+				<!-- <apex:commandButton value="{!$Label.Cancel}" action="{!doCancel}" immediate="true" oncomplete="return false;"/> -->
+			</apex:pageBlockButtons>
+			
+				<!-- Actual display -->
+				<apex:pageBlockSection id="idPriceMatrixEntriesSection" 							
+							columns="2" 
+							rendered="true" >
+
+					<apex:pageBlockTable value="{!matrixEntries}" 
+											 var="entryInfo" 
+											 columns="18" 
+											 rowClasses="oddRow,evenRow"
+											 rendered="{!isDimensionBasedMatrix && isDimension1Enabled}" >
+							
+						<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__Sequence__c.Label}" width="5%" >
+							<apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+						</apex:column>
+					
+						<apex:column headerValue="{!dimension1Label}" 
+								width="10%" >
+							<apex:outputPanel styleClass="{!IF(entryInfo.Dim1InError, 'errorRow', '')}" layout="block" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension1Value__c}" 
+												 rendered="{!NOT(isDimension1Picklist)}" />
+								<apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension1Value__c}" 
+											 multiselect="false" 
+											 required="false" 
+											 size="1" 
+											 rendered="{!isDimension1Picklist}" >
+									<apex:selectOptions value="{!dimension1PicklistItems}" />
+								</apex:selectList>
+							</apex:outputPanel>
+						</apex:column>
+					
+						<apex:column headerValue="{!dimension2Label}" 
+								 width="10%" 
+								 rendered="{!isDimension2Enabled}" >
+							<apex:outputPanel styleClass="{!IF(entryInfo.Dim2InError, 'errorRow', '')}" layout="block" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension2Value__c}" 
+													 rendered="{!NOT(isDimension2Picklist)}" />
+								<apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension2Value__c}" 
+												 multiselect="false" 
+												 required="false" 
+												 size="1" 
+												 rendered="{!isDimension2Picklist}" >
+									<apex:selectOptions value="{!dimension2PicklistItems}" />
+								</apex:selectList>
+							</apex:outputPanel>
+						</apex:column>
+					
+						<apex:column headerValue="{!dimension3Label}" 
+									 width="8%" 
+									 rendered="{!isDimension3Enabled}" >
+								<apex:outputPanel styleClass="{!IF(entryInfo.Dim3InError, 'errorRow', '')}" layout="block" >
+									<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension3Value__c}" 
+													 rendered="{!NOT(isDimension3Picklist)}" />
+									<apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension3Value__c}" 
+												 multiselect="false" 
+												 required="false" 
+												 size="1" 
+												 rendered="{!isDimension3Picklist}" >
+								<apex:selectOptions value="{!dimension3PicklistItems}" />
+							</apex:selectList>
+						</apex:outputPanel>
+					</apex:column>
+					
+					<apex:column headerValue="{!dimension4Label}" 
+								 width="8%" 
+								 rendered="{!isDimension4Enabled}" >
+								<apex:outputPanel styleClass="{!IF(entryInfo.Dim4InError, 'errorRow', '')}" layout="block" >
+									<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension4Value__c}" 
+													 rendered="{!NOT(isDimension4Picklist)}" />
+									<apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension4Value__c}" 
+												 multiselect="false" 
+												 required="false" 
+												 size="1" 
+												 rendered="{!isDimension4Picklist}" >
+								<apex:selectOptions value="{!dimension4PicklistItems}" />
+							</apex:selectList>
+						</apex:outputPanel>
+					</apex:column>
+					
+					<apex:column headerValue="{!dimension5Label}" 
+								 width="8%" 
+								 rendered="{!isDimension5Enabled}" >
+								<apex:outputPanel styleClass="{!IF(entryInfo.Dim5InError, 'errorRow', '')}" layout="block" >
+									<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension5Value__c}" 
+													 rendered="{!NOT(isDimension5Picklist)}" />
+									<apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension5Value__c}" 
+												 multiselect="false" 
+												 required="false" 
+												 size="1" 
+												 rendered="{!isDimension5Picklist}" >
+								<apex:selectOptions value="{!dimension5PicklistItems}" />
+							</apex:selectList>
+						</apex:outputPanel>
+					</apex:column>
+					
+					<apex:column headerValue="{!dimension6Label}" 
+								 width="8%" 
+								 rendered="{!isDimension6Enabled}" >
+								<apex:outputPanel styleClass="{!IF(entryInfo.Dim6InError, 'errorRow', '')}" layout="block" >
+									<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__Dimension6Value__c}" 
+													 rendered="{!NOT(isDimension6Picklist)}" />
+									<apex:selectList value="{!entryInfo.entrySO.Apttus_Config2__Dimension6Value__c}" 
+												 multiselect="false" 
+												 required="false" 
+												 size="1" 
+												 rendered="{!isDimension6Picklist}" >
+								<apex:selectOptions value="{!dimension6PicklistItems}" />
+							</apex:selectList>
+						</apex:outputPanel>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__PeriodStartDate__c.Label}" 
+								 width="5%" 
+								 rendered="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__EnableDateRange__c}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodStartDate__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__PeriodEndDate__c.Label}" 
+								 width="5%" 
+								 rendered="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__EnableDateRange__c}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodEndDate__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__AdjustmentAmount__c.Label}" 
+								 width="8%" 
+								 rendered="{!NOT(HasWeightedRangeDimension)}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__AdjustmentAmount__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__AdjustmentType__c.Label}" 
+								 width="5%" 
+								 rendered="{!NOT(HasWeightedRangeDimension)}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__AdjustmentType__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__StartFactor__c.Label}" 
+								 width="5%" 
+								 rendered="{!HasWeightedRangeDimension}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__StartFactor__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__EndFactor__c.Label}" 
+								 width="5%" 
+								 rendered="{!HasWeightedRangeDimension}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__EndFactor__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__BandSize__c.Label}" 
+								 width="5%" 
+								 rendered="{!HasWeightedRangeDimension}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__BandSize__c}" />
+					</apex:column>
+					
+						<apex:column width="5%" >
+							<apex:commandLink action="{!doAddRow}"  
+													reRender="idPriceMatrixEntriesSection" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />	
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Plus2}" 
+																title="{!$Label.apttus_config2__add}" 
+																alt="{!$Label.apttus_config2__add}" /> 	  	  	  
+						</apex:commandLink>
+						</apex:column>
+						
+						<apex:column width="5%" >
+							<apex:commandLink action="{!doDeleteRow}" 
+												reRender="idPriceMatrixEntriesSection" 
+												rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />	
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+															title="{!$Label.apttus_config2__remove}" 
+															alt="{!$Label.apttus_config2__remove}" />  	  
+						</apex:commandLink>
+					</apex:column>
+					
+					<apex:column width="5%" >
+							<apex:commandLink action="{!doMoveUpRow}" 
+													reRender="idPriceMatrixEntriesSection" 
+													rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveUp}" 
+																title="{!$Label.apttus_config2__moveup}" 
+																alt="{!$Label.apttus_config2__moveup}" />
+						</apex:commandLink>
+						<apex:commandLink action="{!doMoveDownRow}" 
+													reRender="idPriceMatrixEntriesSection" 
+													rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c < lastRowSequence}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveDown}" 
+																title="{!$Label.apttus_config2__movedown}" 
+																alt="{!$Label.apttus_config2__movedown}" />
+						</apex:commandLink>
+						</apex:column>
+						
+						<apex:column width="5%" >
+							<apex:outputText value="{!entryInfo.ErrorMsg}" style="color:red;" />
+						</apex:column>
+					 
+						</apex:pageBlockTable>
+						
+						<apex:pageBlockTable value="{!matrixEntries}" 
+											 var="entryInfo" 
+											 columns="11" 
+											 rowClasses="oddRow,evenRow"
+											 rendered="{!isConditionBasedMatrix}" >
+							
+							<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__Sequence__c.Label}" 
+										 width="5%" >
+								<apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" 
+													rendered="{!NOT(isFilterEditMode) || (entryInfo.entrySO.Apttus_Config2__Sequence__c <= filterRowNum)}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__Condition__c.Label}" 
+								 width="45%" 
+								 rendered="{!isConditionBasedMatrix}" >
+								<apex:outputPanel styleClass="{!IF((entryInfo.ConditionInError || entryInfo.entrySO.Apttus_Config2__Sequence__c == filterRowNum), 'errorRow', '')}" 
+													layout="block" 
+													rendered="{!NOT(isFilterEditMode) || (entryInfo.entrySO.Apttus_Config2__Sequence__c <= filterRowNum)}" >
+									<apex:inputText value="{!entryInfo.conditionExpr}"  
+													size="100"
+													style="font-weight: bold;"
+													disabled="true"
+													title="{!entryInfo.conditionExpr}" />
+						</apex:outputPanel>
+					</apex:column>
+					
+					<apex:column width="5%" >
+						<apex:commandLink action="{!doEditFilter}" 
+												value="{!$Label.apttus_config2__new}" 
+												rendered="{!NOT(isFilterEditMode) && LEN(entryInfo.conditionExpr) == 0}" >
+								<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />			  
+							</apex:commandLink>
+							<apex:commandLink action="{!doEditFilter}" 
+												value="{!$Label.apttus_config2__edit}" 
+												rendered="{!NOT(isFilterEditMode) && LEN(entryInfo.conditionExpr) > 0}" >
+								<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />			  
+							</apex:commandLink>
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__PeriodStartDate__c.Label}" 
+								 width="5%" 
+								 rendered="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__EnableDateRange__c}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodStartDate__c}" 
+												 rendered="{!NOT(isFilterEditMode)}" />
+								<apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodStartDate__c}" 
+													rendered="{!isFilterEditMode && entryInfo.entrySO.Apttus_Config2__Sequence__c <= filterRowNum}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__PeriodEndDate__c.Label}" 
+								 width="5%" 
+								 rendered="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__EnableDateRange__c}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodEndDate__c}" 
+												 rendered="{!NOT(isFilterEditMode)}" />
+								<apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodEndDate__c}" 
+													rendered="{!isFilterEditMode && entryInfo.entrySO.Apttus_Config2__Sequence__c <= filterRowNum}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__AdjustmentAmount__c.Label}" 
+								 width="10%" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__AdjustmentAmount__c}" 
+												 rendered="{!NOT(isFilterEditMode)}" />
+								<apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__AdjustmentAmount__c}" 
+													rendered="{!isFilterEditMode && entryInfo.entrySO.Apttus_Config2__Sequence__c <= filterRowNum}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__AdjustmentType__c.Label}" 
+								 width="5%" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__AdjustmentType__c}" 
+												 rendered="{!NOT(isFilterEditMode)}" />
+								<apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__AdjustmentType__c}" 
+													rendered="{!isFilterEditMode && entryInfo.entrySO.Apttus_Config2__Sequence__c <= filterRowNum}" />
+					</apex:column>
+					
+						<apex:column width="5%" >
+							<apex:commandLink action="{!doAddRow}" 
+													reRender="idPriceMatrixEntriesSection" 
+													rendered="{!NOT(isFilterEditMode)}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Plus2}" 
+																title="{!$Label.apttus_config2__add}" 
+																alt="{!$Label.apttus_config2__add}" /> 		  	  	  
+						</apex:commandLink>
+						</apex:column>
+						
+						<apex:column width="5%" >
+							<apex:commandLink action="{!doDeleteRow}" 
+												reRender="idPriceMatrixEntriesSection" 
+												rendered="{!NOT(isFilterEditMode) && entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+															title="{!$Label.apttus_config2__remove}" 
+															alt="{!$Label.apttus_config2__remove}" />		  
+						</apex:commandLink>
+					</apex:column>
+					
+					<apex:column width="5%" >
+							<apex:commandLink action="{!doMoveUpRow}" 
+													reRender="idPriceMatrixEntriesSection" 
+													rendered="{!NOT(isFilterEditMode) && entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveUp}" 
+																title="{!$Label.apttus_config2__moveup}" 
+																alt="{!$Label.apttus_config2__moveup}" />
+						</apex:commandLink>
+						<apex:commandLink action="{!doMoveDownRow}" 
+													reRender="idPriceMatrixEntriesSection" 
+													rendered="{!NOT(isFilterEditMode) && entryInfo.entrySO.Apttus_Config2__Sequence__c < lastRowSequence}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveDown}" 
+																title="{!$Label.apttus_config2__movedown}" 
+																alt="{!$Label.apttus_config2__movedown}" />
+						</apex:commandLink>
+						</apex:column>
+						
+						<apex:column width="5%" >
+							<apex:outputText value="{!entryInfo.ErrorMsg}" style="color:red;" 
+											 rendered="{!NOT(isFilterEditMode)}" />
+						</apex:column>
+					 
+						</apex:pageBlockTable>
+						
+						<apex:pageBlockTable value="{!matrixEntries}" 
+											 var="entryInfo" 
+											 columns="11" 
+											 rowClasses="oddRow,evenRow"
+											 rendered="{!isUsageBasedMatrix}" >
+							
+							<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__Sequence__c.Label}" 
+										 width="5%" >
+								<apex:outputField value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__TierStartValue__c.Label}" 
+								 width="8%" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__TierStartValue__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__TierEndValue__c.Label}" 
+								 width="8%" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__TierEndValue__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__PeriodStartDate__c.Label}" 
+								 width="5%" 
+								 rendered="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__EnableDateRange__c}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodStartDate__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__PeriodEndDate__c.Label}" 
+								 width="5%" 
+								 rendered="{!Apttus_Config2__PriceMatrix__c.Apttus_Config2__EnableDateRange__c}" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__PeriodEndDate__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__UsageRate__c.Label}" 
+								 width="8%" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__UsageRate__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__FlatPrice__c.Label}" 
+								 width="8%" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__FlatPrice__c}" />
+					</apex:column>
+					
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__PriceMatrixEntry__c.Fields.Apttus_Config2__IsIncluded__c.Label}" 
+								 width="8%" >
+								<apex:inputField value="{!entryInfo.entrySO.Apttus_Config2__IsIncluded__c}" />
+					</apex:column>
+					
+						<apex:column width="5%" >
+							<apex:commandLink action="{!doAddRow}" 
+													reRender="idPriceMatrixEntriesSection" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Plus2}" 
+																title="{!$Label.apttus_config2__add}" 
+																alt="{!$Label.apttus_config2__add}" /> 		  	  	  
+						</apex:commandLink>
+						</apex:column>
+						
+						<apex:column width="5%" >
+							<apex:commandLink action="{!doDeleteRow}" 
+												reRender="idPriceMatrixEntriesSection" 
+												rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+															title="{!$Label.apttus_config2__remove}" 
+															alt="{!$Label.apttus_config2__remove}" />		  
+						</apex:commandLink>
+					</apex:column>
+					
+					<apex:column width="5%" >
+							<apex:commandLink action="{!doMoveUpRow}" 
+													reRender="idPriceMatrixEntriesSection" 
+													rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c > 1}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveUp}" 
+																title="{!$Label.apttus_config2__moveup}" 
+																alt="{!$Label.apttus_config2__moveup}" />
+						</apex:commandLink>
+						<apex:commandLink action="{!doMoveDownRow}" 
+													reRender="idPriceMatrixEntriesSection" 
+													rendered="{!entryInfo.entrySO.Apttus_Config2__Sequence__c < lastRowSequence}" >
+							<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveDown}" 
+																title="{!$Label.apttus_config2__movedown}" 
+																alt="{!$Label.apttus_config2__movedown}" />
+						</apex:commandLink>
+						</apex:column>
+						
+						<apex:column width="5%" >
+							<apex:outputText value="{!entryInfo.ErrorMsg}" style="color:red;" 
+											 rendered="{!NOT(isFilterEditMode)}" />
+						</apex:column>
+					 
+						</apex:pageBlockTable>
+						
+						<apex:outputText value="{!$Label.apttus_config2__nodimensionstodisplay}" rendered="{!isDimensionBasedMatrix && NOT(isDimension1Enabled)}" />
+				</apex:pageBlockSection>
+				
+		</apex:pageBlock>
+									 
+	</apex:form>
+
+</apex:page>

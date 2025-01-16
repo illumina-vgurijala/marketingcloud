@@ -1,0 +1,28 @@
+<apex:page standardController="[%SObjectType]" extensions="[%PackageNameSpace].PredictiveContentPageController" action="{!Init}" docType="html-5.0" applyHtmlTag="false" applyBodyTag="false" showHeader="false" sidebar="false" standardStylesheets="false" html-style="height:100%; width:100%;">
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Seismic Content Viewer</title>
+
+	<style type="text/css">
+		BODY, HTML, IFRAME { width: 100%; height: 100%; margin: 0; padding: 0; }
+	</style>
+</head>
+<body>
+    <iframe allow="autoplay; fullscreen" src="{!SeismicPredictiveContentHandlerUrl}" frameborder="no" width="100%" height="100%" marginwidth="0" marginheight="0" scrolling="no"></iframe>
+
+	<script type="text/javascript">
+		if (pageInfo == undefined || pageInfo == null) {
+			var pageInfo = {};
+		}
+
+		pageInfo.objectType = '[%SObjectType]';
+		pageInfo.objectId = '{![%SObjectType].Id}';
+		pageInfo.objectLastModifiedDate = '{![%SObjectType].LastModifiedDate}';
+		pageInfo.objectSystemModstamp = '{![%SObjectType].SystemModstamp}';
+		pageInfo.buttonName = '[%VFPageName]';
+		pageInfo.docViewerUrl = '{!$Page.[%PackageNameSpace]__SeismicDocViewer}';
+	</script>
+</body>
+</apex:page>

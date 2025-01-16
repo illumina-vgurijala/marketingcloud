@@ -1,0 +1,1686 @@
+<!-- 
+    Apttus Config & Pricing
+    CartView
+     
+    @2011-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__ProductConfiguration__c"
+		   extensions="Apttus_Config2.CartViewController" 
+		   showHeader="{!ShowHeader}" 
+		   sidebar="true"
+		   cache="false" 
+		   standardStylesheets="true"
+		   tabstyle="Product2" 
+		   action="{!doLoad}">
+	
+	<script type="text/javascript" src="/soap/ajax/30.0/connection.js"></script>
+	<script type="text/javascript" src="/soap/ajax/30.0/apex.js"></script>
+	<apex:include pageName="Apttus_Config2__ConfigJSLibInclude" />
+	
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/container/container-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/dragdrop/dragdrop-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/animation/animation-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/treeview/treeview-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/menu/menu-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo/yahoo-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQJSLibrary}"/>
+	
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/assets/skins/sam/skin.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/treeview/assets/skins/sam/treeview.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/examples/treeview/assets/css/menu/tree.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/menu/assets/skins/sam/menu.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/container/assets/skins/sam/container.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources,'CPQCommon.css')}" />
+	<apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+	
+	<style>
+		textarea {
+			width: 70%;
+		} 
+		
+		body .bPageBlock .pbBody .pbSubheader{
+     		background-color: #428BCA;
+     	}
+		
+		.pbBody .pbSubsection {
+			overflow-y: auto;
+			
+		}
+		
+		.detailList [class*="aptQuantityItem"] {
+			width: 40px;
+			
+		}
+		
+		.detailList [class*="AdjustmentItem"],[class*="AdjustmentTotal"] {
+			width: 100px;
+			
+		}
+		
+		.detailList [class*="Currency"] {
+			text-align: right;
+			
+		}
+		
+	</style>
+	<script>
+		j$(document).ready(function(){
+			// apply the dynamic classes on the adjusment amount fields			
+			j$(document).on('change', '[class^=aptAdjustmentType]', function(){
+				j$.APTTUS.applyDynamicClasses(j$(this));
+				j$.APTTUS.formatFields("{!currencyFieldPrecision}", "{!percentageFieldPrecision}", "{!quantityFieldPrecision}");
+					
+			})
+		});
+	
+	</script>
+	 
+	<apex:form id="idProductConfigurationForm">
+		
+		<!--  required fields -->
+		<apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Name}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__Status__c}" rendered="false" />
+			
+		<script type="text/javascript">
+			
+			// Create a namespace for our custom functions
+			YAHOO.namespace("force.com");
+			
+			/**
+			 * Initializes the call
+			 */
+			function initCall() {
+			
+				try {
+					sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+				} catch(e) {
+					cp_erroralert(cp_cERROR_UNKNOWN,e);
+					
+				}
+			
+			}
+			
+			// wait panel
+			
+			/**
+			 * Builds the wait panel.
+			 */
+		    YAHOO.force.com.buildWaitPanel = function() {
+		        document.body.className = document.body.className + " yui-skin-sam";
+		        YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+		            "waitPanel",  // The id of our dialog container
+		            { 
+		                    width           :   "300px", // You can play with this until it's right
+		                    visible         :   false,   // Should be invisible when rendered
+		                    draggable       :   false,   // Make the dialog draggable
+		                    close           :   false,   // Don't include a close title button
+		                    modal           :   true,    // Make it modal
+		                    fixedCenter     :   true,    // Keep centered if window is scrolled
+		                    zindex          :   40,      // Make sure it's on top of everything
+		                    constraintoviewport: true,
+		                    
+		                    // This line adds the appear/disapper fade effect
+		                    effect			:   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+	        							
+		            }
+		        );
+		        
+		        // header
+		        YAHOO.force.com.waitPanel.setHeader("{!$Label.LoadingPage}");
+				// set image
+				YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+		        // Render the dialog to the document.body level of the DOM
+		        YAHOO.force.com.waitPanel.render(document.body);
+		        
+		    }
+	    	
+	    	/**
+			 * Callback when the action button is clicked
+			 */
+			function onActionClick() {
+				// show the modal panel
+				YAHOO.force.com.waitPanel.show();
+				// return false to allow the action to proceed
+				return false;
+				
+			}
+			
+			/**
+			 * Callback when the action is completed
+			 */
+			function onActionComplete() {
+				// hide the modal panel
+				YAHOO.force.com.waitPanel.hide();
+				
+			}
+			
+	    	// confirmation panel
+	    	
+			//YAHOO.force.com.myDialog = new Object();
+			//YAHOO.force.com.selectedLineNbr = new Object();
+						
+			/**
+			 * Build remove confirmation panel
+			 */
+			YAHOO.force.com.buildConfirmationPanel = function() {
+			
+		        document.body.className = document.body.className + " yui-skin-sam";
+		        YAHOO.force.com.confirmationPanel = new YAHOO.widget.Panel(
+		            "confirmationPanel",  // The id of our dialog container
+		            { 
+		                    width           :   "300px", // You can play with this until it's right
+		                    visible         :   false,   // Should be invisible when rendered
+		                    draggable       :   true,    // Make the dialog draggable
+		                    close           :   false,   // Don't include a close title button
+		                    modal           :   true,    // Make it modal
+		                    fixedCenter     :   true,    // Keep centered if window is scrolled
+		                    zindex          :   40,      // Make sure it's on top of everything
+		                    
+		                    // This line adds the appear/disapper fade effect
+		                    effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25} 
+		            }
+		         );
+		        
+		        // Render the dialog to the document.body level of the DOM
+		        YAHOO.force.com.confirmationPanel.render(document.body);
+		        //YAHOO.force.com.confirmationPanel.render();
+		        
+		    }
+		    
+			/**
+			 * Show remove confirmation dialog
+			 */
+			YAHOO.force.com.showRemoveConfirmation = function(lineNumber) {
+				// save selected line item line number
+				YAHOO.force.com.selectedLineNbr = lineNumber;
+				
+				// show the confirmation panel
+				document.getElementById("confirmationPanel").style.display = "block";
+		        YAHOO.force.com.confirmationPanel.show();
+		        
+		    }
+	
+			/**
+			 * Handle remove product option group or product option component
+			 */
+			YAHOO.force.com.remove = function() {
+				// hide the confirmation panel
+		        YAHOO.force.com.confirmationPanel.hide();
+		        // show modal panel
+				YAHOO.force.com.waitPanel.show();
+				// delete the line item
+	    		doDeleteLineItem(YAHOO.force.com.selectedLineNbr);
+				    			
+			}
+ 
+		    // miscellaneous line item panel
+	    		
+			/**
+			 * Builds the miscellaneous item panel
+			 */
+			YAHOO.force.com.buildMiscItemPanel = function() {
+				//document.body.className = document.body.className + " yui-skin-sam";
+		        
+		        YAHOO.force.com.miscItemPanel = new YAHOO.widget.Panel(
+		            "miscItemPanel",  // The id of our dialog container
+		            { 
+		                    width           :   "400px", // You can play with this until it's right
+		                    visible         :   false,   // Should be invisible when rendered
+		                    draggable       :   true,    // Make the dialog draggable
+		                    close           :   false,   // Don't include a close title button
+		                    modal           :   true,    // Make it modal
+		                    fixedCenter     :   true,    // Keep centered if window is scrolled
+		                    zindex          :   40,      // Make sure it's on top of everything
+		                    
+		                    // This line adds the appear/disapper fade effect
+		                    effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25} 
+		            }
+		         );
+		        
+		        // Render the dialog to the document.body level of the DOM
+		        YAHOO.force.com.miscItemPanel.render(document.body);
+		       
+		    }
+    		
+    		/**
+			 * Callback when the add miscellaneous item button is clicked
+			 */
+			function onAddMiscItemClick() {
+				
+				// reset panel field values
+				fldMiscChargeType.value = "";
+				fldMiscDescription.value = "";
+				fldMiscAmount.value = "";
+				
+				// show the modal panel
+				document.getElementById("miscItemPanel").style.display = "block";
+				YAHOO.force.com.miscItemPanel.show();
+				
+			}		
+			
+			/**
+			 * Callback when the ok action button is clicked
+			 */
+			function onOkActionClick() {
+				// hide the miscellaneous line item panel
+		        YAHOO.force.com.miscItemPanel.hide();
+		        // show modal panel
+				YAHOO.force.com.waitPanel.show();
+				// return false to allow the action to proceed
+				return false;
+				
+			}
+			
+			/**
+			 * Callback when the ok action is completed
+			 */
+			function onOkActionComplete() {
+				// hide the modal panel
+				YAHOO.force.com.waitPanel.hide();
+				
+			}
+
+			/**
+			 * Callback when the cancel button is clicked
+			*/
+
+			function onCancelActionClick() {
+				// hide the miscellaneous line item panel
+				YAHOO.force.com.miscItemPanel.hide();
+			}
+			
+			// reprice wait panel
+			
+			/**
+			 * Builds the reprice wait panel.
+			 */
+		    YAHOO.force.com.buildRepriceWaitPanel = function() {
+		        document.body.className = document.body.className + " yui-skin-sam";
+		        YAHOO.force.com.repriceWaitPanel = new YAHOO.widget.Panel(
+		            "repriceWaitPanel",  // The id of our dialog container
+		            { 
+		                    width           :   "300px", // You can play with this until it's right
+		                    visible         :   false,   // Should be invisible when rendered
+		                    draggable       :   false,   // Make the dialog draggable
+		                    close           :   false,   // Don't include a close title button
+		                    modal           :   true,    // Make it modal
+		                    fixedCenter     :   true,    // Keep centered if window is scrolled
+		                    zindex          :   40,      // Make sure it's on top of everything
+		                    constraintoviewport: true,
+		                    
+		                    // This line adds the appear/disapper fade effect
+		                    effect			:   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+	        							
+		            }
+		        );
+		        
+		        // header
+		        YAHOO.force.com.repriceWaitPanel.setHeader("{!$Label.Repricing}");
+				// set image
+				YAHOO.force.com.repriceWaitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+		        // Render the dialog to the document.body level of the DOM
+		        YAHOO.force.com.repriceWaitPanel.render(document.body);
+		        
+		    }
+	    	
+	    	/**
+			 * Callback when the reprice callback is started
+			 */
+			function onRepriceCallbackStart() {
+				// show the modal panel
+				YAHOO.force.com.repriceWaitPanel.show();
+				// return false to allow the action to proceed
+				return false;
+          	
+			}
+			
+			/**
+			 * Callback when the reprice callback is started
+			 */
+			function onRepriceCallbackComplete() {
+				// hide the modal panel
+				YAHOO.force.com.repriceWaitPanel.hide();
+	         	
+			}
+			
+			/**
+			 * Schedules the reprice all call
+			 */
+			function scheduleRepriceAllCall() {
+				// show the modal panel
+				YAHOO.force.com.repriceWaitPanel.show();
+				// delay to display progress message	
+	           	setTimeout(function() {
+	           		// reprice all
+	         		doRepriceAll();
+	          	}, 10);
+	          	
+			}
+			
+			/**
+			 * Schedules the reprice call
+			 */
+			function scheduleRepriceCall() {
+				// show the modal panel
+				YAHOO.force.com.repriceWaitPanel.show();
+				// delay to display progress message	
+	           	setTimeout(function() {
+	           		// reprice pending line item
+	         		doRepricePendingLineItems();
+	          	}, 10);
+	          	
+			}
+			
+			/**
+			 * Reprices all line items in the current configuration
+			 */
+			function doRepriceAll() {
+				
+				// get parameters
+				// current configuration id
+				var configId = "{!configurationId}";
+			
+				try {
+					
+					// STEP I - initialize the call
+					initCall();
+				
+					// STEP II - get summary line items from the configuration
+					var result = getSummaryLineItemsForConfiguration(configId);
+					
+					var numItems = result.length;
+					
+					// STEP III - Reprice each summary line item
+					for (var i = 0; i < numItems; i++) {
+						// compute base price
+						computeBasePriceForItemColl(configId, result[i].LineNumber);
+						
+					}
+					
+					// STEP IV - Compute total price
+					computeTotalPriceForCart(configId);
+					
+				} catch(ex) {
+					// hide modal panel
+					YAHOO.force.com.repriceWaitPanel.hide();
+					// display the error
+					cp_erroralert(cp_cERROR_UNKNOWN, ex);
+					
+				} finally {
+					// reload the page
+					doReload();
+					
+				}
+				
+			}
+			
+			/**
+			 * Callback when the reprice line item action button is clicked
+			 */
+			function onRepriceLineItemClick() {
+				// show the modal panel
+				YAHOO.force.com.repriceWaitPanel.show();
+				// return false to allow the action to proceed
+				return false;
+				
+			}
+			
+			/**
+			 * Callback when the apply adjustment action button is clicked
+			 */
+			function onApplyAdjustmentClick() {
+				// show the modal panel
+				YAHOO.force.com.waitPanel.show();
+				// return false to allow the action to proceed
+				return false;
+				
+			}
+			
+			/**
+             * Reprices the given line item
+             */
+            function doCheckAndRepriceLineItems() {
+                
+                // chck if price is pending
+                var isPricePending = "{!IsPricePending}";
+            	
+                if (isPricePending.toLowerCase() == 'false') {
+                    // no price pending. abort
+                    return;
+                    
+                }
+                
+                // get parameters
+                // current configuration id
+                var configId = "{!configurationId}";
+        		
+        		try {
+                
+                    // STEP I - get summary line items from the configuration
+                    var numItems = "{!NumOfLineItemsAwaitingPrice}";
+                   	
+                    // STEP II - Reprice the line item
+                    if (numItems > 0) {
+                        //alert(numItems);
+                        // show the modal panel
+                        YAHOO.force.com.repriceWaitPanel.show();
+                        // reprice line item
+                        doRepriceLineItem(configId, numItems, 0);
+                        
+                    } else {
+                     	// show the modal panel
+                    	YAHOO.force.com.repriceWaitPanel.show();
+                    	// compute total price
+                    	doComputeTotalPrice(configId);
+                    
+                    }
+
+                } catch(ex) {
+                    // hide modal panel
+                    YAHOO.force.com.repriceWaitPanel.hide();
+                    // display the error
+                    cp_erroralert(cp_cERROR_UNKNOWN, ex);
+                
+                } 
+                
+            }
+            
+            /**
+             * Reprices the pending line items
+             */
+            function doRepricePendingLineItems() {
+              	
+              	// get parameters
+				// current configuration id
+				var configId = "{!configurationId}";
+			
+				try {
+					
+					// STEP I - initialize the call
+					initCall();
+				
+					// STEP II - update price
+					updatePriceForCart(configId);
+					
+				} catch(ex) {
+					// hide modal panel
+					YAHOO.force.com.repriceWaitPanel.hide();
+					// display the error
+					cp_erroralert(cp_cERROR_UNKNOWN, ex);
+					
+				} finally {
+					// reload the page
+					doReload();
+					
+				}
+				
+            }
+            
+            /**
+             * Reprices the pending line items
+             */
+            function doRepricePendingLineItems2() {
+              
+                // get parameters
+                // current configuration id
+                var configId = "{!configurationId}";
+        		
+        		try {
+	        		// STEP I - get the price pending status
+		            {!ClassName}.doGetPricePendingInfo(configId, function(result, event) {
+		             
+	                    // check response status
+	                    if (event.status) {
+	                    	// ok response (check the result)
+		                   	//alert(result.numItems);
+		                    // STEP II - Reprice the line items
+		                    if (result.numItems > 0) {
+		                        // show the modal panel
+		                        YAHOO.force.com.repriceWaitPanel.show();
+		                        // reprice line item
+		                        doRepriceLineItem(configId, result.numItems, 0);
+		                    
+		                    } else if (result.isPricePending) {
+		                    	// compute total price
+                    			doComputeTotalPrice(configId);
+		                    	
+		                    } else {
+		                    	// hide modal panel
+								YAHOO.force.com.repriceWaitPanel.hide();
+					
+	                        }
+	                        
+	                    } else {
+	                        // throw exception
+	                        alert(event.message);
+	                        // hide modal panel
+	              			YAHOO.force.com.repriceWaitPanel.hide();
+				           
+	                    } 
+		                
+		            }, {buffer:false,escape:true});
+        		
+        		} catch(ex) {
+                 	// hide modal panel
+                	YAHOO.force.com.repriceWaitPanel.hide();
+                	// display the error
+                	cp_erroralert(cp_cERROR_UNKNOWN, ex);
+                
+            	} 
+			            
+            }
+            
+            /**
+             * Reprices the given line item
+             */
+            function doRepriceLineItem(configId, numItems, currIndex) {
+                
+                try {
+                    
+                    if (currIndex < numItems) {
+                    
+                        // STEP I - initialize the call
+                        {!ClassName}.doComputeBasePriceForNextItemColl(configId, function(result, event) {
+                        
+                            try {
+                                // check response status
+                                if (event.status) {
+                                    // ok response, increment the index
+                                    currIndex++;
+                                    // check if done
+                                    if (currIndex < numItems) {
+                                        // more to go
+                                        doRepriceLineItem(configId, numItems, currIndex);
+                                        
+                                    } else {
+                                        // compute total price
+                                        doComputeTotalPrice(configId);
+                                    
+                                    }
+                                    
+                                } else {
+                                    //throw exception
+                                    alert(event.message);
+                                    // hide modal panel
+                    				YAHOO.force.com.repriceWaitPanel.hide();
+                                    // reload the page
+                                    //doReload();
+                                
+                                }
+                                
+                            } catch(ex) {
+                                // hide modal panel
+                                YAHOO.force.com.repriceWaitPanel.hide();
+                                // display the error
+                                cp_erroralert(cp_cERROR_UNKNOWN, ex);
+                                // reload the page
+                                //doReload();
+                                  
+                            } 
+                            
+                        }, {escape:true});
+                      
+                     }
+                      
+                } catch(ex) {
+                     // hide modal panel
+                    YAHOO.force.com.repriceWaitPanel.hide();
+                    // display the error
+                    cp_erroralert(cp_cERROR_UNKNOWN, ex);
+                    
+                } 
+                
+            }
+            
+			/**
+             * Reprices the given line item
+             */
+            function doRepriceLineItemColl(configId, lineNumber) {
+ 
+                // STEP I - compute base price
+                {!ClassName}.doComputeBasePriceForItemColl(configId, lineNumber, function(result, event) {
+                
+                    try {
+	                     // check response status
+	                     if (event.status) {
+	                         // ok reponse, compute total price
+                             doComputeTotalPrice(configId);
+                             
+	                     } else {
+	                         //throw exception
+	                         alert(event.message);
+	                         
+	                     } 
+	                     
+	                 } catch(ex) {
+                        // hide all modal panels
+	                    YAHOO.force.com.repriceWaitPanel.hide();
+	              		YAHOO.force.com.waitPanel.hide();
+                        // display the error
+                        cp_erroralert(cp_cERROR_UNKNOWN, ex);
+                        // reload the page
+                   		doReload();
+	                        
+	                 } 
+                    
+                }, {escape:true});
+                       
+            }
+            
+            /**
+			 * Callback to update the total price
+			 */
+			function doUpdateTotalPrice() {
+			 	// get parameters
+                // current configuration id
+                var configId = "{!configurationId}";
+				// compute total price
+				doComputeTotalPrice(configId);
+				
+			}
+			
+            /**
+	         * Computes the total price for the cart
+	         */
+	        function doComputeTotalPrice(configId) {
+	   			
+	   			// register to invoke the function after the page load
+	            var useMultiStepTotaling = "{!UseMultiStepTotaling}";
+	        
+	            try {
+	            
+	              	// check if multi-step totaling should be used
+	                if (useMultiStepTotaling.toLowerCase() == 'true') {
+						// use multi-step totaling
+	                	doExecuteTotalPriceStepForCart(configId, cp_cTOTALING_STEP1);
+	  			
+	                } else {
+	                	// use single step totaling
+	                	doExecuteTotalPriceStepForCart(configId, cp_cTOTALING_ALLSTEPS);
+	                
+	                }
+	              
+	            } catch(ex) {
+	             	// hide all modal panels
+                    YAHOO.force.com.repriceWaitPanel.hide();
+              		YAHOO.force.com.waitPanel.hide();
+	             	// display the error
+	             	cp_erroralert(cp_cERROR_UNKNOWN, ex);
+	             	// reload the page
+	                doReload();
+	   
+	         	} 
+	          
+	        }
+        
+            /**
+	         * Executes the totaling step for the cart
+	         */
+	        function doExecuteTotalPriceStepForCart(configId, stepName) {
+	    
+	            // STEP I - initialize the call
+	            {!ClassName}.doExecuteTotalPriceStepForCart(configId, stepName, function(result, event) {
+	             
+	                try {
+	                    // check response status
+	                    if (event.status) {
+	                        // ok response , check if done
+	                        if (cp_cTOTALING_STEP3 == stepName || 
+	                        	cp_cTOTALING_ALLSTEPS == stepName) {
+	                            // we are done, reload the page
+		                   		doReload();
+	                            
+	                        } else {
+	                            // get the next step
+	                            var nextStepName = ((cp_cTOTALING_STEP1 == stepName) ? cp_cTOTALING_STEP2 : cp_cTOTALING_STEP3);
+	                            // execute the next step
+	                            doExecuteTotalPriceStepForCart(configId, nextStepName);
+	                        
+	                        }
+	                    } else {
+	                        // throw exception
+	                        alert(event.message);
+	                        // hide all modal panels
+		                    YAHOO.force.com.repriceWaitPanel.hide();
+		              		YAHOO.force.com.waitPanel.hide();
+	                        // reload the page
+		                   	doReload();
+			            	
+	                    } 
+	                } catch(ex) {
+		              	// hide all modal panels
+	                    YAHOO.force.com.repriceWaitPanel.hide();
+	              		YAHOO.force.com.waitPanel.hide();
+	                    // display the error
+	                    cp_erroralert(cp_cERROR_UNKNOWN, ex);
+	                    // reload the page
+		                doReload();
+	                       
+	                } 
+	                
+	            }, {escape:true});
+	                   
+	        }
+        
+            /**
+             * Clones the given line item
+             */
+            function doCopyLineItem(lineNumber) {
+                
+                try {
+                    
+                    // current configuration id
+                	var configId = "{!configurationId}";
+                    // show the modal panel
+                    YAHOO.force.com.waitPanel.show();
+                        
+                    // STEP I - initialize the call
+                    {!ClassName}.doClonePrimaryItemColl(configId, lineNumber, function(result, event) {
+                    
+                        try {
+                            // check response status
+                            if (event.status) {
+                                // ok response, compute total price
+                                doRepriceLineItemColl(configId, event.result);
+                                
+                            } else {
+                                // throw exception
+                                alert(event.message);
+                                // hide modal panel
+                				YAHOO.force.com.waitPanel.hide();
+                                // reload the page
+                                //doReload();
+                            
+                            }
+                            
+                        } catch(ex) {
+                            // hide modal panel
+                            YAHOO.force.com.waitPanel.hide();
+                            // display the error
+                            cp_erroralert(cp_cERROR_UNKNOWN, ex);
+                            // reload the page
+                            //doReload();
+                              
+                        } 
+                        
+                    }, {escape:true});
+                      
+                } catch(ex) {
+                     // hide modal panel
+                    YAHOO.force.com.waitPanel.hide();
+                    // display the error
+                    cp_erroralert(cp_cERROR_UNKNOWN, ex);
+                    
+                } 
+                
+            }
+            
+			/**
+			 * Builds the product detail panel
+			 */
+			YAHOO.force.com.buildProductDetailPanel = function() {
+				//document.body.className = document.body.className + " yui-skin-sam";
+		        
+		        YAHOO.force.com.productDetailPanel = new YAHOO.widget.Panel(
+		            "productDetailPanel",  // The id of our dialog container
+		            { 
+	                    	width           :   "600px", // You can play with this until it's right
+		                    fixedcenter 	:	"contained",
+		                    visible         :   false,   // Should be invisible when rendered
+		                    draggable       :   true,    // Make the dialog draggable
+		                    modal           :   true,    // Make it modal
+		                    close			:	true,
+		                    zindex          :   40,      // Make sure it's on top of everything
+		                    		                    
+		                    // This line adds the appear/disapper fade effect
+		                    effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25} 
+		            }
+		         );
+		        
+		        // Render the dialog to the document.body level of the DOM
+		        YAHOO.force.com.productDetailPanel.render();
+		        
+		    }		
+    		
+    		/**
+			 * Get mouseover product information
+			 */
+			function getProductDetail(productId) {
+				
+				document.getElementById('ctxProductName').innerHTML = "{!$Label.LoadingPage}";
+			    document.getElementById('ctxProductDescription').innerHTML = '';
+			        
+				{!ClassName}.getProductDescription(productId, function(result, event){
+				    if (event.status) {
+				        document.getElementById('ctxProductName').innerHTML = result.Name;
+				        if(result.Description != undefined){
+				        	document.getElementById('ctxProductDescription').innerHTML = result.Description;
+						}
+					} else {
+				    	document.getElementById('ctxProductDescription').innerHTML = event.message;
+					}
+		       	}, {escape:true});
+				
+				showProductDetailPanel();
+				
+			}			
+   		
+    		/**
+			 * Callback when mouseover product information icon
+			 */
+			function showProductDetailPanel() {
+				
+				// show the modal panel
+				document.getElementById("productDetailPanel").style.display = "block";				
+				YAHOO.force.com.productDetailPanel.show();
+				
+			}	
+			
+			// submit approvals dialog panel
+	    		
+			/**
+			 * Builds the submit approvals panel
+			 */
+			YAHOO.force.com.buildSubmitApprovalPanel = function() {
+				//document.body.className = document.body.className + " yui-skin-sam";
+		        
+		        YAHOO.force.com.submitApprovalPanel = new YAHOO.widget.Panel(
+		            "submitApprovalPanel",  // The id of our dialog container
+		            { 
+		                    width           :   "400px", // You can play with this until it's right
+		                    visible         :   false,   // Should be invisible when rendered
+		                    draggable       :   true,    // Make the dialog draggable
+		                    close           :   true,    // Include a close title button
+		                    modal           :   true,    // Make it modal
+		                    fixedCenter     :   true,    // Keep centered if window is scrolled
+		                    zindex          :   40,      // Make sure it's on top of everything
+		                    
+		                    // This line adds the appear/disapper fade effect
+		                    effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25} 
+		            }
+		         );
+		        
+		        // Render the dialog to the document.body level of the DOM
+		        YAHOO.force.com.submitApprovalPanel.render(document.body);
+		       
+		    }
+		    
+		    /**
+			 * Show submit approval dialog
+			 */
+			function showSubmitApprovalDialog() {
+				
+				// show the submit approval dialog
+				document.getElementById("submitApprovalPanel").style.display = "block";				
+				YAHOO.force.com.submitApprovalPanel.show();
+				
+				return false;
+				
+		   	}
+	   		
+	   		/**
+			 * Hide the submit approval dialog
+			 */
+	   		function hideSubmitApprovalDialog(){
+		    	// close the submit approval dialog
+		        YAHOO.force.com.submitApprovalPanel.hide();
+		      
+		   	}
+		   		
+		    // Function called when the DOM is ready to create the dialog,
+	    	// render the dialog into the document body, add our dialog skin
+	    	// css to the body tag, and wire up the buttons on our dialog   
+			YAHOO.force.com.onDOMReady = function() {
+				// build the confirmation panel
+				YAHOO.force.com.buildConfirmationPanel();
+				// build the misc item panel
+				YAHOO.force.com.buildMiscItemPanel();
+				// build the wait panel
+				YAHOO.force.com.buildWaitPanel();
+				// build the reprice wait panel
+				YAHOO.force.com.buildRepriceWaitPanel();
+				// build the product detail panel
+				YAHOO.force.com.buildProductDetailPanel();
+				// build the submit approval dialog panel
+				YAHOO.force.com.buildSubmitApprovalPanel();
+				// check and reprice pending line items
+                doCheckAndRepriceLineItems();
+				
+			}
+			
+		    // build the tree as soon as the DOM is in a usable state
+			YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady);   	
+			
+			//hide message and call doHideMessage function to update the appliedActionInfo record HideMessage field
+			function aptHideMessage(ele, actionInfoId){
+				if(ele.parentNode != undefined){
+					ele.parentNode.style.visibility = "hidden";
+				}
+				invokeDoHideMessage(actionInfoId);
+			}	
+			
+		</script>
+		
+		<!--  Cart Header  -->
+	    <c:CartHeader id="idCartHeader" 
+	    			  cartId="{!ConfigurationId}" 
+	    			  requestId="{!RequestId}" 
+	    			  readOnly="{!ReadOnlyMode}" />
+		    				
+		
+			<apex:pageBlock id="idViewBlock">
+			
+			<apex:outputPanel id="idErrorMsg" >
+				<apex:pageMessages />
+				<c:RuleMessageDisplay id="idRuleMessageComponent" configId="{!Id}" isInCart="true" />	
+			</apex:outputPanel>
+			
+			<apex:outputPanel id="idActionPanel" >
+				
+				<apex:outputPanel rendered="{!hasErrors}" >
+					<script>
+				    	onActionComplete();
+				  	</script>
+				</apex:outputPanel>
+				
+				<apex:outputPanel rendered="{!NOT(hasErrors)}" >
+				
+					<!-- reprice action -->
+					<apex:outputPanel rendered="{!IsRepriceAction}" >
+					  <script>
+					  	// end save action
+					  	onActionComplete();
+					    // schedule a reprice call
+					  	scheduleRepriceCall();
+					  </script>
+					</apex:outputPanel>
+				
+					<!-- reprice all action -->
+					<apex:outputPanel rendered="{!IsRepriceAllAction}" >
+					  <script>
+					  	// end save action
+					  	onActionComplete();
+					    // schedule a reprice all call
+					  	scheduleRepriceAllCall();
+					  </script>
+					</apex:outputPanel>
+				</apex:outputPanel>
+				
+			</apex:outputPanel>
+			
+			<ul id="aptTopButtons" style="text-align:center; margin-top:10px; margin-bottom:10px;">
+                         
+				<apex:commandButton value="{!$Label.apttus_config2__addmoreproducts}"
+									action="{!doAddProducts}"
+									immediate="true" 
+									rendered="{!IsActionAddMoreProductsEnabled}"
+									onclick="onActionClick();" 
+									oncomplete="onActionComplete();" 
+									styleClass="aptListButton"/>
+
+				<apex:commandButton value="{!$Label.apttus_config2__installedproducts}"
+									action="{!doInstalledProducts}"
+									immediate="true" 
+									rendered="{!isAssetEnabled}"
+									onclick="onActionClick();" 
+									oncomplete="onActionComplete();" 
+									styleClass="aptListButton"/>
+					
+				<apex:commandButton value="{!$Label.apttus_config2__backtopricing}"
+									action="{!doPricing}" 
+									rendered="{!showFinalize && IsActionBackToPricingEnabled}" 
+									onclick="onActionClick();" 
+									oncomplete="onActionComplete();" 
+								    rerender="idTopNavStage, idTopNavActions, idViewBlock"
+								    styleClass="aptListButton"/>
+				
+				<apex:commandButton value="{!$Label.apttus_config2__addmiscellaneousitem}" 
+        					  	    onclick="onAddMiscItemClick();" 
+        					  	    immediate="true" 
+        					  	    rendered="{!isActionAddMiscItemEnabled}"
+        					  	    reRender="dummy"
+        					  	    styleClass="aptListButton" />
+        					  	    
+				<apex:commandButton value="{!$Label.apttus_config2__applyadjustments}"
+									rendered="{!false && showView}" 
+									action="{!doSaveAll}"
+									onclick="onApplyAdjustmentClick();" 
+									oncomplete="doUpdateTotalPrice();"
+									reRender="idErrorMsg, idActionPanel"
+									styleClass="aptListButton" />
+				
+				<apex:commandButton value="{!$Label.apttus_config2__reprice}"
+									rendered="{!showView && IsActionRepriceEnabled}" 
+									action="{!doRepriceCallback}"
+									onclick="onActionClick();" 
+									reRender="idErrorMsg, idActionPanel" 
+									styleClass="aptListButton" />
+									
+				<apex:commandButton value="{!$Label.apttus_config2__repriceall}"
+									rendered="false" 
+									action="{!doRepriceAllCallback}"
+									onclick="onActionClick();" 
+									reRender="idErrorMsg, idActionPanel" 
+									styleClass="aptListButton"/>
+														
+				<apex:commandButton value="{!$Label.apttus_config2__save}" 
+									action="{!doSaveAndExit}" 
+									rendered="{!IsActionSaveEnabled}"
+									rerender="idErrorMsg"
+									styleClass="aptListButton" />
+				
+				<apex:commandButton value="{!$Label.apttus_config2__quicksave}" 
+									action="{!doQuickSave}" 
+									rendered="{!IsActionQuickSaveEnabled}"
+									rerender="idViewBlock"
+									styleClass="aptListButton" />
+				
+				<apex:commandButton value="{!$Label.apttus_config2__saveandreload}" 
+									action="{!doSaveAndReload}" 
+									rendered="{!IsActionSaveAndReloadEnabled}" 
+									styleClass="aptListButton"/>
+														
+				<apex:commandButton value="{!$Label.apttus_config2__submitforapproval}" 
+									onclick="return showSubmitApprovalDialog();" 
+									rendered="{!IsApprovalRequired && 
+												IsActionSubmitForApprovalEnabled &&
+											    (showFinalize || skipReview)}" 
+									styleClass="aptListButton"/>
+				
+				 <apex:commandLink value="{!$Label.apttus_config2__analyzedeal}" 
+                                    action="{!doAnalyzeDeal}" 
+                                    styleClass="aptListButton"
+                                    rendered="{!IsApprovalRequired && 
+                                                IsDealOptimizerEnabled &&
+                                                (showFinalize || skipReview)}" /> 
+                                                
+				<apex:commandButton value="{!$Label.apttus_config2__generatedocument}" 
+									action="{!doGenerateDoc}" 
+									rendered="{!IsQuickAddMethod && 
+												IsActionGenerateDocumentEnabled &&
+												NOT(IsApprovalRequired) && 
+											   (showFinalize || skipReview)}" 
+									styleClass="aptListButton"/>
+											   										
+				<apex:commandButton value="{!$Label.apttus_config2__reviewandfinalize}" 
+									rendered="{!showView && 
+												NOT(skipReview) && 
+												IsActionReviewAndFinalizeEnabled}"
+									action="{!doSaveAndNext}" 
+									status="idStatusSelect"
+									rerender="idErrorMsg, idTopNavStage, idTopNavActions, idViewBlock" 
+									styleClass="aptListButton"/>
+				
+				<apex:commandButton value="{!$Label.apttus_config2__finalize}"
+									action="{!doFinalize}"
+									onclick="onActionClick();" 
+									oncomplete="onActionComplete();"
+									reRender="idErrorMsg" 
+									rendered="{!(showFinalize || skipReview) && 
+												IsActionFinalizeEnabled}" 
+									styleClass="aptListButton"/>
+				
+				<apex:commandButton value="{!$Label.apttus_config2__closecart}" 
+                                    action="{!doClose}"
+                                    immediate="true" 
+                                    rendered="{!ReadOnlyMode}" 
+                                    styleClass="aptListButton"/>
+                                  
+				<apex:repeat value="{!CustomActions}" 
+							 var="actionInfo">
+					
+					<apex:commandButton value="{!$Label[actionInfo.ActionSO.Apttus_Config2__ActionLabelName__c]}" 
+										action="{!doCustomAction}" 
+									    immediate="true"
+									    reRender="idErrorMsg" 
+									    styleClass="aptListButton">
+						
+						<apex:param name="actionName" 
+									value="{!actionInfo.ActionSO.Apttus_Config2__ActionName__c}" />				    
+					</apex:commandButton>
+					
+				</apex:repeat>
+							
+			</ul>
+			
+			<table style="width:100%">
+				<tr >
+					<td style="width:33%">
+					</td>
+					<td style="width:33%">
+						<apex:outputPanel rendered="{!showFinalize}">
+							<apex:outputText value="{!$Label.apttus_config2__checkitemsbeforefinalize}" 
+											 style="font-weight:bold;color:#5487B9;text-transform:uppercase"/>
+						</apex:outputPanel>
+					</td>
+					<td style="width:33%">
+					</td>
+				</tr>
+			</table>
+			
+			
+			<apex:pageBlockSection id="idItemsSection" 
+								   title="Items" 
+								   columns="1" 
+								   collapsible="true">
+				
+				<apex:pageBlockSectionItem labelStyle="width: 50%;" dataStyle="text-align: right;">
+					<!-- begin duration button	   
+                   	<apex:outputPanel layout="inline" style="text-align: right;" >
+                        <apex:commandLink action="{!doToggleDuration}" 
+                                    value="{!$Label.ShowDuration}" 
+                                    style="color:blue;" 
+                                    rendered="{!isActionShowDurationEnabled && NOT(showDuration)}"
+                                    reRender="idItemsSection"  
+                                    onclick="onActionClick();" 
+                                    oncomplete="onActionComplete();" />
+                        &nbsp;
+                        <apex:commandLink action="{!doToggleDuration}" 
+                                    value="{!$Label.HideDuration}" 
+                                    style="color:blue;" 
+                                    rendered="{!isActionShowDurationEnabled && showDuration}"
+                                    reRender="idItemsSection"  
+                                    onclick="onActionClick();" 
+                                    oncomplete="onActionComplete();" />
+                    </apex:outputPanel>
+					<!-- end duration button -->			   
+                    <!-- begin line item  paginator -->
+					<apex:outputPanel id="idResultStatsPanel" 
+                    				  styleClass="aptsPaginator" 
+                    				  layout="block" 
+                    				  style="text-align: right;" 
+                    				  rendered="{!HasCartLineItems}">
+                    	
+                    	<apex:outputText value="{!StartRecordNumber}-{!EndRecordNumber} {!$Label.apttus_config2__outof} {!TotalRecordCount}" />
+                    	&nbsp; 
+						<apex:selectList value="{!pageSize}" 
+           								 size="1"
+           								 style="font-size: 98%" >
+                              	<apex:selectOptions value="{!pageSizeItems}" />
+                              	<apex:actionSupport event="onchange" 
+                              						action="{!doUpdatePageSize}"
+                              						reRender="idItemsSection" 
+                              						onsubmit="onActionClick();" 
+                                           		oncomplete="onActionComplete();" />
+                          	</apex:selectList> &nbsp; 
+                          	<apex:outputPanel rendered="{!NOT(hasPreviousPage)}"
+                                       	  styleClass="greyedLink">&lt;{!$Label.Previous}</apex:outputPanel>
+                          	<apex:commandLink action="{!previousPage}"
+                                      	   	  rendered="{!hasPreviousPage}" 
+                                      	   	  reRender="idItemsSection" >&lt;{!$Label.Previous}</apex:commandLink>
+                           <span> | </span>
+                           <apex:outputPanel layout="inline"
+                                     		  style="text-align: right; width: 100%;" >
+               				<apex:outputText value="{!$Label.apttus_config2__page}" />
+                              	<apex:inputText value="{!currentPageNumber}" 
+                                          		styleClass="aptsPageInput" >
+                              		<apex:actionSupport event="onchange"
+                                              	    	rerender="idItemsSection" />
+                               </apex:inputText>
+                               <apex:outputText value="{!$Label.apttus_config2__outof} {!totalPages}" />
+                           </apex:outputPanel>                  
+						<span> | </span>
+						<apex:outputPanel rendered="{!NOT(hasNextPage)}" 
+										  styleClass="greyedLink">{!$Label.Next}&gt;</apex:outputPanel>
+                        <apex:commandLink action="{!nextPage}"
+                                		  rendered="{!hasNextPage}" 
+                                		  reRender="idItemsSection" >{!$Label.Next}&gt;</apex:commandLink>
+             
+					</apex:outputPanel>
+                    <!-- end line item  paginator -->
+		        </apex:pageBlockSectionItem>
+                <!--
+				&nbsp;
+				-->
+				<apex:outputPanel style="font-size: 1.0em;" >
+					<apex:pageBlockTable width="100%" 
+										 value="{!cartLineItems}" 
+										 var="summaryItem" 
+										 rules="rows" 
+										 rowClasses="oddRow, evenRow" 
+										 headerClass="aptsColHead">
+						
+						<apex:column rendered="{!showView && DisplayActionsColumnOnLeft}" 
+									 style="text-align:left" >
+							<apex:facet name="header">{!$Label.apttus_config2__actions}</apex:facet>
+							<apex:PanelGrid columns="3" >
+								<apex:commandLink action="{!doConfigure}" 
+												  rendered="{!(summaryItem.lineItemSO.LineType__c == LineTypeProduct) && 
+												  			  (summaryItem.lineItemSO.IsPrimaryLine__c) && 
+												  			  ((summaryItem.lineItemSO.hasAttributes__c) || 
+												  			   (summaryItem.lineItemSO.hasOptions__c))}"
+												  reRender="idPrimaryLineItems" 
+												  onclick="onActionClick();" 
+												  oncomplete="onActionComplete();" >
+									<apex:param name="lineItemId" 
+												value="{!summaryItem.lineItemSO.Id}" />
+									<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}" 
+			                       				title="{!$Label.apttus_config2__configure}" 
+			                       				alt="{!$Label.apttus_config2__configure}" />   
+								</apex:commandLink>
+								<!-- 
+								<br />	
+								<br />					
+								-->				
+								<apex:commandLink onclick="YAHOO.force.com.showRemoveConfirmation('{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}');" 
+												  rendered="{!(summaryItem.lineItemSO.IsPrimaryLine__c) && 
+												  			  (summaryItem.lineItemSO.AllowRemoval__c)}" 
+												  reRender="idErrorMsg" 
+												  immediate="true"
+												  style="color:blue;" >
+												  
+									<apex:image url="{!$Resource.Apttus_Config2__Image_Remove}" 
+			                       				title="{!$Label.apttus_config2__remove}" 
+			                       				alt="{!$Label.apttus_config2__remove}" />   
+			                       				
+								</apex:commandLink>
+								
+								<apex:commandLink onclick="doCopyLineItem('{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}');" 
+												  rendered="{!summaryItem.IsShowCopyAction}" 
+												  immediate="true" 
+												  reRender="dummy">
+												  
+									<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}" 
+			                       				title="{!$Label.apttus_config2__copy}" 
+			                       				alt="{!$Label.apttus_config2__copy}" />   
+			                       				
+								</apex:commandLink>
+								
+							</apex:PanelGrid>
+						</apex:column>
+						
+						<apex:column headerValue="{!$Label.apttus_config2__linenumber}" >	 
+							<apex:outputField value="{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}" 
+                              				  rendered="{!summaryItem.lineItemSO.Apttus_Config2__IsPrimaryLine__c}"  />			  			   			 
+						</apex:column>
+								
+						<apex:repeat value="{!CartLineItemColumns}" var="columnInfo">
+							<apex:column headerValue="{!columnInfo.Label}" 
+										 rendered="{!summaryItem.DisplayColumns[columnInfo.ColumnSO.Apttus_Config2__FieldName__c].IsEnabled__c}">
+								
+								<apex:outputPanel rendered="{!(columnInfo.IsProductLookup) &&
+                              								  (summaryItem.lineItemSO.LineType__c == LineTypeProduct) &&
+                              								  (summaryItem.lineItemSO.IsPrimaryLine__c)}" >
+                             		<apex:commandLink rerender="dummy">
+										<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+													onclick="getProductDetail('{!summaryItem.lineItemSO.Apttus_Config2__ProductId__c}');" />
+									</apex:commandLink>		
+                                    &nbsp;
+                             	</apex:outputPanel>
+                             	<apex:outputPanel rendered="{!(columnInfo.IsOptionLookup) &&
+                              								  (summaryItem.lineItemSO.LineType__c == LineTypeOption) &&
+                              								  (summaryItem.lineItemSO.IsPrimaryLine__c)}" >
+                             		<apex:commandLink rerender="dummy">
+										<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+													onclick="getProductDetail('{!summaryItem.lineItemSO.Apttus_Config2__OptionId__c}');" />
+									</apex:commandLink>		
+                                    &nbsp;
+                             	</apex:outputPanel>
+                             	<div class= "{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}-{!summaryItem.lineItemSO.Apttus_Config2__ItemSequence__c} {!summaryItem.DisplayColumns[columnInfo.ColumnSO.Apttus_Config2__FieldName__c].FormatStyleClass__c}" >
+	                              	<apex:outputField value="{!summaryItem.lineItemSO[columnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+	                              					  styleClass="{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}-{!summaryItem.lineItemSO.Apttus_Config2__ItemSequence__c} {!summaryItem.DisplayColumns[columnInfo.ColumnSO.Apttus_Config2__FieldName__c].FormatStyleClass__c} " 
+	                              					  rendered="{!summaryItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsVisible__c &&
+                               						  			  (showFinalize ||
+                               						  			   NOT(summaryItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsEditable__c)) &&
+                               						  			   NOT(columnInfo.IsProductLookup)}" />
+                              		
+                              		<apex:outputField value="{!summaryItem.lineItemSO.Apttus_Config2__ProductId__c}"   
+                               						  styleClass="{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}-{!summaryItem.lineItemSO.Apttus_Config2__ItemSequence__c} {!summaryItem.DisplayColumns[columnInfo.ColumnSO.Apttus_Config2__FieldName__c].FormatStyleClass__c} "
+                               						  rendered="{!columnInfo.IsProductLookup &&
+                               						  			  (summaryItem.lineItemSO.LineType__c == LineTypeProduct &&
+                               						  			   summaryItem.lineItemSO.IsPrimaryLine__c)}" />
+                               		
+                               		<apex:outputField value="{!summaryItem.lineItemSO.Apttus_Config2__OptionId__c}"   
+                               						  styleClass="{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}-{!summaryItem.lineItemSO.Apttus_Config2__ItemSequence__c} {!summaryItem.DisplayColumns[columnInfo.ColumnSO.Apttus_Config2__FieldName__c].FormatStyleClass__c} "
+                               						  rendered="{!columnInfo.IsProductLookup && 
+                               						  			  (summaryItem.lineItemSO.LineType__c == LineTypeOption) &&
+                               						  			   summaryItem.lineItemSO.IsPrimaryLine__c}" />
+                               		
+                              	</div>
+								<apex:inputField value="{!summaryItem.lineItemSO[columnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+                              					 styleClass="{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}-{!summaryItem.lineItemSO.Apttus_Config2__ItemSequence__c} {!summaryItem.DisplayColumns[columnInfo.ColumnSO.Apttus_Config2__FieldName__c].FormatStyleClass__c}" 
+                              					 onkeypress="return aptIgnoreEnterKey(event);"
+                              					 rendered="{!showView && 
+                              						 		 summaryItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsVisible__c &&
+                              						  		 summaryItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsEditable__c}" >
+                              		
+                              		<apex:actionSupport event="onchange" 
+		                            				    action="{!doRepriceCallback}" 
+		                            				    onsubmit="onActionClick();" 
+														oncomplete="onActionComplete();"  
+		                                   				rendered="{!IsAutoRepriceEnabled && columnInfo.IsNumericType}"
+		                                   				reRender="idErrorMsg, idActionPanel" />
+				                                   							  		 
+                              	</apex:inputField>
+							</apex:column>
+						
+						</apex:repeat> 
+						
+						<apex:column rendered="{!showView && NOT(DisplayActionsColumnOnLeft)}" 
+									 style="text-align:left" >
+							<apex:facet name="header">{!$Label.apttus_config2__actions}</apex:facet>
+							<apex:PanelGrid columns="3" >
+								<apex:commandLink action="{!doConfigure}" 
+												  rendered="{!(summaryItem.lineItemSO.LineType__c == LineTypeProduct) && 
+												  			  (summaryItem.lineItemSO.IsPrimaryLine__c) && 
+												  			  ((summaryItem.lineItemSO.hasAttributes__c) || 
+												  			   (summaryItem.lineItemSO.hasOptions__c))}"
+												  reRender="idPrimaryLineItems" 
+												  onclick="onActionClick();" 
+												  oncomplete="onActionComplete();" >
+									<apex:param name="lineItemId" 
+												value="{!summaryItem.lineItemSO.Id}" />
+									<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}" 
+			                       				title="{!$Label.apttus_config2__configure}" 
+			                       				alt="{!$Label.apttus_config2__configure}" />   
+								</apex:commandLink>
+								<!-- 
+								<br />	
+								<br />					
+								-->				
+								<apex:commandLink onclick="YAHOO.force.com.showRemoveConfirmation('{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}');" 
+												  rendered="{!(summaryItem.lineItemSO.IsPrimaryLine__c) && 
+												  			  (summaryItem.lineItemSO.AllowRemoval__c)}" 
+												  reRender="idErrorMsg" 
+												  immediate="true"
+												  style="color:blue;" >
+												  
+									<apex:image url="{!$Resource.Apttus_Config2__Image_Remove}" 
+			                       				title="{!$Label.apttus_config2__remove}" 
+			                       				alt="{!$Label.apttus_config2__remove}" />   
+			                       				
+								</apex:commandLink>
+								
+								<apex:commandLink onclick="doCopyLineItem('{!summaryItem.lineItemSO.Apttus_Config2__LineNumber__c}');" 
+												  rendered="{!summaryItem.IsShowCopyAction}" 
+												  immediate="true" 
+												  reRender="dummy">
+												  
+									<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}" 
+			                       				title="{!$Label.apttus_config2__copy}" 
+			                       				alt="{!$Label.apttus_config2__copy}" />   
+			                       				
+								</apex:commandLink>
+								
+							</apex:PanelGrid>
+						</apex:column>
+						
+					</apex:pageBlockTable>
+					
+				</apex:outputPanel>
+				<script>					
+					j$.APTTUS.formatFields("{!currencyFieldPrecision}", "{!percentageFieldPrecision}", "{!quantityFieldPrecision}");
+				</script>
+				
+			</apex:pageBlockSection>
+			
+			
+			<apex:pageBlockSection id="idTotalsSection" 
+								   title="Totals" 
+								   columns="1" 
+								   collapsible="true">		
+				
+				<apex:outputPanel style="font-size: 1.0em;">
+					<apex:pageBlockTable width="100%" 
+										 value="{!CartTotalItems}" 
+										 var="totalsItem" 
+										 rules="rows" 
+										 rowClasses="oddRow, evenRow"
+										 headerClass="aptsColHead" >
+	
+						<apex:column rendered="{!showView && DisplayActionsColumnOnLeft}" >
+							<apex:facet name="header">{!$Label.apttus_config2__actions}</apex:facet>
+							<apex:commandLink onclick="YAHOO.force.com.showRemoveConfirmation('{!totalsItem.summaryGroupSO.Apttus_Config2__LineNumber__c}');" 
+											  rendered="{!(totalsItem.summaryGroupSO.Apttus_Config2__AllowRemoval__c)}" 
+											  reRender="idErrorMsg" 
+											  immediate="true"
+											  style="color:blue;" >
+											  
+								<apex:image url="{!$Resource.Apttus_Config2__Image_Remove}" 
+	                       					title="{!$Label.apttus_config2__remove}" 
+	                       					alt="{!$Label.apttus_config2__remove}" />   
+							</apex:commandLink>
+						</apex:column>
+						
+						<apex:repeat value="{!CartTotalItemColumns}" var="columnInfo">
+							<apex:column headerValue="{!columnInfo.Label}" 
+										 rendered="{!totalsItem.DisplayColumns[columnInfo.ColumnSO.Apttus_Config2__FieldName__c].IsEnabled__c}" >
+								<div class= "{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Total-{!totalsItem.summaryGroupSO.Apttus_Config2__LineNumber__c}-{!totalsItem.summaryGroupSO.Apttus_Config2__ItemSequence__c} !summaryItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].FormatStyleClass__c}" >
+	                              	<apex:outputField value="{!totalsItem.summaryGroupSO[columnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+	                              					  styleClass="{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Total-{!totalsItem.summaryGroupSO.Apttus_Config2__LineNumber__c}-{!totalsItem.summaryGroupSO.Apttus_Config2__ItemSequence__c} !summaryItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].FormatStyleClass__c}" 
+	                              					  rendered="{!totalsItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsVisible__c &&
+	                              						  		  (showFinalize ||
+	                              						  		   NOT(totalsItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsEditable__c))}" />
+	                            </div>
+								<apex:inputField value="{!totalsItem.summaryGroupSO[columnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+                              					 styleClass="{!columnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Total-{!totalsItem.summaryGroupSO.Apttus_Config2__LineNumber__c}-{!totalsItem.summaryGroupSO.Apttus_Config2__ItemSequence__c} !summaryItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].FormatStyleClass__c}" 
+                              					 onkeypress="return aptIgnoreEnterKey(event);"
+                              					 rendered="{!showView && 
+                              						 		 totalsItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsVisible__c &&
+                              						  		 totalsItem.DisplayColumns[columnInfo.ColumnSO.FieldName__c].IsEditable__c}" >
+                              		
+                              		<apex:actionSupport event="onchange" 
+		                            				    action="{!doRepriceCallback}" 
+		                            				    onsubmit="onActionClick();" 
+														oncomplete="onActionComplete();" 
+		                                   				rendered="{!IsAutoRepriceEnabled && columnInfo.IsNumericType}"
+		                                   				reRender="idErrorMsg, idActionPanel" />
+                              			 
+                              	</apex:inputField>
+							</apex:column>
+						
+						</apex:repeat>
+						
+						<apex:column rendered="{!showView && NOT(DisplayActionsColumnOnLeft)}" >
+							<apex:facet name="header">{!$Label.apttus_config2__actions}</apex:facet>
+							<apex:commandLink onclick="YAHOO.force.com.showRemoveConfirmation('{!totalsItem.summaryGroupSO.Apttus_Config2__LineNumber__c}');" 
+											  rendered="{!(totalsItem.summaryGroupSO.Apttus_Config2__AllowRemoval__c)}" 
+											  reRender="idErrorMsg" 
+											  immediate="true"
+											  style="color:blue;" >
+											  
+								<apex:image url="{!$Resource.Apttus_Config2__Image_Remove}" 
+	                       					title="{!$Label.apttus_config2__remove}" 
+	                       					alt="{!$Label.apttus_config2__remove}" />   
+							</apex:commandLink>
+						</apex:column>
+						
+					</apex:pageBlockTable>
+					
+				</apex:outputPanel>
+				
+			</apex:pageBlockSection>
+			<script>
+				j$.APTTUS.formatFields("{!currencyFieldPrecision}", "{!percentageFieldPrecision}", "{!quantityFieldPrecision}");
+			</script>
+			
+		</apex:pageBlock>
+	
+		
+		<!-- This is the content of the confirmation dialog -->
+		<apex:outputPanel >
+			<div id="confirmationPanel" style="display: none">
+			    <div class="hd">
+			        <apex:outputText value="{!$Label.apttus_config2__removeconfirmation}" />
+			    </div> 
+			    <div class="bd">
+			    	<apex:outputText value="{!$Label.apttus_config2__removeproductmessage}" />
+			    </div>
+			    <div class="bd">
+		            <apex:actionRegion >
+		                <div style="text-align: center; padding-left: 4px;" >
+		                    <apex:commandButton value="{!$Label.apttus_config2__yes}"
+		                    					onclick="YAHOO.force.com.remove();"
+		                    					style="width: 50px;"   
+		                    					immediate="true" 
+		                    					oncomplete="YAHOO.force.com.confirmationPanel.hide();" />
+		                    <apex:commandButton value="{!$Label.apttus_config2__no}" 
+		                    					style="width: 50px;"   
+		                    					onclick="YAHOO.force.com.confirmationPanel.hide();return false;" />
+		                </div>
+		            </apex:actionRegion>
+			    </div>
+			</div>
+		</apex:outputPanel>
+		
+		<apex:actionFunction name="doDeleteLineItem" 
+							 action="{!doDeleteLineItem}"
+							 reRender="idErrorMsg" 
+							 oncomplete="doUpdateTotalPrice();" >
+			<apex:param name="lineNumber" value="" />
+		</apex:actionFunction>
+				
+		<apex:actionFunction name="invokeDoHideMessage"
+							 action="{!doHideMessage}"
+							 reRender="idErrorMsg"
+							 oncomplete="YAHOO.force.com.waitPanel.hide();" >
+			<apex:param name="actionInfoId" value="" />
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="doReload" 
+    						 action="{!doRefreshPage}" 
+    						 immediate="true" 
+    						 oncomplete="YAHOO.force.com.repriceWaitPanel.hide();" /> 
+		
+		<!-- This is the product details dialog -->
+		<apex:outputPanel >
+			<div id="productDetailPanel" style="display: none">
+				<apex:outputPanel id="idCtxProductDetail">
+				    <div class="hd">
+				    	<apex:outputPanel >
+				    		<span id="ctxProductName">Hello Name</span>
+				        </apex:outputPanel>	
+				    </div> 
+				    <div class="bd">
+			    		<apex:pageBlock >
+			    			<apex:pageBlockSection columns="1">
+			    				<apex:pageBlockSectionItem >
+                    				<apex:outputLabel value="Product Description" for="ctxProductDescription"/>
+			    					<span id="ctxProductDescription">Hello Description</span>
+				    			</apex:pageBlockSectionItem>
+			    			</apex:pageBlockSection>
+			    		</apex:pageBlock>
+				    </div> 
+				</apex:outputPanel>	
+			</div>
+		</apex:outputPanel>					
+		
+	</apex:form>
+	
+	<!-- This is the content of the add miscellaneous line item dialog -->
+	<apex:outputPanel >
+		<div id="miscItemPanel" style="display: none">
+		    <div class="hd">
+		        <apex:outputText value="{!$Label.apttus_config2__addmiscellaneousitem}" />
+		    </div> 
+		    <div class="bd">
+		    	<apex:form >
+		    		<apex:actionRegion >
+			    		<apex:pageBlock >
+			    			<apex:pageBlockSection columns="1">
+			    				
+			    				<apex:pageBlockSectionItem >
+							    	<apex:outputLabel value="{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ChargeType__c.Label}" 
+							    					  for="idMiscChargeType" />
+							    	
+							    	<apex:outputPanel >
+								    	<apex:selectList id="idMiscChargeType" 
+								    					 size="1" 
+								    					 value="{!miscLineItemSO.Apttus_Config2__ChargeType__c}" 
+								    					 multiselect="false" 
+						  								 required="false" >
+								      		<apex:selectOptions value="{!miscChargeTypeItems}"></apex:selectOptions>				      		
+								      	</apex:selectList>
+									    <script>
+					    					var fldMiscChargeType = document.getElementById("{!$Component.idMiscChargeType}");
+					    				
+								      	</script>
+							      	 </apex:outputPanel>	
+								</apex:pageBlockSectionItem>
+								
+								<apex:pageBlockSectionItem >
+				    				<apex:outputLabel value="{!$Label.apttus_config2__amount}" 
+								    				  for="idMiscAmount" />
+								    <apex:outputPanel >
+					    				<apex:inputField id="idMiscAmount" 
+					    								 onkeypress="return aptIgnoreEnterKey(event);"
+					    								 value="{!miscLineItemSO.Apttus_Config2__BasePrice__c}" />
+					    				
+					    				<script>
+								        	var fldMiscAmount = document.getElementById("{!$Component.idMiscAmount}");
+								        	
+								      	</script>				 
+					    			</apex:outputPanel>
+			    				</apex:pageBlockSectionItem>
+			    								 
+			    				<apex:inputField id="idMiscDescription" 
+			    								 onkeypress="return aptIgnoreEnterKey(event);"
+			    								 value="{!miscLineItemSO.Apttus_Config2__Description__c}" />
+			    								 		 
+			    				<script>
+						        	var fldMiscDescription = document.getElementById("{!$Component.idMiscDescription}");
+						        	
+						      	</script>
+			    			</apex:pageBlockSection>
+			    		</apex:pageBlock>
+		    			<div style="text-align: center;" >
+		                    <apex:commandButton value="{!$Label.apttus_config2__ok}"
+		                    					action="{!doAddMiscLineItem}"  
+		                    					reRender="idErrorMsg" 
+		                    					onclick="onOkActionClick();" 
+												oncomplete="doUpdateTotalPrice();" />
+		                    <apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+		                    					immediate="true" 
+		                    					reRender="idErrorMsg, idItemsSection, idTotalsSection"
+		                    					onclick="onCancelActionClick();" 
+		                    					oncomplete="YAHOO.force.com.miscItemPanel.hide();" />
+		                </div>
+		            </apex:actionRegion>
+		    	</apex:form>
+		    </div>
+		</div>
+	</apex:outputPanel>	
+	
+	<!-- This panel represents the submit approvals dialog that will pop up -->
+	<apex:outputPanel >
+		<div id="submitApprovalPanel" style="display: none">
+		    <div class="hd">
+		    	<apex:outputText value="{!$Label.apttus_config2__approvalreasoninstruction}" />
+		    </div>
+		    <div class="bd">
+		    	<apex:form >
+		            <apex:actionRegion >
+		            	<apex:pageBlock >
+                            <apex:pageBlockSection columns="1">
+								<apex:outputText value="{!BOTitle}" />
+								<apex:outputField value="{!configSO.Apttus_Config2__Comments__c}" />
+		
+                                <apex:pageBlockSectionItem >
+                                    <apex:outputLabel value="{!ApprovalReason}" 
+                                                      for="idApprovalReason" />
+                                     <apex:inputTextarea id="idApprovalReason" 
+                                     					 rows="5"
+                                                         value="{!ApprovalReason}" />
+                            
+                                </apex:pageBlockSectionItem>
+                                
+                            </apex:pageBlockSection>
+                        </apex:pageBlock>
+		                <div style="text-align: center; padding-left: 4px;" >
+		                    <apex:commandButton value="{!$Label.apttus_config2__submit}"
+		                    					action="{!doSubmitApproval}" 
+		                    					style="width: 50px;"   
+		                    					oncomplete="hideSubmitApprovalDialog();" 
+		                    					reRender="dummy" />
+		                    					
+		                </div>
+		            </apex:actionRegion>
+		         </apex:form>
+		    </div>
+		</div>
+	</apex:outputPanel>
+	
+</apex:page>

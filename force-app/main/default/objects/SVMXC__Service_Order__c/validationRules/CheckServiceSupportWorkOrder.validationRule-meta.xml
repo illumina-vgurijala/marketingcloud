@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckServiceSupportWorkOrder</fullName>
+    <active>true</active>
+    <description>To prevent Service Support Work Order creation excluding Field Service Profile.</description>
+    <errorConditionFormula>AND(
+        NOT($Profile.Name ==$Label.Integration_SAP_Service),
+        NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+        NOT($User.FirstName ==$Label.Automated_Process_User), 
+        NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    OR(
+        ISNEW(),
+        ISCHANGED( RecordTypeId ),
+        ISCHANGED( SVMXC__Order_Type__c )
+        ),
+    RecordType.Name = $Label.WorkOrderRecordTypeServiceSupport,
+    OR(
+	AND(
+	   OR(
+	     TEXT(SVMXC__Order_Type__c)=$Label.WorkOrderTypeDedicatedOnsiteActivities,
+	     TEXT(SVMXC__Order_Type__c)=$Label.WorkOrderTypeAccountMaintenance
+	     ),
+	     NOT(OR(
+	        ($Profile.Name =$Label.ProfileFieldService),
+	        ($Setup.Channel_Partner_Profile_Settings__c.Is_Channel_Partner__c )
+	     ))),
+	AND(
+           TEXT(SVMXC__Order_Type__c)=$Label.WorkOrderTypePresales,
+	   NOT(OR(
+	         ($Profile.Name =$Label.ProfileFieldService),
+	         ($Setup.Channel_Partner_Profile_Settings__c.Is_Channel_Partner__c ),
+		  $Permission.SS_Service_Ops_Edit_Custom_Perm
+		))
+           )
+      )
+)</errorConditionFormula>
+    <errorMessage>&quot;Service Support&quot; work order of type &quot;Dedicated Onsite Activities&quot; or &quot; Account Maintenance&quot;  can only be created by Field Service User. “Presales” type can only be created by Field Service or Service Ops user.</errorMessage>
+</ValidationRule>

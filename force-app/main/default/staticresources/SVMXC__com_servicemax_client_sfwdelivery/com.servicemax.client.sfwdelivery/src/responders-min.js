@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.sfwdelivery.responders");a.init=function(){a.Class("GetWizardInfoResponder",com.servicemax.client.mvc.api.Responder,{__parent:null,__constructor:function(b){this.__base();this.__parent=b;},result:function(b){this.__parent.onGetWizardInfoCompleted(b);},fault:function(b){this.__parent.onGetWizardInfoFailed(b);}},{});};})();

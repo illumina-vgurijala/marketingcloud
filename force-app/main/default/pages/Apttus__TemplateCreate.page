@@ -1,0 +1,272 @@
+<apex:page standardController="Apttus__APTS_Template__c" 
+           extensions="Apttus.TemplateCreateController" 
+           sidebar="false"
+           action="{!onLoad}">
+
+     <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+     <apex:includeScript value="{!URLFOR($Resource.Apttus__DocumentFinderUI, 'js/jquery.blockUI.min.js')}"/>
+	
+	<style type="text/css">
+		.bPageHeader {
+            display: none;
+        }
+    </style>
+	
+    <script>
+        var originalOnLoad = window.onload; //save original onload reference
+        window.onload = customOnLoad;
+        
+        function customOnLoad() {
+            if (originalOnLoad != null) {
+              originalOnLoad();  //run the original onload first
+            }
+            
+            try {
+              window.external.MakeVisible();
+            } catch(ex) {
+              // object not available
+            }
+        }
+
+        var j$ = jQuery.noConflict();
+        function onAjaxStart() {
+          j$.blockUI({ message: '<img src="{!URLFOR($Resource.Image_LoadingPage)}"/><div>{!$Label.LoadingPage}</div>' });
+        }
+
+        function onAjaxStop() {
+          j$.unblockUI();
+        }
+
+        /**
+         * Callback after a partial page update
+         */
+        function afterPageUpdate() {
+          
+          // delay to allow the page to be rendered 
+                setTimeout(function() {
+                  
+                  // callback the object
+            try {
+              window.external.PageRefreshed();
+            } catch(ex) {
+              // object not available
+            }
+                }, 0);
+                onAjaxStop();
+        }
+    </script>
+
+    <apex:form id="idCreateTemplates">
+        <!-- Page Errors Messages -->
+        <apex:pageBlock mode="edit" rendered="{!hasErrors}" >
+            <apex:pageMessages />
+        </apex:pageBlock>   
+        <apex:inputHidden value="{!Apttus__APTS_Template__c.Apttus__ReferenceId__c}" id="templateReferenceHiddenInput"/>
+        <apex:inputHidden value="{!Apttus__APTS_Template__c.Apttus__ClonedFromId__c}" id="templateClonedFromIdHiddenInput"/>
+        <apex:inputHidden value="{!Apttus__APTS_Template__c.ClonedFromId__r.Name}" id="templateClonedFromNameHiddenInput"/>
+
+        <apex:actionStatus id="idSearchStatus" onstart="onAjaxStart()" onstop="onAjaxStop()" />
+        <apex:pageBlock rendered="{!NOT(isInitialized)}">
+        <!-- Top Button Panel -->
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus__checkinwithdash}" 
+                                    action="{!onCheckIn}" 
+                                    status="idSearchStatus" 
+                                    rendered="{!CallerMode== MODE_CHECKIN}"
+                                    reRender="idCreateTemplates"/>
+                <apex:commandButton value="{! $Label.CreateNew }" 
+                                    action="{!onCreateNew}" 
+                                    status="idSearchStatus" 
+                                    rendered="{!CallerMode== MODE_CREATE_NEW }"
+                                    reRender="idCreateTemplates" />
+                <apex:commandButton value="{!$Label.apttus__clone}" 
+                                    action="{!onClone}" 
+                                    status="idSearchStatus" 
+                                    rendered="{!CallerMode== MODE_CREATE_CLONE}"
+                                    reRender="idCreateTemplates"/>
+                <apex:commandButton value="{!$Label.apttus__cancel}" 
+                                    action="{!doCancel}" 
+                                    status="idSearchStatus" 
+                                    immediate="true" 
+                                    reRender="idCreateTemplates"/>
+            </apex:pageBlockButtons>
+        <!-- Fields for Checkin -->
+              <apex:pageBlockSection title="{!$Label.apttus__checkinwithdash} {!$Label.apttus__template}" columns="2" collapsible="false" rendered="{!CallerMode== MODE_CHECKIN }">
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Name}" required="true"/>
+                <apex:outputField value="{!Apttus__APTS_Template__c.Apttus__FrameworkFormat__c}"/>
+                <apex:outputField value="{!Apttus__APTS_Template__c.Apttus__BusinessObject__c}"/>
+                <apex:outputField value="{!Apttus__APTS_Template__c.Apttus__Type__c}"/>
+                  
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Category__c}" required="true"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Subcategory__c}" required="true"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Language__c}" required="true"/>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus__APTS_Template__c.fields.Apttus__Locale__c.Label}" />
+                    <apex:outputPanel layout="block" styleClass="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <apex:selectList id="localeId" multiselect="false" size="1" value="{!Apttus__APTS_Template__c.Apttus__Locale__c}" required="true">
+                           <apex:selectOptions value="{!availableLocales}"/>
+                        </apex:selectList>
+                        </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Next_Revision_Date__c}"/>
+                <apex:selectList id="TermException1"  multiselect="false" size="1" value="{!Apttus__APTS_Template__c.Apttus__TermExceptionId__c}">
+                    <apex:selectOptions value="{!TermExceptions}"/>
+                </apex:selectList>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Keywords__c}"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Description__c}"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Guidance__c}"/>
+                 <apex:actionRegion >
+                    <apex:outputLabel for="AgreementTypes1" value="{!$ObjectType.Apttus__APTS_Template__c.Fields.Apttus__Agreement_Types__c.Label}" style="font-size: 91%;font-weight:bold;color:#4a4a56;"/>
+                    <apex:inputField id="AgreementTypes1" value="{!Apttus__APTS_Template__c.Apttus__Agreement_Types__c}" required="true">
+                        <apex:actionSupport event="onchange" status="idSearchStatus" rerender="TermException1">
+                            <apex:param assignTo="{!Apttus__APTS_Template__c.Apttus__TermExceptionId__c}" value="" />
+                        </apex:actionSupport>
+                    </apex:inputField>
+                </apex:actionRegion>
+                <apex:inputTextarea label="{!$Label.apttus__entercomments}" value="{!comments}"/>
+                <apex:inputCheckbox value="{!updateCurrentVersion}" 
+                                    label="{!$Label.apttus__updatecurrentversion}"
+                                    disabled="{!canUpdateVersion == false}"
+                                    title="{!IF(NOT(canUpdateVersion), $Label.apttus__inactiveversion, '')}"
+                                    style="font-size: 91%;font-weight:bold;color:#4a4a56;"/>
+                <apex:inputCheckbox value="{!activateUponCheckin}" id="idActivateTemplate"
+                                    label="{!$Label.apttus__activate}"
+                                    style="font-size: 91%;font-weight:bold;color:#4a4a56;"/>
+                
+            </apex:pageBlockSection>
+        <!-- Fields for Create New -->
+              <apex:pageBlockSection title="{!$Label.apttus__createnewtemplate}" columns="2" collapsible="false" rendered="{!CallerMode== MODE_CREATE_NEW }">
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Name}" required="true"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__FrameworkFormat__c}" required="true"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__BusinessObject__c}" required="true"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Type__c}" required="true"/>
+
+                  
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Category__c}" required="true"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Subcategory__c}" required="true"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Language__c}" required="true"/>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus__APTS_Template__c.fields.Apttus__Locale__c.Label}" />
+                    <apex:outputPanel layout="block" styleClass="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <apex:selectList id="localeId" multiselect="false" size="1" value="{!Apttus__APTS_Template__c.Apttus__Locale__c}" required="true">
+                            <apex:selectOptions value="{!availableLocales}"/>
+                        </apex:selectList>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Next_Revision_Date__c}"/>
+                    <apex:selectList id="TermException2" multiselect="false" size="1" value="{!Apttus__APTS_Template__c.Apttus__TermExceptionId__c}">
+                        <apex:selectOptions value="{!TermExceptions}"/>
+                    </apex:selectList>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Keywords__c}"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Description__c}"/>
+                <apex:inputfield value="{!Apttus__APTS_Template__c.Apttus__Guidance__c}"/>
+                <apex:actionRegion >
+                    <apex:outputLabel for="AgreementTypes2" value="{!$ObjectType.Apttus__APTS_Template__c.Fields.Apttus__Agreement_Types__c.Label}" style="font-size: 91%;font-weight:bold;color:#4a4a56;"/>
+                    <apex:inputField id="AgreementTypes2" value="{!Apttus__APTS_Template__c.Apttus__Agreement_Types__c}" required="true">
+                        <apex:actionSupport event="onchange" status="idSearchStatus" rerender="TermException2">
+                            <apex:param assignTo="{!Apttus__APTS_Template__c.Apttus__TermExceptionId__c}" value="" />
+                        </apex:actionSupport>
+                    </apex:inputField>
+                </apex:actionRegion>
+
+            </apex:pageBlockSection>
+        <!-- Fields for Clone -->
+              <apex:pageBlockSection title="{!$Label.apttus__clonetemplate}" columns="2" collapsible="false" rendered="{!CallerMode== MODE_CREATE_CLONE }">
+                <apex:inputfield value="{!clonedTemplate.Name}" required="true"/>
+                <apex:outputField value="{!clonedTemplate.Apttus__FrameworkFormat__c}"/>
+                <apex:outputField value="{!clonedTemplate.Apttus__BusinessObject__c}"/>
+                <apex:outputField value="{!clonedTemplate.Apttus__Type__c}"/>
+                  
+                <apex:inputfield value="{!clonedTemplate.Apttus__Category__c}" required="true"/>
+                <apex:inputfield value="{!clonedTemplate.Apttus__Subcategory__c}" required="true"/>
+                <apex:inputfield value="{!clonedTemplate.Apttus__Language__c}" required="true"/>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus__APTS_Template__c.fields.Apttus__Locale__c.Label}" />
+                    <apex:outputPanel layout="block" styleClass="requiredInput">
+                        <div class="requiredBlock"></div>
+                       <apex:selectList id="localeId" multiselect="false" size="1" value="{!clonedTemplate.Apttus__Locale__c}" required="true">
+                          <apex:selectOptions value="{!availableLocales}"/>
+                       </apex:selectList>
+                   </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:inputfield value="{!clonedTemplate.Apttus__Next_Revision_Date__c}"/>
+                 <apex:selectList id="TermException3" multiselect="false" size="1" value="{!clonedTemplate.Apttus__TermExceptionId__c}">
+                    <apex:selectOptions value="{!TermExceptions}"/>
+                </apex:selectList>
+                <apex:inputfield value="{!clonedTemplate.Apttus__Keywords__c}"/>
+                <apex:inputfield value="{!clonedTemplate.Apttus__Description__c}"/>
+                <apex:inputfield value="{!clonedTemplate.Apttus__Guidance__c}"/>
+                <apex:actionRegion >
+                    <apex:outputLabel for="AgreementTypes3" value="{!$ObjectType.Apttus__APTS_Template__c.Fields.Apttus__Agreement_Types__c.Label}" style="font-size: 91%;font-weight:bold;color:#4a4a56;"/>
+                    <apex:inputField id="AgreementTypes3" value="{!clonedTemplate.Apttus__Agreement_Types__c}" required="true">
+                        <apex:actionSupport event="onchange" status="idSearchStatus" rerender="TermException3">
+                            <apex:param assignTo="{!clonedTemplate.Apttus__TermExceptionId__c}" value="" />
+                        </apex:actionSupport>
+                    </apex:inputField>
+                </apex:actionRegion>
+                <apex:outputPanel style="margin-left:70px">
+                    <apex:outputLabel value="{!$ObjectType.Apttus__APTS_Template__c.Fields.Apttus__ClonedFromId__c.Label}" style="font-size: 91%;font-weight:bold;color:#4a4a56;"/>
+                    <apex:outputText value="    {!originalName}"/>
+                </apex:outputPanel>
+              </apex:pageBlockSection>
+
+        <!-- Custom Fields for New and Clone-->    
+             <apex:pageBlockSection title="{!$Label.apttus__customproperties}" columns="2" collapsible="true" rendered="{!(CallerMode== MODE_CREATE_CLONE ||CallerMode== MODE_CREATE_NEW) &&  HasCreateTemplateFieldSet}">
+                        <apex:repeat value="{!$ObjectType.Apttus__APTS_Template__c.FieldSets.Apttus__CreateTemplateFieldSet}" var="f"> 
+                            <apex:inputfield value="{!Apttus__APTS_Template__c[f.fieldPath]}" /> 
+                        </apex:repeat>
+             </apex:pageBlockSection>
+        <!-- Custom Fields for check-in -->     
+             <apex:pageBlockSection title="{!$Label.apttus__customproperties}" columns="2" collapsible="true" rendered="{!CallerMode== MODE_CHECKIN && HasCheckinTemplateFieldSet}">
+                        <apex:repeat value="{!$ObjectType.Apttus__APTS_Template__c.FieldSets.Apttus__CheckinTemplateFieldSet}" var="f"> 
+                            <apex:inputfield value="{!Apttus__APTS_Template__c[f.fieldPath]}" /> 
+                        </apex:repeat>
+             </apex:pageBlockSection>
+        <!-- Botton Button Panel -->
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton value="{!$Label.apttus__checkinwithdash}" 
+                                    action="{!onCheckIn}" 
+                                    status="idSearchStatus" 
+                                    rendered="{!CallerMode== MODE_CHECKIN}"
+                                    reRender="idCreateTemplates"/>
+                <apex:commandButton value="{! $Label.CreateNew }" 
+                                    action="{!onCreateNew}" 
+                                    status="idSearchStatus" 
+                                    rendered="{!CallerMode== MODE_CREATE_NEW }"
+                                    reRender="idCreateTemplates" />
+                <apex:commandButton value="{!$Label.apttus__clone}" 
+                                    action="{!onClone}" 
+                                    status="idSearchStatus" 
+                                    rendered="{!CallerMode== MODE_CREATE_CLONE}"
+                                    reRender="idCreateTemplates"/>
+                <apex:commandButton value="{!$Label.apttus__cancel}" 
+                                    action="{!doCancel}" 
+                                    status="idSearchStatus" 
+                                    immediate="true" 
+                                    reRender="idCreateTemplates"/>
+            </apex:pageBlockButtons>
+        <!-- Response XML returned for X-author -->
+            <apex:outputPanel id="idResponsePanel">
+                <script>
+                    try {
+                        // get the response xml
+                        var responseXml = "{!JSENCODE(responseXml)}";
+                        if( responseXml.length > 0 && "{!isTest}" == 'true')
+                            alert(responseXml +responseXml.length);
+                        // set the response xml
+                        if (responseXml && responseXml.length > 0) {
+                            window.external.SetResponse(responseXml);
+                        }
+                        
+                    } catch(ex) {
+                        // object not available
+                    } 
+                </script>
+
+            </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+            
+</apex:page>

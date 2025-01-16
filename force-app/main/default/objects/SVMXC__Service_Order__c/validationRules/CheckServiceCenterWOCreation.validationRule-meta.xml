@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckServiceCenterWOCreation</fullName>
+    <active>true</active>
+    <description>To prevent creation of Service Center type work order excluding Service Center User.</description>
+    <errorConditionFormula>AND(
+        NOT($Profile.Name ==$Label.Integration_SAP_Service),
+        NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+        NOT($User.FirstName ==$Label.Automated_Process_User), 
+        NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    OR(
+        ISNEW(),
+        ISCHANGED( RecordTypeId ),
+        ISCHANGED( SVMXC__Order_Type__c )
+        ),
+    RecordType.Name= $Label.WorkOrderRecordTypeServiceCenter,
+    OR(
+        TEXT(SVMXC__Order_Type__c)=$Label.WorkOrderTypeDepotService,
+        TEXT(SVMXC__Order_Type__c)=$Label.WorkOrderTypePlannedMaintenance
+    ),
+    NOT($Permission.Service_Center)
+)</errorConditionFormula>
+    <errorMessage>&quot;Service Center&quot; work order can only be created by Service Center Profile. If you believe you need access, please submit a GIS access ticket to request access.</errorMessage>
+</ValidationRule>

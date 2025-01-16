@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>51.0</apiVersion>
+    <assignments>
+        <name>Set_Reason_for_moving_backwards</name>
+        <label>Set Reason for moving backwards</label>
+        <locationX>1016</locationX>
+        <locationY>396</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Reason_for_Moving_Backwards_Log__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>LogReasonForMovingBackward</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <decisions>
+        <name>Check_Opportunity_Stage</name>
+        <label>Check Opportunity Stage</label>
+        <locationX>517</locationX>
+        <locationY>118</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Check_Stage</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Closed Won</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Closed Lost</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Closed Abandoned</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Reason_for_Moving_Backwards__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue/>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>$Record__Prior.StageName</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Check_Record_Type</targetReference>
+            </connector>
+            <label>Check Stage</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Record_Type</name>
+        <label>Check Record Type</label>
+        <locationX>733</locationX>
+        <locationY>117</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Check_RT_Standard</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.RecordType.DeveloperName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>DirectStandard</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.RecordType.DeveloperName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>RTIndirectStandard</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Standard_RT_Check</targetReference>
+            </connector>
+            <label>Check RT Standard</label>
+        </rules>
+        <rules>
+            <name>Check_RT_Non_Standard</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.RecordType.DeveloperName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>OpportunityRTDirectReOrder</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.RecordType.DeveloperName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>IndirectReOrder</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.RecordType.DeveloperName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>FieldServices</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.RecordType.DeveloperName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>IndirectFieldServices</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Non_Standard_RT_Check</targetReference>
+            </connector>
+            <label>Check RT Non Standard</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Non_Standard_RT_Check</name>
+        <label>Non Standard RT Check</label>
+        <locationX>1008</locationX>
+        <locationY>120</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Non_Standard_Check</name>
+            <conditionLogic>1 OR (2 AND 3)</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.StageName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Finalize</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record__Prior.StageName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Develop</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Finalize</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Reason_for_moving_backwards</targetReference>
+            </connector>
+            <label>Non Standard Check</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Standard_RT_Check</name>
+        <label>Standard RT Check</label>
+        <locationX>733</locationX>
+        <locationY>321</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Conditions_Standard_RT</name>
+            <conditionLogic>(1 OR (2 AND 3) OR (4 AND 5 AND 6) OR (7 AND 8 AND  5 AND 6) OR (9 AND 10 AND 8 AND 6 AND 5) ) AND 11</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.StageName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Finalize</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record__Prior.StageName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Negotiate &amp; Resolve</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Finalize</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record__Prior.StageName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Prove</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Negotiate &amp; Resolve</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Finalize</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record__Prior.StageName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Develop</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Prove</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record__Prior.StageName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Qualify</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Develop</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.StageName</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Create</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Reason_for_moving_backwards</targetReference>
+            </connector>
+            <label>Conditions Standard RT</label>
+        </rules>
+    </decisions>
+    <formulas>
+        <name>DirectStandard</name>
+        <dataType>String</dataType>
+        <expression>{!$Label.OpportunityRTDirectStandard}</expression>
+    </formulas>
+    <formulas>
+        <name>FieldServices</name>
+        <dataType>String</dataType>
+        <expression>{!$Label.FieldServices}</expression>
+    </formulas>
+    <formulas>
+        <name>IndirectFieldServices</name>
+        <dataType>String</dataType>
+        <expression>{!$Label.IndirectFieldServices}</expression>
+    </formulas>
+    <formulas>
+        <name>IndirectReOrder</name>
+        <dataType>String</dataType>
+        <expression>{!$Label.IndirectReOrder}</expression>
+    </formulas>
+    <formulas>
+        <name>LogReasonForMovingBackward</name>
+        <dataType>String</dataType>
+        <expression>CASE(MONTH(TODAY()),1,&quot;01&quot;,2,&quot;02&quot;,3,&quot;03&quot;,4,&quot;04&quot;,5,&quot;05&quot;,6,&quot;06&quot;,7,&quot;07&quot;,8,&quot;08&quot;,9,&quot;09&quot;,TEXT(MONTH(TODAY())))+&apos;/&apos; 
++CASE(DAY(TODAY()),1,&quot;01&quot;,2,&quot;02&quot;,3,&quot;03&quot;,4,&quot;04&quot;,5,&quot;05&quot;,6,&quot;06&quot;,7,&quot;07&quot;,8,&quot;08&quot;,9,&quot;09&quot;,TEXT(DAY(TODAY())))+&apos;/&apos; 
++TEXT(YEAR(TODAY())) +&apos;: &apos;
++ {!$Record.Reason_for_Moving_Backwards__c}
++ &apos; (from &apos;  +  TEXT ({!$Record__Prior.StageName})
++ &apos; to &apos; 
++ TEXT ({!$Record.StageName})  + &apos;)&apos; 
++ SUBSTITUTE({!$Label.UI_NewLine},&quot;-&quot;, &quot;&quot;)
++{!$Record.Reason_for_Moving_Backwards_Log__c}</expression>
+    </formulas>
+    <formulas>
+        <name>OpportunityRTDirectReOrder</name>
+        <dataType>String</dataType>
+        <expression>{!$Label.OpportunityRTDirectReOrder}</expression>
+    </formulas>
+    <formulas>
+        <name>RTIndirectStandard</name>
+        <dataType>String</dataType>
+        <expression>{!$Label.OpportunityRTIndirectStandard}</expression>
+    </formulas>
+    <interviewLabel>Opportunity: Log Reason For Going Backwards Sales Cycle {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Opportunity: Log Reason For Going Backwards Sales Cycle Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>50</locationY>
+        <connector>
+            <targetReference>Check_Opportunity_Stage</targetReference>
+        </connector>
+        <object>Opportunity</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

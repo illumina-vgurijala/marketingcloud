@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckFSIncorrectTypeValue</fullName>
+    <active>true</active>
+    <description>Validation rule to prevent selecting incorrect value for Type field in Field Service Opportunity.</description>
+    <errorConditionFormula>AND (
+    OR ( 
+        RecordType.DeveloperName = $Label.FieldServices, 
+        RecordType.DeveloperName = $Label.IndirectFieldServices 
+    ), 
+    NOT ( 
+        OR ( 
+            TEXT ( Type ) =  $Label.OpportunityTypeBillableService,
+            TEXT ( Type ) =  $Label.OpportunityTypeRentalReagent,
+            TEXT ( Type ) =  $Label.TypeIHPP
+        ) 
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Is_Converted_From_Lead__c ) = &apos;No&apos;, 
+    OR (
+        ISBLANK ( Product_Type__c ),
+        NOT ( 
+            CONTAINS ( Product_Type__c, $Label.OpportunityProdTypeInstrument ) 
+        ) 
+    ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name = $Label.ProfileSystemAdmin, 
+            $Profile.Name = $Label.ProfileDataSteward 
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>Invalid Opportunity &quot;Type&quot; selection. Please select new &quot;Type&quot; value (Opportunity Details section).</errorMessage>
+</ValidationRule>

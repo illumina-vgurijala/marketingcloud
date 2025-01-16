@@ -1,0 +1,168 @@
+<apex:page controller="seismic.InlineDocViewerController" action="{!Init}" docType="html-5.0" applyBodyTag="false" showHeader="true" sidebar="false" standardStylesheets="false">
+
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seismic Doc Viewer</title>
+
+    <link rel="stylesheet" type="text/css" href="https://smc-prod-cdn.seismic.com/static/external-resources/bootstrap/3.3.7/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://smc-prod-cdn.seismic.com/static/external-resources/video-js/4.12/video-js.css" />
+    <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.SeismicDocViewer_css)}" />
+    
+    <style type="text/css">
+        body { background-color: white; height: 100%; min-height: 400px; font-size: 12px !important; line-height: 1.2 !important; }
+        [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak { display: none !important; }
+        
+        #pageloading-panel { width: 100%; height: 100%; min-height: 200px; position: absolute; left: 0px; top: 0px; z-index: 99999; background: #FFFFFF; }
+        
+        #prevslide { left:10px; background:url('{!URLFOR($Resource.back_png)}'); }
+        #nextslide { right:10px; background:url('{!URLFOR($Resource.forward_png)}'); }
+        
+        #progress-back { background:url('{!URLFOR($Resource.progress_back_png)}') repeat-x; }
+        #progress-bar { background:url('{!URLFOR($Resource.progress_bar_png)}') repeat-x; }
+
+        #supersized-loader { background:url('{!URLFOR($Resource.progress_gif)}') no-repeat center center; }
+        #supersized li.image-loading { background:#fff url('{!URLFOR($Resource.progress_gif)}') no-repeat center center; }
+    </style>
+</head>
+<div ng-app="seismicDocViewer" style="min-height: 650px;">
+    <c:SeismicAuthentication pageControllerBase="{!This}"></c:SeismicAuthentication>
+    
+    <div class="wrapperClass" ng-show="!isReady">
+        <div class="height-restricted" style="padding: 50px">
+            <img class="image-responsive center-block" style="width: 32px; height: 32px;" src="https://redtealtest2.seismic.com/html5/Theme/base/images/spinner48.gif" />
+        </div>
+    </div>
+    
+    <div id="seismicdocviewer-panel" ng-show="isReady" class="body-wrapper">
+        <seismic-busy is-busy="!isSiderbarReady">
+            <div ng-controller="SeismicDocViewerSideBarController">
+                <div class="sidebar" ng-show="status.isDisplay">
+                    <ng-include src="'{!URLFOR($Resource.SeismicDocViewer_SideBar_html)}'"></ng-include>
+                </div>
+            </div>
+            <div ng-controller="SeismicDocViewerContentController">
+                <div class="main-content" ng-style="sideBarStatus.mainStyle">
+                    <ng-view></ng-view>
+                    <toaster-container></toaster-container>
+                </div>
+            </div>
+        </seismic-busy>
+    </div>
+    
+    <script type="text/ng-template" id="SeismicBusy.html">
+        <div ng-class="wrapperClass" ng-show="isBusy">
+            <div class="height-restricted" style="padding: 50px">
+                <img class="image-responsive center-block" style="width: 32px; height: 32px;" src="https://redtealtest2.seismic.com/html5/Theme/base/images/spinner48.gif" />
+                <div ng-if="!!busyMessage" class="center-block" style="text-align: center; margin-top: 20px;">{{busyMessage}}</div>
+            </div>
+        </div>
+        <ng-transclude ng-hide="isBusy && !visibleMode" ng-class="{'display-out-when-busy': isBusy && visibleMode}"></ng-transclude>
+    </script>
+    
+    <script type="text/javascript" src="{!URLFOR($Resource.SeismicConstants)}"></script>
+    <script type="text/javascript">
+        __sfdcSessionId = "{!$API.Session_ID}";
+        var isSalesforce1={!isSalesforce1};
+        var isLightning={!isLightning};
+
+        var SeismicDocViewer_Static_html = '{!URLFOR($Resource.SeismicDocViewer_Static_html)}';
+        var SeismicDocViewer_LiveDoc_html = '{!URLFOR($Resource.SeismicDocViewer_LiveDoc_html)}';
+        var SeismicDocViewer_LiveForm_html = '{!URLFOR($Resource.SeismicDocViewer_LiveForm_html)}';
+        var SeismicDocViewer_Generated_html = '{!URLFOR($Resource.SeismicDocViewer_Generated_html)}';
+        var SeismicDocViewer_DeliveryOption_html = '{!URLFOR($Resource.SeismicDocViewer_DeliveryOption_html)}';
+        var SeismicDocViewer_DeliveryOptionList_include_html = '{!URLFOR($Resource.SeismicDocViewer_DeliveryOptionList_include_html)}';
+        var SeismicDocViewer_DeliveryOptionDialog_html = '{!URLFOR($Resource.SeismicDocViewer_DeliveryOptionDialog_html)}';
+        var SeismicDocViewer_PreviewReorder_html = '{!URLFOR($Resource.SeismicDocViewer_PreviewReorder_html)}';
+
+        var SeismicDocViewer_DeliveryOption_htmlTemplates_map = {};
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.Normal] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_CustomDeliveryForm_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.CreateSharedLink] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_CreateSharedLink_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.SendToLiveSend] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_LiveSend_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.SaveToPersonal] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_Add2PersonalSpace_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.SFSendByEmail] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_SendEmail_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.SFPostToChatter] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_SFPostToChatter_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.SFSaveAttachment] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_SFSaveAttachment_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.SFCreateContent] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_SFCreateContent_html)}';
+        SeismicDocViewer_DeliveryOption_htmlTemplates_map[DeliveryOptionNameToType.SFCreateContentDelivery] = '{!URLFOR($Resource.SeismicDocViewer_Delivery_SFCreateContentDelivery_html)}';
+        
+        var SeismicFormatIcon = {};
+        SeismicFormatIcon.PPT_PNG_URL = '{!URLFOR($Resource.PPT_PNG)}';
+        SeismicFormatIcon.WORD_PNG_URL = '{!URLFOR($Resource.WORD_PNG)}';
+        SeismicFormatIcon.PDF_PNG_URL = '{!URLFOR($Resource.PDF_PNG)}';
+        SeismicFormatIcon.IMG_PNG_URL = '{!URLFOR($Resource.IMG_PNG)}';
+        SeismicFormatIcon.VIDEO_PNG_URL = '{!URLFOR($Resource.VIDEO_PNG)}';
+        SeismicFormatIcon.GENERAL_PNG_URL = '{!URLFOR($Resource.GENERAL_PNG)}';
+        SeismicFormatIcon.YOUTUBE_PNG_URL = '{!URLFOR($Resource.YOUTUBE_PNG)}';
+        SeismicFormatIcon.VIMEO_PNG_URL = '{!URLFOR($Resource.VIMEO_PNG)}';
+        SeismicFormatIcon.XLS_PNG_URL = '{!URLFOR($Resource.XLS_PNG)}';
+        SeismicFormatIcon.URL_PNG_URL = '{!URLFOR($Resource.URL_PNG)}';
+        SeismicFormatIcon.FORM_PNG_URL = '{!URLFOR($Resource.FORM_PNG)}';
+
+        var SeismicDeliverOptionIcon = {};
+        SeismicDeliverOptionIcon.DO_ADD = '{!URLFOR($Resource.DO_ADD)}';
+        SeismicDeliverOptionIcon.DO_CART = '{!URLFOR($Resource.DO_CART)}';
+        SeismicDeliverOptionIcon.DO_DELETE = '{!URLFOR($Resource.DO_DELETE)}';
+        SeismicDeliverOptionIcon.DO_DOWNLOAD = '{!URLFOR($Resource.DO_DOWNLOAD)}';
+        SeismicDeliverOptionIcon.DO_EDIT = '{!URLFOR($Resource.DO_EDIT)}';
+        SeismicDeliverOptionIcon.DO_EMAIL = '{!URLFOR($Resource.DO_EMAIL)}';
+        SeismicDeliverOptionIcon.DO_LIVESEND = '{!URLFOR($Resource.DO_LIVESEND)}';
+        SeismicDeliverOptionIcon.DO_MOVE = '{!URLFOR($Resource.DO_MOVE)}';
+        SeismicDeliverOptionIcon.DO_NORMAL = '{!URLFOR($Resource.DO_NORMAL)}';
+        SeismicDeliverOptionIcon.DO_SAVE_PERSONAL = '{!URLFOR($Resource.DO_SAVE_PERSONAL)}';
+        SeismicDeliverOptionIcon.DO_SHARE = '{!URLFOR($Resource.DO_SHARE)}';
+        SeismicDeliverOptionIcon.DO_SHARED_LINK = '{!URLFOR($Resource.DO_SHARED_LINK)}';
+
+        SeismicDeliverOptionIcon.CDO_ADD = '{!URLFOR($Resource.CDO_ADD)}';
+        SeismicDeliverOptionIcon.CDO_CART = '{!URLFOR($Resource.CDO_CART)}';
+        SeismicDeliverOptionIcon.CDO_DELET = '{!URLFOR($Resource.CDO_DELET)}';
+        SeismicDeliverOptionIcon.CDO_DOWNLOAD = '{!URLFOR($Resource.CDO_DOWNLOAD)}';
+        SeismicDeliverOptionIcon.CDO_EDIT = '{!URLFOR($Resource.CDO_EDIT)}';
+        SeismicDeliverOptionIcon.CDO_EMAIL = '{!URLFOR($Resource.CDO_EMAIL)}';
+        SeismicDeliverOptionIcon.CDO_LIVESEND = '{!URLFOR($Resource.CDO_LIVESEND)}';
+        SeismicDeliverOptionIcon.CDO_MOVE = '{!URLFOR($Resource.CDO_MOVE)}';
+        SeismicDeliverOptionIcon.CDO_NORMAL = '{!URLFOR($Resource.CDO_NORMAL)}';
+        SeismicDeliverOptionIcon.CDO_SAVE_PERSONAL = '{!URLFOR($Resource.CDO_SAVE_PERSONAL)}';
+        SeismicDeliverOptionIcon.CDO_SHARE = '{!URLFOR($Resource.CDO_SHARE)}';
+        SeismicDeliverOptionIcon.CDO_SHARED_LINK = '{!URLFOR($Resource.CDO_SHARED_LINK)}';
+        SeismicDeliverOptionIcon.CDO_MORE = '{!URLFOR($Resource.CDO_MORE)}';
+        
+
+		var SeismicIcon = {};
+		SeismicIcon.GOTO_CART = '{!URLFOR($Resource.GOTO_CART)}';
+		
+		SeismicIcon.Reorder = {};
+		SeismicIcon.Reorder.UNDO = '{!URLFOR($Resource.REORDER_UNDO)}';
+		SeismicIcon.Reorder.REDO = '{!URLFOR($Resource.REORDER_REDO)}';
+		SeismicIcon.Reorder.RESET = '{!URLFOR($Resource.REORDER_RESET)}';
+		SeismicIcon.Reorder.CANCEL = '{!URLFOR($Resource.REORDER_CANCEL)}';
+		SeismicIcon.Reorder.FINISH = '{!URLFOR($Resource.REORDER_FINISH)}';
+		SeismicIcon.Reorder.DELETE = '{!URLFOR($Resource.REORDER_DELETE)}';
+
+        
+        if (pageInfo == undefined || pageInfo == null) {
+            var pageInfo = {};
+        }
+        pageInfo.remoteFunction = '{!$RemoteAction.InlineDocViewerController.RemoteCall}';
+        pageInfo.rmToken = '{!rememberMeToken}';
+        pageInfo.sfBaseUrl = '{!sfBaseUrl}';
+        pageInfo.sfOrgId = '{!salesforceOrgId}';
+        pageInfo.sfUserId = '{!salesforceUserId}';
+        pageInfo.sfSessionId = '{!salesforceSessionId}';
+
+        var SeismicIcons = {
+            closeIcon: '{!URLFOR($Resource.icon_cross_16_png)}'
+        };
+        var allIconVersion = {!AllIconVersion};
+        var HtmlFilesInJson = {!HtmlFilesInJson};
+        var langJsonVersion = {!LanguageJsonVersion};
+    </script>
+    
+    
+    <script type="text/javascript" src="/soap/ajax/27.0/connection.js"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.SeismicDocViewer_libraries_js)}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.SeismicCommon_js)}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.SeismicDocViewer_js)}"></script>
+</div>
+</apex:page>

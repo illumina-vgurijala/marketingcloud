@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSAndISECAmount</fullName>
+    <active>true</active>
+    <description>Amount is required to progress past Create for both Indirect Standard and Direct Standard.</description>
+    <errorConditionFormula>AND (
+    OR (
+        RecordType.DeveloperName == $Label.OpportunityRTDirectStandard,  
+        RecordType.DeveloperName == $Label.OpportunityRTIndirectStandard
+    ), 
+    NOT( 
+        OR( 
+           ISPICKVAL( PRIORVALUE(StageName) ,&apos;Closed Abandoned&apos;), 
+           ISPICKVAL( PRIORVALUE(StageName) ,&apos;Closed Won&apos;), 
+           ISPICKVAL( PRIORVALUE(StageName) ,&apos;Closed Lost&apos;), 
+           ISPICKVAL(StageName, &apos;Closed Lost&apos;), 
+           ISPICKVAL(StageName, &apos;Closed Abandoned&apos;), 
+            ISPICKVAL(StageName, &apos;Create&apos;),
+           TEXT ( StageName ) = $Label.OpportunityStageClosedWon 
+        ) 
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    ISBLANK( Amount ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+			$Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward,
+            CONTAINS($Label.Bypassed_Sales_Integration_Profiles_Id,$Profile.Id),
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Amount</errorDisplayField>
+    <errorMessage>Please enter Amount.</errorMessage>
+</ValidationRule>

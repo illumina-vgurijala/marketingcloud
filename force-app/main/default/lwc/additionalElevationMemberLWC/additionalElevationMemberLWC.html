@@ -1,0 +1,146 @@
+<!--
+  @description       : 
+  @author            : Rohan 
+  @group             : 
+  Developer             Date                Description
+    Rohan Rathod      08-24-2022           Initial Version
+    Gladis            08-30-2022           DCP-56756-Displaying the contact's account name if a contact is selected
+-->
+<template>  
+  <lightning-layout multiple-rows>
+      <lightning-layout-item flexibility="auto" size="6" padding="around-small">
+          <lightning-dual-listbox  name="types"
+              label="Type"
+              source-label="Available"
+              selected-label="Selected"
+              size="4"
+              options={lstOptions}
+              onchange={handleListChange}
+              field-level-help="Select &quot;Type&quot; to indicate if this individual is a &quot;Watcher&quot; or &quot;Executive Summary Key Stakeholder&quot;. 
+              Added watchers will receive internal notifications. 
+              Executive Summary Key Stakeholders are customer contacts that will not receive these internal notifications."
+              message-when-bad-input={requiredMessage}     
+              value={values}>
+          </lightning-dual-listbox>
+      </lightning-layout-item>
+      <lightning-layout-item vertical-align="stretch" alignment-bump="left"  flexibility="auto" padding="around-small">
+          <lightning-combobox
+              name="relatedObjectSearch"
+              class="slds-p-top_large"
+              label="Search Related To"
+              value=""
+              placeholder="Search"
+              options={options}
+              onchange={handleSearchRelatedToChange}>
+          </lightning-combobox>
+          <lightning-layout-item vertical-align="stretch" alignment-bump="left" flexibility="auto" padding="around-small">
+              <div class="slds-col">
+                  <div class="slds-col">
+                  <div class="slds-form-element">          
+                      <label class="slds-p-top_large slds-form-element__label" for="combobox-id-2">{lookupLabel}  
+                        <template if:true={isSearchObjSelected}>
+                        <lightning-helptext class="slds-p-left_xx-small" content={helpTextContent}></lightning-helptext>
+                        </template>
+                    </label>
+                      <div class="slds-form-element__control">  
+                      <div class="slds-combobox_container">  
+                          <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click slds-is-open" aria-expanded="true" aria-haspopup="listbox" role="combobox">  
+                          <template if:true={selectedValue}>  
+                          <div data-key="pilldiv" class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_left-right" role="none">  
+                              <span class="slds-icon_container slds-icon-standard-contact slds-combobox__input-entity-icon" title="object">  
+                              <div class="slds-icon slds-icon_small" aria-hidden="true">  
+                              <lightning-icon icon-name={iconName} size="small"></lightning-icon>  
+                              </div>  
+                              <span class="slds-assistive-text">Record</span>  
+                              </span>  
+                              <input type="text" class="slds-input slds-combobox__input slds-combobox__input-value" id="combobox-id-5" aria-controls="listbox-id-5" role="textbox" placeholder="Select an Option" readonly value={selectedValue} />  
+                              <button class="slds-button slds-button_icon slds-input__icon slds-input__icon_right" onclick={removeRecordOnLookup}  
+                              title="Remove selected option">  
+                              <span class="slds-button__icon" aria-hidden="true" >  
+                              <lightning-icon icon-name="utility:close"   
+                              size="xx-Small" class="slds-icon slds-icon slds-icon_x-small slds-icon-text-default" aria-hidden="true"></lightning-icon>  
+                              </span>  
+                              <span class="slds-assistive-text">Remove selected record</span>  
+                              </button>  
+                          </div>  
+                          </template>  
+                  
+                          <template if:false={selectedValue}>  
+                          <div data-key="searchdiv" class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">  
+                              <input type="text" value={searchKey}  onkeyup={handleKeyChange} class="slds-input slds-combobox__input slds-has-focus"
+                              id="combobox-id-2" aria-autocomplete="list" aria-controls="listbox-id-2" role="textbox" 
+                              placeholder="Search..." />  
+                              <span class="slds-icon_container slds-icon-utility-search slds-input__icon slds-input__icon_right">  
+                              <lightning-icon icon-name="utility:search" size="xx-Small" class="slds-icon slds-icon slds-icon_x-small slds-icon-text-default" aria-hidden="true"></lightning-icon>  
+                              </span>  
+                          </div>  
+                      
+                          <!--<template if:true={recordsList}>  -->
+                          <template if:true={isEmptyCheck}> 
+                          <div id="listbox-id-2-venu" data-key="dropdownresult" class="slds-show slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid" role="listbox">  
+                              <ul class="slds-listbox slds-listbox_vertical" role="presentation" >  
+                              
+                              <template if:true={message}>  
+                                  {message}  
+                              </template>
+                              
+                              
+                              <template for:each={recordsList} for:item="record">  
+                                  <li id={record.Id} key={record.Id} onclick={onRecordSelection} role="presentation" class="slds-listbox__item">  
+                                  <div data-key={record.Id} data-name={record.Name} class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta" role="option">  
+                                  <span class="slds-media__figure slds-listbox__option-icon">  
+                                      <span class="slds-icon_container">  
+                                      <lightning-icon icon-name={iconName} size="small"></lightning-icon>  
+                                      </span>  
+                                  </span>  
+                                  <span class="slds-media__body">  
+                                    <span data-key={record.Id} data-name={record.Name} class="slds-listbox__option-text slds-listbox__option-text_entity">{record.Name} </span>  
+                                    <!--- DCP-56756 starts. Displaying the contact's account name if a contact is selected-->
+                                    <template if:true={isContact}>  
+                                        <span data-key={record.Id} data-name={record.Name} class="slds-listbox__option-meta slds-listbox__option-meta_entity">{record.Account.Name}</span> 
+                                    </template>
+                                    <!--- DCP-56756 ends -->
+                                    </span>  
+                                  </div>  
+                              </li>  
+                              </template>  
+                              </ul>  
+                          </div>  
+                          </template>  
+                          </template>  
+                          </div>  
+                      </div>  
+                      </div>      
+                  </div>
+                  </div> 
+              </div>
+          </lightning-layout-item>
+      </lightning-layout-item>       
+  </lightning-layout>
+  <lightning-layout>
+    <lightning-layout-item alignment-bump="left">
+          <lightning-button               
+              title="Add New Row" 
+              variant="brand" 
+              label="Add Row" 
+              class="slds-p-vertical_x-small slds-float_right"
+              onclick={addRow}>
+          </lightning-button> 
+    </lightning-layout-item>
+  </lightning-layout>
+  <lightning-layout>
+    <lightning-formatted-rich-text value={ElevationMemberMessage}></lightning-formatted-rich-text>
+ </lightning-layout>
+  <lightning-layout>      
+      <lightning-layout-item padding="around-small">
+          <lightning-datatable
+              key-field="key"
+              show-row-number-column
+              data={finalLstRecContactAssigned}
+              columns={_columns}
+              hide-checkbox-column="true"
+              onrowaction={handleRowAction}>
+          </lightning-datatable>
+      </lightning-layout-item>
+</lightning-layout>
+</template>

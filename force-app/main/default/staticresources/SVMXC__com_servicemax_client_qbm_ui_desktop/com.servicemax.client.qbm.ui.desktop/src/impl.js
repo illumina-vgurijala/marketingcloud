@@ -1,0 +1,29 @@
+
+(function(){
+
+	var appImpl = SVMX.Package("com.servicemax.client.qbm.ui.desktop.impl");
+
+	appImpl.Class("Module", com.servicemax.client.lib.api.ModuleActivator, {
+
+		__constructor : function(){
+			this.__base();
+		},
+
+		beforeInitialize: function() {
+
+        },
+
+        initialize: function() {
+        },
+
+        afterInitialize: function() {
+        	com.servicemax.client.qbm.ui.desktop.api.init();
+            com.servicemax.client.qbm.ui.desktop.editQuestion.init();
+            com.servicemax.client.qbm.ui.desktop.boxselect.init();
+        }
+
+	}, {
+		instance : null
+	});
+
+})();

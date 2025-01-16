@@ -1,0 +1,446 @@
+<!-- 
+    Apttus Config & Pricing
+    DataValidationRulesetEdit
+    
+    @2018-2019 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__DataValidationEnrichmentRuleset__c" 
+           extensions="Apttus_Config2.DataValidationRulesetEditController" 
+           showHeader="true" 
+           sidebar="true" 
+           standardStylesheets="true"
+           tabStyle="Apttus_Config2__DataValidationEnrichmentRuleset__c">  
+    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+    <apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+    
+    <apex:sectionHeader title="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Label & ' ' & $Label.apttus_config2__edit}" 
+                        subtitle="{!$Label.apttus_config2__new & ' ' & $ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Label & ' (' & StepStats & ')'}" 
+                        rendered="{!IsAddMode && (CurrentStep == 1)}" />
+    
+    <apex:sectionHeader title="{!$Label.apttus_config2__new & ' ' & $ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Label}" 
+                        subtitle="{!TargetObjectLabel & ' (' & StepStats & ')'}" 
+                        rendered="{!IsAddMode && (CurrentStep != 1)}" />
+                                            
+    <apex:sectionHeader title="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Label & ' ' & $Label.apttus_config2__edit}" 
+                        subtitle="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Name}" 
+                        rendered="{!IsEditMode}" />
+
+    <apex:form id="idDataRulesetSO">
+
+        <!--  required fields -->
+        <apex:outputText value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__SourceDataObject__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__TargetObjectToValidate__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__SourceAndTargetMatchCriteria__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__TargetObjectFilterCriteria__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__TargetObjectParent__c}" rendered="false" />
+        
+        <apex:pageBlock id="idDataRulesetBlock" 
+                        title="{!IF(isAddMode, $Label.apttus_config2__step & ' ' & TEXT(CurrentStep) & ': ' & CurrentStepName, '')}"
+                        mode="edit" >
+                        
+            <apex:pageMessages />
+            
+            <apex:pageBlockButtons location="both">
+                <apex:commandButton value="{!$Label.apttus_config2__next}" 
+                                    action="{!doNext}" 
+                                    rendered="{!IsAddMode && (CurrentStep == 1)}" />
+                <apex:commandButton value="{!$Label.apttus_config2__previous}" 
+                                    action="{!doPrevious}" 
+                                    rendered="{!IsAddMode && (CurrentStep != 1)}" />
+                <apex:commandButton value="{!$Label.apttus_config2__save}" 
+                                    action="{!doSave}" 
+                                    rendered="{!IsLastStep}" />
+                <apex:commandButton value="{!$Label.apttus_config2__saveandnew}" 
+                                    action="{!doSaveAndNew}" 
+                                    rendered="{!IsLastStep}" />
+                <apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+                                    action="{!doCancel}" 
+                                    immediate="true" 
+                                    rendered="true" />
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockSection id="idSelectObjectSection" 
+                                   title="{!$Label.apttus_config2__selectsourceandtargetobjects}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsAddMode && (CurrentStep == 1)}" >
+                                   
+                <apex:pageBlockSectionItem />
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Apttus_Config2__TargetObjectToValidate__c.Label}" 
+                                      for="idTargetObject" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:actionRegion >
+                            <apex:selectList id="idTargetObject" 
+                                             value="{!targetObjectName}" 
+                                             multiselect="false" 
+                                             required="false" 
+                                             size="1" >
+                                <apex:selectOptions value="{!targetObjectItems}"></apex:selectOptions>
+                                <apex:actionSupport event="onchange" reRender="idDataRulesetBlock"/>
+                            </apex:selectList>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Apttus_Config2__TargetObjectParent__c.Label}" 
+                                      for="idTargetObjectParent" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:actionRegion >
+                            <apex:selectList id="idTargetObjectParent" 
+                                             value="{!targetObjectParentName}" 
+                                             multiselect="false" 
+                                             required="false" 
+                                             size="1">
+                                <apex:selectOptions value="{!targetObjectParentItems}"></apex:selectOptions>
+                            </apex:selectList>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Apttus_Config2__SourceDataObject__c.Label}" 
+                                      for="idSourceObject" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:actionRegion >
+                            <apex:selectList id="idSourceObject" 
+                                             value="{!sourceObjectName}" 
+                                             multiselect="false" 
+                                             required="false" 
+                                             size="1" >
+                                <apex:selectOptions value="{!sourceObjectItems}"></apex:selectOptions>
+                                <apex:actionSupport event="onchange" reRender="idDataRulesetBlock"/>
+                            </apex:selectList>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection id="idConfigureFilterSection" 
+                                   title="{!$Label.apttus_config2__configureruleset}"
+                                   columns="2" 
+                                   collapsible="false" 
+                                   rendered="{!CurrentStep == 2}" >
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Apttus_Config2__TargetObjectParent__c.Label}" 
+                                      for="idTargetObjectParent" />
+                    <apex:outputText id="idTargetObjectParent" value="{!targetObjectParentLabel}" />
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Apttus_Config2__TargetObjectToValidate__c.Label}" 
+                                      for="idTargetObject" />
+                    <apex:outputText id="idTargetObject" value="{!targetObjectLabel}" />
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Apttus_Config2__SourceDataObject__c.Label}" 
+                                      for="idSourceObject" />
+                    <apex:outputText id="idSourceObject" value="{!sourceObjectLabel}" />
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem rendered="true" >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Name.Label}" 
+                                      for="idName" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:inputField id="idName" 
+                                         value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Name}" 
+                                         required="false" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem rendered="true" >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__DataValidationEnrichmentRuleset__c.Fields.Apttus_Config2__Sequence__c.Label}" 
+                                      for="idSequence" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:inputField id="idSequence" 
+                                         value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__Sequence__c}" 
+                                         required="false" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                                                                  
+                <apex:inputField value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__Description__c}" 
+                                 rendered="true" />
+
+                <apex:inputField value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__Message__c}" 
+                                 rendered="true" />
+
+                <apex:inputField value="{!Apttus_Config2__DataValidationEnrichmentRuleset__c.Apttus_Config2__Active__c}" 
+                                 rendered="true" />                         
+            </apex:pageBlockSection>
+            
+            <apex:outputPanel rendered="{!CurrentStep == 2}" >
+                
+                <apex:pageBlockSection id="idFilterCriteriaSection" 
+                                       title="{!$Label.apttus_config2__targetobjectfiltercriteria}" 
+                                       columns="2" 
+                                       collapsible="true" 
+                                       rendered="true" >
+                                       
+                    <apex:pageBlockTable value="{!TargetObjectFilterCriteria}" 
+                                         var="incCriteria" 
+                                         columns="4" 
+                                         rowClasses="oddRow,evenRow" >
+                        
+                        <apex:column headerValue="{!$Label.apttus_config2__field}" width="30%" >
+                            <apex:outputPanel styleClass="{!IF(incCriteria.FieldInError, 'errorRow', '')}" layout="block" >
+                                <apex:selectList id="idIncField" 
+                                                 size="1" 
+                                                 value="{!incCriteria.FieldName}" 
+                                                 disabled="false" > 
+                                    <apex:selectOptions value="{!FilterCriteriaFieldItems}"></apex:selectOptions>
+                                    <apex:actionSupport event="onchange" 
+                                                        action="{!doUpdateInclusionCriteriaFieldInfo}" 
+                                                        reRender="idFilterCriteriaSection" />
+                                </apex:selectList>
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus_config2__operator}" width="30%" >
+                            <apex:outputPanel styleClass="{!IF(incCriteria.CompOperInError, 'errorRow', '')}" layout="block" >
+                                <apex:selectList id="idIncCompOper" 
+                                                 size="1" 
+                                                 value="{!incCriteria.CompOper}" 
+                                                 disabled="false" >
+                                    <apex:selectOptions value="{!MatchCriteriaCompOperItems}"></apex:selectOptions>
+                                    <apex:actionSupport event="onchange"
+                                                        rerender="idFilterCriteriaSection"
+                                                        status="idPleaseWaitField"/>
+                                </apex:selectList>
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus_config2__value}" width="30%" >
+                            <apex:outputPanel styleClass="{!IF(incCriteria.FieldValueInError, 'errorRow', '')}" 
+                                              layout="block" 
+                                              rendered="true" >
+                                <apex:inputText id="idIncFieldValue" 
+                                                size="25" 
+                                                value="{!incCriteria.FieldValue}" 
+                                                rendered="{!NOT(incCriteria.IsPicklist)}" />
+                                <apex:selectList id="idIncFieldValue2" 
+                                                 size="1" 
+                                                 multiselect="false"
+                                                 value="{!incCriteria.FieldValue}" 
+                                                 rendered="{!incCriteria.IsPicklist && NOT(incCriteria.IsMultiPicklist)}" >
+                                    <apex:selectOptions value="{!incCriteria.fieldValueItems}"></apex:selectOptions>
+                                </apex:selectList>
+                                <apex:selectList id="idIncFieldValue3" 
+                                                 size="5" 
+                                                 multiselect="true"
+                                                 value="{!incCriteria.FieldValues}" 
+                                                 rendered="{!incCriteria.IsPicklist && incCriteria.IsMultiPicklist}" >
+                                    <apex:selectOptions value="{!incCriteria.fieldValueItems}"></apex:selectOptions>
+                                </apex:selectList>
+                            </apex:outputPanel>
+                            <apex:outputText value="{!incCriteria.FieldValue}" 
+                                             rendered="false" /> 
+                        </apex:column>
+                        
+                        <apex:column width="10%" >
+                            <apex:outputText value="{!incCriteria.ErrorMsg}" style="color:red;" />
+                        </apex:column>
+                       
+                    </apex:pageBlockTable>
+                                           
+                </apex:pageBlockSection>
+                <apex:pageBlockSection id="idPredicatesSection" 
+                                       title="{!$Label.apttus_config2__sourceandtargetmatchcriteria}" 
+                                       columns="2" 
+                                       collapsible="false" >
+                                       
+                    <apex:pageBlockTable value="{!predicates}" 
+                                         var="predicate" 
+                                         columns="8" 
+                                         rowClasses="oddRow,evenRow" >
+                        
+                        <apex:column width="5%" rendered="{!isAdvancedOptionsMode}" >
+                            <apex:outputText id="idRowNum" value="{!predicate.RowNum}. " />
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus_config2__field}" width="25%" >
+                            <apex:outputPanel styleClass="{!IF(predicate.FieldInError, 'errorRow', '')}" layout="block" >
+                                <apex:selectList id="idField" 
+                                                 size="1" 
+                                                 value="{!predicate.FieldName}" 
+                                                 disabled="false" > 
+                                    <apex:selectOptions value="{!FieldItems}"></apex:selectOptions>
+                                    <apex:actionSupport event="onchange" 
+                                                        action="{!doUpdateFieldInfo}" 
+                                                        reRender="idPredicatesSection" 
+                                                        status="idPleaseWaitField" />
+                                </apex:selectList>
+                                <apex:actionStatus id="idPleaseWaitField">
+                                    <apex:facet name="start">
+                                        {!$Label.PleaseWait}...
+                                        <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                    </apex:facet>
+                                    <apex:facet name="stop" />
+                                </apex:actionStatus>
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus_config2__operator}" width="15%" >
+                            <apex:outputPanel styleClass="{!IF(predicate.CompOperInError, 'errorRow', '')}" layout="block" >
+                                <apex:selectList id="idCompOper" 
+                                                 size="1" 
+                                                 value="{!predicate.CompOper}" 
+                                                 disabled="false" >
+                                    <apex:selectOptions value="{!compOperItems}"></apex:selectOptions>
+                                    <apex:actionSupport event="onchange" 
+                                                        action="{!doUpdateState}"  
+                                                        reRender="idPredicatesSection" 
+                                                        status="idPleaseWaitCompOper" />
+                                </apex:selectList>
+                                <apex:actionStatus id="idPleaseWaitCompOper">
+                                    <apex:facet name="start">
+                                        {!$Label.PleaseWait}...
+                                        <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                    </apex:facet>
+                                    <apex:facet name="stop" />
+                                </apex:actionStatus>
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column headerValue="Map To" width="15%" >
+                            <apex:selectList id="idMapToObject" 
+                                             size="1" 
+                                             value="{!predicate.ValueObject}" 
+                                             disabled="false" 
+                                             rendered="{!HasTargetObject}" >
+                                <apex:selectOptions value="{!MapToObjectItems}"></apex:selectOptions>
+                                <apex:actionSupport event="onchange" 
+                                                    action="{!doUpdateFieldInfo}" 
+                                                    reRender="idPredicatesSection" />
+                            </apex:selectList>
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus_config2__value}" width="20%" >
+                            <apex:outputPanel styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" 
+                                              layout="block" 
+                                              rendered="true" >
+                                <apex:inputText id="idFieldValue" 
+                                                size="25" 
+                                                value="{!predicate.FieldValue}" 
+                                                rendered="{!NOT(predicate.IsVariable) && 
+                                                            NOT(predicate.IsPicklist)}" />
+                                <apex:selectList id="idFieldValue2" 
+                                                 size="1" 
+                                                 multiselect="false"
+                                                 value="{!predicate.FieldValue}" 
+                                                 rendered="{!NOT(predicate.IsVariable) && 
+                                                             predicate.IsPicklist && 
+                                                             NOT(predicate.IsMultiPicklist)}" >
+                                    <apex:selectOptions value="{!predicate.fieldValueItems}"></apex:selectOptions>
+                                </apex:selectList>
+                                <apex:selectList id="idFieldValue3" 
+                                                 size="5" 
+                                                 multiselect="true"
+                                                 value="{!predicate.FieldValues}" 
+                                                 rendered="{!NOT(predicate.IsVariable) && 
+                                                             predicate.IsPicklist && 
+                                                             predicate.IsMultiPicklist}" >
+                                    <apex:selectOptions value="{!predicate.fieldValueItems}"></apex:selectOptions>
+                                </apex:selectList>
+                                <apex:selectList id="idFieldValue4" 
+                                                 size="1" 
+                                                 multiselect="false"
+                                                 value="{!predicate.FieldValue}" 
+                                                 rendered="{!predicate.IsVariable}" >
+                                    <apex:selectOptions value="{!TargetFieldItems}"></apex:selectOptions>
+                                </apex:selectList>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="false" >
+                                <apex:outputText value="{!predicate.FieldValue}" 
+                                                 rendered="{!NOT(predicate.IsVariable)}" /> 
+                                <apex:selectList size="1" 
+                                                 value="{!predicate.FieldValue}" 
+                                                 rendered="{!predicate.IsVariable}" 
+                                                 disabled="true" >
+                                    <apex:selectOptions value="{!TargetFieldItems}"></apex:selectOptions>
+                                </apex:selectList>
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column width="5%" >
+                            <apex:outputText id="idBoolOper" 
+                                             value="{!predicate.BoolOper}" 
+                                             rendered="{!NOT(isAdvancedOptionsMode) && NOT(ISBLANK(predicate.BoolOper))}" />
+                            <apex:commandLink action="{!doAddRow}" 
+                                              reRender="idPredicatesSection, idAdvancedOptionsSection" 
+                                              rendered="{!NOT(isAdvancedOptionsMode) && 
+                                                          ISBLANK(predicate.BoolOper)}" > 
+                                <apex:image url="{!$Resource.Apttus_Config2__Image_Plus2}" 
+                                            title="{!$Label.apttus_config2__add}" 
+                                            alt="{!$Label.apttus_config2__add}" />                
+                            </apex:commandLink>
+                        </apex:column>
+                        <apex:column width="5%" >
+                            <apex:commandLink id="idDeleteRow" 
+                                              action="{!doDeleteRow}" 
+                                              reRender="idPredicatesSection, idAdvancedOptionsSection" 
+                                              rendered="{!predicate.RowNum > 1}" >
+                                <apex:param name="rowNum" value="{!predicate.RowNum}" />    
+                                <apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+                                            title="{!$Label.apttus_config2__remove}" 
+                                            alt="{!$Label.apttus_config2__remove}" />     
+                            </apex:commandLink>
+                        </apex:column>
+                        <apex:column width="10%" >
+                            <apex:outputText value="{!predicate.ErrorMsg}" style="color:red;" />
+                        </apex:column>
+                       
+                    </apex:pageBlockTable>
+                    
+                </apex:pageBlockSection>
+                        
+                <apex:pageBlockSection id="idAdvancedOptionsSection" 
+                                       columns="1" 
+                                       collapsible="false" >
+                
+                    <apex:commandLink id="idShowAdvancedOptions" 
+                                      action="{!doShowAdvancedOptions}" 
+                                      value="{!$Label.apttus_config2__advancedoptions}" 
+                                      reRender="idAdvancedOptionsSection, idPredicatesSection" 
+                                      rendered="{!NOT(isAdvancedOptionsMode)}" />
+                    
+                    <apex:outputPanel rendered="{!isAdvancedOptionsMode}">
+                        <apex:commandLink id="idAddRow" 
+                                          action="{!doAddRow}" 
+                                          value="{!$Label.apttus_config2__addrow}" 
+                                          rendered="true" 
+                                          reRender="idAdvancedOptionsSection, idPredicatesSection" />
+                        <span>  </span>
+                        <apex:commandLink id="idRemoveRow" 
+                                          action="{!doRemoveRow}" 
+                                          value="{!$Label.apttus_config2__removerow}" 
+                                          reRender="idAdvancedOptionsSection, idPredicatesSection" 
+                                          rendered="{!OkToRemoveRow}" />
+                        <apex:outputPanel id="idRemoveRow2" styleClass="greyedLink" rendered="{!NOT(OkToRemoveRow)}" >{!$Label.apttus_config2__removerow}</apex:outputPanel>
+                        <p/>    
+                        <apex:commandLink id="idHideAdvancedOptions" 
+                                          action="{!doHideAdvancedOptions}" 
+                                          value="{!$Label.apttus_config2__clearadvancedoptions}" 
+                                          rendered="true" 
+                                          reRender="idAdvancedOptionsSection, idPredicatesSection" />
+                        <br/>
+                        <apex:outputText value="{!$Label.apttus_config2__advancedfiltercondition}" />
+                        <br/>
+                        <apex:inputText size="80" 
+                                        value="{!advancedOptions}" 
+                                        rendered="true" />
+                        <apex:outputText value="{!advancedOptions}" 
+                                         rendered="false" />
+                    </apex:outputPanel>
+                    
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+            
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.sfwdelivery.wizarddata");a.init=function(){SVMX.define("com.servicemax.client.sfwdelivery.wizarddata.SFWData",{extend:"com.servicemax.client.lib.api.Object",alias:"widget.sfw.data",constructor:function(b){this.callParent([b]);},initComponent:function(){}});};})();

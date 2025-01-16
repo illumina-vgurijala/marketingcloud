@@ -1,0 +1,1123 @@
+<!-- 
+    Apttus Contract Lifecycle Management
+    @2015-2019 Apttus Inc. All rights reserved.
+ 
+ -->
+<apex:page sidebar="false" 
+            showHeader="false" 
+            docType="html-5.0"
+            standardController="Apttus__Wizard2__c"
+            extensions="Apttus.WizardController"
+            action="{!initWizard}"
+            title="{!wizard.Apttus__BannerStatement__c}">
+                    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" />   
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'js/jquery-ui-1.12.1.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/wizard-designer.js')}" />    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/jquery.blockUI.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesignerAttachment, 'js/wizard-designer-attachment.js')}" />
+
+    <link type="text/css" href="{!URLFOR($Resource.FontAwesome,'css/font-awesome.min.css')}" rel="stylesheet" />    
+    <link type="text/css" href="{!URLFOR($Resource.WizardDesigner,'css/normalize.css')}" rel="stylesheet" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.12.1.min.css')}"/>
+    <link type="text/css" href="{!URLFOR($Resource.WizardDesigner, 'css/runtime.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.WizardDesigner,'css/style.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.WizardDesignerAttachment,'css/wizard-attachment.css')}" rel="stylesheet" />  
+    <style>
+        .disable {
+            pointer-events : none;
+			color: grey;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+        .disable:hover{
+            pointer-events : none;
+            color: grey;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+        .queSpinner {
+            font-size : 1em;
+            position : absolute;
+            margin-left : -20px;
+        }
+        #calYearPicker{
+            text-indent:0;
+        }  
+		.requiredDiv select, .requiredDiv input, .requiredDiv textarea{
+            border-left: 4px solid #e60000;
+        }		
+    </style>
+    <script>
+        j$ = jQuery.noConflict();
+        
+        j$( document ).ready(function() {
+            var openPopup = '{!openPopup}';           
+            if(openPopup == "true") {                
+                j$.unblockUI();            
+                j$( "#attachmentModal" ).dialog( "open" );
+                j$('#attachmentModal').css('width','428px');
+                animateSideBar('{!OpenSidebar}');
+            } 
+            // set Json map on load   
+            if(setJSONOnLoad) { 
+                processJsonOnLoad(JSON.stringify(jsonFocusObjectMap));                
+            }
+            setJSONOnLoad = false;                  
+        }); 
+    
+        function onAjaxStart() {            
+            j$('html, body').css('cursor', 'wait');
+        }
+    
+        function onAjaxStop() {            
+            j$('html, body').css('cursor', 'auto');
+        }
+        
+        function onClickStart() {                       
+            j$.blockUI({ message: '<img src="{!URLFOR($Resource.WizardUI, '/images/load-icon.gif')}"/><div>{!$Label.LoadingPage}</div>' });
+        }
+    
+        function onClickStop() {
+            j$.unblockUI();         
+        }
+    
+        function loadWizardDesignCSS() {      
+            if({!cssAvailable == 'true'})
+            {                   
+                var resValue = '{!JSINHTMLENCODE(StaticResourceBaseUrl)}' + '/resource/' + '{!JSINHTMLENCODE(wizard.StaticResource__c)}' + '/' + '{!JSINHTMLENCODE(wizard.CSSFileName__c)}';
+                var cssLink = "<link rel='stylesheet' id='dynamicCss' href='"+ resValue +"' type='text/css' />";                
+                j$("body").append(cssLink);                 
+            }               
+        }
+
+        function getCustomLabels() {
+            return {
+                DefaultRule: '{!$Label.DefaultRule}',
+                RuleFor: '{!$Label.RuleFor}',
+                FailedToSaveRuleset: '{!$Label.FailedToSaveRuleset}',
+                DefaultInput: '{!$Label.DefaultInput}',
+                WantToActivateWizard: '{!$Label.WantToActivateWizard}',
+                New: '{!$Label.New}',
+                Edit: '{!$Label.Edit}',
+                Delete: '{!$Label.Delete}',
+                View: '{!$Label.View}',
+                WarnWizardLibraryItemAdd: '{!$Label.WarnWizardLibraryItemAdd}',
+                Ok: '{!$Label.Ok}',
+                Cancel: '{!$Label.Cancel}',
+                Activate: '{!$Label.Activate}',
+                Review: '{!$Label.Review}'
+            };
+        }
+        
+        onUserNavigate('onwizardstart', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}');
+        
+        window.onunload = function() {
+            onUserNavigate('onwizardunload', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}');
+            
+        }
+        
+		var focusElemOldValue = '';
+        var focusedElementId = null;
+        var onFocus = function(elemId) {
+            focusedElementId = elemId.replace(/(:|\.)/g,'\\\\$1'); //Escape id chars
+            
+            var ele = document.getElementById(elemId);
+			focusElemOldValue = ele.value;
+            //SetCaretAtEnd(ele);
+            if(ele.type == 'text' || ele.type == 'textarea') {
+            	disableActionLinksJS();
+            }
+        }
+               
+        var onComplete = function() {
+            setTimeout(function(){
+                j$('#' + focusedElementId).focus();
+            }, 10);
+            
+            var ele = document.getElementById(focusedElementId);
+            //SetCaretAtEnd(ele); Commenting out this Function to fix CLM-2784
+            
+            j$('.dateFieldClass').datepicker();
+            
+        }
+        
+        function SetCaretAtEnd(elem) {
+            var elemLen = elem.value.length;
+            // For IE Only
+            if (document.selection) {
+                // Set focus
+                elem.focus();
+                // Use IE Ranges
+                var oSel = document.selection.createRange();
+                // Reset position to 0 & then set at end
+                oSel.moveStart('character', -elemLen);
+                oSel.moveStart('character', elemLen);
+                oSel.moveEnd('character', 0);
+                oSel.select();
+            }
+            else if (elem.selectionStart || elem.selectionStart == '0') {
+                // Firefox/Chrome
+                elem.selectionStart = elemLen;
+                elem.selectionEnd = elemLen;
+                elem.focus();
+            } 
+        } 
+        
+        var onCompleteObjFields = function(elemId) {            
+            var focusedElementObjFieldId = elemId.replace(/(:|\.)/g,'\\\\$1');
+            setTimeout(function(){
+                j$('#' + focusedElementObjFieldId).focus();
+            }, 10);
+            
+            j$('.dateFieldClass').datepicker();
+            
+        }
+        
+        function disableElement(elemId) {
+            var selectedElement = elemId.replace(/(:|\.)/g,'\\\\$1');
+            j$('#' + selectedElement).addClass("disable");
+        }
+    
+        function enableElement(elemId) {            
+            var selectedElement = elemId.replace(/(:|\.)/g,'\\\\$1');
+            j$('#' + selectedElement).removeClass("disable");
+        }
+        
+        j$("body").on("click", function(){ 
+            //
+        });
+    
+        function onWait(fieldId) {             
+            var fieldId = fieldId.replace(/(:|\.)/g,'\\\\$1');            
+            j$("body").off("click");            
+            j$("#" + fieldId).before("<span class='field" + fieldId + "'> <i class=\"fa fa-spinner fa-spin queSpinner\"></i></span>");                       
+        }
+    
+        function onWaitComplete(fieldId) {            
+            var fieldId = fieldId.replace(/(:|\.)/g,'\\\\$1');            
+            j$(".field" + fieldId).remove();
+            j$("body").on("click");
+        }
+        
+		function validateAndRerender(errorsPresent, functionName) {
+			disableActionLinksJS();
+			if(errorsPresent == 'true') {
+				window[functionName + 'ErrorMsg']();
+			}
+			else{
+				window[functionName]();
+			}
+			return false;           
+		}
+		
+		
+		//JS variable to hold the focus object value in json format.
+		var jsonFocusObjectMap;
+        var setJSONOnLoad = true;
+		
+		//JS variable to hold wizardRuntimeInputId.
+		var wizardRuntimeInputId;
+        jsonFocusObjectMap = JSON.parse('{!JSENCODE(jsonStringFocusObjectMap)}');
+
+		//return all the selected values of a multipicklist.
+		function getSelectValues(select) {
+			var result = '';
+			var options = select && select.options;
+			var opt;
+
+			for (var i=0, iLen=options.length; i<iLen; i++) {
+				opt = options[i];
+
+				if (opt.selected) {
+					result += (opt.value || opt.text) + ';';
+				}
+			}
+			return result;
+		}
+		
+		//populate the JSON String for focusObjectMap.
+        function populateJSONObjectMap(objName, fldName, fldvalue, fldType) {
+            fldType = fldType.toUpperCase();
+            
+            if (fldType == "BOOLEAN") {
+                fldvalue = document.getElementById(fldvalue).checked;
+            }            
+            else if (fldType == "MULTIPICKLIST") {
+                fldvalue = getSelectValues(document.getElementById(fldvalue));
+            }            
+            else if (fldType == "DOUBLE" || fldType == "PERCENT" || fldType == "CURRENCY") {
+                fldvalue = document.getElementById(fldvalue).value;
+                fldvalue = Number(fldvalue);
+                  
+            }			
+            else if (fldType == "DATE") {
+                fldvalue = document.getElementById(fldvalue).value;
+                if (fldvalue != ""){
+                    var d = new Date(fldvalue);
+                    fldvalue = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); 
+                } else {
+                    fldvalue = null;
+                }
+            } 			
+            else if (fldType == "DATETIME") {
+                fldvalue = document.getElementById(fldvalue).value;
+                fldvalue = new Date(fldvalue);               
+            }  
+            else if (fldType == "REFERENCE") {
+                fldvalue = document.getElementById(fldvalue+'_lkid').value;
+                // Salesforce DOM returns '000000000000000' when value of a lookup is null. If this value is returned replace the value by null
+                if (fldvalue == '000000000000000'){
+                    fldvalue=null;
+                }                           
+            }
+            else {
+                fldvalue = document.getElementById(fldvalue).value;
+            }
+            // salesforce sets the dependent controlling field value to '_\u0001_' when there is no value available for a parent controlling field.
+            // Reset FieldValue to empty string in case no value is selected in Controlling Field
+            fldvalue = (fldvalue == '_\u0001_') ? '' : fldvalue;
+            
+            jsonFocusObjectMap[objName][fldName] = fldvalue;
+           
+            return true;
+        }
+        
+		//pass the populated json string as a param to controller along with elementId on click of view attachments link.
+        function viewAttachmentsJS(icrId, openPopup, linkId) {
+            wizardRuntimeInputId = icrId;  
+            convertJsonToObjMap(icrId, openPopup, JSON.stringify(jsonFocusObjectMap), linkId);
+            return true;
+        }
+		
+		// reset focus map only when there is no validation error on page. 
+		function resetFocusMap(isError, jsonStringFocusObjectMap) {
+            if(isError == 'false') {
+                jsonFocusObjectMap = JSON.parse(jsonStringFocusObjectMap);  
+            }
+        }
+        
+		// function used to enable the action links after it has been disabled by disableActionLinksJS function.
+        function enableActionLinksJS(focusedElemValue) {            
+            if(focusedElemValue != focusElemOldValue && focusedElemValue != null) {
+                return false;
+            }
+            else{
+                var attachElements = document.getElementsByClassName("numberOfAttach");  
+                var btnsPanel = document.getElementsByClassName("controls"); 
+                for(var i=0, elemLength = attachElements.length; i < elemLength; i++ ) {
+                    attachElements[i].classList.remove("disable");
+                }
+                
+                for(var i=0, elemLength = btnsPanel.length; i < elemLength; i++ ) {
+                    btnsPanel[i].classList.remove("disable");
+                }
+            }
+			if(focusedElemValue == null) {
+				//set the focus back to element.
+				setTimeout(function(){
+					j$('#' + focusedElementId).focus();
+				}, 10);
+			}
+        }
+        
+		// function used to disable the action links on page (View Attachments, Save, Next). 
+		// this is done basically to restrict the user from clicking the link before the data is submitted to server. 
+        function disableActionLinksJS() {
+            var attachElements = document.getElementsByClassName("numberOfAttach");  
+            var btnsPanel = document.getElementsByClassName("controls"); 
+            for(var i=0, elemLength = attachElements.length; i < elemLength; i++ ) {
+                attachElements[i].classList.add("disable");
+            }
+            for(var i=0, elemLength = btnsPanel.length; i < elemLength; i++ ) {
+                btnsPanel[i].classList.add("disable");
+            }
+        }
+		
+    </script>
+    <style>
+        .question-container-section{
+            overflow: hidden;
+            float: left;
+            width: 100%;
+        }
+        .question-text-section{
+            display: -webkit-box;
+            overflow: hidden;
+            text-overflow: hiden;
+            line-height: 17px;
+            max-height: 82px;
+			-webkit-line-clamp: 2;
+            margin: 0px 5px 25px 5px;
+        }
+        .answer-container-section{
+            float: left;
+            
+        }
+        .answer-input-section{
+            display:block;
+    		float: left;
+        	margin: 0px 120px 0px 0px;
+        }
+        .answer-notes-attachment-section{
+         	display:block;
+    		float: right;
+        }
+        
+        
+    </style>
+    <body class="runtime">
+    
+    <apex:form id="frmWizardRuntime" html-novalidate="true">
+        <apex:actionRegion >
+            <apex:actionFunction name="convertJsonToObjMap" action="{!viewAttachments}" reRender="pnlRuntimeBody, modalID" status="ajaxStatusContainer" oncomplete="checkPageDisplayed(); animateSideBar('{!OpenSidebar}'); openViewAttachmentsModal(); onCompleteDateField();  return false;">
+                <apex:param name="wizardRuntimeInputIdParam" value="" assignTo="{!viewAttachWizardRuntimeInputId}"/>
+                <apex:param name="openPopupParam" value="" assignTo="{!openPopup}"/>
+                <apex:param value="" name="jsonFocusObjectParam" assignTo="{!jsonStringFocusObjectMap}"/>
+                <apex:param value="" name="refreshAttachmentCountParam" assignTo="{!refreshAttachmentCountId}"/>
+            </apex:actionFunction>
+        </apex:actionRegion>
+
+        <apex:actionFunction name="processJsonOnLoad" action="{!loadJSONValue}" reRender="focusObjectMessage,pnlRuntimeBody" immediate="true">
+            <apex:param value="" name="jsonFocusObjectParamOnLoad" assignTo="{!jsonStringFocusObjectMap}"/>
+        </apex:actionFunction>
+
+        <apex:actionFunction name="processInputRules" action="{!processInputRules}" reRender="focusObjectMessage,pnlRuntimeBody" immediate="true" status="ajaxStatusContainer" oncomplete="checkPageDisplayed(); animateSideBar('{!OpenSidebar}');onCompleteDateField();enableActionLinksJS(null); return false;"/>
+        <apex:actionFunction name="processInputRulesErrorMsg" action="{!processInputRules}" reRender="focusObjectMessage,pnlRuntimeBody" status="ajaxStatusContainer" oncomplete="checkPageDisplayed(); animateSideBar('{!OpenSidebar}');onCompleteDateField();enableActionLinksJS(null); return false;"/>
+        
+        <apex:actionFunction name="saveRuntimeId" action="{!saveRuntimeId}" reRender="focusObjectMessage,pnlRuntimeBody" immediate="true" status="ajaxStatusContainer" oncomplete="checkPageDisplayed(); animateSideBar('{!OpenSidebar}');onCompleteDateField();enableActionLinksJS(null); return false;"/>
+        <apex:actionFunction name="saveRuntimeIdErrorMsg" action="{!saveRuntimeId}" reRender="focusObjectMessage,pnlRuntimeBody" status="ajaxStatusContainer" oncomplete="checkPageDisplayed(); animateSideBar('{!OpenSidebar}');onCompleteDateField();enableActionLinksJS(null); return false;"/>
+        
+        <apex:actionFunction name="saveRuntimeIdComments" action="{!saveRuntimeIdComments}" reRender="focusObjectMessage,pnlRuntimeBody" immediate="true" status="ajaxStatusContainer" oncomplete="checkPageDisplayed(); animateSideBar('{!OpenSidebar}');onCompleteDateField();enableActionLinksJS(null); return false;"/>
+        <apex:actionFunction name="saveRuntimeIdCommentsErrorMsg" action="{!saveRuntimeIdComments}" reRender="focusObjectMessage,pnlRuntimeBody" status="ajaxStatusContainer" oncomplete="checkPageDisplayed(); animateSideBar('{!OpenSidebar}');onCompleteDateField();enableActionLinksJS(null); return false;"/>
+
+        
+        <apex:actionStatus id="ajaxStatusContainer" onstart="onAjaxStart();" onstop="onAjaxStop();">
+        </apex:actionStatus>
+            <apex:outputPanel layout="block" id="errorMessages">
+                <apex:pageMessages />
+        </apex:outputPanel>
+        <apex:outputPanel id="pnlRuntimeBody" layout="none" rendered="{!NOT(ErrorLoadingWizard)}">            
+            <!-- Steps sidebar - start -->
+            <apex:outputPanel layout="block" rendered="{!runtimeWizard.Apttus__Status__c == 'In Progress'}" id="sidebarmain" >
+                <ul id="dock" style="display :{!IF(openSidebar=='true', 'none', 'inline-block')}">
+                    <li id="tools">
+                        <apex:outputPanel styleClass="progressHeader">{!$Label.apttus__steps}</apex:outputPanel>
+                    </li>
+                </ul>
+                <apex:outputPanel rendered="{!openSidebar=='true'}">                    
+                    <ul class="sidePannel free" id="sideBarSection">                        
+                        <li>                                
+                            <apex:outputPanel styleClass="sidePanelStepTitle">{!$Label.apttus__steps}</apex:outputPanel>
+                            <apex:outputPanel styleClass="undock fa fa-close sidePanelClose" id="unPinId" onclick="noSideBarDisplayFunction();"></apex:outputPanel>
+                        </li>
+                        
+                        <apex:variable value="0" var="wizardStepNum"/>
+                        
+                        <!-- Steps without rule -->
+                        <apex:repeat value="{!wizardProgressSteps}" var="wizardSteps" rendered="{!NOT(stepRulesExist)}">                                                                                 
+                        <li>  
+                            <apex:commandLink id="sidebar_step_no_rule" styleClass="{!IF((currentStepIndex == VALUE(wizardStepNum) && stepType == 'STEP'), 'stepSelected', 'stepNotSelected')}" value="{!JSENCODE(wizardSteps.name)}" action="{!onStepNavigateWithoutRules}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.sidebar_step_no_rule}');"  oncomplete="enableElement('{!$Component.sidebar_step_no_rule}');checkPageDisplayed();animateSideBar('true');resetFocusMap('{!errorsPresent}', '{!JSENCODE(jsonStringFocusObjectMap)}');">
+                                <apex:param name="wizardStepNumParam" value="{!wizardStepNum}"></apex:param>
+                                <apex:param name="wizardStepIDParam" value="{!wizardSteps.id}"></apex:param>                                    
+                            </apex:commandLink>                                          
+                            <apex:variable var="wizardStepNum" value="{!VALUE(wizardStepNum) + 1}"/>           
+                        </li>
+                        </apex:repeat>
+                        
+                        <!-- Steps with rule -->
+                        <apex:repeat value="{!runtimeSteps}" var="wizardRuntimeSteps" rendered="{!stepRulesExist}">                                                                                   
+                        <li>  
+                            <apex:commandLink id="sidebar_step_with_rule" styleClass="{!IF((currentStepIndex == VALUE(wizardStepNum) && stepType == 'STEP'), 'stepSelected', 'stepNotSelected')}" value="{!JSENCODE(wizardRuntimeSteps.step.name)}" action="{!onStepNavigateWithRules}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.sidebar_step_with_rule}');"  oncomplete="enableElement('{!$Component.sidebar_step_with_rule}');checkPageDisplayed();animateSideBar('true');resetFocusMap('{!errorsPresent}', '{!JSENCODE(jsonStringFocusObjectMap)}');">
+                                <apex:param name="wizardStepNumParam" value="{!wizardStepNum}"></apex:param>                                         
+                            </apex:commandLink>                                
+                            <apex:variable var="wizardStepNum" value="{!VALUE(wizardStepNum) + 1}"/> 
+                        </li>
+                        </apex:repeat>
+                        <li> 
+                            <apex:commandLink id="sidebar_preview_no_rule" value="{!$Label.apttus__preview}" styleClass="{!IF(stepType != 'STEP', 'stepSelected', 'stepNotSelected')} sidebar-preview" action="{!onPreviewWithoutRules}" rendered="{!NOT(stepRulesExist)}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.sidebar_preview_no_rule}');"  oncomplete="enableElement('{!$Component.sidebar_preview_no_rule}');checkPageDisplayed();animateSideBar('true');">                                 
+                            </apex:commandLink>
+                        </li>
+                        <li> 
+                            <apex:commandLink id="sidebar_preview_with_rule" value="{!$Label.apttus__preview}"  styleClass="{!IF(stepType != 'STEP', 'stepSelected', 'stepNotSelected')} sidebar-preview" action="{!onPreviewWithRules}" rendered="{!stepRulesExist}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.sidebar_preview_with_rule}');" oncomplete="enableElement('{!$Component.sidebar_preview_with_rule}');checkPageDisplayed();animateSideBar('true');">                                 
+                            </apex:commandLink>
+                        </li>
+                    </ul>
+                </apex:outputPanel>                
+            </apex:outputPanel>
+            <!-- Steps sidebar - end -->
+            
+            <apex:outputPanel layout="block" styleClass="main-section" style="position:relative">
+                <apex:outputPanel layout="block" styleClass="{!IF(openSidebar=='true', 'other-sectionShow', 'other-sectionHide')} other-section runtime-container withoutReview" rendered="{!stepType == 'STEP'}">
+                <apex:outputPanel layout="block">
+                    <div class="runtime-header">
+                    <h2>{!currentStepIndex+1}. {!currentStep.step.BannerStatement__c} <i class="help-icon tooltip" title="{!currentStep.step.Description__c}"></i></h2>
+                    <apex:outputPanel style="margin-left:10px;" styleClass="fa fa-question-circle" title="{!currentStep.step.Apttus__RuntimeHelpText__c}" rendered="{!currentStep.step.Apttus__RuntimeHelpText__c != null && currentStep.step.Apttus__RuntimeHelpText__c != ''}" />
+                    </div>
+                    <apex:outputPanel rendered="{!currentStep.step.Apttus__InputGroupOption__c == ''}" layout="none">                        
+                        <div class="field-container runtime-field">                
+                            
+                            <apex:repeat value="{!currentStep.lineItems[0].inputs}" var="icr"> 
+                                <apex:outputPanel layout="block" styleClass="question-container-section" rendered="{!icr.Shown__c == true}">
+                                    <apex:outputPanel layout="block" styleClass="question-text-section" rendered="{!icr.Shown__c == true}" id="queBlock" >
+                                        <apex:outputPanel layout="block" id="quePreText">
+                                            <apex:outputLabel id="question" value="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.Apttus__Shown__c == true && NOT(isWizardUseLongQuestion)}" styleClass="questionText"/>
+                                            <apex:outputLabel id="longQuestion" value="{!icr.WizardInputControlId__r.Apttus__LongQuestion__c}" rendered="{!icr.Apttus__Shown__c == true && isWizardUseLongQuestion}" styleClass="questionText"/>
+                                            <apex:outputPanel styleClass="fa fa-question-circle question-help" style="margin-left:5px" title="{!icr.WizardInputControlId__r.Apttus__RuntimeHelpText__c}" rendered="{!icr.WizardInputControlId__r.RuntimeHelpText__c != null && icr.WizardInputControlId__r.RuntimeHelpText__c != '' && icr.Shown__c == true}" />
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel layout="block" styleClass="answer-container-section" rendered="{!icr.Shown__c == true}">
+                                        <apex:outputPanel layout="block" styleClass="answer-input-section" rendered="{!icr.Shown__c == true}">
+                                            
+                                            <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none" styleClass="question-input-container"> 
+                                                <apex:outputPanel style="display:block" layout="block" rendered="{!currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] != null && currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] == true}">
+                                                    <apex:actionRegion >                                                                                                                
+                                                        <apex:inputCheckbox id="wif1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif1}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_CHECKBOX && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputCheckbox>
+                                                        <apex:selectList id="wif2" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif2}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" size="1" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_PICKLIST && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}" >
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:selectList>
+                                                        <apex:selectCheckboxes id="wif3" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif3}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}" value="{!currentStep.inputMultiselectValues[icr.Apttus__WizardInputControlId__c]}" layout="pageDirection" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_MULTIPICKLIST && icr.Apttus__Shown__c == true}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:selectCheckboxes>
+                                                        <apex:selectRadio id="wif4" styleClass="{!IF(icr.WizardInputControlId__r.Required__c, 'required', '')}{!IF(icr.WizardInputControlId__r.FieldType__c == TYPE_PICKLIST_RADIO_BUTTON, ' radio-picklist', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif4}')" label="{!icr.WizardInputControlId__r.Question__c}" value="{!icr.Apttus__ResponseValue__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" layout="pageDirection" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_PICKLIST_RADIO_BUTTON && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}" >
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}"></apex:selectOptions>
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:selectRadio>
+                                                        <apex:inputText id="wif5" styleClass="dateFieldClass{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif5}')" label="{!icr.WizardInputControlId__r.Question__c}" html-placeholder="mm/dd/yyyy" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_DATE && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onCompleteDateField();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputText>
+                                                        <apex:inputText id="wif6" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif6}')" label="{!icr.WizardInputControlId__r.Question__c}" html-pattern="[0-9]" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_NUMBER && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputText>                                                        
+                                                        <apex:inputText id="wif7" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif7}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_TEXT && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputText>
+                                                        <apex:inputTextArea id="wif8" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif8}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_TEXTAREA && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputTextArea>
+                                                    </apex:actionRegion>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel styleClass="question-input-container" style="display:inblock" layout="block" rendered="{!currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] != null && currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] == false}">
+                                                    <apex:actionRegion >
+                                                        <div class="{!IF(icr.WizardInputControlId__r.Required__c, 'required', '')}">
+                                                            <apex:inputCheckbox id="wif1_1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif1_1}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_CHECKBOX && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                                <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                            </apex:inputCheckbox>
+                                                        </div>
+                                                        <apex:selectList id="wif2_1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif2_1}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" size="1" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_PICKLIST && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}" >
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:selectList>
+                                                        <apex:selectCheckboxes id="wif3_1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif3_1}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}" value="{!currentStep.inputMultiselectValues[icr.Apttus__WizardInputControlId__c]}" layout="pageDirection" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_MULTIPICKLIST && icr.Apttus__Shown__c == true}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:selectCheckboxes>
+                                                        <apex:selectRadio id="wif4_1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON, 'radio-picklist', '')}{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif4_1}')" label="{!icr.WizardInputControlId__r.Question__c}" value="{!icr.Apttus__ResponseValue__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" layout="pageDirection" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_PICKLIST_RADIO_BUTTON && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}" >
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}"></apex:selectOptions>
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:selectRadio>
+                                                        <apex:inputText id="wif5_1" styleClass="dateFieldClass{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif5_1}')" label="{!icr.WizardInputControlId__r.Question__c}" html-placeholder="mm/dd/yyyy" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_DATE && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onCompleteDateField();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputText>
+                                                        <apex:inputText id="wif6_1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif6_1}')" label="{!icr.WizardInputControlId__r.Question__c}" html-pattern="[0-9]" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_NUMBER && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputText>
+                                                        <apex:inputText id="wif7_1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif7_1}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_TEXT && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputText>
+                                                        <apex:inputTextArea id="wif8_1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif8_1}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.FieldType__c == TYPE_TEXTAREA && icr.Shown__c == true}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');" onsubmit="onWait('{!$Component.quePreText}');"/>
+                                                        </apex:inputTextArea>
+                                                    </apex:actionRegion>
+                                                </apex:outputPanel>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel rendered="{!icr.WizardInputControlId__r.FieldClass__c == OBJECT_FIELD && icr.Shown__c == true}" layout="none">                                        
+                                                <apex:outputPanel style="display:block" layout="block" rendered="{!currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] != null && currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] == true}">
+                                                    <apex:actionRegion > 
+														<div class="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'requiredDiv', '')}">
+															<apex:inputField id="of1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.of1}')" value="{!focusObjectMap[icr.WizardInputControlId__r.ObjectName__c][icr.WizardInputControlId__r.FieldName__c]}" rendered="{!icr.Enabled__c == true && NOT(icr.WizardInputControlId__r.ReadOnly__c)}" required="{!icr.WizardInputControlId__r.Required__c}">
+																<apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');populateJSONObjectMap('{!icr.WizardInputControlId__r.ObjectName__c}','{!icr.WizardInputControlId__r.FieldName__c}', '{!$Component.of1}', '{!icr.WizardInputControlId__r.FieldType__c}');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');return false;" onsubmit="onWait('{!$Component.quePreText}');"/>
+															</apex:inputField>
+														</div>
+                                                        <apex:outputPanel styleClass="{!IF(icr.WizardInputControlId__r.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldName__c != null && (icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c)}">
+                                                            <apex:outputField value="{!focusObjectMap[icr.WizardInputControlId__r.ObjectName__c][icr.WizardInputControlId__r.FieldName__c]}" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" />
+                                                        </apex:outputPanel>
+                                                        <script>
+                                                            if(setJSONOnLoad) {
+                                                                populateJSONObjectMap('{!icr.WizardInputControlId__r.ObjectName__c}','{!icr.WizardInputControlId__r.FieldName__c}', '{!$Component.of1}', '{!icr.WizardInputControlId__r.FieldType__c}');
+                                                            }
+                                                        </script>
+                                                    </apex:actionRegion>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel style="display:block" layout="block" rendered="{!currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] != null && currentStep.lineItemsRuleExistMap[icr.WizardInputControlId__r.id] == false}">
+                                                    
+													<apex:actionRegion > 
+														<div class="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'requiredDiv', '')}">
+															<apex:inputField id="of1_1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.of1_1}')" value="{!focusObjectMap[icr.WizardInputControlId__r.ObjectName__c][icr.WizardInputControlId__r.FieldName__c]}" rendered="{!icr.Enabled__c == true && NOT(icr.WizardInputControlId__r.ReadOnly__c)}" required="{!icr.WizardInputControlId__r.Required__c}">
+																<apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeId');populateJSONObjectMap('{!icr.WizardInputControlId__r.ObjectName__c}','{!icr.WizardInputControlId__r.FieldName__c}', '{!$Component.of1_1}', '{!icr.WizardInputControlId__r.FieldType__c}'); onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.quePreText}');return false;" onsubmit="onWait('{!$Component.quePreText}');"/>
+															</apex:inputField>
+														</div>
+                                                        <apex:outputPanel styleClass="{!IF(icr.WizardInputControlId__r.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldName__c != null && (icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c)}">
+                                                            <apex:outputField value="{!focusObjectMap[icr.WizardInputControlId__r.ObjectName__c][icr.WizardInputControlId__r.FieldName__c]}" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" />
+                                                        </apex:outputPanel>
+                                                        <script>
+                                                        HandleRequiredSignForLookupMultiPicklist('of1_1');
+                                                        </script>
+                                                    </apex:actionRegion>
+                                                </apex:outputPanel>
+                                            </apex:outputPanel>
+                                        </apex:outputPanel>
+                                		<!--- Wizard Attachment - start - Regular layout both types of fields -->                                            
+                                        <apex:outputPanel layout="block" styleClass="answer-notes-attachment-section" rendered="{!icr.Shown__c == true}">
+                                            <apex:outputPanel layout="block"  styleClass="" rendered="{!icr.Shown__c == true}">                                    
+                                                <apex:actionRegion rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}">
+                                                    <apex:inputTextArea id="wif_comment_1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_comment_1}')" html-placeholder="{!$Label.apttus__entercomments}" value="{!icr.Apttus__Comments__c}" styleClass="commentsTextArea">
+                                                        <apex:actionSupport event="onchange" status="ajaxStatusContainer" reRender="dummy"  oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeIdComments');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_comment_1}');" onsubmit="onWait('{!$Component.wif_comment_1}');"/>
+                                                    </apex:inputTextArea>                                   
+                                                </apex:actionRegion>                                       
+                                                <apex:outputPanel layout="block" styleClass="attachViewSection" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}">                                                                                                                                                                                                                      
+                                                    <apex:actionRegion >        
+                                                        <apex:variable value="{!currentStep.lineItemsWithAttachment[icr.id]}"  var="wizardAttachmentMap" /> 
+                                                        <apex:commandLink id="viewAttachId" value="{!wizardAttachmentMap.size} {!$Label.apttus__wizardattachments}" onClick="onClickStart();viewAttachmentsJS('{!icr.id}', 'true', '{!$Component.viewAttachId}'); return false;" styleClass="numberOfAttach" reRender="dummy"/>                                                            
+                                                    </apex:actionRegion>                                                                                                                                                                                
+                                                </apex:outputPanel>                                        
+                                            </apex:outputPanel> 
+                                        </apex:outputPanel>                                        
+                                        <!--- Wizard Attachment - end - Regular layout both types of fields -->                                                            
+                                    </apex:outputPanel>
+                                </apex:outputPanel> 
+                            </apex:repeat>
+                            <apex:outputPanel layout="block" style="" styleClass="stepImage">
+                                <apex:variable var="wizardResource" value="{!IF(wizard.Apttus__StaticResource__c == null || wizard.Apttus__StaticResource__c == '', '', wizard.Apttus__StaticResource__c)}"/>
+                                <apex:variable var="wizardStepImageName" value="{!IF(currentStep.step.Apttus__ImageFilename__c == null || currentStep.step.Apttus__ImageFilename__c == '', '', currentStep.step.Apttus__ImageFilename__c)}"/>
+                                <div class="wizardStepImage" style="display:inline-block">                                                     
+                                    <apex:variable var="wizardStepImageUrl" value="/resource/{!wizardResource}/{!wizardStepImageName}"/>
+                                    <apex:image value="{!wizardStepImageUrl}" styleClass="wizardIcon" rendered="{!(wizardResource != '' && wizardStepImageName != '')}"></apex:image>                            
+                                </div>   
+                            </apex:outputPanel>
+                        </div>
+                        <!--Step Image-->
+                    
+                        <apex:outputPanel id="focusObjectMessage" styleClass="createAgrement">
+                             <apex:outputText value="{!$Label.apttus__createsfocusobject}" escape="false" rendered="{!currentStep.determinedFocusObject != null && currentStep.determinedRecordType == null}">
+                                <apex:param value="{!currentStep.determinedFocusObject}"></apex:param>
+                             </apex:outputText>
+                             <apex:outputText value="{!$Label.apttus__createsrecordtype}" escape="false" rendered="{!currentStep.determinedFocusObject != null && currentStep.determinedRecordType != null}">
+                                <apex:param value="{!currentStep.determinedFocusObject}"></apex:param>
+                                <apex:param value="{!currentStep.determinedRecordType}"></apex:param>
+                             </apex:outputText>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!currentStep.step.Apttus__InputGroupOption__c == GROUP_OPTION_TABLELAYOUT}" layout="block" styleClass="tableContainer">
+                         <table class="runtime-table-layout">
+                             <thead>
+                                 <tr>
+                                    <apex:repeat value="{!currentStep.lineItems[0].inputs}" var="icr">
+                                        <th>{!icr.WizardInputControlId__r.Question__c}
+                                            <apex:outputPanel styleClass="fa fa-question-circle" title="{!icr.WizardInputControlId__r.Apttus__RuntimeHelpText__c}" rendered="{!icr.WizardInputControlId__r.Apttus__RuntimeHelpText__c != null && icr.WizardInputControlId__r.Apttus__RuntimeHelpText__c != ''}" />
+                                        </th>
+                                    </apex:repeat>
+                                    <th>&nbsp;</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                <apex:variable var="lineItemIndex" value="{!0}"></apex:variable>
+                                <apex:repeat value="{!currentStep.lineItems}" var="lineItem">
+                                    <tr>
+                                         <apex:repeat value="{!lineItem.inputs}" var="icr">
+                                             <td class="field-container runtime-field">
+                                                <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none">
+                                                    <apex:actionRegion >
+                                                        <div class="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required alignProper', 'alignProper')}">
+                                                            <apex:inputCheckbox id="wif_tl1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl1}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_CHECKBOX}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                                <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl1}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl1}');" />
+                                                            </apex:inputCheckbox>
+                                                        </div>
+                                                        <apex:selectList id="wif_tl2" styleClass="alignProper{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl2}')" size="1" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_PICKLIST}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl2}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl2}');"/>
+                                                        </apex:selectList>
+                                                        <apex:selectCheckboxes id="wif_tl3" styleClass="alignProper{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl3}')" label="{!icr.WizardInputControlId__r.Question__c}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}" value="{!currentStep.inputMultiselectValues[icr.Apttus__WizardInputControlId__c]}" layout="pageDirection" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_MULTIPICKLIST && icr.Apttus__Shown__c == true}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl3}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl3}');"/>
+                                                        </apex:selectCheckboxes>    
+                                                        <apex:selectRadio id="wif_tl4" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON, 'radio-picklist', '')}{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl4}')" style="margin:0px 10px 10px" label="{!icr.WizardInputControlId__r.Question__c}" layout="pageDirection" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl4}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl4}');"/>
+                                                        </apex:selectRadio>
+                                                         <apex:inputText id="wif_tl5" styleClass="alignProper dateFieldClass{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl5}')" label="{!icr.WizardInputControlId__r.Question__c}" html-placeholder="mm/dd/yyyy" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATE}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl5}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onCompleteDateField();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl5}');"/>
+                                                         </apex:inputText>
+                                                         <apex:inputText id="wif_tl6" styleClass="alignProper{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl6}')" label="{!icr.WizardInputControlId__r.Question__c}" html-pattern="[0-9]" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_NUMBER}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl6}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl6}');"/>
+                                                         </apex:inputText>
+                                                         <apex:inputText id="wif_tl7" styleClass="alignProper{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl7}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_TEXT}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl7}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl7}');"/>
+                                                         </apex:inputText> 
+                                                         <apex:inputTextArea id="wif_tl8" styleClass="alignProper{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_tl8}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_tl8}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_tl8}');"/>
+                                                         </apex:inputTextArea>
+                                                     </apex:actionRegion>
+                                                </apex:outputPanel>
+                                                <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == OBJECT_FIELD}" layout="none">
+                                                    <apex:actionRegion >
+														<div class="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'requiredDiv', '')}">
+															<apex:inputField id="of_tl1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.of_tl1}')" value="{!lineItem.lineItemSO[icr.WizardInputControlId__r.Apttus__FieldName__c]}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldName__c != null && NOT(icr.WizardInputControlId__r.Apttus__ReadOnly__c)}" required="{!icr.WizardInputControlId__r.Required__c}">
+																<apex:actionSupport onsubmit="onWait('{!$Component.of_tl1}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.of_tl1}');"/>
+															</apex:inputField>
+														</div>
+                                                        <apex:outputPanel styleClass="{!IF(icr.WizardInputControlId__r.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldName__c != null && (icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c)}">
+                                                            <apex:outputField value="{!lineItem.lineItemSO[icr.WizardInputControlId__r.Apttus__FieldName__c]}" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" />
+                                                        </apex:outputPanel>
+                                                        <script>
+                                                            HandleRequiredSignForLookupMultiPicklist('of_tl1');
+                                                        </script>
+                                                  </apex:actionRegion>   
+                                                </apex:outputPanel>
+                                                <!--- Wizard Attachment - start - Table layout both types of fields -->
+                                                <apex:outputPanel layout="block">
+                                                     <apex:actionRegion rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}" >
+                                                         <apex:inputTextArea id="oft_comment_1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.oft_comment_1}')" style="float:left;margin:0px 0px 10px 10px" html-placeholder="{!$Label.apttus__entercomments}" value="{!icr.Apttus__Comments__c}" styleClass="commentsTextArea">
+                                                                <apex:actionSupport onsubmit="onWait('{!$Component.oft_comment_1}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeIdComments');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.oft_comment_1}');"/>
+                                                         </apex:inputTextArea>                                  
+                                                     </apex:actionRegion>                                                                                                                
+                                                     <apex:outputPanel layout="block" styleClass="attachViewSection" style="margin: -8px 0px 0px 15px;width: 472px;" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}">                                                                                                                                                                                                                      
+                                                         <apex:actionRegion >        
+                                                             <apex:variable value="{!currentStep.lineItemsWithAttachment[icr.id]}"  var="wizardAttachmentMap" />    
+                                                             <apex:commandLink value="{!wizardAttachmentMap.size} {!$Label.apttus__wizardattachments}" onClick="onClickStart();" action="{!viewAttachments}" styleClass="numberOfAttach" oncomplete="checkPageDisplayed();animateSideBar('{!OpenSidebar}');openViewAttachmentsModal();return false;" reRender="modalID">
+                                                                 <apex:param name="wizardRuntimeInputIdParam" value="{!icr.id}" assignTo="{!viewAttachWizardRuntimeInputId}"/>
+                                                                 <apex:param name="openPopupParam" value="true" assignTo="{!openPopup}"/>
+                                                             </apex:commandLink>
+                                                         </apex:actionRegion>                                                                                                                                                                                
+                                                         <!--<apex:outputLabel for="tableLayoutFileUpload" styleClass="uploadText">{!$Label.apttus__addfiles}</apex:outputLabel>
+                                                         <apex:inputFile style="display:none" value="{!newAttachment.body}" filename="{!newAttachment.name}" contentType="{!newAttachment.contentType}" id="tableLayoutFileUpload" onchange="uploadAttachmentToWizardRuntimeInput('{!icr.id}');"/>-->
+                                                     </apex:outputPanel> 
+                                                 </apex:outputPanel>                                                    
+                                                 <!--- Wizard Attachment - end - Table layout both types of fields -->                                                 
+                                             </td>
+                                         </apex:repeat>
+                                         <td>
+                                            <apex:commandLink action="{!onRemoveItem}" immediate="true" styleClass="fa fa-trash-o" title="{!$Label.apttus__removeitem}" onComplete="checkPageDisplayed();animateSideBar('{!OpenSidebar}');" reRender="focusObjectMessage,pnlRuntimeBody">
+                                                <apex:param name="index" value="{!lineItemIndex}"></apex:param>
+                                            </apex:commandLink>
+                                         </td>
+                                     </tr>
+                                     <apex:variable var="lineItemIndex" value="{!lineItemIndex + 1}"></apex:variable>
+                                 </apex:repeat>
+                             </tbody>
+                         </table>
+                         <apex:outputPanel layout="block" style="margin-top:25px;" styleClass="stepImage">                           
+                            <apex:variable var="wizardResource" value="{!IF(wizard.Apttus__StaticResource__c == null || wizard.Apttus__StaticResource__c == '', '', wizard.Apttus__StaticResource__c)}"/>
+                            <apex:variable var="wizardStepImageName" value="{!IF(currentStep.step.Apttus__ImageFilename__c == null || currentStep.step.Apttus__ImageFilename__c == '', '', currentStep.step.Apttus__ImageFilename__c)}"/>
+                            <div class="wizardStepImage" style="display:inline-block">                                                     
+                                <apex:variable var="wizardStepImageUrl" value="/resource/{!wizardResource}/{!wizardStepImageName}"/>
+                                <apex:image value="{!wizardStepImageUrl}" styleClass="wizardIconTable" rendered="{!(wizardResource != '' && wizardStepImageName != '')}"></apex:image>                            
+                            </div>                             
+                        </apex:outputPanel>
+                        <span class="secondary-section">                            
+                            <apex:commandLink styleClass="secondary-ctrl addBtnTableLayout" value="{!$Label.apttus__additem}" action="{!onAddItem}" onComplete="checkPageDisplayed();animateSideBar('{!OpenSidebar}');" reRender="focusObjectMessage,pnlRuntimeBody" immediate="true"></apex:commandLink>                            
+                        </span>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!currentStep.step.Apttus__InputGroupOption__c == GROUP_OPTION_REPEATABLE}" layout="none">
+                        <apex:variable var="lineItemIndex" value="{!0}"></apex:variable>
+                        <div class="field-container runtime-field" >
+                            <apex:repeat value="{!currentStep.lineItems}" var="lineItem">
+                                <apex:repeat value="{!lineItem.inputs}" var="icr">                                 
+                                    <apex:outputPanel layout="block" styleClass="questionSection">
+                                        <apex:outputPanel layout="block" style="margin-bottom:15px" styleClass="question-text-section">
+                                            <apex:outputLabel id="question" value="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.Apttus__Shown__c == true && NOT(isWizardUseLongQuestion)}" styleClass="questionText"/>
+                                            <apex:outputLabel id="longQuestion" value="{!icr.WizardInputControlId__r.Apttus__LongQuestion__c}" rendered="{!icr.Apttus__Shown__c == true && isWizardUseLongQuestion}" styleClass="questionText"/>
+                                            <apex:outputPanel styleClass="fa fa-question-circle" style="margin-left:5px" title="{!icr.WizardInputControlId__r.Apttus__RuntimeHelpText__c}" rendered="{!icr.WizardInputControlId__r.Apttus__RuntimeHelpText__c != null && icr.WizardInputControlId__r.Apttus__RuntimeHelpText__c != ''}" />
+                                        </apex:outputPanel>
+                                        <div>
+                                            <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none">
+                                                <apex:actionRegion >
+                                                    <apex:outputPanel layout="block" style="display:inline-block">
+                                                        <apex:inputCheckbox id="wif_r1" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r1}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_CHECKBOX}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r1}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r1}');"/>
+                                                        </apex:inputCheckbox>
+                                                        <apex:selectList id="wif_r2" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r2}')" size="1" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_PICKLIST}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r2}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r2}');"/>
+                                                        </apex:selectList>
+                                                        <apex:selectCheckboxes id="wif_r3" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r3}')" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" label="{!icr.WizardInputControlId__r.Question__c}" required="{!icr.WizardInputControlId__r.Required__c}" value="{!currentStep.inputMultiselectValues[icr.Apttus__WizardInputControlId__c]}" layout="pageDirection" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_MULTIPICKLIST && icr.Apttus__Shown__c == true}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r3}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r3}');"/>
+                                                        </apex:selectCheckboxes>
+                                                        <apex:selectRadio id="wif_r4" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')},{!IF(icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON, ' radio-picklist', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r4}')" label="{!icr.WizardInputControlId__r.Question__c}" layout="pageDirection" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:selectOptions value="{!currentStep.inputSelectOptions[icr.Apttus__WizardInputControlId__c]}" />
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r4}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r4}');"/>
+                                                        </apex:selectRadio>
+                                                        <apex:inputText id="wif_r5" styleClass="dateFieldClass{!IF(icr.WizardInputControlId__r.Apttus__Required__c, ' required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r5}')" label="{!icr.WizardInputControlId__r.Question__c}" html-placeholder="mm/dd/yyyy" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATE}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r5}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onCompleteDateField();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r5}');"/>
+                                                        </apex:inputText>
+                                                        <apex:inputText id="wif_r6" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r6}')" label="{!icr.WizardInputControlId__r.Question__c}" html-pattern="[0-9]" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_NUMBER}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r6}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r6}');"/>
+                                                        </apex:inputText>
+                                                        <apex:inputText id="wif_r7" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r7}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_TEXT}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r7}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r7}');"/>
+                                                        </apex:inputText> 
+                                                        <apex:inputTextArea id="wif_r8" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.wif_r8}')" value="{!icr.Apttus__ResponseValue__c}" label="{!icr.WizardInputControlId__r.Question__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="{!icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c}" required="{!icr.WizardInputControlId__r.Required__c}">
+                                                            <apex:actionSupport onsubmit="onWait('{!$Component.wif_r8}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.wif_r8}');"/>
+                                                        </apex:inputTextArea>
+                                                    </apex:outputPanel>
+                                                </apex:actionRegion>                                                                                          
+                                            </apex:outputPanel>
+                                            
+                                            <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == OBJECT_FIELD}" layout="none">
+                                                <apex:actionRegion >
+													<div class="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'requiredDiv', '')}">
+														<apex:inputField id="of_r1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.of_r1}')" value="{!lineItem.lineItemSO[icr.WizardInputControlId__r.Apttus__FieldName__c]}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldName__c != null && NOT(icr.WizardInputControlId__r.Apttus__ReadOnly__c)}" required="{!icr.WizardInputControlId__r.Required__c}">
+															<apex:actionSupport onsubmit="onWait('{!$Component.of_r1}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'processInputRules');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.of_r1}');"/>
+														</apex:inputField>
+													</div>
+                                                    <apex:outputPanel styleClass="{!IF(icr.WizardInputControlId__r.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldName__c != null && (icr.Apttus__Enabled__c == false || icr.WizardInputControlId__r.Apttus__ReadOnly__c)}">
+                                                        <apex:outputField value="{!lineItem.lineItemSO[icr.WizardInputControlId__r.Apttus__FieldName__c]}" styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" />
+                                                    </apex:outputPanel>
+                                                    <script>
+                                                        HandleRequiredSignForLookupMultiPicklist('of_r1');
+                                                    </script>
+                                                </apex:actionRegion> 
+                                            </apex:outputPanel>
+                                        </div>
+                                    </apex:outputPanel>
+                                    <!-- Wizard Attachment - start - Repeat layout both types of fields -->
+                                    <apex:outputPanel layout="block" styleClass="commentSection" >
+                                        <apex:actionRegion rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}"  >
+                                            <apex:inputTextArea id="ofr_comment_1" onblur="enableActionLinksJS(this.value);" onfocus="onFocus('{!$Component.ofr_comment_1}')" html-placeholder="{!$Label.apttus__entercomments}" value="{!icr.Apttus__Comments__c}" styleClass="commentsTextArea">
+                                                <apex:actionSupport onsubmit="onWait('{!$Component.ofr_comment_1}');" event="onchange" status="ajaxStatusContainer" reRender="dummy" oncomplete="validateAndRerender('{!ErrorsPresent}', 'saveRuntimeIdComments');onComplete();checkPageDisplayed();animateSideBar('{!OpenSidebar}');onWaitComplete('{!$Component.ofr_comment_1}');"/>
+                                            </apex:inputTextArea>                                   
+                                        </apex:actionRegion>                                                
+                                        <apex:outputPanel layout="block" styleClass="attachViewSection" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}"  >                                                                                                                                                                                                                      
+                                            <apex:actionRegion >        
+                                                <apex:variable value="{!currentStep.lineItemsWithAttachment[icr.id]}"  var="wizardAttachmentMap" /> 
+                                                <apex:commandLink value="{!wizardAttachmentMap.size} {!$Label.apttus__wizardattachments}" onClick="onClickStart();" action="{!viewAttachments}" styleClass="numberOfAttach" oncomplete="checkPageDisplayed();animateSideBar('{!OpenSidebar}');openViewAttachmentsModal();return false;" reRender="modalID">
+                                                    <apex:param name="wizardRuntimeInputIdParam" value="{!icr.id}" assignTo="{!viewAttachWizardRuntimeInputId}"/>
+                                                    <apex:param name="openPopupParam" value="true" assignTo="{!openPopup}"/>
+                                                </apex:commandLink>
+                                            </apex:actionRegion>                                                                                                                                                                                
+                                            <!--<apex:outputLabel for="fileUploaded" styleClass="uploadText">{!$Label.apttus__addfiles}</apex:outputLabel>
+                                            <apex:inputFile style="display:none" value="{!newAttachment.body}" filename="{!newAttachment.name}" contentType="{!newAttachment.contentType}" id="fileUploaded" onchange="uploadAttachmentToWizardRuntimeInput('{!icr.id}');"/>-->
+                                        </apex:outputPanel> 
+                                    </apex:outputPanel>                                        
+                                    <!-- Wizard Attachment - end - Repeat layout both types of fields -->                                  
+                                </apex:repeat>
+                                 
+                                <apex:commandLink styleClass="secondary-ctrl default removeBtn" value="{!$Label.apttus__removeitem}" action="{!onRemoveItem}" immediate="true" onComplete="checkPageDisplayed();animateSideBar('{!OpenSidebar}');" reRender="focusObjectMessage,pnlRuntimeBody">
+                                     <apex:param name="index" value="{!lineItemIndex}"></apex:param>
+                                </apex:commandLink>
+                                <apex:variable var="lineItemIndex" value="{!lineItemIndex+1}"></apex:variable>
+                            </apex:repeat>
+                            <span class="secondary-section addBtn">
+                               <apex:commandLink styleClass="secondary-ctrl" value="{!$Label.apttus__additem}" action="{!onAddItem}" onComplete="checkPageDisplayed();animateSideBar('{!OpenSidebar}');" reRender="focusObjectMessage,pnlRuntimeBody" immediate="true"></apex:commandLink>
+                            </span>
+                            <apex:outputPanel layout="block" styleClass="stepImage">                              
+                               <apex:variable var="wizardResource" value="{!IF(wizard.Apttus__StaticResource__c == null || wizard.Apttus__StaticResource__c == '', '', wizard.Apttus__StaticResource__c)}"/>
+                               <apex:variable var="wizardStepImageName" value="{!IF(currentStep.step.Apttus__ImageFilename__c == null || currentStep.step.Apttus__ImageFilename__c == '', '', currentStep.step.Apttus__ImageFilename__c)}"/>
+                               <div class="wizardStepImage" style="display:inline-block">                                                     
+                                   <apex:variable var="wizardStepImageUrl" value="/resource/{!wizardResource}/{!wizardStepImageName}"/>
+                                   <apex:image value="{!wizardStepImageUrl}" styleClass="wizardIcon" rendered="{!(wizardResource != '' && wizardStepImageName != '')}"></apex:image>                            
+                               </div>                                    
+                            </apex:outputPanel>
+                        </div>
+                    </apex:outputPanel>   
+                    </apex:outputPanel>
+
+                        <div class="runtime-footer"  style="position: fixed;top: -12px;z-index: 999;right: 60px;">
+                            <span class="controls">
+                                <!--<apex:commandLink styleClass="secondary-ctrl alignBtn" style="margin-right: 10px;" value="{!$Label.apttus__preview}" action="{!onPreview}" status="ajaxStatusContainer" reRender="pnlRuntimeBody" onComplete="checkPageDisplayed();" immediate="true">
+                                    <apex:param name="previewFunIndex" value="{!currentStepIndex}" assignTo="{!previewFuncStepIndex}"></apex:param>
+                                </apex:commandLink> -->
+                                <apex:actionRegion >
+                                <apex:commandLink id="back_button" styleClass="secondary-ctrl alignBtn" value="{!$Label.apttus__back}" action="{!onBack}" status="ajaxStatusContainer" immediate="true" rendered="{!currentStepIndex != 0}" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.back_button}');" onComplete="enableElement('{!$Component.back_button}');setBodyWidth(); onUserNavigate('onwizardback', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}', '{!currentStep.step.id}', '{!JSENCODE(currentStep.step.name)}');j$('.message').remove();animateSideBar('{!OpenSidebar}');CompleteDateField();"></apex:commandLink>
+                                </apex:actionRegion>
+                                <apex:commandLink id="save_button" styleClass="secondary-ctrl default" value="{!$Label.apttus__save}" action="{!onSave}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.save_button}');" onComplete="enableElement('{!$Component.save_button}');checkPageDisplayed();onUserNavigate('onwizardsave', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}', '{!currentStep.step.id}', '{!JSENCODE(currentStep.step.name)}');onCompleteDateField();animateSideBar('{!OpenSidebar}');"></apex:commandLink>
+                                <apex:commandLink id="next_button" styleClass="secondary-ctrl default" value="{!$Label.apttus__next}" action="{!onNext}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.next_button}');" onComplete="enableElement('{!$Component.next_button}');checkPageDisplayed();onUserNavigate('onwizardnext', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}', '{!currentStep.step.id}', '{!JSENCODE(currentStep.step.name)}');onCompleteDateField();animateSideBar('{!OpenSidebar}');resetFocusMap('{!errorsPresent}', '{!JSENCODE(jsonStringFocusObjectMap)}');"></apex:commandLink>                                
+                            </span>
+                        </div>
+
+            </apex:outputPanel>
+            <apex:outputPanel id="pnlRuntimeReviewAndAcknowledgment" layout="block" styleClass="other-section runtime-container" rendered="{!stepType == 'SUBMIT' || stepType == 'ABORT' || stepType == 'ACKNOWLEDGEMENT' || stepType == 'PREVIEW'}">
+                <apex:outputPanel styleClass="runtime-header review" layout="block">
+                    <apex:outputPanel rendered="{!runtimeWizard.Apttus__Status__c == 'In Progress'}" layout="none">
+                    <h2>{!$Label.apttus__reviewinformation}</h2>
+                </apex:outputPanel>
+                    <apex:outputPanel rendered="{!runtimeWizard.Apttus__Status__c == 'Submitted' || runtimeWizard.Apttus__Status__c == 'Aborted'}" layout="none">
+                        <h2>{!$Label.apttus__wizardcompletedescription}</h2>    
+                    </apex:outputPanel>
+                </apex:outputPanel>
+                <apex:variable var="stepIndex" value="{!0}" /> 
+                <apex:repeat value="{!runtimeSteps}" var="rs">
+                    <div class="runtime-header review" style="width:100%;float:left;margin:0px">
+                        <h3 style="width:50%;float:left;">{!rs.step.BannerStatement__c}</h3>                  
+                        <apex:outputPanel rendered="{!wizard.Apttus__AllowReviewEdit__c && runtimeWizard.Apttus__Status__c == 'In Progress' && stepRulesExist}" style="float:right">
+                            <a onclick="promptEditWarning('{!stepIndex}');" style="font-size: 13px;color: #7A8199;font-weight: 700;font-family:'Arial Bold','Arial'">{!$Label.apttus__edit}</a>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!wizard.Apttus__AllowReviewEdit__c && runtimeWizard.Apttus__Status__c == 'In Progress' && NOT(stepRulesExist)}" style="float:right">
+                            <a onclick="onGotoStep('{!stepIndex}');" style="font-size: 13px;color: #7A8199;font-weight: 700;font-family:'Arial Bold','Arial'">{!$Label.apttus__edit}</a>
+                        </apex:outputPanel>
+                    </div>
+                    <apex:outputPanel layout="none" rendered="{!rs.step.Apttus__InputGroupOption__c == ''}">
+                        <ul class="runtime-review-section" style="width:100%;float:left;margin:20px 0px 0px 0px;padding:0px">
+                            <apex:repeat value="{!rs.lineItems[0].inputs}" var="icr">
+                                <apex:outputPanel rendered="{!icr.Shown__c}" layout="none">
+                                    <li style="clear:both">
+                                        <div style="width: calc(40% - 40px);float: left;padding-left: 5px;margin:0px 30px 0px 0px;text-align:right">  
+                                            <apex:outputLabel style="color : red" value="|" rendered="{!icr.WizardInputControlId__r.Required__c}"/>
+                                            <apex:outputLabel style="color: #a09999;" value="{!icr.WizardInputControlId__r.Question__c}" ></apex:outputLabel>                                            
+                                        </div>    
+                                        <div style="width:60%;float:left;margin:0px 0px 0px 0px">                                         
+                                            <apex:outputPanel layout="none" rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}">
+                                                <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_CHECKBOX && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_TEXTAREA}">{!icr.Apttus__ResponseValue__c}</apex:outputPanel>
+                                                <apex:inputCheckbox value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_CHECKBOX}" disabled="true" />
+                                                <apex:inputTextarea value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="true"></apex:inputTextarea>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel layout="none" rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == OBJECT_FIELD}">
+                                                <apex:outputField value="{!focusObjectMap[icr.WizardInputControlId__r.ObjectName__c][icr.WizardInputControlId__r.FieldName__c]}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_REFERENCE || icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATE || icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATETIME}"></apex:outputField>
+                                                <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_REFERENCE && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_DATE && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_DATETIME}">{!icr.Apttus__ResponseValue__c}</apex:outputPanel>
+                                            </apex:outputPanel>
+                                            <!-- Wizard Attachment - start - preview - no layout -->                                    
+                                            <div style="position:relative; margin-top:5px;">
+                                                <apex:inputTextarea value="{!icr.Apttus__Comments__c}" disabled="true" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}"></apex:inputTextarea>                                                                                       
+                                            </div>                                       
+                                            <apex:actionRegion >        
+                                                <apex:variable value="{!rs.lineItemsWithAttachment[icr.id]}"  var="wizardAttachmentMap" />  
+                                                <apex:commandLink value="{!wizardAttachmentMap.size} {!$Label.apttus__wizardattachments}" onClick="onClickStart();" action="{!viewAttachmentsPreview}" styleClass="numberOfAttach" oncomplete="openViewAttachmentsModal();return false;" reRender="modalID" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}">
+                                                    <apex:param name="wizardRuntimeInputIdParam" value="{!icr.id}" assignTo="{!viewAttachWizardRuntimeInputId}"/>
+                                                    <apex:param name="wizardRuntimeAttachmentsParam" value="{!stepIndex}" assignTo="{!previewStepIndex}"/>
+                                                </apex:commandLink>
+                                            </apex:actionRegion>                                        
+                                        </div>                                  
+                                        <!-- Wizard Attachment - end - preview - no layout -->
+                                    </li>
+                                </apex:outputPanel>
+                            </apex:repeat>
+                        </ul>
+                    </apex:outputPanel>
+                    <apex:outputPanel layout="none" rendered="{!rs.step.Apttus__InputGroupOption__c == GROUP_OPTION_REPEATABLE}">
+                        <apex:variable var="lineItemIndex" value="{!0}"></apex:variable>
+                        <apex:repeat value="{!rs.lineItems}" var="lineItem">
+                            <ul class="runtime-review-section" style="width:100%;float:left;margin:20px 0px 0px 0px;padding:0px">
+                                <apex:repeat value="{!lineItem.inputs}" var="icr">
+                                    <li style="clear:both">
+                                        <div style="width: calc(40% - 40px);float: left;padding-left: 5px;margin:0px 30px 0px 0px;text-align:right">  
+                                            <label style="color: #a09999;">{!icr.WizardInputControlId__r.Question__c}</label>
+                                        </div>
+                                        <div style="width:60%;float:left;margin:0px 0px 0px 0px">
+                                            <apex:outputPanel layout="none" rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}">
+                                                <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_CHECKBOX && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_TEXTAREA}">{!icr.Apttus__ResponseValue__c}</apex:outputPanel>
+                                                <apex:inputCheckbox value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_CHECKBOX}" disabled="true" />
+                                                <apex:inputTextarea value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="true"></apex:inputTextarea>
+                                            </apex:outputPanel>
+                                            <apex:outputPanel layout="none" rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == OBJECT_FIELD}">
+                                                <apex:outputField value="{!lineItem.lineItemSO[icr.WizardInputControlId__r.Apttus__FieldName__c]}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_REFERENCE || icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATE || icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATETIME}"></apex:outputField>
+                                                <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_REFERENCE && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_DATE && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_DATETIME}">{!icr.Apttus__ResponseValue__c}</apex:outputPanel>
+                                            </apex:outputPanel>
+                                            <!-- Wizard Attachment - start - preview - repeat layout -->                                    
+                                            <div style="position:relative; margin-top:5px;">
+                                                <apex:inputTextarea style="float:left;margin-right:5px;" value="{!icr.Apttus__Comments__c}" disabled="true" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}"></apex:inputTextarea>                                            
+                                            </div>                                       
+                                            <apex:actionRegion >        
+                                                <apex:variable value="{!rs.lineItemsWithAttachment[icr.id]}"  var="wizardAttachmentMap" />  
+                                                <apex:commandLink style="width:100%;" value="{!wizardAttachmentMap.size} {!$Label.apttus__wizardattachments}" onClick="onClickStart();" action="{!viewAttachmentsPreview}" styleClass="numberOfAttach" oncomplete="openViewAttachmentsModal();return false;" reRender="modalID" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}">
+                                                    <apex:param name="wizardRuntimeInputIdParam" value="{!icr.id}" assignTo="{!viewAttachWizardRuntimeInputId}"/>
+                                                    <apex:param name="wizardRuntimeAttachmentsParam" value="{!stepIndex}" assignTo="{!previewStepIndex}"/>
+                                                </apex:commandLink>
+                                            </apex:actionRegion>
+                                         </div>
+                                         <!-- Wizard Attachment - end - preview - repeat layout -->
+                                     </li>
+                                </apex:repeat>
+                             </ul>
+                            <apex:variable var="lineItemIndex" value="{!lineItemIndex+1}"></apex:variable>
+                        </apex:repeat>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!rs.step.Apttus__InputGroupOption__c == GROUP_OPTION_TABLELAYOUT}" layout="block" styleClass="runtime-header-section" style="width:100%;margin-top:60px">
+                        <table class="runtime-table-layout" style=" word-wrap: break-word; table-layout:fixed;width: 100%;">
+                            <thead>
+                                <tr>
+                                    <apex:repeat value="{!rs.lineItems[0].inputs}" var="icr">
+                                        <th>{!icr.WizardInputControlId__r.Question__c}</th>
+                                    </apex:repeat>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <apex:repeat value="{!rs.lineItems}" var="lineItem">
+                                <tr>
+                                    <apex:repeat value="{!lineItem.inputs}" var="icr">
+                                        <td class="field-container runtime-field">
+                                            <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none">
+                                                <apex:outputPanel layout="none" rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}">
+                                                    <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_CHECKBOX}">{!icr.Apttus__ResponseValue__c}</apex:outputPanel>
+                                                    <apex:inputCheckbox styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_CHECKBOX}" disabled="true" />
+                                                    <!--  && icr.WizardInputControlId__r.FieldType__c != TYPE_TEXTAREA
+                                                    <apex:inputTextarea styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" value="{!icr.Apttus__ResponseValue__c}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="true"></apex:inputTextarea> -->
+                                                </apex:outputPanel>
+                                                <apex:outputPanel layout="none" rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == OBJECT_FIELD}">
+                                                    <apex:outputField styleClass="{!IF(icr.WizardInputControlId__r.Apttus__Required__c, 'required', '')}" value="{!lineItem.lineItemSO[icr.WizardInputControlId__r.Apttus__FieldName__c]}" rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_REFERENCE || icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATE || icr.WizardInputControlId__r.Apttus__FieldType__c == TYPE_DATETIME}"></apex:outputField>
+                                                    <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_REFERENCE && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_DATE && icr.WizardInputControlId__r.Apttus__FieldType__c != TYPE_DATETIME}">{!icr.Apttus__ResponseValue__c}</apex:outputPanel>
+                                                </apex:outputPanel>
+                                                 <!-- Wizard Attachment - start - preview - Table layout -->                                    
+                                                <div style="position:relative; margin-top:5px;margin-bottom:0;">
+                                                    <apex:inputTextarea value="{!icr.Apttus__Comments__c}" disabled="true" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}" style="margin:10px 0px 0px 0px "></apex:inputTextarea>                                                    
+                                                </div>                                   
+                                                <apex:actionRegion >        
+                                                    <apex:variable value="{!rs.lineItemsWithAttachment[icr.id]}"  var="wizardAttachmentMap" />  
+                                                    <apex:commandLink style="width:100%" value="{!wizardAttachmentMap.size} {!$Label.apttus__wizardattachments}" onClick="onClickStart();" action="{!viewAttachmentsPreview}" styleClass="numberOfAttach" oncomplete="openViewAttachmentsModal();return false;" reRender="modalID" rendered="{!icr.WizardInputControlId__r.Apttus__EnableAttachments__c == true}">
+                                                        <apex:param name="wizardRuntimeInputIdParam" value="{!icr.id}" assignTo="{!viewAttachWizardRuntimeInputId}"/>
+                                                        <apex:param name="wizardRuntimeAttachmentsParam" value="{!stepIndex}" assignTo="{!previewStepIndex}"/>
+                                                    </apex:commandLink>
+                                                </apex:actionRegion>                                                    
+                                                <!-- Wizard Attachment - end - preview - Table layout -->
+                                            </apex:outputPanel>
+                                            <apex:outputPanel rendered="{!icr.WizardInputControlId__r.Apttus__FieldClass__c == OBJECT_FIELD}" layout="none">
+                                                <apex:outputField value="{!lineItem.lineItemSO[icr.WizardInputControlId__r.Apttus__FieldName__c]}"></apex:outputField>
+                                            </apex:outputPanel>
+                                        </td>
+                                    </apex:repeat>
+                                </tr>  
+                                </apex:repeat>
+                            </tbody>
+                        </table>
+                    </apex:outputPanel>
+                    <apex:variable var="stepIndex" value="{!stepIndex+1}"/>
+                </apex:repeat>
+                <div class="runtime-footer" style="position: fixed;top:-12px;z-index: 999;right: 60px;">
+                    <apex:outputPanel rendered="{!stepType == 'SUBMIT'}" styleClass="controls">
+                        <apex:commandLink id="ack_back_button" styleClass="secondary-ctrl alignBtn" value="{!$Label.apttus__back}" action="{!onBack}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.ack_back_button}');" onComplete="enableElement('{!$Component.ack_back_button}');setBodyWidth();onUserNavigate('onwizardback', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}', '{!currentStep.step.id}', '{!JSENCODE(currentStep.step.name)}');onCompleteDateField();animateSideBar('{!OpenSidebar}');"></apex:commandLink>
+                        <apex:commandLink id="ack_submit_button" styleClass="secondary-ctrl default" value="{!$Label.apttus__submit}" action="{!onSubmit}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,pnlHeaderPrimaryControls,titleBanner,errorMessages" onclick="disableElement('{!$Component.ack_submit_button}');onUserNavigate('onwizardsubmit', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}')" onComplete="enableElement('{!$Component.ack_submit_button}');"></apex:commandLink>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!stepType == 'ABORT'}" styleClass="controls">
+                        <apex:commandLink id="ack_back_button_1" styleClass="secondary-ctrl alignBtn" value="{!$Label.apttus__back}" action="{!onBack}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.ack_back_button_1}');" onComplete="enableElement('{!$Component.ack_back_button_1}');setBodyWidth();onUserAction('onwizardback', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}', '{!currentStep.step.id}', '{!JSENCODE(currentStep.step.name)}');onCompleteDateField();animateSideBar('{!OpenSidebar}');"></apex:commandLink>
+                        <apex:commandLink id="ack_abort_button" styleClass="secondary-ctrl abort" value="{!$Label.apttus__abort}" action="{!onAbort}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,pnlHeaderPrimaryControls,titleBanner,errorMessages" onclick="disableElement('{!$Component.ack_abort_button}');onUserNavigate('onwizardabort', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}')" onComplete="enableElement('{!$Component.ack_abort_button}');"></apex:commandLink>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!stepType == 'PREVIEW'}" styleClass="controls">
+                        <apex:commandLink id="ack_back_button_2" styleClass="secondary-ctrl alignBtn" value="{!$Label.apttus__back}" action="{!onPreivewBackStep}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,errorMessages" onclick="disableElement('{!$Component.ack_back_button_2}');" onComplete="enableElement('{!$Component.ack_back_button_2}');setBodyWidth();onCompleteDateField();animateSideBar('{!OpenSidebar}');" immediate="true"></apex:commandLink>                        
+                        <apex:commandLink id="ack_submit_button_1" styleClass="secondary-ctrl default" value="{!$Label.apttus__submit}" action="{!onSubmit}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,pnlHeaderPrimaryControls,titleBanner,sidebarpanelscript,errorMessages" onclick="disableElement('{!$Component.ack_submit_button_1}');onUserNavigate('onwizardsubmit', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}')" rendered="{!MandatoryFieldValueProvided && NOT(stepRulesExist)}" onComplete="enableElement('{!$Component.ack_submit_button_1}');"></apex:commandLink>
+                        <apex:commandLink id="ack_submit_button_2" styleClass="secondary-ctrl default" value="{!$Label.apttus__submit}" action="{!onSubmit}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,pnlHeaderPrimaryControls,titleBanner,sidebarpanelscript,errorMessages" onclick="disableElement('{!$Component.ack_submit_button_2}');onUserNavigate('onwizardsubmit', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}')" rendered="{!MandatoryFieldValueProvided && stepRulesExist && displaySubmit}" onComplete="enableElement('{!$Component.ack_submit_button_2}');"></apex:commandLink>
+                        <apex:commandLink id="ack_abort_button_1" styleClass="secondary-ctrl abort" value="{!$Label.apttus__abort}" action="{!onAbort}" status="ajaxStatusContainer" reRender="pnlRuntimeBody,pnlHeaderPrimaryControls,titleBanner,errorMessages" onclick="disableElement('{!$Component.ack_abort_button_1}');onUserNavigate('onwizardabort', '{!wizard.id}', '{!JSENCODE(wizard.name)}', '{!runtimeWizard.id}')" rendered="{!MandatoryFieldValueProvided && stepRulesExist && displayAbort}" onComplete="enableElement('{!$Component.ack_abort_button_1}');"></apex:commandLink>
+                    </apex:outputPanel>
+                </div>
+            </apex:outputPanel>
+        </apex:outputPanel>    
+        </apex:outputPanel>         
+            <div class="edit--warning--dlg">
+                <p class="content">
+                    <i class="fa fa-exclamation-triangle warn--icon"></i>                
+                    <span>{!$Label.EditingStepsRuntime}</span>
+                </p>
+            </div>        
+    
+        <div class="header">
+            <div class="header-container runtime-header-container">
+                <apex:outputPanel id="pnlHeaderPrimaryControls" styleClass="controls-container">
+                    <apex:outputLabel styleClass="primary{!IF(runtimeWizard.Apttus__Status__c == 'Submitted', ' activated', '')}{!IF(runtimeWizard.Apttus__Status__c == 'Aborted', ' aborted', '')}" rendered="{!NOT(ErrorLoadingWizard) && runtimeWizard.Apttus__Status__c != 'In Progress'}">                        
+                        {!IF(runtimeWizard.Status__c == 'Submitted', $Label.Submitted, '')}
+                        {!IF(runtimeWizard.Status__c == 'Aborted', $Label.Aborted, '')}
+                    </apex:outputLabel>
+                </apex:outputPanel>
+                <div class="runtime-logo-container">
+                <!-- Wizard image - start -->                                                           
+                    <apex:variable var="wizardResource" value="{!IF(wizard.Apttus__StaticResource__c == null || wizard.Apttus__StaticResource__c == '', '', wizard.Apttus__StaticResource__c)}"/>
+                    <div class="logo" >
+                        <apex:variable var="wizardLogoImageUrl" value="/resource/{!wizardResource}/logo.png" rendered="{! wizardResource != ''}"/>
+                        <apex:image style="position:absolute;left:0;float:left;" styleClass="logoImage" value="{!wizardLogoImageUrl}" rendered="{! wizardResource != ''}" />
+                        <apex:image style="position:absolute; left: 0;float:left;" styleClass="logoImage" value="{!URLFOR($Resource.Apttus__WizardDesigner, 'images/Wizard.png')}" rendered="{! wizardResource == ''}" />
+                    </div>                    
+                    <!-- Wizard image - end -->
+                    <apex:actionRegion >   
+                        <apex:outputPanel layout="block" styleClass="title" id="titleBanner">                    
+                            <apex:outputField value="{!runtimewizard.Name}" id="titleHeaderLabel" /> 
+                            <apex:inputField value="{!runtimewizard.Name}" id="titleHeaderEditText" styleClass="titleHeaderEditDisplay" />
+                            <apex:outputLabel styleClass="fa fa-pencil titleHeaderPencilDisplay" onclick="toggleTitleEditClick();" id="titleHeaderPencil" rendered="{!runtimeWizard.Apttus__Status__c == 'In Progress'}"/>                        
+                            <apex:commandLink action="{!saveRuntimeHeaderTitle}" reRender="titleBanner" styleClass="fa fa-check titleHeaderAcceptDisplay" id="titleHeaderAccept"/>                        
+                            <apex:outputLabel styleClass="fa fa-times titleHeaderCancelDisplay" id="titleHeaderCancel" onclick="toggleTitleEditCancelClick();"/>                                        
+                        </apex:outputPanel> 
+                     </apex:actionRegion>                
+                </div>
+            </div>
+        </div>
+        <apex:actionFunction action="{!onGotoStep}" name="onGotoStep" reRender="frmWizardRuntime" status="ajaxStatusContainer">
+            <apex:param name="index" value=""></apex:param>
+        </apex:actionFunction>
+        <apex:actionFunction name="invokeSaveComments" action="{!saveRuntimeIdComments}" reRender="focusObjectMessage,pnlRuntimeBody" oncomplete="checkPageDisplayed();animateSideBar('{!OpenSidebar}');"/>
+        <apex:actionFunction name="sideBarDisplayFunction" action="{!sideBarDisplay}" reRender="pnlRuntimeBody" oncomplete="checkPageDisplayed();animateSideBarFirstTime();" immediate="true" >
+            <apex:param name="sidebarParam" value="true"/> 
+        </apex:actionFunction>
+        <apex:actionFunction name="noSideBarDisplayFunction" action="{!sideBarDisplay}" reRender="pnlRuntimeBody" oncomplete="checkPageDisplayed();onCompleteDateField()" immediate="true" >
+            <apex:param name="sidebarParam" value="false"/>
+        </apex:actionFunction>
+        
+       </apex:form> 
+        
+        
+            <div id="attachmentModal" class="modal fade" role="dialog">
+                <apex:form >
+                <!--<apex:actionFunction name="invokeSaveRuntimeInputId"
+                                 action="{!saveRuntimeId}"
+                                 reRender="none" 
+                                 oncomplete="afterRuntimeIdSet();">
+                <apex:param name="param" assignTo="{!wizardRuntimeInputId}" value=""/>                           
+                </apex:actionFunction>-->
+            
+                <apex:actionFunction name="invokeSaveAttachmentToWizardRuntimeInput"
+                                 action="{!saveAttachmentToWizardRuntimeInput}">                                                         
+                </apex:actionFunction>
+            
+                <div class="modal-dialog">                                        
+                    <div class=""> 
+                        <apex:outputPanel id="modalID">
+                        <div class="modal-header">                            
+                            <h4 class="modal-title" style="display:inline-block">{!$Label.ManageAttachments}</h4>                            
+                            <apex:actionRegion >
+                                <apex:commandLink styleClass="fa fa-close modalClose" action="{!closeModalPopup}" oncomplete="closeModal(); onCompleteDateField();checkPageDisplayed();animateSideBar('{!OpenSidebar}');" rerender="{!refreshAttachmentCountId}" /> 
+                            </apex:actionRegion>
+                        </div>
+                        <div class="modal-body"  style="clear:both">    
+                            <span class="ui-helper-hidden-accessible"><input type="text"/></span>
+                            <apex:outputPanel id="viewAttachmentBlockId">
+                                <apex:pageBlock id="manageAttachmentsBlock" rendered="{!viewAttachWizardRuntimeInputId != null && (viewWizardRuntimeInputAttachments !=null && viewWizardRuntimeInputAttachments.size>0 )}">                        
+                                    <apex:variable var="attachmentIndex" value="{!0}"></apex:variable>  
+                                    <apex:pageBlockTable value="{!viewWizardRuntimeInputAttachments}" var="attachment" id="blockone">                           
+                                        <apex:column >
+                                            <apex:outputLink styleClass="modalDocName" value="{!URLFOR($Action.Attachment.Download, attachment.Id)}" target="_blank">{!attachment.Name}</apex:outputLink>                                            
+                                        </apex:column>
+                                        <apex:column >
+                                            <apex:actionRegion >                                                
+                                                <apex:commandLink onclick="j$('.modal-body a').addClass('disable');" styleClass="fa fa-close" action="{!deleteAttachment}" reRender="viewAttachmentBlockId" rendered="{!stepType == 'STEP'}">
+                                                    <apex:param name="deleteAttachIdParam" value="{!attachment.id}"  assignTo="{!deleteAttachId}"/>
+                                                    <apex:param name="wizardRuntimeInputIdParam" value="{!attachment.parentid}" assignTo="{!viewAttachWizardRuntimeInputId}"/>
+                                                    <apex:param name="attachIndex" value="{!attachmentIndex}"/>
+                                                </apex:commandLink>                                                
+                                            </apex:actionRegion>
+                                            <apex:variable var="attachmentIndex" value="{!attachmentIndex + 1}"></apex:variable>
+                                        </apex:column>                            
+                                    </apex:pageBlockTable>
+                                </apex:pageBlock>
+                            </apex:outputPanel>
+                        </div>
+                        <div class="modal-footer">                            
+                            <apex:outputLabel for="fileUploaded" styleClass="uploadText primary" rendered="{!stepType == 'STEP'}" value="{!$Label.apttus__addfiles}"></apex:outputLabel>                                                               
+                            <apex:inputFile style="display:none" value="{!attachmentBody}" filename="{!attachmentName}" contentType="{!attachmentContentType}" id="fileUploaded" onchange="invokeSaveWizardRuntimeInput();" rendered="{!stepType == 'STEP'}" />                                                                                                      
+							<apex:inputHidden value="{!viewAttachWizardRuntimeInputId}" id="wizardInputControlId"/>
+                        </div>
+						
+						<script>
+                            function invokeSaveWizardRuntimeInput() {
+                                if(wizardRuntimeInputId) {
+                                    document.getElementById('{!$Component.wizardInputControlId}').value = wizardRuntimeInputId;                                    
+                                }
+                                invokeSaveAttachmentToWizardRuntimeInput();
+                            }
+                        </script>
+                        </apex:outputPanel>
+                    </div>                                            
+                </div>
+                </apex:form>
+            </div>    
+    </body>
+</apex:page>

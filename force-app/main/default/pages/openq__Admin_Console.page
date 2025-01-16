@@ -1,0 +1,1737 @@
+<apex:page tabStyle="Account" controller="openq.Admin_Console" standardStylesheets="false" sidebar="false">
+    <apex:stylesheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/themes/cupertino/jquery-ui.css"></apex:stylesheet>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Mini_Colorpicker, 'jquery.minicolors.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/jquery.multiselect.css')}"/>
+
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"> </apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.js"></apex:includescript>
+    <apex:includescript value="{!URLFOR($Resource.openq__Mini_Colorpicker, 'jquery.minicolors.js')}"></apex:includescript>
+    <apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/jquery.multiselect.min.js')}"/>
+    
+    <style>
+    
+        .ui-tabs-vertical { width: 90em; }
+        .ui-tabs-vertical .ui-tabs-nav { padding: .2em .1em .2em .2em; float: left; width: 16em; }
+        .ui-tabs-vertical .ui-tabs-nav li { clear: left; width: 100%; border-bottom-width: 1px !important; border-right-width: 0 !important; margin: 0 -1px .2em 0; }
+        .ui-tabs-vertical .ui-tabs-nav li a { display:block; }
+        .ui-tabs-vertical .ui-tabs-nav li.ui-tabs-active { padding-bottom: 0; padding-right: .1em; border-right-width: 1px; border-right-width: 1px; }
+        .ui-tabs-vertical .ui-tabs-panel { padding: 1em; float: right; width: 70em;}
+        .ui-tabs .ui-tabs-nav li a { padding-right:5em; }
+                
+        *:focus { outline: none; }
+        
+        .saveBtn{
+        
+            float:right;
+        }
+        
+        #fields-4{ padding: 10px; }
+        
+        .consoleField { padding-top: 10px; padding-bottom: 10px; }
+        .consoleField .minicolors:hover { cursor: pointer }
+        
+        .consoleFieldLabel { float: left; }
+        
+        .saveBtn { position: absolute; left: 50%; }
+        
+        label { padding-right: 5px; }
+        
+        textarea {
+        
+            width: 500px;
+            height: 50px;
+        }
+        
+        #tabs div h2 { font-size: 14px;}
+        
+        .header { padding-top: 12px; padding-bottom: 8px; }
+        
+        .center { text-align: center; }
+        
+        .rowClassSeg {
+        
+            font-family: Lucida Grande, Lucida Sans, Arial, sans-serif !important;
+        }
+        
+        #tabs-9 input {
+        
+            width: 40px;
+        }
+        
+        .fileLabel{
+        
+            margin-top: 3px;
+        }
+        
+        .required{
+        
+            color:red;
+        }
+        
+        .eventDocImages{
+        
+            width:16px;
+            height:16px;
+            margin:0 10px -4px 0; 
+        }
+        
+        .custPopup{
+        
+            background-color: white;
+            border-width: 2px;
+            border-style: solid;
+            z-index: 9999;
+            left: 50%;
+            top:50%;
+            padding:10px;
+            position: fixed;
+            width: 500px;
+            height: 110px;
+            margin-left:-250px;
+        }
+        
+     .popupBackground{
+        background-color:black;
+        opacity: 0.90;
+        filter: alpha(opacity = 90);
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 9998;
+    }               
+    .floatInput{
+        
+        width:100%;     
+        position:relative;
+    }   
+    .floatInput label{
+        float: left;
+    }
+    .floatInputCheck{
+        
+        width:100%;     
+        position:relative;
+    }   
+    .floatInputCheck label{
+        float: left;
+    }
+    .floatInput .requiredInput{
+        float:left;
+        width:400px;
+    }
+   input[type="checkbox"]{
+        float:left;
+
+   }
+    </style>
+    
+     
+    
+    <apex:pageMessages id="errorDiv"/>
+    
+    <h1 class="header default" style="color: #245C8A; font-weight:bold; font-size: 24px;">
+    OpenQ Admin Console
+    </h1>
+    <apex:outputPanel id="tabPanel">
+    <apex:form id="theForm">
+        
+            <div id="tabs" style="position: relative;">
+                <ul>
+                    <li><a href="#tabs-1">General Settings</a></li>
+                    <li><a href="#tabs-2">Advocacy &amp; Sentiment</a></li>
+                    <li><a href="#tabs-3">Calendar</a></li>
+                    <li><a href="#tabs-4">{!$Label.Contact}</a></li>
+                    <li><a href="#tabs-5">{!$Label.Event_Label_Plural}</a></li>
+                    <li><a href="#tabs-6">{!$Label.Interaction}</a></li>
+                    <li><a href="#tabs-7">{!$Label.Mapping}</a></li>
+                    <li><a href="#tabs-8">{!$Label.MIRF_Label_Plural}</a></li>
+                    <li><a href="#tabs-9">{!$Label.Plan_Label}</a></li>
+                    <li><a href="#tabs-10">{!$Label.Segmentation_Label}</a></li>
+                    <li><a href="#tabs-11">{!$Label.Trigger_Plural}</a></li>
+                </ul>
+                <div id="tabs-1">
+                    <apex:outputPanel rendered="{!tabSelected == 'General'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveGeneralTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <div class="header"><h2>General Settings</h2></div>
+                        <div class="consoleField">
+                            <apex:outputLabel value="Interaction Presentation Past Download Days"/>
+                            <apex:inputField value="{!consSetting.openq__Int_Presentation_Past_Download_Day__c}"/>
+                        </div>                  
+                        <div class="consoleField">
+                            <apex:outputLabel value="Enable Chatter Feed on Contacts Page"/>
+                            <apex:inputField value="{!consSetting.openq__Is_Chatter_Feed_Enabled__c}"/>
+                        </div>                  
+                    </apex:outputPanel>                 
+                </div>              
+                <div id="tabs-2">
+                    <apex:outputPanel rendered="{!tabSelected == 'AdvocacySentiment'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveAdvocacySentimentTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <div class="header"><h2>General</h2></div>                      
+                        <div id="fields-General">
+                            <div class="consoleField">
+                                <apex:outputLabel value="Enable Advocacy/Sentiment"/>
+                                <apex:inputField value="{!consSetting.openq__Is_Insights_Enabled__c}"/>
+                            </div>
+                        </div>
+                        <div class="header"><h2>Chart Settings</h2></div>
+                        <div id="fields-ChartSettings">
+                            <div class="consoleField">
+                                <apex:outputLabel value="Show Country Score"/>
+                                <apex:inputField value="{!consSetting.openq__Is_Country_Score_Enabled__c}"/>
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel value="Show Region Score"/>                   
+                                <apex:inputField value="{!consSetting.openq__Is_EU_Score_Enabled__c}"/>
+                            </div>
+                        </div>
+                        <div class="header"><h2>Search Terms Settings (Save any unsaved changes before editing)</h2></div>
+                        <div style="padding: 10px;">                    
+                            <apex:commandButton styleClass="searchBtn" id="searchTermButton" action="{!newSearchTerm}" value="New Search Term"/>                    
+                        </div>              
+                        <div>
+                            <apex:dataTable width="950px" value="{!searchterms}" columnsWidth="25%" cellspacing="10px" var="st" id="theTable" rowClasses="odd,even">
+                                <apex:column width="25%" headerValue="Product" rendered="{!$Objecttype.openq__Search_Terms_Setting__c.fields.openq__Product__c.Accessible}">
+                                    <apex:outputText value="{!st.openq__Product__c}"/>
+                                </apex:column>
+                                <apex:column width="25%" rendered="{!$Objecttype.openq__Search_Terms_Setting__c.fields.openq__Therapy__c.Accessible}">
+                                    <apex:facet name="header">Therapy</apex:facet>
+                                    <apex:outputText value="{!st.openq__Therapy__c}"/>
+                                </apex:column>
+                                <apex:column width="25%" rendered="{!$Objecttype.openq__Search_Terms_Setting__c.fields.openq__Search_Terms__c.Accessible}">
+                                    <apex:facet name="header">Search Terms</apex:facet>
+                                    <apex:outputText value="{!st.openq__Search_Terms__c}"/>
+                                </apex:column>
+                                <apex:column width="25%">
+                                    <apex:facet name="header">Actions</apex:facet>
+                                    <div style="width: 70px;">
+                                        <apex:outputLink value="/{!st.Id}/e?retUrl={!$Page.openq__Admin_Console}&saveUrl={!$Page.openq__Admin_Console}">Edit</apex:outputLink>                                                                   
+                                           &nbsp;|&nbsp;
+                                        <apex:commandLink value="Del" action="{!deleteRecord}"  rerender="theTable" onclick="if(!confirm('Are you sure?')) return false;">                                                                    
+                                            <apex:param name="recordToDelete" assignTo="{!recordToDelete}" value="{!st.Id}" />                      
+                                        </apex:commandLink>
+                                    </div>
+                                </apex:column>
+                            </apex:dataTable>
+                        </div>
+                        <div class="header"><h2>Country/Region Settings</h2></div>
+                        <apex:outputPanel >
+                            <apex:outputPanel >
+                                <apex:selectList value="{!selectedRegion}" size="1">
+                                    <apex:selectOptions value="{!regions}"/>
+                                </apex:selectList>
+                            </apex:outputPanel> 
+                            <apex:commandButton value="Go" action="{!selectRegion}" rerender="regionCountries" style="margin-left:5px;"/>                                       
+                        </apex:outputPanel>
+                        <apex:outputPanel id="regionCountries">
+                            <apex:outputPanel rendered="{!IF(countrySelected, true, false)}">
+                                <div>                   
+                                    <apex:inputText value="{!countryToAdd}" maxlength="80"/>
+                                    <apex:commandButton styleClass="searchBtn" id="countryAddBtn" action="{!addCountry}" value="Add" rerender="regionCountries"/>
+                                </div>
+                                <div style="padding: 5px;">
+                                    <apex:outputText value="Region Label: "/>
+                                    <apex:inputText value="{!newLabel}"/>
+                                </div>
+                                <apex:dataTable value="{!insightCountries}" var="insight" columnsWidth="50%" width="20%">           
+                                    <apex:column width="10%">
+                                        <apex:facet name="header">Actions</apex:facet>                      
+                                        <apex:commandLink value="Remove" action="{!deleteEU}" rerender="regionCountries" onclick="if(!confirm('Are you sure?')) return false;">
+                                            <apex:param name="countryToDelete" assignTo="{!countryToDelete}" value="{!insight.Name}"/>
+                                        </apex:commandLink>
+                                    </apex:column>
+                                    <apex:column width="95%">
+                                        <apex:facet name="header">Country</apex:facet>
+                                        <apex:outputLabel value="{!insight.Name}"/>
+                                    </apex:column>
+                                </apex:dataTable>                       
+                            </apex:outputPanel>                     
+                        </apex:outputPanel>
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveAdvocacySentimentTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/><br/>
+                    </apex:outputPanel>                     
+                </div>
+                <div id="tabs-3">
+                    <apex:outputPanel rendered="{!tabSelected == 'Calendar'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveCalendarTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <div class="header"><h2>General Settings</h2></div>
+                        <div class="consoleField">
+                            <apex:outputLabel value="Enable Contact Calendar"/>
+                            <apex:inputField value="{!calSetting.openq__Is_Calendar_Enabled__c}"/>
+                        </div>
+                        <div class="consoleField">
+                            <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__eventsettings_day_view_text}"/>                   
+                            <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(calSetting.Day_View_Calendar_Indicator__c)}"></div></div>             
+                            <apex:inputHidden id="openq__Day_View_Calendar_Indicator" value="{!calSetting.openq__Day_View_Calendar_Indicator__c}" />
+                        </div>
+                        
+                        <div id="contactCalendarLegendIcon" class="consoleField">
+                            <apex:outputLabel value="{!$Label.openq__contact_calendar_legend_image}"/>
+                            <div style="display:inline-block;">
+                                <apex:image styleClass="eventDocImages" value="/servlet/servlet.FileDownload?file={!contactCalendarLegendDoc.Id}" />                            
+                                <apex:commandButton onclick="popupCalendarLegendDialog(); return false;" value="Change" rerender="contactCalendarLegendDialog"/>
+                            </div>
+                        </div>
+                        
+                        <div class="header"><h2>Enabled Objects</h2></div><br/>
+                        <apex:outputPanel id="colorPanelCalendars">
+                            <apex:outputPanel id="calTable">
+                                <apex:variable value="{!0}" var="j"/>
+                                <apex:datatable value="{!calCatWrapperList}" var="ccw" headerClass="center" columnClasses="center">
+                                    <apex:column width="3%">
+                                        <apex:inputCheckbox value="{!ccw.selected}" id="calendarObjectCheckbox" onclick="waitOn(); saveTempColorInfo();">
+                                        </apex:inputCheckbox>
+                                    </apex:column>
+                                    <apex:column width="20%" style="text-align: left;">
+                                        <apex:facet name="header">
+                                            <apex:outputPanel layout="block" style="text-align: left;">Object Name</apex:outputPanel>
+                                        </apex:facet>
+                                        <apex:outputText value="{!ccw.objLabel}" title="{!ccw.objApiName}"/>
+                                    </apex:column>
+                                    <apex:column id="startDateColumnCalendar" width="20%">
+                                        <apex:facet name="header">Start Date Field&nbsp;<span class="required">*</span></apex:facet>
+                                        <apex:selectList size="1" value="{!ccw.selStartDateField}" rendered="{!ccw.selected}">
+                                            <apex:selectOptions value="{!ccw.startEndDateFieldOptions}"/>
+                                        </apex:selectList>
+                                    </apex:column>
+                                    <apex:column id="endDateColumnCalendar" width="20%">
+                                        <apex:facet name="header">End Date Field</apex:facet>
+                                        <apex:selectList size="1" value="{!ccw.selEndDateField}" rendered="{!ccw.selected}">
+                                            <apex:selectOptions value="{!ccw.startEndDateFieldOptions}"/>
+                                        </apex:selectList>
+                                    </apex:column>
+                                    <apex:column width="6%">
+                                        <apex:facet name="header">Color&nbsp;<span class="required">*</span></apex:facet>
+                                        <apex:outputPanel rendered="{!ccw.selected}">
+                                            <div id="colorSelector">
+                                                <div style="background-color: #{!HTMLENCODE(ccw.color)}"></div>
+                                            </div>
+                                            <input type="hidden" id="calColor-{!j}" data-info="{!ccw.objApiName}" value="{!ccw.color}"/>
+                                        </apex:outputPanel>
+                                    </apex:column>
+                                    <apex:column width="6%">
+                                        <apex:facet name="header">Order&nbsp;<span class="required">*</span></apex:facet>
+                                        <apex:inputText style="width: 30px;" value="{!ccw.displayOrder}" rendered="{!ccw.selected}" maxlength="3"/>
+                                    </apex:column>
+                                    <apex:column width="12%">
+                                        <apex:facet name="header">Actions</apex:facet>
+                                        <apex:commandLink action="{!showCalendarPopup}" rendered="{!AND(ccw.selected, ccw.ccId != null)}" onclick="waitOn();" rerender="calendarFieldSelectPopup" oncomplete="initSelectObject(ccid);" >
+                                            <apex:param name="selCwId" value="{!ccw.ccId}" assignTo="{!calendarPopupSelId}"/>
+                                            <apex:image width="16px" height="16px" rendered="{!ccw.selected}" value="{!URLFOR($Resource.openq__Admin_Console,'img/CalendarConfig.png')}" />
+                                        </apex:commandLink>
+                                    </apex:column>                  
+                                    <apex:variable value="{!j+1}" var="j"/>                 
+                                </apex:datatable>                                                                           
+                            </apex:outputPanel>
+                                <apex:outputPanel id="calendarFieldSelectPopup" >
+                                    <script>var ccid='{!JSENCODE(calendarPopupSelId)}';</script>
+                                </apex:outputPanel>
+                                <c:SelectObjectFields objIdParam="{!calendarPopupSelId}" />
+                         </apex:outputPanel>
+                         <div class="saveBtn">
+                            <apex:commandButton onclick="saveCalendarTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/><br/>                   
+                         <apex:inputHidden id="Calendar_Color_Text" value="{!calColorInfo}"/>
+                         <apex:actionFunction name="saveTempColorInfoApex" action="{!saveTempColorInfo}" rerender="calTable" oncomplete="setCalendarMinicolors();waitOff();">
+                            <apex:param name="tempColorInfo" assignTo="{!tempColorString}" value=""/>
+                         </apex:actionFunction>
+                    </apex:outputPanel>
+                </div>      
+                <div id="tabs-4">
+                    <apex:outputPanel rendered="{!tabSelected == 'Contact'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveContactTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <div class="header"><h2>{!$Label.openq__contact}</h2></div> 
+                        <div class="consoleField">
+                            <apex:outputLabel value="{!$Label.openq__max_number_of_records} :"/>
+                            <apex:inputField value="{!contactSetting.openq__MAX_NUMBER_OF_RECORDS__c}" />                          
+                        </div>
+                        <div class="consoleField">
+                            <apex:outputLabel value="{!$Label.openq__set_related_table_cookies} :"/>
+                            <apex:inputCheckbox value="{!contactSetting.openq__relatedTableCookie__c}" selected="{!contactSetting.openq__relatedTableCookie__c}"  />
+                        </div>
+                        <div class="consoleField">
+                            <apex:outputLabel value="{!$Label.openq__show_custom_openq_address_in_header} :"/>
+                            <apex:inputCheckbox value="{!contactSetting.openq__showCustomOpenQAddressHeader__c}" selected="{!contactSetting.openq__showCustomOpenQAddressHeader__c}"  />
+                        </div>
+                        <br/><br/>      
+                                        
+                    </apex:outputPanel>
+                </div>                      
+                <div id="tabs-5">
+                    <apex:outputPanel rendered="{!tabSelected == 'Event'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveEventTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <div class="header"><h2>{!$Label.openq__admin_console_event_tab_colors_header}</h2></div>                      
+                        <apex:outputPanel id="colorPanelEvents">
+                            <apex:outputPanel styleClass="gr multiSelectPL_OP" layout="block">                                                              
+                                <select id="eventCategories" class="multiSelectPL" multiple="multiple">
+                                     <apex:repeat value="{!eventLOVs}" var="mpVal" >                                                               
+                                         <apex:outputPanel layout="none" rendered="{!mpVal.selected}">
+                                             <option data-apiname = "{!mpVal.name}" value="{!mpVal.label}" selected="selected">
+                                                {!mpVal.label}
+                                            </option>
+                                         </apex:outputPanel>
+                                         <apex:outputPanel layout="none" rendered="{!NOT(mpVal.selected)}">
+                                             <option data-apiname = "{!mpVal.name}" value="{!mpVal.label}">
+                                                 {!mpVal.label}
+                                             </option>
+                                         </apex:outputPanel>                                                                                                                                               
+                                      </apex:repeat>                                                                
+                                </select>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        <apex:commandButton value="Load" onclick="loadValuesAndColorsEvents(); return false;"/><br/><br/>
+                        <apex:outputPanel >
+                            <apex:outputPanel id="colorPanelResultsEvents">
+                                <apex:variable value="{!0}" var="i"/>
+                                    <apex:repeat value="{!selws}" var="selw">                                                                       
+                                        <h3>{!selw.label}</h3>
+                                        <table style="padding-top: 15px; padding-bottom: 15px;">                                                                        
+                                        <apex:repeat value="{!selw.values}" var="lov">                                  
+                                            <tr>
+                                                <td><apex:outputLabel styleClass="consoleFieldLabel" value="{!lov.value}"/></td>                   
+                                                <td>
+                                                    <div id="colorSelector">
+                                                        <div id="colorDiv" style="background-color: #{!IF(lov.color != null, HTMLENCODE(lov.color), 'FFFF00')}">
+                                                        </div>
+                                                    </div>             
+                                                    <input type="hidden" id="elvc-{!i}" data-info="{!selw.name}^{!selw.label}^{!lov.value}" class="inputColors" value="{!lov.color}" />
+                                                </td>
+                                            </tr>                                    
+                                         <apex:variable value="{!i+1}" var="i"/>
+                                                                             
+                                          </apex:repeat>
+                                          </table>                                    
+                                    </apex:repeat>                              
+                            </apex:outputPanel>
+                            <div id="calendarSettings" >
+                                <div class="consoleField">
+                                    <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__eventsettings_day_view_text}"/>                   
+                                    <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(evSetting.Day_View_Event_Indicator__c)}"></div></div>             
+                                    <apex:inputHidden id="openq__Day_View_Event_Indicator" value="{!evSetting.openq__Day_View_Event_Indicator__c}" />
+                                </div>
+                                <div class="consoleField">
+                                    <apex:outputLabel styleClass="consoleFieldLabel" value="Enable Payment Requests: "/>
+                                    <apex:inputField value="{!evSetting.openq__Enable_Payment_Requests__c}" />
+                                </div>
+                                <div class="consoleField" >
+                                    <apex:outputLabel styleClass="consoleFieldLabel" value="Enable Validation Tab: "/>
+                                    <apex:inputField value="{!evSetting.openq__Enable_Validation_Tab__c}" />
+                                </div>
+                                <div class="consoleField">
+                                    <apex:outputLabel styleClass="consoleFieldLabel" value="Send Events to MobileQ with Start Date +\- Days:" />
+                                    <apex:inputField value="{!evSetting.openq__Date_Range_To_Send_MobileQ__c}" />
+                                </div>
+                            </div>
+                            <br /><br />
+                        </apex:outputPanel>
+                        <hr/><br/>
+                        <h2>{!$Label.openq__displayeventoneachday}</h2>
+                        <apex:inputField style="margin-left:10px;margin-top:5px;" value="{!evSetting.openq__Display_Event_On_Start_Date__c}" />  
+                        <br/><br/>
+                         <hr/>
+                        <br/>
+                        <h2>Event Calendar Pop-up</h2>
+                        <br/><br/>
+                        <div>
+                            <c:MultiselectPicklist leftLabel="Available Fields" leftOptionsValues="{!allPopupEventAttributes}" rightLabel="Selected Fields" rightOptionsValues="{!selectedEventPopupAttributes}" size="10" width="200px"/>
+                        </div>
+                        <hr/>
+                        <br/>
+                        <h2>Event Calendar View Displayed Fields</h2>
+                        <br/><br/>
+                        <apex:outputPanel rendered="{!evSetting != null}">
+                            <apex:selectList value="{!selectedObjectIdentifier1}" size="1">
+                                <apex:selectOptions value="{!allPopupEventAttributesWithNone}"/>
+                            </apex:selectList>
+                            <apex:selectList value="{!selectedObjectIdentifier2}" size="1">
+                                <apex:selectOptions value="{!allPopupEventAttributesWithNone}"/>
+                            </apex:selectList>
+                            <apex:selectList value="{!selectedObjectIdentifier3}" size="1">
+                                <apex:selectOptions value="{!allPopupEventAttributesWithNone}"/>
+                            </apex:selectList>  
+                        </apex:outputPanel>
+                        <hr/>
+                        <div id="speakerApprovalSection">
+                            <div class="header">
+                                <h2>{!$Label.openq__event_speaker_approval_validation_title}</h2>
+                            </div>
+                            <div>
+                                <div class="consoleField">
+                                    <apex:outputLabel value="{!$Label.openq__event_enable_speaker_approval}"/>
+                                    <apex:inputField onclick="toggleEventApprovalSection();" id="enableSpeakerApprovalField" value="{!evSetting.openq__Enable_Speaker_Approval_Validation__c}" />
+                                </div>
+                                <apex:outputPanel id="speakerApprovalSettingsSection" layout="block" style="margin-left: 40px;">
+                                    <apex:outputPanel layout="block"  >
+                                        <div id="enforceAppRestr" class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_enforce_approvals_restrictions}"/>
+                                            <apex:inputField value="{!evSetting.openq__Enforce_Approvals_Restrictions__c}" />
+                                        </div>
+                                        <div id="approvalsRestrictionsFileSection" class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_approvals_restrictions_image}"/>
+                                            <div style="display:inline-block;">
+                                                <apex:image styleClass="eventDocImages" value="/servlet/servlet.FileDownload?file={!approvalsRestrictionsDoc.Id}" />                            
+                                                <apex:commandButton onclick="popupApprovalsRestrictionsDialog(); return false;" value="Change" rerender="restrApprovalDialog"/>
+                                            </div>
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_approval_restrictions_hover_message}"/><br/>
+                                            <apex:inputField value="{!evSetting.openq__Approvals_Restrictions_Hover_Message__c}"/>
+                                        </div>
+                                        <hr/>           
+                                    </apex:outputPanel>                                                         
+                                    <apex:outputPanel layout="block" id="annualSpendCapSection">
+                                        <div id="enforceAppRestr" class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_enforce_annual_spend_cap_limit}"/>
+                                            <apex:inputField value="{!evSetting.openq__Enforce_Annual_Spend_Cap_Limit__c}" />
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_annual_spend_cap_image}"/>
+                                            <div style="display:inline-block;">
+                                                <apex:image styleClass="eventDocImages" value="/servlet/servlet.FileDownload?file={!annualSpendCapDoc.Id}" />                           
+                                                <apex:commandButton onclick="popupAnnualSpendLimitDialog(); return false;" value="Change" rerender="annualSpendCapDialog"/>
+                                            </div>
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_annual_spend_cap_hover_message}"/><br/>
+                                            <apex:inputField value="{!evSetting.openq__Annual_Spend_Cap__c}"/>
+                                        </div>
+                                        <hr/>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel layout="block" id="projSpendCapSection">
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_enforce_projected_annual_spend_cap_limit}"/>
+                                            <apex:inputField value="{!evSetting.openq__Enforce_Projected_Annual_Spend_Cap_Limit__c}" />
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_projected_annual_spend_cap_image}"/>
+                                            <div style="display:inline-block;">
+                                                <apex:image styleClass="eventDocImages" value="/servlet/servlet.FileDownload?file={!projAnnualSpendCapDoc.Id}" />                           
+                                                <apex:commandButton onclick="popupProjAnnualSpendLimitDialog(); return false;" value="Change" rerender="projSpendCapDialog"/>
+                                            </div>
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_projected_annual_spend_cap_limit_hover_over_message}"/><br/>
+                                            <apex:inputField value="{!evSetting.openq__Projected_Annual_Spend_Cap_Hover_Message__c}"/>
+                                        </div>
+                                        <hr/>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel layout="block" id="maxEventsSection">
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_maximum_number_of_events_per_day_limit}"/><br/>
+                                            <apex:inputField value="{!evSetting.openq__Maximum_Number_of_Event__c}" />
+                                        </div>
+                                        <div>
+                                            <div>Event Type Exceptions</div>
+                                            <div style="max-height: 100px; overflow: auto;">
+                                                <apex:repeat value="{!eventTypes}" var="evType">
+                                                    <div>
+                                                        <apex:inputCheckbox value="{!evType.selected}"/>
+                                                        <apex:outputText value="{!evType.label}"/>
+                                                    </div>
+                                                </apex:repeat>
+                                            </div>
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_maximum_number_of_events_per_day_image}"/>
+                                            <div style="display:inline-block;">
+                                                <apex:image styleClass="eventDocImages" value="/servlet/servlet.FileDownload?file={!maxNumberEventsPerDayDoc.Id}" />                            
+                                                <apex:commandButton onclick="popupMaxEventsDialog(); return false;" value="Change" rerender="maxEventsPerDayDialog"/>
+                                            </div>
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_maximum_number_of_events_per_day_hover_over_message}"/><br/>
+                                            <apex:inputField value="{!evSetting.openq__Maximum_Number_of_Events_per_Day_Hover__c}"/>
+                                        </div>
+                                        <hr/>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel layout="block" id="enforceDatesSection">
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_enforce_dates_unavailable}"/>
+                                            <apex:inputField value="{!evSetting.openq__Enforce_Dates_Unavailable__c}" />
+                                        </div>
+                                        <div id="approvalsRestrictionsFileSection" class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_dates_unavailable_image}"/>
+                                            <div style="display:inline-block;">
+                                                <apex:image styleClass="eventDocImages" value="/servlet/servlet.FileDownload?file={!datesUnavailableImageDoc.Id}" />                            
+                                                <apex:commandButton onclick="popupDatesUnavailableDialog(); return false;" value="Change" rerender="datesUnavailableDialog"/>
+                                            </div>
+                                        </div>
+                                        <div class="consoleField">
+                                            <apex:outputLabel value="{!$Label.openq__event_dates_unavailable_hover_over_message}"/><br/>
+                                            <apex:inputField value="{!evSetting.openq__Dates_Unavailable_Hover_Over_Message__c}"/>
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:outputPanel>
+                            </div>
+                        </div>
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveEventTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/><br/>
+                        <apex:inputHidden id="Event_Color_Text" value="{!colorInfo}"/>
+                        <apex:inputHidden id="Selected_Event_Fields" value="{!selectedEventColorFields}"/>                  
+                    </apex:outputPanel>
+                </div>
+                <div id="tabs-6">
+                    <apex:outputPanel rendered="{!tabSelected == 'Interaction'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveInteractionTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/><br/><br/> 
+                        <h2>{!$Label.openq__interaction_visibility_scope_text}</h2>                        
+                        <apex:SelectList size="1"  value="{!interactionScope}" style="width:400px; margin-left: 10px;">
+                            <apex:selectOptions value="{!MirfsScope}"/>             
+                        </apex:SelectList>
+                        <br/><br/>
+                        <h2>{!$Label.Use_Default_Page_Layout}</h2> &nbsp;&nbsp;
+                        <apex:inputCheckBox value="{!AllowSelectPageLayout }" />
+                        <br/><br/>
+                        <h2>{!$Label.openq__select_interaction_default_page_layout}</h2> 
+                        <apex:SelectList size="1"  value="{!currentPageLayoutInteraction}" style="width:400px; margin-left: 10px;">
+                            <apex:selectOptions value="{!PageLayoutsOpt}"/>             
+                        </apex:SelectList>
+                        <br/><br/>
+                        <h2>{!$Label.openq__admin_console_display_create_new_contact_button}</h2>
+                        <apex:inputCheckbox value="{!iSttgs.openq__Display_Create_New_Contact_Button__c}" />
+                        <br/><br/>
+                        <h2>{!$Label.Display_Attendees_Section}</h2>&nbsp;&nbsp;
+                        <apex:selectList size="1" value="{!selectedAttendeeDisplay}" style="width:400px; margin-left: 10px;">
+                            <apex:selectOptions value="{!attendeesOptionsForInteractionForm}" />
+                        </apex:selectList>
+                        <br/><br/>
+                        <h2>{!$Label.Display_Attendees_Type_Section}</h2> &nbsp;&nbsp;
+                        <apex:inputCheckBox value="{!iSttgs.Display_Attendees_Type__c }" />
+                        <br/><br/>
+                        /*<h2>{!$Label.Display_Attendees_Count}</h2> &nbsp;&nbsp;
+                        <apex:inputCheckBox value="{!iSttgs.Display_Attendees_Count__c }" />
+                        <br/><br/>*/
+                        <h2>{!$Label.Make_Attendees_Required}</h2> &nbsp;&nbsp;
+                        <apex:inputCheckBox value="{!iSttgs.Make_Attendees_Required__c }" />
+                        <br/><br/>                      
+                        <h2>{!$Label.openq__interaction_header_columns}</h2> 
+                        <apex:SelectList size="1"  value="{!iSttgs.openq__Number_of_Sections__c}" style="width:100px; margin-left: 10px;">
+                            <apex:selectOptions value="{!InteractionSections}"/>                
+                        </apex:SelectList>
+                        <br/>
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveInteractionTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/>
+                    </apex:outputPanel>
+                </div>
+                <div id="tabs-7">
+                    <apex:outputPanel rendered="{!tabSelected == 'Mapping'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveMappingTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <h2>{!$Label.openq__mapping_tab_header}</h2>                       
+                        <div id="fields-7">
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__mapping_career_info_name}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(mmSetting.Institutions_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Mapping_Career_Info_Color" value="{!mmSetting.openq__Institutions_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__mapping_committees_name}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(mmSetting.Committees_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Mapping_Committees_Color" value="{!mmSetting.openq__Committees_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__mapping_editorial_boards_name}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(mmSetting.Editorial_Boards_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Mapping_Editorial_Boards_Color" value="{!mmSetting.openq__Editorial_Boards_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__mapping_publications_name}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(mmSetting.Publications_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Mapping_Publications_Color" value="{!mmSetting.openq__Publications_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__mapping_trials_name}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(mmSetting.Trials_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Mapping_Trials_Color" value="{!mmSetting.openq__Trials_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__mapping_multiple_connection_types_name}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(mmSetting.Multiple_Connection_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Mapping_Multiple_Connection_Color" value="{!mmSetting.openq__Multiple_Connection_Color__c}" />
+                            </div>
+                            <br/> 
+                            <h2>{!$Label.openq__mapping_tab_mapping_options}</h2>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel fileLabel" value="{!consSetting.openq__Contact_Term_Singular__c} Image"/>
+                                <div style="position: relative;">
+                                    <apex:image style="width:32px; height:32px; padding-right: 10px;" value="/servlet/servlet.FileDownload?file={!document.Id}" />                              
+                                    <apex:commandButton onclick="popupFileDialog(); return false;" value="Change" rerender="fileInput"/>
+                                </div>
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__mapping_default_bing_view}"/>
+                                <apex:selectRadio value="{!selectedDefaultViewItem}">
+                                    <apex:selectOptions value="{!defaultViewItems}"/>
+                                </apex:selectRadio>
+                            </div>                                              
+                        </div>
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveMappingTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/><br/>
+                    </apex:outputPanel>             
+                </div>
+                <div id="tabs-8">
+                    <apex:outputPanel rendered="{!tabSelected == 'MIRFs'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveMIRFTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/>
+                        <h2>{!$Label.MIRF_Submission_Message_Text}&nbsp;<span style="color:red;">*</span></h2><br/><br/>                                            
+                        <apex:inputTextarea id="newDesc" value="{!mSttgs.openq__Submission_Message__c}" style="width:550px;"/>
+                        <br/><br/>
+                        <h2>{!$Label.openq__mirf_visibility_scope_text}</h2> 
+                        <apex:SelectList size="1"  value="{!mirfScope}" style="width:400px; margin-left: 10px;">
+                            <apex:selectOptions value="{!MirfsScope}"/>             
+                        </apex:SelectList>                      
+                    </apex:outputPanel> 
+                </div>                          
+                <div id="tabs-9">
+                    <apex:outputPanel rendered="{!tabSelected == 'Planning'}">
+                    <div class="saveBtn">
+                        <apex:commandButton onclick="savePlanningTab(); savingStatus();" oncomplete=""  value="Save" >
+                        </apex:commandButton>
+                    </div>
+                    <h2>{!$Label.openq__progress_gauge_settings}</h2>
+                        <div id="fields-4">
+                            <div class="consoleField">
+                                <apex:outputLabel value="{!$Label.openq__progress_gauge_settings_minimum}"/>
+                                <apex:inputField value="{!planSettings.openq__Gauge_Minimum__c}"/>
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__progress_gauge_settings_gauge_low_range_color}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(planSettings.Gauge_Low_Range_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Gauge_Low_Range_Color" value="{!planSettings.openq__Gauge_Low_Range_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__progress_gauge_settings_gauge_breakpoint_1}"/>
+                                <apex:inputField value="{!planSettings.openq__Gauge_Breakpoint_1__c}"/>                    
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__progress_gauge_settings_gauge_middle_color}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(planSettings.Gauge_Middle_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Gauge_Middle_Color" value="{!planSettings.openq__Gauge_Middle_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel value="{!$Label.openq__progress_gauge_settings_gauge_breakpoint_2}"/>
+                                <apex:inputField value="{!planSettings.openq__Gauge_Breakpoint_2__c}"/>                    
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel styleClass="consoleFieldLabel" value="{!$Label.openq__progress_gauge_settings_gauge_high_color}"/>                   
+                                <div id="colorSelector"><div style="background-color: #{!HTMLENCODE(planSettings.Gauge_High_Color__c)}"></div></div>             
+                                <apex:inputHidden id="Gauge_High_Color" value="{!planSettings.openq__Gauge_High_Color__c}" />
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel value="{!$Label.openq__progress_gauge_settings_maximum}"/>
+                                <apex:inputField value="{!planSettings.openq__Maximum__c}"/>                   
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel value="{!$Label.openq__progress_gauge_settings_major_tickmarks}"/>
+                                <apex:inputField value="{!planSettings.openq__Major_Tick_Marks__c}"/>
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel value="{!$Label.openq__progress_gauge_settings_minor_tickmarks}"/>
+                                <apex:inputField value="{!planSettings.openq__Minor_Tick_Marks__c}"/>
+                            </div>
+                            <div class="consoleField">
+                                <apex:outputLabel value="{!$Label.openq__progress_gauge_settings_show_percentage}"/>
+                                <apex:inputField value="{!planSettings.openq__Show_Percentage__c}"/>                   
+                            </div>
+                        </div>
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="savePlanningTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <br/><br/>
+                    </apex:outputPanel>             
+                </div>
+                <div id="tabs-10">
+                    <apex:outputPanel rendered="{!tabSelected == 'Segmentation'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveSegmentationTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <h2>{!$Label.openq__segmentation_label}</h2><br/><br/>                         
+                            <div id="starRatings">
+                                <apex:panelGrid columns="3" id="theGrid" rowClasses="rowClassSeg">
+                                    <apex:outputLabel value="{!$Label.openq__segmentation_star_label}:"/>
+                                    <apex:outputLabel value="Min"/>
+                                    <apex:outputLabel value="Max"/>
+                                    <apex:image style="width:80px; padding-right: 10px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_500.gif')}" />
+                                    <apex:inputField value="{!segSetting.openq__Five_Star_Minimum__c}"/>
+                                    <apex:inputField value="{!segSetting.openq__Five_Star_Maximum__c}"/>
+                                    <apex:image style="width:80px; padding-right: 10px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_400.gif')}" />
+                                    <apex:inputField value="{!segSetting.openq__Four_Star_Minimum__c}"/>
+                                    <apex:inputField value="{!segSetting.openq__Four_Star_Maximum__c}"/>
+                                    <apex:image style="width:80px; padding-right: 10px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_300.gif')}" />
+                                    <apex:inputField value="{!segSetting.openq__Three_Star_Minimum__c}"/>
+                                    <apex:inputField value="{!segSetting.openq__Three_Star_Maximum__c}"/>
+                                    <apex:image style="width:80px; padding-right: 10px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_200.gif')}" />
+                                    <apex:inputField value="{!segSetting.openq__Two_Star_Minimum__c}"/>
+                                    <apex:inputField value="{!segSetting.openq__Two_Star_Maximum__c}"/>
+                                    <apex:image style="width:80px; padding-right: 10px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_100.gif')}" />
+                                    <apex:inputField value="{!segSetting.openq__One_Star_Minimum__c}"/>
+                                    <apex:inputField value="{!segSetting.openq__One_Star_Maximum__c}"/>
+                                    <apex:image style="width:80px; padding-right: 10px;" value="{!URLFOR($Resource.openq__StylesScriptsImages,'img/stars_000.gif')}" />
+                                    <apex:inputField value="{!segSetting.openq__No_Star_Minimum__c}"/>
+                                    <apex:inputField value="{!segSetting.openq__No_Star_Maximum__c}"/>                         
+                                </apex:panelGrid>
+                            </div>
+                            <div id="segWeighting" style="margin-top: 10px;">
+                                <div>
+                                    <apex:outputText value="Default Weightings (Scale 1-10)"/>
+                                </div><br/>
+                                <div>
+                                    <apex:panelGrid columns="2" rowClasses="rowClassSeg">
+                                        <apex:outputLabel style="margin-right: 35px;" value="Strength"/>
+                                        <apex:inputField value="{!segSetting.openq__Strength_Weighting__c}"/>
+                                        <apex:outputLabel style="margin-right: 35px;" value="Leadership"/>
+                                        <apex:inputField value="{!segSetting.openq__Leadership_Weighting__c}"/>
+                                        <apex:outputLabel style="margin-right: 35px;" value="Impact"/>
+                                        <apex:inputField value="{!segSetting.openq__Impact_Weighting__c}"/>
+                                    </apex:panelGrid>
+                                </div>
+                            </div>
+                            <br/>
+                            <div id="segShowColumnRating">
+                                <apex:panelGrid columns="2" rowClasses="rowClassSeg">
+                                    <apex:outputLabel value="Show {!$Label.openq__contact_label} Score"/>
+                                    <apex:inputField value="{!segSetting.openq__Show_KOL_Score__c}"/>
+                                    <apex:outputLabel value="Show Ratings Column"/>
+                                    <apex:inputField value="{!segSetting.openq__Show_Ratings_Column__c}"/> 
+                                </apex:panelGrid>
+                            </div>
+                            <div>
+                                <table style="border-collapse: separate; border-spacing: 10px; margin-left: -10px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Lens</th>
+                                            <th>Custom Label Display</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Engagements x KOL Score</td>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Engagements_By_KOL_Score_Label__c}" style="width: 150px;"/>
+                                            </td>
+                                            <td><apex:inputCheckbox value="{!segSetting.openq__Enable_Engagements_By_KOL_Score__c}"/> </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Engagements x Strength</td>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Engagements_By_Strength_Label__c}" style="width: 150px;"/>
+                                            </td>
+                                            <td><apex:inputCheckbox value="{!segSetting.openq__Enable_Engagements_By_Strength__c}" /> </td>                                            
+                                        </tr>
+                                        <tr>
+                                            <td>Engagements x Leadership</td>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Engagements_By_Leadership_Label__c}" style="width: 150px;"/>
+                                            </td>
+                                            <td><apex:inputCheckbox value="{!segSetting.openq__Enable_Engagements_By_Leadership__c}" /> </td>                                          
+                                        </tr>
+                                        <tr>
+                                            <td>Engagements x Impact</td>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Engagements_By_Impact_Label__c}" style="width: 150px;"/>
+                                            </td>
+                                            <td><apex:inputCheckbox value="{!segSetting.openq__Enable_Engagements_By_Impact__c}" /> </td>                                          
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <hr/>
+                                <h2>Lens Popup Fields</h2>
+                                <br /><br />
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Field Label</th>
+                                            <th>Field To Display</th>                                           
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Lens_Popup_Field_1_Label__c}" style="width: 200px;"></apex:inputText>
+                                            </td>
+                                            <td>
+                                                <apex:selectList value="{!segSetting.openq__Lens_Popup_Field_1_API_Name__c}" size="1">
+                                                    <apex:selectOptions value="{!allPopupContactAttributesWithNone}"/>
+                                                </apex:selectList>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Lens_Popup_Field_2_Label__c}" style="width: 200px;" ></apex:inputText>
+                                            </td>
+                                            <td>
+                                                <apex:selectList value="{!segSetting.openq__Lens_Popup_Field_2_API_Name__c}" size="1">
+                                                    <apex:selectOptions value="{!allPopupContactAttributesWithNone}"/>
+                                                </apex:selectList>
+                                            </td>
+                                        </tr>                                       
+                                        <tr>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Lens_Popup_Field_3_Label__c}" style="width: 200px;" ></apex:inputText>
+                                            </td>
+                                            <td>
+                                                <apex:selectList value="{!segSetting.openq__Lens_Popup_Field_3_API_Name__c}" size="1">
+                                                    <apex:selectOptions value="{!allPopupContactAttributesWithNone}"/>
+                                                </apex:selectList>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <apex:inputText value="{!segSetting.openq__Lens_Popup_Field_4_Label__c}" style="width: 200px;" ></apex:inputText>
+                                            </td>
+                                            <td>
+                                                <apex:selectList value="{!segSetting.openq__Lens_Popup_Field_4_API_Name__c}" size="1">
+                                                    <apex:selectOptions value="{!allPopupContactAttributesWithNone}"/>
+                                                </apex:selectList>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <br/>
+                                <div id="segShowColumnRatingLens">
+                                <apex:panelGrid columns="2" rowClasses="rowClassSeg">
+                                    <apex:outputLabel value="Show {!$Label.openq__contact_label} Score"/>
+                                    <apex:inputField value="{!segSetting.openq__Enable_Lens_Popup_KOL_Score__c}"/>
+                                    <apex:outputLabel value="Show Stars"/>
+                                    <apex:inputField value="{!segSetting.openq__Enable_Lens_Popup_Stars__c}"/> 
+                                </apex:panelGrid>
+                            </div>
+                            </div>
+                            <div class="saveBtn">
+                                <apex:commandButton onclick="saveSegmentationTab(); savingStatus();" oncomplete=""  value="Save" >
+                                </apex:commandButton>
+                            </div>
+                            <br/><br/>
+                    </apex:outputPanel>
+                </div>      
+                <div id="tabs-11">
+                    <apex:outputPanel rendered="{!tabSelected == 'Triggers'}">
+                        <div class="saveBtn">
+                            <apex:commandButton onclick="saveGeneralTab(); savingStatus();" oncomplete=""  value="Save" >
+                            </apex:commandButton>
+                        </div>
+                        <div class="header"><h2>Trigger Settings</h2></div>
+                        <div class="consoleField">
+                            <apex:outputLabel value="Enable user-group assignment trigger"/>
+                            <apex:inputField value="{!consSetting.openq__Is_User_Trigger_Enabled__c}"/>
+                        </div>
+                    </apex:outputPanel>                 
+                </div>
+            </div>
+            <apex:actionFunction name="saveTabApex" action="{!saveTab}" rerender="errorDiv" onComplete="bindTabs(); removeSavingStatus();" >
+                <apex:param name="tabName" value="" assignTo="{!tabNameToSave}"/>               
+            </apex:actionFunction>
+            <apex:actionFunction name="loadTabContent" action="{!loadTabContent}" rerender="errorDiv, tabPanel" onComplete="bindTabs(); waitOff();">
+                <apex:param name="tabNameToLoad" value="" assignTo="{!tabNameToLoad}"/>
+            </apex:actionFunction>
+            <apex:actionFunction name="loadValuesAndColorsEventsApex" action="{!loadValuesAndColorsEvents}" rerender="colorPanelResultsEvents, errorDiv" onComplete="setEventMinicolors();">
+                <apex:param name="multiPicklistValuesEvents" value="" assignTo="{!selectedEventColorFields}"/>
+            </apex:actionFunction>
+        </apex:form>
+        <apex:form >
+            <div id="fileDialog" style="display:none;">
+                <apex:outputPanel styleClass="popupBackground">
+                    <apex:outputPanel id="fileDialogPanel" styleClass="custPopup">
+                        <div id="uploadLabel">
+                            <apex:outputText value="Please select a file of up to 128kb.  The file must be of type .jpg, .jpeg, .gif, .png or .bmp"/>
+                        </div><br/>
+                        <div id="uploadFile">
+                            <apex:inputFile value="{!document.Body}" filename="{!document.Name}" filesize="{!document.BodyLength}" accept="jpg,jpeg,gif,png,bmp"/>
+                        </div><br/>
+                        <apex:outputPanel id="uploadMapping">
+                            <apex:commandButton value="Upload" action="{!uploadMappingImage}"/>
+                            <apex:commandButton value="Cancel" onclick="closePopupFileDialog(); return false;"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            <div id="restrApprovalDialog" style="display:none;">
+                <apex:outputPanel styleClass="popupBackground">
+                    <apex:outputPanel id="restrApprovalPanel" styleClass="custPopup">
+                        <div id="uploadLabel">
+                            <apex:outputText value="Please select a file of up to 128kb.  The file must be of type .jpg, .jpeg, .gif, .png or .bmp.  You may need to refresh the page to see the new image."/>
+                        </div><br/>
+                        <div id="uploadFile">
+                            <apex:inputFile value="{!approvalsRestrictionsDoc.Body}" filename="{!approvalsRestrictionsDoc.Name}" filesize="{!approvalsRestrictionsDoc.BodyLength}" accept="jpg,jpeg,gif,png,bmp"/>
+                        </div><br/>
+                        <apex:outputPanel id="uploadRestrictions">
+                            <apex:commandButton value="Upload" action="{!uploadApprovalsRestrictionsImage}"/>
+                            <apex:commandButton value="Cancel" onclick="closePopupFileDialogRes(); return false;"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            <div id="annualSpendCapDialog" style="display:none;">
+                <apex:outputPanel styleClass="popupBackground">
+                    <apex:outputPanel id="annualSpendCapFileDialogPanel" styleClass="custPopup">
+                        <div id="uploadLabel">
+                            <apex:outputText value="Please select a file of up to 128kb.  The file must be of type .jpg, .jpeg, .gif, .png or .bmp.  You may need to refresh the page to see the new image."/>
+                        </div><br/>
+                        <div id="uploadFileSpendCap">
+                            <apex:inputFile value="{!annualSpendCapDoc.Body}" filename="{!annualSpendCapDoc.Name}" filesize="{!annualSpendCapDoc.BodyLength}" accept="jpg,jpeg,gif,png,bmp"/>
+                        </div><br/>
+                        <apex:outputPanel id="uploadSpendCap">
+                            <apex:commandButton value="Upload" action="{!uploadAnnualSpendCapImage}"/>
+                            <apex:commandButton value="Cancel" onclick="closePopupFileDialogSpendCap(); return false;"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            <div id="projSpendCapDialog" style="display:none;">
+                <apex:outputPanel styleClass="popupBackground">
+                    <apex:outputPanel id="projSpendCapDialogPanel" styleClass="custPopup">
+                        <div id="uploadLabelProj">
+                            <apex:outputText value="Please select a file of up to 128kb.  The file must be of type .jpg, .jpeg, .gif, .png or .bmp.  You may need to refresh the page to see the new image."/>
+                        </div><br/>
+                        <div id="uploadFileProj">
+                            <apex:inputFile value="{!projAnnualSpendCapDoc.Body}" filename="{!projAnnualSpendCapDoc.Name}" filesize="{!projAnnualSpendCapDoc.BodyLength}" accept="jpg,jpeg,gif,png,bmp"/>
+                        </div><br/>
+                        <apex:outputPanel id="uploadProjSpendCap">
+                            <apex:commandButton value="Upload" action="{!uploadProjectedAnnualSpendCapImage}"/>
+                            <apex:commandButton value="Cancel" onclick="closePopupFileDialogProjSpendCap(); return false;"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            <div id="maxEventsPerDayDialog" style="display:none;">
+                <apex:outputPanel styleClass="popupBackground">
+                    <apex:outputPanel id="maxEventsDialogPanel" styleClass="custPopup">
+                        <div id="uploadLabelMaxEvents">
+                            <apex:outputText value="Please select a file of up to 128kb.  The file must be of type .jpg, .jpeg, .gif, .png or .bmp.  You may need to refresh the page to see the new image."/>
+                        </div><br/>
+                        <div id="uploadFileMaxEvents">
+                            <apex:inputFile value="{!maxNumberEventsPerDayDoc.Body}" filename="{!maxNumberEventsPerDayDoc.Name}" filesize="{!maxNumberEventsPerDayDoc.BodyLength}" accept="jpg,jpeg,gif,png,bmp"/>
+                        </div><br/>
+                        <apex:outputPanel id="uploadMaxEvents" >
+                            <apex:commandButton value="Upload" action="{!uploadMaxNumberEventsImage}"/>
+                            <apex:commandButton value="Cancel" onclick="closePopupFileDialogMaxEvents(); return false;"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            <div id="datesUnavailableDialog" style="display:none;">
+                <apex:outputPanel styleClass="popupBackground">
+                    <apex:outputPanel id="datesUnavailableDialogPanel" styleClass="custPopup">
+                        <div id="uploadLabelDatesUnavailable">
+                            <apex:outputText value="Please select a file of up to 128kb.  The file must be of type .jpg, .jpeg, .gif, .png or .bmp.  You may need to refresh the page to see the new image."/>
+                        </div><br/>
+                        <div id="uploadFileDatesUnavailable">
+                            <apex:inputFile value="{!datesUnavailableImageDoc.Body}" filename="{!datesUnavailableImageDoc.Name}" filesize="{!datesUnavailableImageDoc.BodyLength}" accept="jpg,jpeg,gif,png,bmp"/>
+                        </div><br/>
+                        <apex:outputPanel id="uploadDatesUnavailable" >
+                            <apex:commandButton value="Upload" action="{!uploadDatesUnavailableImage}"/>
+                            <apex:commandButton value="Cancel" onclick="closePopupFileDialogDatesUnavailable(); return false;"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            <div id="contactCalendarLegendDialog" style="display:none;">
+                <apex:outputPanel styleClass="popupBackground">
+                    <apex:outputPanel id="contacCalendarLegendPanel" styleClass="custPopup">
+                        <div id="uploadLabel">
+                            <apex:outputText value="Please select a file of up to 128kb.  The file must be of type .jpg, .jpeg, .gif, .png or .bmp.  You may need to refresh the page to see the new image."/>
+                        </div><br/>
+                        <div id="uploadFile">
+                            <apex:inputFile value="{!contactCalendarLegendDoc.Body}" filename="{!contactCalendarLegendDoc.Name}" filesize="{!contactCalendarLegendDoc.BodyLength}" accept="jpg,jpeg,gif,png,bmp"/>
+                        </div><br/>
+                        <apex:outputPanel id="uploadLegendIcon">
+                            <apex:commandButton value="Upload" action="{!uploadContactCalendarLegendImage}"/>
+                            <apex:commandButton value="Cancel" onclick="closePopupContactCalendarLegendDialog(); return false;"/>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            
+        </apex:form>
+    </apex:outputPanel>
+    <c:WaitComponent />
+    <script>
+        
+        var madeChanges = false;
+        var firstLoad = true;
+        var tabNumberToBind = -1;
+        
+        $.noConflict();
+        
+        jQuery('.noSidebarCell').hide();
+        
+        jQuery(document).ready(function() {
+                                                    
+            init();
+                            
+        });
+        
+        function bindTabs(){
+                        
+            if(madeChanges) madeChanges = false;
+            
+            switch(tabNumberToBind){
+                                                                
+                case 2:
+                
+                    bindCalendarTab();
+                    break;
+                
+                case 4:
+                
+                    bindEventTab();
+                    break;                              
+                
+                case 6:
+                
+                    bindMappingTab();
+                    break;
+                
+                case 8:
+                    
+                    bindPlanningTab();
+                    break;
+            }
+            
+            //load Tabs again
+            init();         
+        }
+        
+        function setEventMinicolors(){
+        
+            jQuery("[id^=elvc]").minicolors({
+                
+                change: function(hex, opacity) {
+                    
+                    var elemId = jQuery(this).attr('id');
+                    jQuery("input[elemId]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=openq__Day_View_Event_Indicator]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=openq__Day_View_Event_Indicator]").attr('value', hex.toUpperCase());
+                }
+            });
+        }
+        
+        function setCalendarMinicolors(){
+        
+            jQuery("[id$=openq__Day_View_Calendar_Indicator]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=openq__Day_View_Calendar_Indicator]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id^=calColor]").minicolors({
+            
+                change: function(hex, opacity) {
+                
+                    var elemId = jQuery(this).attr('id');
+                    jQuery("input[elemId]").attr('value', hex.toUpperCase());
+                }
+            });
+        }
+        
+        function setPlanningMinicolors(){
+        
+            jQuery("[id$=Gauge_Low_Range_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Gauge_Low_Range_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=Gauge_Middle_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Gauge_Middle_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=Gauge_High_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Gauge_High_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+        }
+                
+        function bindEventTab(){
+                        
+            setEventMinicolors();
+                    
+            if(jQuery('[id$=enableSpeakerApprovalField]').prop('checked') == true){
+                
+                jQuery('[id$=speakerApprovalSettingsSection]').css('display', 'block');
+            
+            }else{
+
+                jQuery('[id$=speakerApprovalSettingsSection]').css('display', 'none');
+            }
+            
+            jQuery(".multiSelectPL_OP").hide();
+            jQuery(".multiSelectPL").multiselect({
+                height: "auto", width: "100%",
+                noneSelectedText : "None selected",
+                selectedText : function(numCheck, totalNum, arrCheck) {
+                    
+                    var text = '';
+                    for (var i=0; i < arrCheck.length; i++) {
+                        text += arrCheck[i].value + ', ';
+                    }                 
+                    if (text.indexOf(', ') >= 0) {
+                        text = text.substring(0, text.length - 2);            
+                    }           
+                    
+                    if (text.length > 40) {
+                        text = text.substring(0, 40) + '...';                    
+                    }
+                    
+                    return text;            
+                },                
+                create: function() { jQuery(".multiSelectPL_OP").show() }
+            });                                                             
+        }
+                  
+        function loadValuesAndColorsEvents(){
+                    
+            var values = '';
+            
+            jQuery('#eventCategories option:selected').each(function(){
+                
+                values += jQuery(this).data('apiname') + ';';
+            });
+                 
+            if (values != '') {
+                values = values.substring(0, values.length - 1);
+            }       
+            
+            loadValuesAndColorsEventsApex(values);
+        }
+        
+        function bindPlanningTab(){
+        
+            setPlanningMinicolors();
+        }
+        
+        function bindCalendarTab(){
+                        
+            setCalendarMinicolors();            
+        }
+        
+        function setMappingMinicolors(){
+        
+            jQuery("[id$=Mapping_Career_Info_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Mapping_Career_Info_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=Mapping_Committees_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Mapping_Committees_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=Mapping_Editorial_Boards_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Mapping_Editorial_Boards_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=Mapping_Publications_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Mapping_Publications_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=Mapping_Trials_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Mapping_Trials_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+            
+            jQuery("[id$=Mapping_Multiple_Connection_Color]").minicolors({
+            
+                change: function(hex, opacity) {
+                    
+                    jQuery("input[id$=Mapping_Multiple_Connection_Color]").attr('value', hex.toUpperCase());
+                }
+            });
+        }
+        
+        function bindMappingTab(){
+        
+            setMappingMinicolors();
+        }   
+        
+        function toggleEventApprovalSection(){
+        
+            if(jQuery('[id$=enableSpeakerApprovalField]').prop('checked') == true){
+                
+                jQuery('[id$=speakerApprovalSettingsSection]').css('display', 'block');
+            
+            }else{
+
+                jQuery('[id$=speakerApprovalSettingsSection]').css('display', 'none');
+            }
+        }
+                            
+        function init(){
+                        
+            //  Define friendly index name
+            var index = 'key';
+            //  Define friendly data store name
+            var dataStore = window.sessionStorage;
+            //  Start magic!
+            var oldIndex = 0;
+            
+            try {
+                // getter: Fetch previous value                                             
+                oldIndex = parseInt(dataStore.getItem(index));
+                
+                if(isNaN(oldIndex)){
+                
+                    oldIndex = 0;
+                    tabNumberToBind = 0;
+                }
+                
+            } catch(e) {
+                // getter: Always default to first tab in error state
+                oldIndex = 0;
+                tabNumberToBind = 0;
+            }
+            
+            if(firstLoad){
+                
+                tabNumberToBind = oldIndex;             
+                loadDynamicTabContent(oldIndex);
+                firstLoad = false;
+            }
+            
+            jQuery("#tabs input, #tabs select").each(function() {
+               
+               var elem = jQuery(this);
+                                
+               // Save current value of element
+               elem.data('oldVal', elem.val());
+               
+               if(elem.attr('type') === 'checkbox'){
+               
+                elem.bind("change", function(event){
+                
+                    madeChanges = true;
+                });
+               }else{
+                
+                   // Look for changes in the value
+                   elem.bind("propertychange keyup input paste", function(event){
+                      
+                      // If value has changed...
+                      if (elem.data('oldVal') != elem.val()) {
+                       // Updated stored value
+                       elem.data('oldVal', elem.val());                 
+                       madeChanges = true;
+                     }
+                   });
+                }
+             });
+            
+            jQuery("#tabs").tabs({
+                // The zero-based index of the panel that is active (open)
+                active : oldIndex,              
+                // Triggered after a tab has been activated
+                activate : function( event, ui ){                                                           
+                    //  Get future value
+                    var newIndex = ui.newTab.parent().children().index(ui.newTab);
+                    //  Set future value
+                    dataStore.setItem( index, newIndex );                   
+                     
+                },
+                
+                beforeActivate: function(event, ui){
+                    
+                    if(madeChanges){
+                    
+                        if(!confirm('You have made unsaved changes.  Continue anyway?')) return false;
+                    }
+                    
+                    waitOn();
+                    
+                    tabNumberToBind = ui.newTab.index();                    
+                    
+                    loadDynamicTabContent(ui.newTab.index());
+                }  
+            }).addClass( "ui-tabs-vertical ui-helper-clearfix" );
+            jQuery("#tabs li").removeClass( "ui-corner-top" ).addClass( "ui-corner-left" );         
+            
+            jQuery('.noSidebarCell').show();            
+        }           
+        
+        function loadDynamicTabContent(index){
+            
+            switch(index){
+                                                
+            case 0:
+                loadTabContent('General');
+                break;
+            
+            case 1:
+            
+                loadTabContent('AdvocacySentiment');
+                break;
+                
+            case 2:
+                
+                loadTabContent('Calendar');
+                break;
+                
+            case 3:
+                loadTabContent('Contact');
+                
+                break;
+                
+            case 4:
+                loadTabContent('Event');
+                
+                break;
+            
+            case 5:
+                loadTabContent('Interaction');
+            
+                break;
+            
+            case 6:
+                loadTabContent('Mapping');
+                break;
+                
+            case 7:
+                
+                loadTabContent('MIRFs');
+                break;
+                
+            case 8:
+                
+                loadTabContent('Planning');
+                break;
+            
+            case 9:
+            
+                loadTabContent('Segmentation');
+                break;
+
+            case 10:
+            
+                loadTabContent('Triggers');
+                break;
+            }
+        }
+        
+        function confirmMsg(){
+            
+            return(confirm('Unsaved changes will be lost.  Continue?'));
+        }
+        
+        function popupApprovalsRestrictionsDialog(){
+        
+            if(confirmMsg()){
+            
+                jQuery('#restrApprovalDialog').css('display', 'block');
+            }
+        }   
+        
+        function popupFileDialog(){
+            
+            if(confirmMsg()){
+            
+                jQuery('#fileDialog').css('display', 'block');
+            }
+        }
+        
+        function popupAnnualSpendLimitDialog(){
+        
+            if(confirmMsg()){
+            
+                jQuery('#annualSpendCapDialog').css('display', 'block');
+            }
+        }
+        
+        function popupProjAnnualSpendLimitDialog(){
+        
+            if(confirmMsg()){
+            
+                jQuery('#projSpendCapDialog').css('display', 'block');
+            }
+        }
+        
+        function popupMaxEventsDialog(){
+        
+            if(confirmMsg()){
+            
+                jQuery('#maxEventsPerDayDialog').css('display', 'block');
+            }
+        }
+        
+        function popupDatesUnavailableDialog(){
+        
+            if(confirmMsg()){
+            
+                jQuery('#datesUnavailableDialog').css('display', 'block');
+            }
+        }
+        
+        function popupCalendarLegendDialog(){
+        
+            if(confirmMsg()){
+            
+                jQuery('#contactCalendarLegendDialog').css('display', 'block');
+            }
+        }
+        
+        function closePopupFileDialogDatesUnavailable(){
+        
+            jQuery('#datesUnavailableDialog').css('display', 'none');
+        }
+        
+        function closePopupFileDialogMaxEvents(){
+        
+            jQuery('#maxEventsPerDayDialog').css('display', 'none');
+        }
+        
+        function closePopupFileDialogProjSpendCap(){
+        
+            jQuery('#projSpendCapDialog').css('display', 'none');
+        }
+        
+        function closePopupFileDialogRes(){
+        
+            jQuery('#restrApprovalDialog').css('display', 'none');
+        }
+        
+        function closePopupFileDialog(){
+            
+            jQuery('#fileDialog').css('display', 'none');
+        }
+        
+        function closePopupFileDialogSpendCap(){
+        
+            jQuery('#annualSpendCapDialog').css('display', 'none');
+        }
+        
+        function closePopupContactCalendarLegendDialog(){
+        
+            jQuery('#contactCalendarLegendDialog').css('display', 'none');
+        }
+        
+        function saveTempColorInfo(){
+            
+            var textCalendar = '';
+            
+            jQuery('[id^=calColor]').each(function(){
+            
+                var info = jQuery(this).data('info');
+                
+                var infoAndColor = info+'^'+jQuery(this).val();
+                textCalendar += infoAndColor+',';
+            });
+            
+            if(textCalendar != ''){
+                textCalendar = textCalendar.substring(0, textCalendar.length - 1);
+            }
+            
+            saveTempColorInfoApex(textCalendar);                                            
+        }
+        
+        function saveInteractionTab(){
+        
+            saveTabApex('Interaction');
+        }
+        
+        function savePlanningTab(){
+            
+            saveTabApex('Planning');
+        }
+        
+        function saveEventTab(){
+            
+            var text = '';
+            var error = false;
+                        
+            jQuery('[id^=elvc]').each(function(){
+            
+                var info = jQuery(this).data('info');
+                                
+                if(!error && (jQuery(this).val() === 'undefined' || jQuery(this).val() === null || jQuery(this).val() == '')){
+                
+                    alert('One or more LOV values do not have colors assigned');                    
+                    error = true;                   
+                    setTimeout(removeSavingStatus, 200);
+                    
+                }else{
+                
+                    var infoAndColor = info+'^'+jQuery(this).val();
+                    text += infoAndColor+',';
+                }
+            });
+            
+            if (text != '') {
+                text = text.substring(0, text.length - 1);
+            }
+                        
+            var values = '';
+           
+            jQuery('#eventCategories option:selected').each(function(){
+                
+                values += jQuery(this).data('apiname') + ';';
+            });
+                 
+            if (values != '') {
+                values = values.substring(0, values.length - 1);
+            }
+            
+            if(!error){
+                jQuery('[id$=Selected_Event_Fields]').val(values);
+                jQuery('[id$=Event_Color_Text]').val(text);
+                tabNumberToBind = 3;
+                saveTabApex('Event');
+            }
+        }
+        
+        function saveCalendarTab(){
+            
+            var errorCalendar = false;
+            var textCalendar = '';          
+            
+            jQuery('[id^=calColor]').each(function(){
+            
+                var info = jQuery(this).data('info');
+                                
+                if(!errorCalendar && (jQuery(this).val() === 'undefined' || jQuery(this).val() === null || jQuery(this).val() == '')){
+                
+                    alert('One or more Calendar objects do not have colors assigned');                  
+                    errorCalendar = true;
+                    setTimeout(removeSavingStatus, 2000);
+                    
+                }else{
+                
+                    var infoAndColor = info+'^'+jQuery(this).val();
+                    textCalendar += infoAndColor+',';
+                }
+            });
+            
+            if(textCalendar != ''){
+                textCalendar = textCalendar.substring(0, textCalendar.length - 1);
+            }
+            
+            if(!errorCalendar){
+                jQuery('[id$=Calendar_Color_Text]').val(textCalendar);
+                tabNumberToBind = 2;                
+                saveTabApex('Calendar');
+            }
+        }
+        
+        function saveAdvocacySentimentTab(){
+            saveTabApex('AdvocacySentiment');
+        }
+        
+        function saveGeneralTab(){
+
+            saveTabApex('General');
+        }
+
+        function saveTriggersTab(){
+
+            saveTabApex('Triggers');
+        }
+        
+        function saveMIRFTab(){
+
+            saveTabApex('MIRFs');
+        }
+        
+        function saveMappingTab(){
+
+            saveTabApex('Mapping');
+        }   
+        
+        function saveSegmentationTab(){
+        
+            saveTabApex('Segmentation');    
+       }
+       function saveContactTab(){
+        
+            saveTabApex('Contact'); 
+       }
+       function savingStatus(){
+       
+            jQuery('.saveBtn input.btn').each(function(){
+            
+                jQuery(this).val('Saving...');
+                jQuery(this).width('70px');
+            });
+       }
+       
+       function removeSavingStatus(){
+            
+            jQuery('.saveBtn input.btn').each(function(){
+            
+                jQuery(this).val('Save');
+                jQuery(this).width('37px');
+            });             
+       }
+    </script>
+</apex:page>

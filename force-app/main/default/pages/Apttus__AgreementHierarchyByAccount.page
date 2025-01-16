@@ -1,0 +1,94 @@
+<!-- 
+Apttus Contract Management
+AgreementHierarchyByAccount
+
+@2019-2020 Apttus Inc. All rights reserved.
+
+-->
+<apex:page standardController="Account" extensions="Apttus.AgreementHierarchyByAccountController" action="{!buildJSON}" showHeader="true"
+    sidebar="false">
+    
+	<Apttus_Base2:UsageDataComponent2 ProdName="{!systemSettingforUsageAnalytics['productName']}" ProdVersion="{!systemSettingforUsageAnalytics['productVersion']}"/>
+	
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementHierarchyResource, 'AgreementHierarchy/js/jquery.ui.position.js')}"
+    />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementHierarchyResource, 'AgreementHierarchy/js/jquery-ui.min.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__AgreementHierarchyResource, 'AgreementHierarchy/css/jquery-ui.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__AgreementHierarchyResource, 'AgreementHierarchy/css/AgreementHierarchyByAccountStyle.css')}"
+    />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementHierarchyResource, 'AgreementHierarchy/js/panzoom.min.js')}" />
+    <script type="text/javascript">
+        var agreementDetails = JSON.parse("{!JSENCODE(jsonParentAgreements)}");
+        var accountDetails = JSON.parse("{!JSENCODE(jsonAccount)}");
+        var salesforceUrl = "{!JSENCODE(baseURL)}";
+        var agreementIconFromResource = "{!URLFOR($Resource.AgreementHierarchyResource, 'AgreementHierarchy/images/Capture.png')}";
+        var accountIconFromResource = "{!URLFOR($Resource.AgreementHierarchyResource, 'AgreementHierarchy/images/Account.png')}";
+        var downArrowIconFromResource = "{!URLFOR($Resource.AgreementHierarchyResource, 'AgreementHierarchy/images/Down.png')}";
+        var labelRelatedAgreements = "{!$Label.RelatedAgreements}";
+        var labelChildAgreements = "{!$Label.ChildAgreements}";
+        var labelNoChildAgreements = "{!$Label.NoChildAgreementsFound}";
+        var labelNoRelatedAgreements  = "{!$Label.NoRelatedAgreementsfound}";
+        var labelViewRecord = "{!$Label.ViewRecord}";
+        var labelShowRelatedAgreements = "{!$Label.ShowRelatedAgreements}";
+    </script>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementHierarchyResource, 'AgreementHierarchy/js/agreement-hierarchy-by-account.js')}"></apex:includeScript>
+    <apex:form >
+        <div class="bPageTitle bpageTitleExtra">
+            <div class="ptBody">
+                <div class="content">
+                    <img src="{!URLFOR($Resource.AgreementHierarchyResource, 'AgreementHierarchy/images/Hierarchy.png')}" class="pageTitleIconAV hierarchy-icon"
+                        title="{!$Label.AgreementHierarchy}" />
+                    <h1 class="pageType">{!$Label.AgreementHierarchy}
+                        <span class="titleSeparatingColon">:</span>
+                    </h1>
+                    <h2 class="pageDescription"> {!accountRecord.Name}</h2>
+                    <div class="blank">&nbsp;</div>
+                </div>
+                <div style="float: right;padding-right: 20px;">
+                    <div class="{!lightningButtonClass}">
+                        <apex:commandButton styleclass="slds-button slds-button--brand" action="{!doCancel}" value="{!$Label.apttus__backtoaccount}" immediate="true"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <apex:pageBlock >
+                <div id="container">
+                    <div class="tree zoomable" id="tree">
+                        <ul>
+                            <li id='root-account'>
+                            </li>
+                        </ul>
+                    </div>
+                    <div id="dialog">
+                        <div id="popup-tree" class="htree">
+                        </div>
+                    </div>
+                </div>
+            </apex:pageBlock>
+            <apex:outPutPanel id="script_block">
+                <script>
+                    var childAgreements = "{!JSENCODE(jsonChildAgreements)}" ? JSON.parse("{!JSENCODE(jsonChildAgreements)}") : "";
+                </script>
+            </apex:outPutPanel>
+            <apex:outPutPanel id="script_block2">
+                <script>
+                    var parentDetailsForRelatedRecord = "{!JSENCODE(jsonParentAgreementForRelatedRecord)}" ? JSON.parse("{!JSENCODE(jsonParentAgreementForRelatedRecord)}") : "";
+                    var relatedDetailsForRelatedRecord = "{!JSENCODE(jsonRelatedAgreementForRelatedRecord)}" ? JSON.parse("{!JSENCODE(jsonRelatedAgreementForRelatedRecord)}") : "";
+                    var childDetailsForRelatedRecord = "{!JSENCODE(jsonChildAgreementForRelatedRecord)}" ? JSON.parse("{!JSENCODE(jsonChildAgreementForRelatedRecord)}") : "";
+                    var popupName = "{!JSENCODE(popupName)}";
+                </script>
+            </apex:outPutPanel>
+        </div>
+        <apex:actionFunction name="getChildAgreementsFromAgreement" reRender="script_block" action="{!getChildAgreementsFromAgreement}"
+            oncomplete="onExpandComplete();">
+            <apex:param name="relatedAgreementId" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="viewRelatedRecord" reRender="script_block2" action="{!viewRelatedRecord}" oncomplete="openDialogWrapper();">
+            <apex:param name="popupRelatedAgreementId" value="" />
+        </apex:actionFunction>
+    </apex:form>
+</apex:page>

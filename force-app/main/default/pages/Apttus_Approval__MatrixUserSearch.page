@@ -1,0 +1,94 @@
+<!-- 
+    Apttus Approvals Management
+    MatrixUserSearch
+     
+    @2010-2011 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Approval_Matrix__c"
+           extensions="Apttus_Approval.NextLevelApproverController">
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+    <apex:sectionHeader title="{!$Label.apttus_approval__matrixusersearch}"/>
+    
+    <apex:form >
+    
+        <apex:PanelGrid columns="3" cellpadding="2">
+        
+            <apex:outputLabel value="{!$Label.apttus_approval__search}" 
+                              for="idSearchText" 
+                              style="font-weight: bold;" />
+            <apex:inputText id="idSearchText" 
+                            value="{!searchText}" 
+                            size="25" 
+                            style="height:15px;font-size:13px;" />
+            <apex:commandButton action="{!doSearch}" 
+                                value="{!$Label.apttus_approval__go}" 
+                                rerender="idSearchResult" 
+                                status="idSearchStatus" />
+        </apex:PanelGrid>
+        
+        <apex:pageBlock title="Users" id="idSearchResult">
+        
+            <apex:pageMessages />
+            
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!doCancelUserSearch}" value="{!$Label.apttus_approval__cancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+
+           <apex:outputPanel id="idResultStatsPanel" styleClass="bNext"
+                layout="block" style="text-align: right;"  rendered="{!hasUsers}">
+                <font size="1px">{!$Label.PageNbr}:&nbsp;{!currentPageNumber}&nbsp;{!$Label.OutOf}&nbsp;{!totalPages}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <apex:outputPanel id="idNavigationPanel" styleClass="next"
+                        layout="block" rendered="{!OR(hasNextPage,hasPreviousPage)}">
+                        <apex:outputPanel rendered="{!NOT(hasPreviousPage)}" styleClass="greyedLink">&lt;{!$Label.PreviousPage}</apex:outputPanel>
+                        <apex:commandLink rendered="{!hasPreviousPage}" action="{!previousPage}" reRender="idSearchResult">&lt;{!$Label.PreviousPage}</apex:commandLink>
+                        <span> | </span>
+                        <apex:outputPanel rendered="{!NOT(hasNextPage)}" styleClass="greyedLink">{!$Label.NextPage}&gt;</apex:outputPanel>
+                        <apex:commandLink rendered="{!hasNextPage}" action="{!nextPage}" reRender="idSearchResult">{!$Label.NextPage}&gt;</apex:commandLink>
+                    </apex:outputPanel> 
+                </font>
+            </apex:outputPanel>
+            
+            <p/>
+            
+            <apex:outputPanel >
+                <apex:actionstatus id="idSearchStatus" startText="{!$Label.apttus_approval__searchstatusmessage}">
+                    <apex:facet name="stop">
+                        <apex:outputPanel >
+                            <apex:pageBlockTable value="{!userList}" var="userWrapper" >
+                                
+                                <apex:column headerValue="{!$Label.apttus_approval__name}">
+                                    <apex:commandLink action="{!doChooseUser}" value="{!userWrapper.user.Name}" >
+                                        <apex:param name="nextApproverId" value="{!userWrapper.user.id}" />
+                                        <apex:param name="nextApproverName" value="{!userWrapper.user.Name}" />
+                                    </apex:commandLink>     
+                                </apex:column>
+                                
+                                <apex:column headerValue="{!$Label.apttus_approval__level}" >
+                                    <apex:outputText value="{!userWrapper.approverLevel}" />
+                                </apex:column>
+                                
+                            </apex:pageBlockTable>
+                        </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionstatus>
+            </apex:outputPanel>
+            
+        </apex:pageBlock>   
+        
+    </apex:form>
+    
+</apex:page>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>checkProductReturnStatusonRecallSRCase</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    RecordType.Name = $Label.CaseRecordTypeServiceRequest,
+    Recall__c = TRUE,
+    ISPICKVAL(Recall_Acknowledgement_Status__c, &quot;Customer Confirmed Receipt of Notification and Understands its Content&quot;),
+    OR(
+        ISPICKVAL(SVMXC__Product__r.Service_Product_Type__c, &quot;Spare&quot;),
+        ISPICKVAL(SVMXC__Product__r.Service_Product_Type__c, &quot;Consumable&quot;)
+    ),
+    ISPICKVAL(Product_Returned_Status__c,&quot;&quot;),
+    OR(
+        AND(ISCHANGED(Status), ISPICKVAL(Status, &quot;Completed&quot;)),
+        AND(ISCHANGED(Status), ISPICKVAL(Status, &quot;Closed&quot;))
+    ),
+    NOT($Profile.Name = $Label.Integration_SAP_Service),
+    NOT($Profile.Name = $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName = $Label.Automated_Process_User),
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c)
+)</errorConditionFormula>
+    <errorDisplayField>Product_Returned_Status__c</errorDisplayField>
+    <errorMessage>The &quot;Product Return Status&quot; field is required when the product on the recall service request case is a consumable or spare. Add a Product Return Status.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,1393 @@
+<!--
+	Apttus Config & Pricing
+	RemoteCPQ
+	 Workbench for RemoteCPQ
+	@2015-2016 Apttus Inc. All rights reserved.
+ -->
+
+<apex:page lightningStylesheets="true" controller="Apttus_Config2.RemoteCPQController"
+			title="Remote CPQ Workbench"
+			showHeader="false"
+			sidebar="false">
+
+<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+
+<!-- translation is wrapped inside function and added to angular module -->
+<apex:include pageName="Apttus_Config2__Translation" />
+
+<style>
+	#codeViewPortContainer, #requestViewPort {
+		position: absolute;
+		background-color: rgb(206, 239, 255);
+		padding: 10px;
+		width: 80%;
+		-moz-border-radius: 10px;
+		border-radius: 10px;
+	}
+
+	#codeViewPort, #requestViewPort {
+		white-space: pre-wrap;
+		font-family: courier, monotype;
+	}
+
+	input {
+		margin-left: 4px;
+		margin-right: 4px;
+	}
+
+	h1 {
+		font-size: 1.5em;
+	}
+
+	div {
+		padding-bottom: 1em!important;
+	}
+
+	a {
+		padding: 4px;
+	}
+
+	label {
+		padding-left: 4px;
+		padding-right: 4px;
+	}
+
+	#rest-help {
+		width: 500px;
+	}
+
+	#timeLine {
+		position: absolute;
+		left: 75%;
+		top: 30px;
+		width: 120px;
+		background-color: white;
+		border: 2px solid #ccc;
+		padding: 6px;
+	}
+
+	#tabs-1, #tabs-2, #tabs-3, #tabs-4, #tabs-5, #tabs-6 {
+		border: 1px solid lightblue;
+		width: 80%;
+		display: table;
+	}
+
+	.smalllabel {
+		font-size: 50%;
+	}
+
+
+
+
+</style>
+
+<script>
+	var j$ = jQuery.noConflict();
+
+	var jsonData;
+
+	j$.cachedData = {};
+
+	var cartId = "{!JSENCODE($CurrentPage.parameters.Id)}";
+	var configRequestId = "{!JSENCODE($CurrentPage.parameters.configRequestId)}";
+
+	var lineAction;
+
+	j$.REMOTE = {};
+	j$.REMOTE.getCategories = '{!$RemoteAction.RemoteCPQController.getCategories}';
+	j$.REMOTE.getProducts = '{!$RemoteAction.RemoteCPQController.getProducts}';
+	j$.REMOTE.searchProducts = '{!$RemoteAction.RemoteCPQController.searchProducts}';
+	j$.REMOTE.getProductSearchSample = '{!$RemoteAction.RemoteCPQController.getProductSearchSample}';
+	j$.REMOTE.getTypeaheadResults = '{!$RemoteAction.RemoteCPQController.getTypeaheadResults}';
+
+	j$.REMOTE.getCart = '{!$RemoteAction.RemoteCPQController.getCart}';
+	j$.REMOTE.getCartLineItems = '{!$RemoteAction.RemoteCPQController.getCartLineItems}';
+	j$.REMOTE.getAddToCartSample = '{!$RemoteAction.RemoteCPQController.getAddToCartSample}';
+	j$.REMOTE.addToCart = '{!$RemoteAction.RemoteCPQController.addToCart}';
+	j$.REMOTE.cloneBundleLineItem = '{!$RemoteAction.RemoteCPQController.cloneBundleLineItem}';
+	j$.REMOTE.cloneOptionLineItem = '{!$RemoteAction.RemoteCPQController.cloneOptionLineItem}';
+	j$.REMOTE.saveCollaborationRequest = '{!$RemoteAction.RemoteCPQController.saveCollaborationRequest}';
+
+	j$.REMOTE.getLineItemDetails = '{!$RemoteAction.RemoteCPQController.getLineItemDetails}';
+	j$.REMOTE.getProductDetails = '{!$RemoteAction.RemoteCPQController.getProductDetails}';
+
+	j$.REMOTE.getConfigurationData = '{!$RemoteAction.RemoteCPQController.getConfigurationData}';
+
+	j$.REMOTE.getAssetLineItems = '{!$RemoteAction.RemoteCPQController.getAssetLineItems}';
+	j$.REMOTE.getAssetLineItemsForPage = '{!$RemoteAction.RemoteCPQController.getAssetLineItemsForPage}';
+	j$.REMOTE.performAssetActions = '{!$RemoteAction.RemoteCPQController.performAssetActions}';
+	j$.REMOTE.getAssetFilterFields = '{!$RemoteAction.RemoteCPQController.getAssetFilterFields}';
+	j$.REMOTE.getReplacementProducts = '{!$RemoteAction.RemoteCPQController.getReplacementProducts}';
+	j$.REMOTE.calculateMetricsForAssets = '{!$RemoteAction.RemoteCPQController.calculateMetricsForAssets}';
+	j$.REMOTE.getReferenceObjects = '{!$RemoteAction.RemoteCPQController.getReferenceObjects}';
+	j$.REMOTE.getPriceBreakups = '{!$RemoteAction.RemoteCPQController.getPriceBreakups}';
+	j$.REMOTE.getCosts = '{!$RemoteAction.RemoteCPQController.getCosts}';
+	
+	j$.TIME_TRACKER = [];
+	var txnPLN = 10003;
+	
+	/**
+	 * format date
+	 */
+	function formatDate(date) {
+		var hours = date.getHours();
+		var minutes = date.getMinutes();
+		minutes = minutes < 10 ? '0' + minutes : minutes;
+		var sec = date.getSeconds();
+		sec = sec < 10 ? '0' + sec : sec;
+
+		var strTime = hours + ':' + minutes + ':' + sec;
+		//return date.getFullYear() + "/" + date.getMonth()+1 + "/" + date.getDate() +  " : " + strTime;
+		return strTime;
+	}
+
+	/**
+	 * display json data
+	 */
+	function displayResult(result, methodName) {
+		jsonData = result; //used in debugging
+
+		if (typeof methodName === "undefined") {
+			j$("#tabs2").tabs('option', "active", 0);
+
+		} else {
+			document.getElementById("requestViewPort").innerHTML = '<p>Method Name: '+methodName+'</p>' + JSON.stringify(result, null, 2);
+
+		}
+
+		// if you are getting the typeahead result
+		if (typeof result === "string") {
+			var decodedHTMLEntities = j$("<div>").html(result).text();
+			result = JSON.parse(decodedHTMLEntities);
+		}
+
+		document.getElementById("codeViewPort").innerHTML = JSON.stringify(result, null, 2);
+		document.getElementById("recordCount").innerHTML = 'NA';
+
+		if (result.hasOwnProperty('categories')) {
+			document.getElementById("recordCount").innerHTML = result.categories.length;
+		}
+
+		if (result.hasOwnProperty('products')) {
+			document.getElementById("recordCount").innerHTML = result.products.length;
+			if (typeof result.products[0].productSO !== 'undefined') {
+				j$.cachedData.products = jsonData.products;
+			}
+		}
+
+		if (result.hasOwnProperty('lineItems')) {
+			document.getElementById("recordCount").innerHTML = result.lineItems.length;
+			if (typeof result.lineItems[0].lineItemSO !== 'undefined') {
+				j$.cachedData.lineItems = jsonData.lineItems;
+			}
+		}
+
+		if (result.hasOwnProperty('assetLineItems')) {
+			document.getElementById("recordCount").innerHTML = result.assetLineItems.length;
+			if (typeof result.assetLineItems[0].assetLineItemSO !== 'undefined') {
+				j$.cachedData.assetLineItems = jsonData.assetLineItems;
+			}
+		}
+
+
+		if (result.hasOwnProperty("timeTaken")) {
+			document.getElementById("timeTaken").innerHTML = result.timeTaken;
+
+			//time line display
+			j$.TIME_TRACKER.push(result.timeTaken);
+			document.getElementById("timeRows").innerHTML = document
+					.getElementById("timeRows").innerHTML
+					+ '<tr><td style="width: 60px; text-align: right;">'
+					+ formatDate(new Date())
+					+ '</td><td style="width: 30px; text-align: right;">'
+					+ result.timeTaken + '</td></tr>';
+			var totalTime = 0;
+			for (var i = 0; i < j$.TIME_TRACKER.length; i++) {
+				totalTime += j$.TIME_TRACKER[i];
+			}
+			document.getElementById("averageTime").innerHTML = Math
+					.round(totalTime / j$.TIME_TRACKER.length);
+
+		}
+
+	}
+
+	/**
+	 * returns include list based on checkbox selection
+	 */
+	function getIncludeParams() {
+		var includes = [];
+		if (document.getElementById("prices").checked) {
+			includes.push("prices");
+		}
+		if (document.getElementById("categories").checked) {
+			includes.push("categories");
+		}
+		if (document.getElementById("defaultOptionProducts").checked) {
+			includes.push("defaultOptionProducts");
+		}
+
+		if (document.getElementById("productFilters").checked) {
+			includes.push("productFilters");
+		}
+		return includes;
+
+	}
+
+	/**
+	 * returns configruation data include list based on checkbox selection
+	 */
+	function getConfigurationDataIncludes() {
+		var includes = [];
+		if (document.getElementById("customSettings").checked) {
+			includes.push("customSettings");
+		}
+		if (document.getElementById("categories2").checked) {
+			includes.push("categories");
+		}
+		if (document.getElementById("displayActions").checked) {
+			includes.push("displayActions");
+		}
+		if (document.getElementById("displayColumns").checked) {
+			includes.push("displayColumns");
+		}
+		if (document.getElementById("attributeFields").checked) {
+			includes.push("attributeFields");
+		}
+		if (document.getElementById("lookupFieldSettings").checked) {
+			includes.push("lookupFieldSettings");
+		}
+
+		return includes;
+
+	}
+
+	/**
+	 * get list of line items
+	 */
+	function getAttributeFields() {
+		try {
+			var cartRequest = {
+								"cartId": cartId,
+								"configRequestId": configRequestId,
+								"responseIncludes": ["attributeFields"]
+							  };
+
+			displayResult(cartRequest, 'getConfigurationData');
+
+			invokeRemoteAction(j$.REMOTE.getConfigurationData, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * get list of line items
+	 */
+	function getConfigurationData() {
+		try {
+			var cartRequest = {
+								"cartId": cartId,
+								"configRequestId": configRequestId,
+								"responseIncludes": getConfigurationDataIncludes()
+							  };
+
+			displayResult(cartRequest, 'getConfigurationData');
+			invokeRemoteAction(j$.REMOTE.getConfigurationData, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * get all categories for the price list
+	 */
+	function getCategories() {
+		try {
+			var searchRequest = createSearchRequest();
+			delete searchRequest.productSearchInfo;
+			displayResult(searchRequest, 'getCategories');
+
+			Visualforce.remoting.Manager.invokeAction(
+					j$.REMOTE.getCategories,
+					searchRequest,
+					function(result, event) {
+						try {
+							if (event.status) {
+								displayResult(result);
+
+								j$("#selectedCategory").empty().append('<option value="allCategories">All Categories</option>');
+								j$("#selectedCategory").append('<option value="allProducts">All Products</option>');
+
+								for (var i = 0; i < result.categories.length; i++) {
+									j$("#selectedCategory").append("<option value=\'"+result.categories[i].nodeId+"\'>"
+															+ result.categories[i].label
+															+ "</option>");
+								};
+
+							} else {
+								console.log('error in VF remote for ' + j$.REMOTE.getCategories);
+							}
+						} catch (ex) {
+							console.log(ex);
+						}
+					}, {buffer : false, escape : true, timeout : 120000 });
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * get products for a category
+	 */
+	function getProducts() {
+		try {
+			var searchRequest = createSearchRequest();
+			//delete searchRequest.productSearchInfo;
+			delete searchRequest.productSearchInfo.searchText;
+			delete searchRequest.productSearchInfo.searchFields;
+
+			displayResult(searchRequest, 'getProducts');
+			invokeRemoteAction(j$.REMOTE.getProducts, [searchRequest]);
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * returns include list based on checkbox selection
+	 */
+	function getCartIncludeParams() {
+		var includes = [];
+		if (document.getElementById("cart").checked) {
+			includes.push("cart");
+		}
+		if (document.getElementById("cartLines").checked) {
+			includes.push("cartLines");
+		}
+		if (document.getElementById("chargeLines").checked) {
+			includes.push("chargeLines");
+		}
+		if (document.getElementById("optionLines").checked) {
+			includes.push("optionLines");
+		}
+		if (document.getElementById("attributeValues").checked) {
+			includes.push("attributeValues");
+		}
+		if (document.getElementById("ruleActions").checked) {
+			includes.push("ruleActions");
+		}
+		if (document.getElementById("totalItems").checked) {
+			includes.push("totalItems");
+		}
+		if (document.getElementById("grandTotal").checked) {
+			includes.push("grandTotal");
+		}
+		if (document.getElementById("appliedExpressionInfos").checked) {
+			includes.push("appliedExpressionInfos");
+		}
+		if (document.getElementById("attributeRules").checked) {
+			includes.push("attributeRules");
+		}
+		if (document.getElementById("attributeMatrices").checked) {
+			includes.push("attributeMatrices");
+		}
+
+		return includes;
+
+	}
+
+	/**
+	 * get sample product search request object
+	 */
+	function getAddToCartSample() {
+		try {
+			invokeRemoteAction(j$.REMOTE.getAddToCartSample, [cartId]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * creates data for line item
+	 */
+	function createCartRequest() {
+		var productId = j$("#productId")[0].value;
+		var qty = j$("#quantity")[0].value;
+		var lineNumber = j$("#lineNumber")[0].value;
+		var lineId = j$("#lineId")[0].value;
+		var primaryLineNumber = j$("#primaryLineNumber")[0].value;
+		var cartRequest = {
+							"cartId": cartId,
+							"configRequestId": configRequestId,
+							"lineItems": [
+								{
+									"chargeLines": [
+										{
+											"lineItemSO": {
+												"ProductId__c": assetProductId,
+												"Quantity__c": assetQty,
+												"LineNumber__c": lineNumber,
+												"PrimaryLineNumber__c": primaryLineNumber,
+												"Id": lineId
+											}
+										}
+									],
+									"sequence": 1,
+									"txnPrimaryLineNumber": 10005
+								}
+							],
+							"responseIncludes": getCartIncludeParams()
+						};
+
+		if (document.getElementById("applyConstraintRules").checked) {
+			cartRequest["applyConstraintRules"] = true;
+		}
+		if (document.getElementById("updatePrice").checked) {
+			cartRequest["updatePrice"] = true;
+		}
+
+		return cartRequest;
+
+	}
+
+
+	function createCollabRequest() {
+		var lineItemId = j$("#lineItemId")[0].value;
+
+		var collabRequest = {
+							  "parentLineItemIds": [
+							    lineItemId
+							  ],
+							  "parentConfigId": cartId,
+							  "pageErrors": null,
+							  "hasErrors": null,
+							  "collaborationRequestSO": {
+							    "OwnerId": '{!$User.id}',
+							    "Status__c": 'Submitted'
+							  }
+							};
+		return collabRequest;
+	}
+
+	/**
+	 * get sample product search request object
+	 */
+	function getLineItemAttributes() {
+		try {
+			var lineItemId = j$("#attrLineItemId")[0].value;
+			var lineItemDO = {};
+			var found = false;
+			for (var i = 0; i < j$.cachedData.lineItems.length; i++) {
+				for (var j = 0; j < j$.cachedData.lineItems[i].chargeLines.length; i++) {
+					if (j$.cachedData.lineItems[i].chargeLines[j].lineItemSO.Id == lineItemId) {
+						lineItemDO = j$.cachedData.lineItems[i];
+						found = true;
+						break;
+					}
+					if (found) {
+						break;
+					}
+				}
+			}
+
+			var cartRequest = {
+								"cartId": cartId,
+								"configRequestId": configRequestId,
+								"lineItems": [lineItemDO],
+								"responseIncludes": ["attributeGroups", "attributeValues", "usagePriceTiers", "priceRamps"] //TODO: use check boxes
+							  };
+
+			displayResult(cartRequest, 'getLineItemDetails');
+
+			invokeRemoteAction(j$.REMOTE.getLineItemDetails, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * get sample product search request object
+	 */
+	function getProductDetails(productIdField, detailIncludes) {
+		try {
+			var productId = j$("#"+productIdField)[0].value;
+			var products = [];
+
+			if (typeof j$.cachedData.products == 'undefined') {
+				alert('First search for products in Catalog tab');
+				return;
+			}
+
+			for (var i=0; i<j$.cachedData.products.length; i++) {
+				var productSO =  {};
+				if(productId !== "" && j$.cachedData.products[i].productSO.Id == productId) {
+					productSO.Id = j$.cachedData.products[i].productSO.Id;
+					productSO.HasAttributes__c = j$.cachedData.products[i].productSO.HasAttributes__c;
+					productSO.HasOptions__c = j$.cachedData.products[i].productSO.HasOptions__c;
+					products.push(productSO);
+					break;
+
+				} else {
+					productSO.Id = j$.cachedData.products[i].productSO.Id;
+					productSO.HasAttributes__c = j$.cachedData.products[i].productSO.HasAttributes__c;
+					productSO.HasOptions__c = j$.cachedData.products[i].productSO.HasOptions__c;
+					products.push(productSO);
+
+				}
+
+			}
+
+			var catalogRequest = {
+									"cartId": cartId,
+									"configRequestId": configRequestId,
+									"priceListId": priceListId,
+									"products": products,
+									"responseIncludes": [detailIncludes]
+								  };
+
+			displayResult(catalogRequest, 'getProductDetails');
+
+			invokeRemoteAction(j$.REMOTE.getProductDetails, [catalogRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+
+	/**
+	 * get sample product search request object
+	 */
+	function getLineItemDetails() {
+		try {
+			var lineItemId = j$("#optionLineItemId")[0].value;
+			var lineItemSO = {};
+			for (var i=0; i<jsonData.lineItems.length; i++) {
+				if(jsonData.lineItems[i].lineItemSO.Id == lineItemId) {
+					lineItemSO = jsonData.lineItems[i].lineItemSO;
+					break;
+				}
+			}
+
+			var cartRequest = {
+								"cartId": cartId,
+								"configRequestId": configRequestId,
+								"lineItems": [
+									{
+									  "lineItemSO": lineItemSO,
+									  "sequence": 1
+									}
+								],
+								"responseIncludes": ["optionGroups"]
+							  };
+
+			invokeRemoteAction(j$.REMOTE.getLineItemDetails, [cartRequest]);
+
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * populate map with component id as key and line item as value
+	 */
+	function createOptionLineItemMap(componentLineItemMap, lineItemDO) {
+		if(lineItemDO.hasOwnProperty('optionLines')) {
+			mapComponentLines(componentLineItemMap, lineItemDO.optionLines);
+		}
+
+	}
+	function mapComponentLines(componentLineItemMap, lineItemDOs) {
+		for (var i=0; i<lineItemDOs.length; i++) {
+			var lineItemDO = lineItemDOs[i];
+			componentLineItemMap[lineItemDO.lineItemSO['ProductOptionId__c']] = lineItemDO; //use ns prefix
+			if(lineItemDO.hasOwnProperty('optionLines')) {
+				mapComponentLines(componentLineItemMap, lineItemDO.optionLines);
+			}
+		}
+	}
+
+	/**
+	 * get sample product search request object
+	 */
+	function addToCart() {
+		try {
+			var cartRequest = createCartRequest();
+			displayResult(cartRequest, 'addToCart');
+			invokeRemoteAction(j$.REMOTE.addToCart, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * clone bundle/standalone line item
+	 */
+	function cloneBundleLineItem() {
+		try {
+			var cartRequest = createCartRequest();
+			displayResult(cartRequest, 'cloneBundleLineItem');
+			invokeRemoteAction(j$.REMOTE.cloneBundleLineItem, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * clone option line item
+	 */
+	function cloneOptionLineItem() {
+		try {
+			var cartRequest = createCartRequest();
+			displayResult(cartRequest, 'cloneOptionLineItem');
+			invokeRemoteAction(j$.REMOTE.cloneOptionLineItem, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * Create new Collaboration Task with the Owner as the current user
+	 */
+	function createCollabRequestWithCurrentUser() {
+		try {
+			var collabRequest = createCollabRequest();
+			displayResult(collabRequest, 'saveCollaborationRequest');
+
+			invokeRemoteAction(j$.REMOTE.saveCollaborationRequest, [collabRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * get list of line items
+	 */
+	function getCartLineItems() {
+		try {
+			var cartRequest = createCartRequest();
+			displayResult(cartRequest, 'getCartLineItems');
+
+			invokeRemoteAction(j$.REMOTE.getCartLineItems, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * get sample product search request object
+	 */
+	function getProductSearchSample() {
+		try {
+			invokeRemoteAction(j$.REMOTE.getProductSearchSample, [cartId, configRequestId]);
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	function getCostLineItems() {
+		var cartRequest = createCartRequest();
+		displayResult(cartRequest, 'getCosts');
+		try {
+			invokeRemoteAction(j$.REMOTE.getCosts, [cartRequest]);
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	function getPriceBreakups() {
+		var cartRequest = createCartRequest();
+		displayResult(cartRequest, 'getPriceBreakups');
+		try {
+			invokeRemoteAction(j$.REMOTE.getPriceBreakups, [cartRequest]);
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * creates product search request
+	 * category id is used from selected category id from pick list
+	 * include params added from selected checkboxes
+	 */
+	function createSearchRequest() {
+		var searchRequest = {
+								"cartId": cartId,
+								"configRequestId": configRequestId,
+								"responseIncludes": getIncludeParams(),
+								"productSearchInfo": {
+									"orderByFields": [
+										"Name"
+									],
+									"searchAllProducts": false,
+									"searchFields": [
+										"Name",
+										"ProductCode",
+										"Family"
+									],
+									"searchText": j$("#searchText").val()
+								}
+							};
+
+		searchRequest["categoryIds"] = [];
+
+		if (j$("#selectedCategory option:selected")[0].value === 'allProducts') {
+			searchRequest.productSearchInfo["searchAllProducts"] = true;
+
+		} else if (j$("#selectedCategory option:selected")[0].value === 'allCategories') {
+			searchRequest.productSearchInfo["searchAllCategories"] = true;
+
+		} else {
+			searchRequest["categoryIds"].push(j$("#selectedCategory option:selected").attr("value"));
+
+		}
+
+
+		return searchRequest;
+
+	}
+
+	/**
+	 * search products
+	 */
+	function searchProducts() {
+		var searchRequest = createSearchRequest();
+		displayResult(searchRequest, 'searchProducts');
+		invokeRemoteAction(j$.REMOTE.searchProducts, [searchRequest]);
+
+	}
+
+	/**
+	 * return remote function result
+	 */
+	function invokeRemoteAction(actionName, actionParams) {
+		//Constuct deferred object for return
+		var remoteActionWithParams, resolver, remotingParams;
+		if (!actionName || typeof actionName !== 'string') {
+			console.log("Error - Could not invoke remote action: action name invalid!");
+		}
+		//Construct list with aciton name and parameters to pass to invokeAction
+		remoteActionWithParams = [actionName];
+		for (var argIndex = 0, nextArg; argIndex < actionParams.length; argIndex++) {
+			nextArg = actionParams[argIndex];
+			if (!nextArg) {
+				console.log("Error - Could not construce remote action parameters. Parameter #" + argIndex +" is undefined!");
+			}
+			remoteActionWithParams.push(nextArg);
+
+		}
+		//Add the resolve function and remoting params to argument array
+		resolver = function resolveRemoteAction(result, event) {
+			if (event.status) {
+				displayResult(result);
+
+			} else {
+				console.log('Error in VF remote: ' + result);
+
+			}
+
+		};
+		remoteActionWithParams.push(resolver);
+
+		//Add the default parameters for remoting call
+		remotingParams = {
+			"buffer": false,
+			"escape": true,
+			"timeout": 30000
+		};
+		remoteActionWithParams.push(remotingParams);
+
+		console.log('remoteActionWithParams: ' + remoteActionWithParams);
+		//Try to call visualforce remoting invokeAction with the parameters we built
+		try {
+			Visualforce.remoting.Manager.invokeAction.apply(Visualforce.remoting.Manager, remoteActionWithParams);
+
+		} catch(ex) {
+
+			console.log('Error - Could not invoke remote action: ' + actionName);
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * creates data for asset item
+	 */
+	function createAssetRequest() {
+		var assetId = j$("#assetId")[0].value;
+		var cancelDate = j$("#cancelDate")[0].value != "" ? Date.parse(j$("#cancelDate")[0].value) : Date.parse(Date());
+		var assetQty = j$("#assetQty")[0].value;
+		assetQty = (assetQty ? assetQty : null);
+		var swapProductId = j$("#swapProductId")[0].value;
+		var swapQty = j$("#swapQty")[0].value;
+		var assetProductId = j$("#assetProductId")[0].value;
+		var cartRequest = {
+							"cartId": cartId,
+							"configRequestId": configRequestId,
+							"lineItems": [
+								{
+									"chargeLines": [
+										{
+											"lineItemSO": {
+												"AssetLineItemId__c": assetId,
+												"Quantity__c": assetQty,
+												"EndDate__c": cancelDate,
+												"ProductId__c": assetProductId
+											}
+										}
+									],
+									"swapLines": [
+										{
+											"lineItemSO": {
+												"Quantity__c": swapQty,
+												"ProductId__c": swapProductId
+											}
+										}
+									],
+									"sequence": 1,
+									"lineAction": lineAction,
+									"txnPrimaryLineNumber": txnPLN++
+								}
+							],
+							"assetLineItems": [
+								{
+									"assetLineItemSO": {
+										"Id": assetId
+									},
+									"isCalculated": false,
+									"lineAction": lineAction,
+									"lineItemSO": {
+										"EndDate__c": cancelDate
+									},
+									"chargeLines": [
+										{
+											"lineItemSO": {
+												"AssetLineItemId__c": assetId,
+												"Quantity__c": assetQty,
+												"EndDate__c": cancelDate,
+												"ProductId__c": assetProductId
+											}
+										}
+									]
+								}
+							],
+							"responseIncludes": [
+								"cartLines"
+							]
+						};
+
+		if (j$("#assetSearchText")[0].value) {
+			cartRequest.filterSchemas = [
+											{
+												"FieldType": "REFERENCE",
+												"FieldName": "ProductId__c",
+												"FieldValue": j$("#assetSearchText")[0].value
+											}
+										];
+		}
+
+		if (j$("#idObjectName")[0].value) {
+			cartRequest.sObjectName = j$("#idObjectName")[0].value;
+		}
+
+		if (j$("#idLookupKey")[0].value) {
+			cartRequest.lookupKey = j$("#idLookupKey")[0].value;
+		}
+
+		if (j$("#idAssetPage")[0].value) {
+			cartRequest.pageInfo =
+				{
+					"currentPageNum": j$("#idAssetPage")[0].value,
+					"recordsPerPage": 10
+				};
+		}
+
+		return cartRequest;
+
+	}
+
+	/**
+	 * creates request for multiple asset line item including charge line item and option line item
+	 */
+	function createMultipleAssetRequest() {
+		var assetId = j$("#assetId")[0].value;
+		var optionAssetId = j$("#optionAssetId")[0].value;
+		var chargeAssetId = j$("#chargeAssetId")[0].value;
+		var cancelDate = j$("#cancelDate")[0].value != "" ? Date.parse(j$("#cancelDate")[0].value) : Date.parse(Date());
+		var assetQty = j$("#assetQty")[0].value;
+		assetQty = (assetQty ? assetQty : 1);
+		var swapProductId = j$("#swapProductId")[0].value;
+		var swapQty = j$("#swapQty")[0].value;
+		var assetProductId = j$("#assetProductId")[0].value;
+		var cartRequest = {
+							"cartId": cartId,
+							"configRequestId": configRequestId,
+							"assetLineItems": [
+								{
+									"assetLineItemSO": {
+										"Id": assetId
+									},
+									"isCalculated": false,
+									"lineAction": "",
+								}
+							],
+							"responseIncludes": [
+								"cartLines"
+							]
+						  };
+		if (chargeAssetId != "") {
+			var chargeLineDO = {
+									"assetLineItemSO": {
+										"Id": chargeAssetId,
+									},
+									"isCalculated": false,
+									"lineAction": lineAction,
+									"lineItemSO": {
+										"EndDate__c": cancelDate
+									}
+								};
+			cartRequest.assetLineItems[0].chargeLines = [];
+			cartRequest.assetLineItems[0].chargeLines.push(chargeLineDO);
+		}
+		if (optionAssetId != "") {
+			var optionLineDO = {
+									"assetLineItemSO": {
+										"Id": optionAssetId,
+									},
+									"isCalculated": false,
+									"lineAction": lineAction,
+									"lineItemSO": {
+										"EndDate__c": cancelDate
+									}
+								};
+			cartRequest.assetLineItems[0].optionLines = [];
+			cartRequest.assetLineItems[0].optionLines.push(optionLineDO);
+		}
+
+		if (j$("#assetSearchText")[0].value) {
+			cartRequest.filterSchemas = [
+											{
+												"FieldType": "REFERENCE",
+												"FieldName": "ProductId__c",
+												"FieldValue": j$("#assetSearchText")[0].value
+											}
+										];
+		}
+
+		return cartRequest;
+
+	}
+
+	/**
+	 * get list of asset lines
+	 */
+	function getAssetLineItems() {
+		try {
+			var cartRequest = createAssetRequest();
+			displayResult(cartRequest, 'getAssetLineItems');
+
+			invokeRemoteAction(j$.REMOTE.getAssetLineItems, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * get list of asset lines
+	 */
+	function getAssetLineItemsForPage() {
+		try {
+			var cartRequest = createAssetRequest();
+			displayResult(cartRequest, 'getAssetLineItemsForPage');
+
+			invokeRemoteAction(j$.REMOTE.getAssetLineItemsForPage, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * cancel assets
+	 */
+	function performAssetActions() {
+		try {
+			var cartRequest = createAssetRequest();
+			displayResult(cartRequest, 'performAssetActions');
+			invokeRemoteAction(j$.REMOTE.performAssetActions, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * get list of asset fields
+	 */
+	function getAssetFilterFields() {
+		try {
+			var cartRequest = createAssetRequest();
+			displayResult(cartRequest, 'getAssetFilterFields');
+
+			invokeRemoteAction(j$.REMOTE.getAssetFilterFields, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * get list of reference objects
+	 */
+	function getReferenceObjects() {
+		try {
+			var cartRequest = createAssetRequest();
+			displayResult(cartRequest, 'getReferenceObjects');
+
+			invokeRemoteAction(j$.REMOTE.getReferenceObjects, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * gets the json solr response
+	 */
+	function getTypeaheadResults() {
+		try {
+			var searchRequest = createSearchRequest();
+			searchRequest.productSearchInfo.searchText = j$('#solrSearchText').val();
+			displayResult(searchRequest, 'getTypeaheadResults');
+
+			invokeRemoteAction(j$.REMOTE.getTypeaheadResults, [searchRequest]);
+		} catch (ex) {
+			console.log(ex);
+		}
+	}
+
+	/**
+	 * get replacement products
+	 */
+	function getReplacementProducts() {
+		try {
+			var cartRequest = createAssetRequest();
+			displayResult(cartRequest, 'getReplacementProducts');
+
+			invokeRemoteAction(j$.REMOTE.getReplacementProducts, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	/**
+	 * get replacement products
+	 */
+	function calculateMetricsForAssets() {
+		try {
+			var cartRequest = createAssetRequest();
+			displayResult(cartRequest, 'calculateMetricsForAssets');
+
+			invokeRemoteAction(j$.REMOTE.calculateMetricsForAssets, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+	function calculateMetricsForMultipleAssets() {
+		try {
+			var cartRequest = createMultipleAssetRequest();
+			displayResult(cartRequest, 'calculateMetricsForAssets');
+
+			invokeRemoteAction(j$.REMOTE.calculateMetricsForAssets, [cartRequest]);
+
+		} catch (ex) {
+			console.log(ex);
+		}
+
+	}
+
+</script>
+
+<script>
+	j$(function() {
+		j$("#tabs1, #tabs2").tabs();
+	});
+
+</script>
+
+<style>
+.ui-widget-content { border: none; background: none; color: black; }
+.ui-widget-content a { color: blue; }
+.ui-widget-header { border: none; background: none; color: black; font-weight: bold; }
+.ui-widget-header a { color: blue; }
+
+</style>
+
+<div style="padding: 10px; display: block">
+	<h1>Remote CPQ Workbench</h1>
+
+	<apex:form id="idMainForm">
+
+		<div id="tabs1">
+			<ul>
+				<li><a href="#tabs-1">Catalog</a></li>
+				<li><a href="#tabs-2">Cart</a></li>
+				<li><a href="#tabs-3">Options</a></li>
+				<li><a href="#tabs-4">Assets</a></li>
+				<li><a href="#tabs-5">Attributes</a></li>
+				<li><a href="#tabs-6">Essentials</a></li>
+				<li><a href="#tabs-7">SOLR</a></li>
+			</ul>
+			<div id="tabs-1">
+				<div style="display: block;">
+					<input name="btnSend3" type="button" value="Get Categories" onclick="getCategories();" />
+					<select id="selectedCategory" name="selectedCategory">
+							<option value="allCategories">All Categories</option>
+							<option value="allProducts">All Products</option>
+					</select>
+					<label for="selectedCategory" class="smallLabel">Select categories for Products</label>
+				</div>
+				<div style="display: block; float: left;">
+					<input name="btnSend3" type="button" value="Get Products" onclick="getProducts();" />
+				</div>
+				<div id="includes" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Includes : </span>
+					<input type="checkbox" id="prices" value="prices" /> <label for="prices">Prices </label>
+					<input type="checkbox" id="defaultOptionProducts" value="defaultOptionProducts" /> <label for="defaultOptionProducts">Default Option Products</label>
+					<input type="checkbox" id="productFilters" value="productFilters" /> <label for="productFilters">Product Filters </label>
+					<input type="checkbox" id="categories" value="categories" /> <label for="categories">Categories</label>
+
+				</div>
+				<div style="display: block;">
+					<label for="searchText">Search Text</label>
+					<input type="text" name="searchText" id="searchText" value="" size="20" />
+					<input name="btnSend5" type="button" value="Search Products" onclick="searchProducts();" />
+					<input name="btnSend4" type="button" value="Sample Request" onclick="getProductSearchSample();" />
+				</div>
+			</div>
+			<div id="tabs-2">
+				<div style="display: block; float: left;">
+					<input name="btnSend3b" type="button" value="Get LineItems" onclick="getCartLineItems();" />
+				</div>
+				<div id="cartIncludes" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Response Includes : </span>
+					<input type="checkbox" id="cart" value="cart" /><label for="cart">Cart</label>
+					<input type="checkbox" id="cartLines" value="cartLines" /><label for="cartLines">Cart Lines</label>
+					<input type="checkbox" id="chargeLines" value="chargeLines" /><label for="chargeLines">Charge Lines</label>
+					<input type="checkbox" id="optionLines" value="optionLines" /><label for="optionLines">Option Lines</label>
+					<input type="checkbox" id="attributeValues" value="attributeValues" /><label for="attributeValues">Attribute Values</label>
+					<input type="checkbox" id="attributeRules" value="attributeRules" /><label for="attributeRules">Attribute Rules</label>
+					<input type="checkbox" id="attributeMatrices" value="attributeMatrices" /><label for="attributeMatrices">Attribute Matrices</label>
+					<input type="checkbox" id="ruleActions" value="ruleActions" /><label for="ruleActions">Rule Actions</label>
+					<input type="checkbox" id="totalItems" value="totalItems" /><label for="totalItems">Total Lines</label>
+					<input type="checkbox" id="grandTotal" value="grandTotal" /><label for="grandTotal">Grand Total</label>
+					<input type="checkbox" id="appliedExpressionInfos" value="appliedExpressionInfos" /><label for="grandTotal">Applied Expressions</label>
+				</div>
+				<div style="display: block; float: left;">
+					<label for="productId">Product Id</label>
+					<input type="text" name="productId" id="productId" value="" size="12"/>
+					<label for="quantity">Quantity</label>
+					<input type="text" name="quantity" id="quantity" value="" size="3"/>
+					<input name="btnSend5a" type="button" value="AddToCart" onclick="addToCart();" />
+					<input name="btnSend4a" type="button" value="Sample Add Request" onclick="getAddToCartSample();" />
+				</div>
+				<div id="cartActions" style="display: block; line-height: 25px; padding-left: 4px;">
+					<span style="font-weight: bold; padding: 4px;">Actions : </span>
+					<input type="checkbox" id="applyConstraintRules" value="applyConstraintRules" /><label for="applyConstraintRules">Apply Constraint Rules</label>
+					<input type="checkbox" id="updatePrice" value="updatePrice" /><label for="updatePrice">Update Price</label>
+				</div>
+				<div style="display: block; float: left;">
+					<label for="lineNumber">Line Number</label>
+					<input type="text" name="lineNumber" id="lineNumber" value="" size="12"/>
+					<input name="btnSend5f" type="button" value="Clone Bundle" onclick="cloneBundleLineItem();" />
+					<label for="primaryLineNumber">Primary Line Number</label>
+					<input type="text" name="primaryLineNumber" id="primaryLineNumber" value="" size="12"/>
+					<input name="btnSend4f" type="button" value="Clone Option" onclick="cloneOptionLineItem();" />
+					<input type="text" name="lineId" id="lineId" value="" size="12" />
+					<input name="pricebreakup" type="button" value="Get Price Breakup" onclick="getPriceBreakups();" />
+				</div>
+
+				<div style="display: block; float: left;">
+					<input name="costLineItems" type="button" value="Get Cost Line Items" onclick="getCostLineItems();" />
+					<label for="lineId">Line Item Id</label>
+					<input type="text" name="lineId" id="lineId" value="" size="12" />
+					<input name="pricebreakup" type="button" value="Get Price Breakup" onclick="getPriceBreakups();" />
+				</div>
+
+				<div style="display: block; float: left;">
+					<label for="lineItemId">Line Item Id</label>
+					<input type="text" name="lineItemId" id="lineItemId" value="" size="20"/>
+					<input name="btnCollab1" type="button" value="Collaboration" onclick="createCollabRequestWithCurrentUser();" />
+				</div>
+
+			</div>
+			<div id="tabs-3">
+				<div style="display: block; float: left;">
+					<input name="btnSend3d" type="button" value="Get Product Options" onclick="getProductDetails('optionProductId', 'optionGroups');"  title="First Search Products to get product data in the page context."/>
+				</div>
+				<div style="display: block;">
+					<label for="optionProductId">Product Id</label>
+					<input type="text" name="optionProductId" id="optionProductId" value="" size="18"/>
+				</div>
+
+			</div>
+			<div id="tabs-4">
+				<div style="display: block; clear: left;">
+					<label for="assetSearchText">Search Text</label>
+					<input type="text" name="assetSearchText" id="assetSearchText" value="" size="12"/>
+					<label for="idAssetPage">Page Number</label>
+					<input type="text" name="idAssetPage" id="idAssetPage" value="" size="12"/>
+					<input name="btnSend3d2" type="button" value="Get Asset Lines" onclick="getAssetLineItems();"/>
+					<input name="btnSend3d4" type="button" value="Get Asset Lines For Page" onclick="getAssetLineItemsForPage();"/>
+					<input name="btnSend3d3" type="button" value="Get Filtered Asset Lines" onclick="getAssetFilterFields();"/>
+				</div>
+				<div style="display: block; clear: left;">
+					<label for="assetId">Asset Id</label>
+					<input type="text" name="assetId" id="assetId" value="" size="12"/>
+					<label for="cancelDate">Effective Date</label>
+					<input type="text" name="cancelDate" id="cancelDate" value="" size="12"/>
+					<label for="assetQty">Quantity</label>
+					<input type="text" name="assetQty" id="assetQty" value="" size="12"/>
+					<input name="btnSend5b" type="button" value="Cancel Asset" onclick="lineAction = 'Cancel'; performAssetActions();" />
+					<input name="btnSend6b" type="button" value="Change Asset" onclick="lineAction = 'Amend'; performAssetActions();" />
+					<input name="btnSend7b" type="button" value="Renew Asset" onclick="lineAction = 'Renew'; performAssetActions();" />
+					<input name="btnSend8b" type="button" value="Calculate Metrics" onclick="lineAction = 'Cancel'; calculateMetricsForAssets();" />
+				</div>
+				<div style="display: block; clear: left;">
+					<label for="swapProductId">Swap Product Id</label>
+					<input type="text" name="swapProductId" id="swapProductId" value="" size="12"/>
+					<label for="swapQty">Quantity</label>
+					<input type="text" name="swapQty" id="swapQty" value="" size="12"/>
+					<input name="btnSend5b" type="button" value="Swap Asset" onclick="lineAction = 'Upgrade'; performAssetActions();" />
+					<input name="btnSend5c" type="button" value="Increment Asset" onclick="lineAction = 'Increment'; performAssetActions();" />
+				</div>
+				<div style="display:block; clear:left;">
+					<label for="assetProductId">Asset Product Id</label>
+					<input type="text" name="assetProductId" id="assetProductId" value="" size="12"/>
+					<input name="btnSend5c" type="button" value="Get Replacement Products" onclick="getReplacementProducts();" />
+				</div>
+				<div style="display:block; clear:left;">
+					<label for="optionAssetId">Option Asset Id</label>
+					<input type="text" name="optionAssetId" id="optionAssetId" value="" size="12"/>
+					<label for="chargeAssetId">Charge Asset Id</label>
+					<input type="text" name="chargeAssetId" id="chargeAssetId" value="" size="12"/>
+					<input name="btnSend5d" type="button" value="Calculate Metrics for Multiple Assets" onclick="lineAction = 'Cancel'; calculateMetricsForMultipleAssets();" />
+				</div>
+			</div>
+			<div id="tabs-5">
+				<div style="display: block; float: left;">
+					<input name="btnSend3f1" type="button" value="Get Attribute Field Definition" onclick="getAttributeFields();" title="Gets Field Defintion for all fields in Product Attribute Value object." />
+				</div>
+
+				<div style="display: block; clear: left;">
+					<input name="btnSend3d1" type="button" value="Get Attribute Groups" onclick="getProductDetails('attrProductId', 'attributeGroups');" />
+					<label for="attrProductId">Product Id</label>
+					<input type="text" name="attrProductId" id="attrProductId" value="" placeholder="--optional--" size="18"/>
+				</div>
+
+				<div style="display: block; clear: left;">
+					<input name="btnSend3d1" type="button" value="Get Attribute Values" onclick="getLineItemAttributes();" title="First Search Products to get product data in the page context." />
+					<label for="attrLineItemId">Line Item Id</label>
+					<input type="text" name="attrLineItemId" id="attrLineItemId" value="" placeholder="--required--" size="18"/>
+				</div>
+			</div>
+			<div id="tabs-6">
+				<div style="display: block; float: left;">
+					<input name="btnSend3e" type="button" value="Get Configuration Data" onclick="getConfigurationData();" />
+				</div>
+				<div style="display: block; line-height: 25px;">
+					<input type="checkbox" id="categories2" value="categories" /> <label for="categories2">Categories</label>
+					<input type="checkbox" id="customSettings" value="customSettings" /><label for="customSettings">Custom Settings</label>
+					<input type="checkbox" id="displayActions" value="displayActions" /><label for="displayActions">Custom Actions</label>
+					<input type="checkbox" id="displayColumns" value="displayColumns" /><label for="displayColumns">Custom Columns</label>
+					<input type="checkbox" id="attributeFields" value="attributeFields" /><label for="attributeFields">Attribute Field Definition</label>
+					<input type="checkbox" id="lookupFieldSettings" value="lookupFieldSettings" /><label for="lookupFieldSettings">Lookup Field Settings</label>
+				</div>
+				<div style="display:block; clear:left;">
+					<label for="idObjectName">Object Name</label>
+					<input type="text" name="fieldName" id="idObjectName" value="" size="12"/>
+					<label for="idLookupKey">Lookup Key</label>
+					<input type="text" name="lookupKey" id="idLookupKey" value="" size="12"/>
+					<input name="btnSend5d" type="button" value="Get Reference Objects" onclick="getReferenceObjects();" />
+				</div>
+			</div>
+			<div id="tabs-7">
+				<div>
+					<label for="solrSearchText">Search Text</label>
+					<input type="text" name="solrSearchText" id="solrSearchText"/>
+				</div>
+				<div>
+					<input name="btnSend5d" type="button" value="Get SOLR Response" onclick="getTypeaheadResults();" />
+				</div>
+			</div>
+		</div>
+		<div id="tabs2">
+			<ul style="clear: left;">
+				<li><a href="#tabs-8">Response</a></li>
+				<li><a href="#tabs-9">Request</a></li>
+			</ul>
+			<div id="tabs-8">
+				<div id="codeViewPortContainer">
+					<div style="display: inline;">
+						<label for="timeTaken">Time Taken: </label><span id="timeTaken" style="font-weight: bold; color: red;"></span>
+						<label for="recordCount">Record Count: </label><span id="recordCount" style="font-weight: bold; color: red;"></span>
+					</div>
+					<p id="codeViewPort"></p>
+				</div>
+			</div>
+			<div id="tabs-9">
+				<div id="requestViewPortContainer">
+					<p id="requestViewPort"></p>
+				</div>
+			</div>
+		</div>
+
+
+	</apex:form>
+
+</div>
+
+<!--  display time line -->
+<div id="timeLine">
+	<table>
+		<thead> <tr> <td>Response</td> <td>Time</td> </tr> </thead>
+		<tbody id="timeRows"></tbody>
+	</table>
+	<table>
+		<tr>
+			<td style="width: 60px;"><input type="button" value="Clear" onclick="j$.TIME_TRACKER = [];document.getElementById('timeRows').innerHTML='';" style="font-size: 8px;" /></td>
+			<td id="averageTime" style="width: 30px; border-top: 2px; text-align: right; color: red;"> </td>
+		</tr>
+	</table>
+</div>
+
+</apex:page>

@@ -1,0 +1,286 @@
+<apex:page showHeader="true" tabstyle="Contact" controller="openq.ContactListViewController">
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"> </apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></apex:includescript>
+        
+    <style>
+   
+        #cdiv {
+            visibility: hidden; 
+            
+            background-color: #F1F5F6;  
+            position:absolute; 
+            z-index:1000; 
+            
+            border: 2px solid #EDEDED;
+            
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            
+            
+            -webkit-border-bottom-left-radius: 10px;
+            -webkit-border-bottom-right-radius: 10px;
+            -webkit-border-top-left-radius: 10px;
+            -webkit-border-top-right-radius: 10px;
+            
+            -moz-border-bottom-left-radius: 10px;
+            -moz-border-bottom-right-radius: 10px;
+            -moz-border-top-left-radius: 10px;
+            -moz-border-top-right-radius: 10px;
+        }
+    
+        #cdiv a {
+            color: #015BA7;        
+        }
+    
+        #pic {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            margin-top: 5px;
+            margin-left: 5px;
+            height: 100%;
+            float: left;       
+            
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+        
+        .myContactLink{
+        
+            display:inline-block;
+            width: 48%;
+            margin-bottom: 5px;
+            text-decoration: none;
+            word-wrap: break-word;
+        }
+        
+        #info {
+            height: 100%;
+            
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+            
+            position: relative;
+            float: left;
+            min-width: 200px;           
+        }
+        
+        #addressPanel{
+            font-size: 11px;
+        }
+        
+    </style>
+
+    <script>   
+
+        var flag = false;
+        
+        $(document).ready(function(){
+        
+            var sidebarWidth = $('#sidebarCell').width();
+            $("#cdiv").css("left", (200 + sidebarWidth)+"px"); 
+        }); 
+        var warehouseNavUrl = 'sforce.one.navigateToSObject(\'' + contact.Id + '\')';
+        
+        $("div.x-grid3-cell-inner.x-grid3-col-FULL_NAME a").live("mouseover", function(ev) {            
+            var sURL = jQuery(this).attr("href");                             
+            var contactId = sURL.split('.com/')[1];                           
+            y = ev.clientY;
+            console.log(contactId);
+            Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.ContactListViewController.getContact}',
+            
+                contactId,
+                
+                function(result, event){
+                    
+                    jQuery('#links').empty();
+                    
+                    if(event.status){
+                                                
+                        if(result.contact !== undefined){
+                                
+                            var contact = result.contact;
+                                                        
+                            var specialityText = contact.openq__Physician_Specialities__c != null? contact.openq__Physician_Specialities__c: '';
+                            var addressText = ''; 
+                            
+                            if({!isDisplayOpenQAddress}) {
+                                if(contact.openq__Physician_Address_Line_1__c != null){
+                                
+                                    addressText += contact.openq__Physician_Address_Line_1__c+"<br/>";
+                                }
+
+                                if(contact.openq__Physician_Address_Line_2__c != null){
+                                
+                                    addressText += contact.openq__Physician_Address_Line_2__c+"<br/>";
+                                }
+
+    
+                                if(contact.openq__Physician_Address_City__c != null || contact.openq__Physician_Address_State__c != null){ 
+                                
+                                    if(contact.openq__Physician_Address_City__c != null){
+                                    
+                                        addressText += contact.openq__Physician_Address_City__c;
+                                    }
+                                    
+                                    if(contact.openq__Physician_Address_State__c != null){
+                                    
+                                        addressText += " "+contact.openq__Physician_Address_State__c;
+                                    }
+                                
+                                    addressText += "<br/>";
+                                }
+
+                                if(contact.openq__Physician_Address_Postal_Code__c != null){
+                                
+                                    addressText += contact.openq__Physician_Address_Postal_Code__c+"<br/>";
+                                }
+                                if(contact.openq__Physician_Address_Country__c != null){
+                                
+                                    addressText += contact.openq__Physician_Address_Country__c;
+                                }
+                            } else {
+                                if(contact.MailingStreet != null){
+                                
+                                    addressText += contact.MailingStreet+"<br/>";
+                                }
+                            
+                                if(contact.MailingCity != null || contact.MailingState != null){ 
+                                
+                                    if(contact.MailingCity != null){
+                                    
+                                        addressText += contact.MailingCity;
+                                    }
+                                    
+                                    if(contact.MailingState != null){
+                                    
+                                        addressText += " "+contact.MailingState;
+                                    }
+                                
+                                    addressText += "<br/>";
+                                }
+
+                                if(contact.MailingPostalCode != null){
+                                
+                                    addressText += contact.MailingPostalCode+"<br/>";
+                                }
+                                if(contact.MailingCountry != null){
+                                
+                                    addressText += contact.MailingCountry;
+                                }
+                            }
+                            
+                                                        
+                            if(addressText == '') addressText = 'No address known';
+                            
+                            jQuery('#addressPanel').html(addressText);
+                            
+                            jQuery('#specialities').text(specialityText);                       
+                                                                                                            
+                            if(result.contactLinks !== undefined && result.contactLinks.length > 0){
+                            
+                                for(var i = 0; i < result.contactLinks.length; i++){
+                                
+                                    var contactLink = result.contactLinks[i];
+                                    
+                                    var linkHtml = "<div class='myContactLink'>";
+                                    linkHtml += "<a href="+contactLink.URL+" target='_parent'>"+contactLink.label+"</a>";
+                                    linkHtml += "</div>";
+                                    
+                                    jQuery('#links').append(linkHtml);
+                                }
+                            }
+                            
+                            var imageUrl = '';
+                            
+                            if(contact.Attachments !== undefined && contact.Attachments.length == 1){
+                                
+                                imageUrl = '/servlet/servlet.FileDownload?file='+contact.Attachments[0].Id;
+                                jQuery('#picImg').width('auto');                                
+                            }else{
+                            
+                                imageUrl = '{!URLFOR($Resource.PictureUploader, '/images/unknownperson.jpg')}';
+                                jQuery('#picImg').width('100px');
+                            }
+                            
+                            jQuery('#picImg').attr('src', imageUrl);                        
+                        }
+                                            
+                    } else if (event.type === 'exception') {
+                        console.log(event.message);
+                    }
+                }   
+                );
+                
+            show(); 
+            return false;
+        });
+                              
+        $("#sidebarDiv, .topNav, #tabContainer").live("mouseenter", function(ev) {
+                        
+            hide();
+            return false;
+        });
+        
+        
+        $(":not(div.x-grid3-cell-inner.x-grid3-col-FULL_NAME a)").click(function(ev){
+            hide();         
+        }); 
+        
+        function hide() {
+           $("#cdiv").css("visibility", "hidden");      
+        }
+        
+        function show() {
+            
+            var pbHeight = $('.listBody').height();
+            var popupHeight = $('#cdiv').height();
+            var offset = Math.max(document.documentElement.scrollTop,document.body.scrollTop);
+            
+            console.log(offset);
+            console.log(y);
+                
+            var top = (offset - 130 + y) - (popupHeight /2);
+            
+            if(top < 0) top = 0;
+            
+            $("#cdiv").css("top", top+"px");                        
+                                    
+            $("#cdiv").stop().css("visibility", "visible");            
+        }
+        
+    </script>    
+    
+    
+    <div id="cdiv">   
+        <div id="pic">
+            <img id="picImg" src="" height="100px"></img>    
+        </div>
+        
+        <div id="info">
+            <table>
+               <tr>
+                    <td>
+                        <div id="specialities" style="width: 175px; font-weight: bold;">
+                            
+                        </div>                        
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <div id="addressPanel">
+                            
+                        </div>
+                    </td>
+                </tr>
+            </table>  
+            <br/>
+            <div id="links">
+                
+            </div>                                             
+        </div>                       
+    </div>
+    <apex:enhancedList type="Contact" height="{!listViewHeight}" rowsPerPage="50" id="ContactList" />
+</apex:page>

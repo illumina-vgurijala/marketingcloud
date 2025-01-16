@@ -1,0 +1,245 @@
+<!-- 
+    Apttus Config & Pricing
+    IncentiveAdvancedSearch
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+ -->
+<apex:page controller="Apttus_Config2.AdvancedSearchController" standardStylesheets="false" sidebar="false" showHeader="false" applyHtmlTag="false" docType="html-5.0">
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/incentives-style.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/AdvanceSearch.js')}" />
+    
+    <script>
+        
+        function setSelectedIncentiveID(IncentiveID, cb){
+            var currentValue = j$('[id$=selectedIncentiveIds]').val();
+            if(cb.checked){                
+                if(currentValue == '') {
+                    currentValue = IncentiveID;
+                } else {
+                    currentValue = currentValue + '; ' + IncentiveID;
+                }
+            } else {
+                 currentValue = currentValue.replace(IncentiveID, "");
+            }            
+            j$('[id$=selectedIncentiveIds]').val(currentValue);
+        }
+
+        j$(document).ready(function(){
+            var selectedIncentiveCodes = {!LOWER(SelectedIncentiveCodes)},
+                appliedCount = 0,
+                selectedCount = 0;
+
+            for(i = 0; i < selectedIncentiveCodes.length; i++){
+                j$('.' + selectedIncentiveCodes[i] + '-code').trigger('click');
+                appliedCount++;
+                selectedCount++;
+            }
+
+            j$('#appliedCount').html(appliedCount);
+            j$('#selectedCount').html(selectedCount);
+
+            j$('[id$=idIncentiveSearchString]').bind("keypress", function search(e) {
+                if (e.keyCode == 13) {
+                    searchFunction();
+                    return false; // prevent the button click from happening
+                }
+            });
+
+            j$('body').on('click', '.fa-times', function(){
+                searchFunction();
+            })
+
+            j$('body').on('click', 'input[type="checkbox"]', function(){
+                if(j$(this).prop('checked')){
+                    selectedCount++;
+                
+                }else{
+                    selectedCount--;
+                  
+                }
+                j$('#selectedCount').html(selectedCount);
+                j$('#idSelect').removeClass('disabled');
+                j$('#idSelect').addClass('select');
+            });
+        });
+
+        function resizeMe() {
+            window.parent.openingPopup = true;
+            if(window.parent.resizeIframe !== undefined) {
+                window.parent.resizeIframe(window.frameElement);
+            }
+
+        }
+    </script>
+    <body >
+        <apex:variable var="rowcount" value="{!0}" />
+        <apex:form styleClass="advanced-search">
+            <apex:inputHidden id="selectedIncentiveIds" />
+            <div class="advanced-search-container">
+                <div class="search">
+                    <label class="spy-glass">
+                        <i class="fa fa-search"></i>
+                        <div>
+                            <i class="fa fa-times"></i>
+                        </div>
+                    </label>
+                    <apex:inputText id="idIncentiveSearchString" value="{!searchString}" html-placeholder="{!$Label.apttus_config2__search}" onkeyup="searchFunction();" />
+                    <apex:actionFunction action="{!searchTermChanged}" name="searchFunction" reRender="idIncentiveSearchResultPanel" />
+                </div>
+            </div>
+            <apex:outputPanel id="idIncentiveSearchResultPanel" layout="block">
+                <div class="data-controls top-data-controls">
+                    <div class="paging-status">
+                        <apex:outputPanel layout="none" rendered="{!isUsingCart}">
+                          <span id="selectedCount"></span> {!$Label.Selected} / <span id="appliedCount"></span> {!$Label.Applied} &nbsp;&nbsp;&nbsp;
+                        </apex:outputPanel>
+                        <span>{!$Label.Items} {!firstResult}–{!lastResult} (of {!resultsCount})</span>
+                    </div>
+                    <!-- Incentive paging buttons -->
+                    <apex:outputPanel styleClass="paging">
+                      <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                        styleClass="prev">&lt;{!$Label.PreviousPage}
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!previousPage}" 
+                                          rendered="{!NOT(PreviousPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idIncentiveSearchResultPanel">&lt;{!$Label.PreviousPage}
+                      </apex:commandLink>
+                      <span> | </span>
+                      <apex:outputPanel rendered="{!NextPageStatus}" 
+                                        styleClass="prev">{!$Label.NextPage}&gt;
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!nextPage}" 
+                                          rendered="{!NOT(NextPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idIncentiveSearchResultPanel">{!$Label.NextPage}&gt;
+                      </apex:commandLink>
+                      
+                    </apex:outputPanel>
+                    
+                    <div style="clear: both;"></div>
+                </div>
+                <table class="product-search-header" border="0" cellpadding="0" cellspacing="0">
+                    <thead>
+                        <apex:outputPanel rendered="{!NOT(isUsingLineItem)}" layout="none">
+                            <th class="checkbox-4"><input type="checkbox" id="checkAll" /><label for="checkAll"> </label></th>
+                        </apex:outputPanel>
+                        <th>{!$ObjectType.Incentive__c.fields.IncentiveCode__c.Label}</th>
+                        <th>{!$ObjectType.Incentive__c.fields.Name.Label}</th>
+                        <apex:outputPanel rendered="{!isUsingLineItem}" layout="none">
+                        <th>{!$ObjectType.Apttus_Config2__AdjustmentLineItem__c.fields.Apttus_Config2__CouponCode__c.Label}</th>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!isUsingCart || isUsingLineItem}">
+
+                        <th>{!$ObjectType.Incentive__c.fields.Sequence__c.Label}</th>
+                          <th>{!$ObjectType.Incentive__c.fields.EffectiveDate__c.Label}</th>
+                          <th>{!$ObjectType.Incentive__c.fields.ExpirationDate__c.Label}</th>
+                        <apex:outputPanel rendered="{!isUsingLineItem}" layout="none">
+                        <th>{!$Label.BenefitAmount}</th>
+                        <th>{!$Label.BenefitQuantity}</th>
+                        </apex:outputPanel>
+                        <th>{!$ObjectType.Incentive__c.fields.ApplicationMethod__c.Label}</th>
+                        <th>{!$ObjectType.Incentive__c.fields.Description__c.Label}</th>
+                        </apex:outputPanel>
+                    </thead>
+                <tbody class="scrollable-data">
+                    <apex:repeat value="{!searchedIncentiveList}" var="Incentive">
+                    <tr class="advanced-search-results">
+                        <apex:outputPanel rendered="{!NOT(isUsingLineItem)}" layout="none">
+                            <td class="checkbox-4">
+                                <input type="checkbox" id="singleCheck{!rowcount}" onchange="setSelectedIncentiveID('{!Incentive.Id}', this);"/><label for="singleCheck{!rowcount}" class="{!LOWER(Incentive.IncentiveCode__c)}-code"> </label>
+                                <apex:variable var="rowcount" value="{!rowcount+1}" />
+                            </td>
+                        </apex:outputPanel>
+                        <td>
+                            {!Incentive.IncentiveCode__c}
+                        </td>
+                        <td class="product-family-category-19">
+                            {!Incentive.name}
+                        </td>
+                        <apex:outputPanel rendered="{!isUsingLineItem}" layout="none">
+                        <td>
+                            {!incentiveToAdjustmentMap[Incentive.Id].CouponCode__c}
+                        </td>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!isUsingCart || isUsingLineItem}" layout="none">
+                        <td>
+                            {!Incentive.Sequence__c}
+                        </td>
+                        <td>
+                            <apex:outputPanel rendered="{!NOT(ISBLANK(Incentive.Apttus_Config2__EffectiveDate__c))}">
+                                <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                                    <apex:param value="{!Incentive.Apttus_Config2__EffectiveDate__c}" />
+                                </apex:outputText>
+                            </apex:outputPanel>
+                        </td>
+                        <td>
+                            <apex:outputPanel rendered="{!NOT(ISBLANK(Incentive.Apttus_Config2__ExpirationDate__c))}">
+                                <apex:outputText value="{0, date, MM'/'dd'/'yyyy}">
+                                    <apex:param value="{!Incentive.Apttus_Config2__ExpirationDate__c}" />
+                                </apex:outputText>
+                            </apex:outputPanel>
+                        </td>
+                        <apex:outputPanel rendered="{!isUsingLineItem}" layout="none">
+                        <td>
+                            {!incentiveToAdjustmentMap[Incentive.Id].AdjustmentAmount__c}
+                        </td>
+                        <td>
+                            {!incentiveToAdjustmentMap[Incentive.Id].BenefitQuantity__c}
+                        </td>
+                        </apex:outputPanel>
+                        <td>
+                            {!Incentive.ApplicationMethod__c}
+                        </td>
+                        <td>
+                            {!Incentive.Description__c}
+                        </td>
+                        </apex:outputPanel>
+                    </tr>
+                    </apex:repeat>
+                </tbody>
+                </table>
+                <div class="data-controls">
+                    <apex:outputPanel rendered="{!NOT(isUsingLineItem)}" layout="none">
+                        <div class="commands">
+                            <a href="#" class="btn disabled" id="idSelect" onclick="parent.getSelectedIncentiveID(j$('[id$=selectedIncentiveIds]').val()); return false;">{!IF(pullIncentivesOnly,$Label.Apply,$Label.Select)}</a>
+                            <a href="#" class="btn cancel" id="idCancel" onclick="window.parent.incentiveAdvancedSearchDialog.dialog('close');">{!$Label.Cancel}</a>
+                        </div>
+                    </apex:outputPanel>
+
+                    <apex:outputPanel styleClass="paging">
+                      <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                        styleClass="prev">&lt;{!$Label.PreviousPage}
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!previousPage}" 
+                                          rendered="{!NOT(PreviousPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idIncentiveSearchResultPanel">&lt;{!$Label.PreviousPage}
+                      </apex:commandLink>
+                      <span> | </span>
+                      <apex:outputPanel rendered="{!NextPageStatus}" 
+                                        styleClass="prev">{!$Label.NextPage}&gt;
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!nextPage}" 
+                                          rendered="{!NOT(NextPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idIncentiveSearchResultPanel">{!$Label.NextPage}&gt;
+                      </apex:commandLink>
+                      
+                    </apex:outputPanel>
+                    <div style="clear: both;"></div>
+                </div>
+                <script>
+                j$(document).ready(function(){
+                    resizeMe();
+                    advancedSearchFunctionality(j$, ".product-search-header", ".advanced-search-results");
+                });
+                </script>
+            </apex:outputPanel>
+        </apex:form>
+    </body>
+</apex:page>

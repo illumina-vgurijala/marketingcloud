@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckWorkDescriptionForReviewActivity</fullName>
+    <active>true</active>
+    <description>Prevent users from closing review WDs if Work Description is blank.</description>
+    <errorConditionFormula>AND(   
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    NOT($Profile.Name =$Label.Integration_SAP_Service), 
+    NOT($User.FirstName =$Label.Automated_Process_User), 
+    NOT($Profile.Name = $Label.Integration_Service_SNAP_Profile),
+    NOT($Profile.Name = $Label.ProfileSystemAdmin),
+    
+    OR(
+        TEXT( SVMXC__Activity_Type__c)=$Label.WorkDetailActivityFieldComplianceReview,
+        TEXT(SVMXC__Activity_Type__c)=$Label.WorkDetailActivityCustomerServiceReview,
+        TEXT(SVMXC__Activity_Type__c)=$Label.WorkDetailActivityQSReview,
+        TEXT(SVMXC__Activity_Type__c)=$Label.WorkDetailActivityIlluminaReview
+    ),
+    PRIORVALUE(SVMXC__Line_Status__c) &lt;&gt; $Label.WorkDetailLineStatusClosed,
+    TEXT(SVMXC__Line_Status__c) = $Label.WorkDetailLineStatusClosed,
+    ISBLANK( SVMXC__Work_Description__c )
+)</errorConditionFormula>
+    <errorDisplayField>SVMXC__Work_Description__c</errorDisplayField>
+    <errorMessage>Illumina Review line is lacking a Work Description. Provide a Work Description on the Illumina Review debrief line.</errorMessage>
+</ValidationRule>

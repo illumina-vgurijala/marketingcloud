@@ -1,0 +1,111 @@
+<!--************************************************************************************************
+*NAME: WorkOrderStatusChangeReason
+*DESCRIPTION:  Display popup to enter Reason while Work Order status change.
+               Display popup for Work Order Status Closed/Completed When Instrument Down is checked.
+*AUTHOR: Debalina Chatterjee
+*DATE: 16-May-2018  
+*
+* MODIFICATION LOG:  
+* ***************************************************************************************************************************************
+* DEVELOPER        DATE        DESCRIPTION 
+* ***************************************************************************************************************************************
+* Debalina          16-May-2018     Initial version  
+* Debalina          31-May-2018     
+*************************************************************************************************-->
+
+<aura:component controller="WorkOrderStatusChangeReason" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+
+  <aura:handler name="init" value="{!this}" action="{!c.loadData}" />
+
+  <!-- ###### Attributes Start here ######-->  
+	<aura:attribute name="boolShowModal" type="Boolean" default="false"/>
+  <aura:attribute name="boolIsError" type="Boolean" default="false"/>
+  <aura:attribute name="boolLoaded" type="Boolean" default="false"/>
+  <aura:attribute name="objTargetFields" type="Object"/>
+  <aura:attribute name="strNewOrderStatus" type="String"/>
+  <aura:attribute name="objTargetRecord" type="Object"/>
+  <aura:attribute name="labelsToTranslate" type="Map"/>
+  <aura:attribute name="lstReasonStatus" type="List"/>
+	
+  <aura:attribute name="boolShowConfirmModal" type="Boolean" default="false"/>
+  <aura:attribute name="boolShowPartsNotUsedModal" type="Boolean" default="false"/>
+  <aura:attribute name="lstCompletedClosedStatus" type="List"/>
+  <aura:attribute name="strOldOrderStatus" type="String"/>
+  <aura:attribute name="strReason" type="String"/>
+  <aura:attribute name="confirmationModalMessage" type="String"/>
+  <aura:attribute name="WorkOrderRecord" type="sObject"/>
+    
+  <!-- ###### Attributes End here ######--> 
+  
+  <!-- ###### Detect Record Change ######-->  
+  <aura:if isTrue="{!v.boolLoaded}">
+    <force:recordData aura:id="forceRecordUpdate"
+                      recordId="{!v.recordId}" 
+                      layoutType="FULL"
+                      targetRecord="{!v.objTargetRecord}" 
+                      targetFields="{!v.objTargetFields}"
+                      mode="EDIT"
+                      fields="Reason__c,Is_Set_From_Lightning_Component__c"
+                      recordUpdated="{!c.recordUpdated}" />
+    <!-- ###### Modal For Reason Start ######-->
+    <aura:if isTrue="{!v.boolShowModal}">
+    <div role="dialog" tabindex="-1" aria-labelledby="" class="slds-modal slds-fade-in-open" aura:id="modal">
+        <div class="slds-modal__container">
+          <!-- ###### MODAL BOX HEADER Part Start From Here ######-->
+          <div class="slds-modal__header">
+            <h2 class="slds-text-heading--medium">{!v.labelsToTranslate.Please_Enter_Reason}</h2>
+          </div>
+          <!-- ###### MODAL BOX HEADER Part End Here ######-->
+          <!--###### MODAL BOX BODY Part Start From Here ######-->
+           <div class="slds-modal__content slds-p-around--medium">
+            
+              <lightning:layout horizontalAlign="left" multipleRows="true" class="slds-p-around_small">
+  			       <lightning:layoutItem flexibility="grow"  size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12" padding="around-small">
+                        <lightning:textarea aura:id="reasonField" 
+                                         name="Reason"
+                                         maxlength="32768"
+                                         class="{!and(v.boolIsError,
+                                         empty(v.strReason))? 'slds-has-error required-asterisk':'required-asterisk'}"
+                                         label="{!v.labelsToTranslate.Reason}"
+                          				       value="{!v.strReason}"
+                                         />
+                   </lightning:layoutItem>
+              </lightning:layout>
+            </div>
+          <!--###### MODAL BOX BODY Part End Here ######-->
+          <div class="slds-modal__footer">
+              <lightning:button variant="brand" label="{!v.labelsToTranslate.Save}" onclick="{! c.saveRecord }" />
+         </div>
+        </div>
+      </div>
+      <div class="slds-backdrop slds-backdrop--open"></div>
+    </aura:if>
+    <!-- ###### Modal For Reason End ######-->
+
+    <!-- ###### Confirmation Modal For Complete/Closed Start ######-->
+    <aura:if isTrue="{!v.boolShowConfirmModal}">
+    <div role="dialog" tabindex="-1" aria-labelledby="" class="slds-modal slds-fade-in-open" aura:id="modal">
+        <div class="slds-modal__container">
+          <!--###### MODAL BOX BODY Part Start From Here ######-->
+           <div class="slds-modal__content slds-p-around--medium">
+              <lightning:layout horizontalAlign="left" multipleRows="true" class="slds-p-around_small">
+               <lightning:layoutItem flexibility="grow"  size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12" padding="around-small">
+                <lightning:formattedText value="{!v.confirmationModalMessage}"/>
+                </lightning:layoutItem>
+              </lightning:layout>
+            </div>
+          <!--###### MODAL BOX BODY Part End Here ######-->
+          <div class="slds-modal__footer">
+              <lightning:button variant="brand" label="{!v.labelsToTranslate.Save}" onclick="{! c.hideConfirmModal }" />
+              <lightning:button variant="neutral" label="{!v.labelsToTranslate.Cancel}" onclick="{! c.revertOldValue }" />
+         </div>
+        </div>
+      </div>
+      <div class="slds-backdrop slds-backdrop--open"></div>
+    </aura:if>
+    <!-- ###### Confirmation Modal For Complete/Closed End ######-->
+      
+    
+    
+    </aura:if>
+</aura:component>

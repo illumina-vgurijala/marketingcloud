@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Request_Short_term</fullName>
+    <active>true</active>
+    <description>Validation on Open Offer Discount Exception Request so that these the field can only be updated in Draft and Approval Required stage.</description>
+    <errorConditionFormula>AND(
+    NOT (
+        OR (
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c,
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+        )
+    ),
+    OR(
+        AND(
+            ISNEW(),
+            NOT(ISBLANK(TEXT(Open_Offer_Discount_Exception_Request__c)))
+           ),
+           AND(
+            NOT (    
+                AND( 
+                    TEXT ( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageApprovalRequired,
+                            OR( 
+                                TEXT( Open_Offer_Discount_Violation_Type__c ) =  $Label.DiscountExceeded , 
+                                TEXT( Open_Offer_Discount_Violation_Type__c ) = $Label.DiscountExceededByFifteen
+                              ),
+                     Quote_For_Open_Offer_Customer__c
+                   )
+            ),
+            ISCHANGED ( Open_Offer_Discount_Exception_Request__c )
+           )
+    )
+)</errorConditionFormula>
+    <errorMessage>Open Offer Discount Exception Request Status is only available when discounts have been provided over the Open Offer grid and the quote is in the Approval Required stage.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,127 @@
+<div ng-class="{'advanced-search-modal': settings.isModal}" class="advanced-search-container directives-common" ng-show="settings.show">
+    <div ng-class="{'advanced-search-modal-content': settings.isModal}" class="advanced-search-inner-container">
+        <div class="advanced-search-close" ng-click="closeAdvancedSearch()"><i class="fa fa-times"></i></div>
+        <h3 class="advanced-search-title">{{settings.headerTitle}}</h3>
+        <ul class="advanced-search-tabs-cont">
+            <li ng-show="!settings.selectedItemsOnlyView" ng-class="{'advanced-search-active': settings.view == views.available}" ng-click="switchView(views.available)">{{labels.available}}</li>
+            <li ng-class="{'advanced-search-active': settings.view == views.selected || settings.selectedItemsOnlyView}" ng-click="switchView(views.selected)">
+                {{labels.selected + ' (' + settings.selectedRecords.length + ')'}}
+            </li>
+        </ul>
+        <table class="advanced-search-head">
+            <tr ng-show="!(settings.isSingleSelect && settings.view == views.selected)">
+                <td class="advanced-search-paging-status">
+                    Items {{beginRecordNumber()}}-{{endRecordNumber()}} (of {{filtered.length}})
+                </td>
+                <td ng-if="!settings.selectedItemsOnlyView" class="advanced-search-search-wrapper">
+                    <div class="advanced-search-search-container">
+                        <i class="fa fa-search"></i>
+                        <div class="advanced-search-input-wrapper">
+                            <input type="text" ng-model="settings.query.searchTerm" placeholder="{{labels.search}}" ng-change="onSearchTextChange()" />
+                        </div>
+                    </div>
+                </td>
+                <td class="advanced-search-pagination-container">
+                    <dir-pagination-controls pagination-id="uniqueId"
+                                             boundary-links="true"
+                                             on-page-change="pageChangeHandler(newPageNumber)"
+                                             template-url="/paginator/paginatorView.html"></dir-pagination-controls>
+                </td>
+            </tr>
+        </table>
+        <table class="advanced-search-grid-head">
+            <thead>
+                <tr>
+                    <th class="advanced-search-checkbox" ng-show="!settings.selectedItemsOnlyView">
+                        <span class="advanced-search-col-name" ng-show="!settings.isSingleSelect">
+                        <input type="checkbox"
+                            id="checkAll{{uniqueId}}"
+                            ng-change="selectAll(beginRecordNumber(), endRecordNumber(), allSelected)"
+                                ng-model="allSelected" />
+                            <label for="checkAll{{uniqueId}}"></label>
+                        </span>
+                    </th>
+                    <th ng-repeat="col in settings.columns | filter : { isVisible: true } track by col.name"
+                        ng-click="onClickColumnHeader(col)"
+                        ng-class="{'advanced-search-sorted': col.name == settings.sort.columnName && !(settings.isSingleSelect
+                            && settings.view == views.selected),
+                            'sortable': settings.view == views.available && !settings.selectedItemsOnlyView}">
+                        <div>
+                            <span class="advanced-search-col-name">{{col.displayName}}</span>
+                            <i ng-if="col.name == settings.sort.columnName && !(settings.isSingleSelect && settings.view == views.selected)"
+                                              ng-class="{'fa-sort-asc': settings.sort.ascending, 'fa-sort-desc': !settings.sort.ascending}"
+                               class="advanced-search-grid-head-fa fa"></i>
+                            <i ng-if="col.sortAndFilterSettings.filteringApplied && settings.view != views.selected"
+                               class="advanced-search-grid-head-fa fa fa-filter" aria-hidden="true"></i>
+                            <sort-filter-menu ng-if="!settings.selectedItemsOnlyView" settings="col.sortAndFilterSettings"
+                                              on-filter-change="onFilterChangeHandler(col)"
+                                              on-select-sort="selectSortHandler(col)" />
+                        </div>
+                    </th>
+                </tr>
+            </thead>
+        </table>
+        <div class="advanced-search-scrollable" ng-class="{'selected-items-only-view': settings.selectedItemsOnlyView,
+            'single-select-selected-view': settings.view == views.selected && settings.isSingleSelect}">
+            <table>
+                <tbody>
+                    <tr pagination-id="uniqueId"
+                        dir-paginate="item in filtered = ((settings.view == views.available? settings.results: settings.selectedRecords) | filter: resultsFilter | orderBy: settings.sortExpression) | itemsPerPage: settings.pageSize"
+                        current-page="settings.currentPage">
+                        <!--total-items="5000"-->
+                        <td class="advanced-search-checkbox" ng-show="!settings.selectedItemsOnlyView">
+                            <input type="checkbox" id="checkRow_{{uniqueId}}_{{item[settings.dataKeyColumn]}}"
+                                   name="checkRow_{{uniqueId}}_{{item[settings.dataKeyColumn]}}"
+                                    ng-if="!settings.isSingleSelect"
+                                    ng-change="toggleSeletedRow(item[settings.dataKeyColumn], item.selected)"
+                                    ng-model="item.selected" /><label for="checkRow_{{uniqueId}}_{{item[settings.dataKeyColumn]}}"></label>
+                            <label ng-if="settings.isSingleSelect">
+                                <input type="radio" id="radioOpt_{{uniqueId}}_{{item[settings.dataKeyColumn]}}"
+                                       name="rdoSingleOption"
+                                        ng-change="toggleSeletedRow(item, item.selected)"
+                                        ng-model="settings.singleSelectItemValue"
+                                        ng-value="item[settings.dataKeyColumn]" /> <span><span></span></span>
+                            </label>
+                        </td>
+                        <td ng-repeat="col in settings.columns | filter : { isVisible: true } track by col.name">
+                            <span ng-if="!isLongTextColumn(col.dataType)">{{item[col.name]}}</span>
+                            <div ng-if="isLongTextColumn(col.dataType)" class="advanced-search-description-summarized"
+                                  ng-mouseover="longTextHoverOver($event)"
+                                  ng-mouseleave="longTextHoverLeave($event)">{{item[col.name]}}</div>
+                        </td>
+                    </tr>
+                    <tr ng-if="settings.isSingleSelect && settings.view == views.selected && settings.singleSelectItem != null">
+                        <td class="advanced-search-checkbox">
+                            <label>
+                                <input type="radio" id="radioOpt_{{uniqueId}}_{{settings.singleSelectItem[settings.dataKeyColumn]}}" name="rdoSingleOption"
+                                       checked="checked" /> <span><span></span></span>
+                            </label>
+                        </td>
+                        <td ng-repeat="col in settings.columns | filter : { isVisible: true } track by col.name">
+                            <span ng-if="!isLongTextColumn(col.dataType)">{{settings.singleSelectItem[col.name]}}</span>
+                            <div ng-if="isLongTextColumn(col.dataType)"
+                                 class="advanced-search-description-summarized"
+                                 ng-mouseover="longTextHoverOver($event)"
+                                 ng-mouseleave="longTextHoverLeave($event)">{{settings.singleSelectItem[col.name]}}</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="advanced-search-footer">
+            <div class="advanced-search-command-buttons">
+                <a ng-if="!settings.selectedItemsOnlyView"
+                   ng-class="{'advanced-search-highlighted': (recordSelectionChanged)}"
+                   class="advanced-search-btn advanced-search-primary"
+                   ng-click="selectItems()">{{labels.select}}</a>
+                <a class="advanced-search-btn advanced-search-cancel" ng-click="closeAdvancedSearch()">{{labels.cancel}}</a>
+            </div>
+            <div class="advanced-search-pagination-container">
+                <dir-pagination-controls pagination-id="uniqueId"
+                                         boundary-links="true"
+                                         on-page-change="pageChangeHandler(newPageNumber)"
+                                         template-url="/paginator/paginatorView.html"></dir-pagination-controls>
+            </div>
+        </div>
+    </div>
+</div>

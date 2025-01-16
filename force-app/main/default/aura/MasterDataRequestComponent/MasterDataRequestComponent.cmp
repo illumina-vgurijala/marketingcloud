@@ -1,0 +1,71 @@
+<aura:component controller="MasterDataRequestController" implements="flexipage:availableForRecordHome,force:hasRecordId,force:hasSObjectName,flexipage:availableForAllPageTypes,lightning:actionOverride" extends="c:BaseSuperComponent">
+    <aura:attribute name="pageLayoutName" type="String" />
+    <aura:attribute name="recordTypeId" type="String" />    
+    <aura:attribute name="pageLayout" type="Object" access="private" />
+	<aura:attribute name="pageReference" type="Object"/>
+    <aura:attribute name="AccountId" type="String"/>
+    <aura:attribute name="Account" type="Account" default="{}"/>
+    <aura:attribute name="SectionIgnore" type="String" default="System Information"/>
+    <aura:attribute name="AccountAPIName" type="String" default="Account_Name__c"/>
+    <aura:attribute name="ObjectAPIName" type="String" default="Master_Data_Request__c"/>
+    <aura:attribute name="MDRRecordId" type="String" default=""/>
+    <aura:attribute name="strAccountId" type="String" />
+    <aura:attribute name="UploadFiles" type="Boolean" default="false"/>
+    <aura:attribute name="booIsSubmit" type="Boolean" default="false"/>
+    <aura:attribute name="mapLabels" type="Object" />
+    <aura:attribute name="AccountOwnerAPIName" type="String" default="Account_Owner__c"/>
+	
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    <aura:handler event="force:refreshView" action="{!c.init}" />
+    
+    <aura:if isTrue="{!!v.UploadFiles}">  
+        <lightning:recordEditForm   aura:id="MDGForm"
+                                    objectApiName="{!v.ObjectAPIName}"                              
+                                    recordTypeId="{! v.recordTypeId }"
+                                    class="slds-card slds-p-around_medium"
+                                    onerror="{! c.onError}"
+                                    onsubmit="{!c.onSubmit}" 
+                                    onsuccess="{! c.onSuccess}">
+    
+            <lightning:messages />
+            <lightning:navigation aura:id="navService"/>
+            <div onkeypress="{!c.formPress}" class="margbottom">
+            <aura:iteration items="{! v.pageLayout.Sections }" var="section">
+                <aura:if isTrue="{!v.SectionIgnore!=section.Label}">
+                <c:CollapsibleSection title="{! section.Label }">
+                    <div class="slds-grid slds-gutters">
+                        <aura:iteration items="{! section.Columns }" var="column">
+                            <div class="slds-col">
+                                <aura:iteration items="{! column.Fields }" var="field">
+                                    <aura:if isTrue="{!and(v.AccountAPIName!=field.APIName,v.AccountOwnerAPIName!=field.APIName)}">                                             
+                                        <lightning:inputField fieldName="{! field.APIName }" class="{!field.Behavior}"  aura:id="inputField" disabled="{! field.Behavior=='Readonly'}" required="{!field.Behavior=='Required'}"/>
+                                    </aura:if>
+                                    
+                                    <aura:if isTrue="{!v.AccountAPIName==field.APIName}"> 
+                                        <lightning:inputField fieldName="{! field.APIName }" class="{!field.Behavior}" aura:id="inputField" value="{!v.Account.Id}" disabled="true"/>
+                                    </aura:if>
+									
+									<aura:if isTrue="{!v.AccountOwnerAPIName==field.APIName}"> 
+                                        <lightning:inputField fieldName="{! field.APIName }" class="{!field.Behavior}" aura:id="inputField" value="{!v.Account.Owner.Name}" disabled="true"/>
+                                    </aura:if>
+                                </aura:iteration>
+                            </div>
+                        </aura:iteration>
+                    </div>
+                </c:CollapsibleSection>
+                </aura:if>
+            </aura:iteration>
+            <!-- Start: DCP-26543 changes-->
+            <lightning:button class="slds-m-top_small" label="{!v.mapLabels.UI_Label_MDG_Cancel_Button}" variant="destructive" onclick="{! c.cancel }"/>
+            <lightning:button class="slds-m-top_small" type="submit" label="{!v.mapLabels.UI_Label_MDG_Save_Button}" variant="neutral" onclick="{! c.save }" />
+            <lightning:button class="slds-m-top_small" type="submit" label="{!v.mapLabels.UI_Label_MDG_Submit_Button}" variant="brand" onclick="{! c.submit }" />
+            <!-- End: DCP-26543 changes-->
+            </div>
+        </lightning:recordEditForm>
+    </aura:if>     
+    <aura:if isTrue="{!v.UploadFiles}" >
+        <c:MDRFileUploadComponent recordId="{!v.MDRRecordId}" UploadFiles="{!v.UploadFiles}" />
+    </aura:if>
+    
+    
+</aura:component>

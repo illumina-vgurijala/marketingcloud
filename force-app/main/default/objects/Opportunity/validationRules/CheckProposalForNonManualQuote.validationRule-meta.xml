@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckProposalForNonManualQuote</fullName>
+    <active>true</active>
+    <description>Validation Rule to check if there is no manual Quote then Quote Generated on Date should be editable.</description>
+    <errorConditionFormula>AND (
+    ByPass_LockSentProposalDate__c = false,
+    ISBLANK ( Manual_Quote_Number__c ),
+    ISCHANGED ( Proposal_Sent_On__c ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    ) 
+)</errorConditionFormula>
+    <errorDisplayField>Proposal_Sent_On__c</errorDisplayField>
+    <errorMessage>Please send Proposal through Apttus. &quot;Quote Generated on&quot; date editable only if Quote is manual. If Quote manual &amp; Proposal sent manually, first indicate manual Quote # &amp; Quote Reason, then provide date Quote generated (Quote &amp; Order Information section).</errorMessage>
+</ValidationRule>

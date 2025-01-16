@@ -1,0 +1,97 @@
+<!-- 
+    Apttus Config & Pricing
+    IncentiveRollupTab
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+ -->
+ <apex:page standardController="Apttus_Config2__SearchFilter__c" recordSetVar="searchFilters" extensions="Apttus_Config2.IncentiveRollupTabController">
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+	<script type="text/javascript">
+        // This to make sure jQuery doesn't conflict with any other JS libraries
+        var j$ = jQuery.noConflict();
+    </script>
+    <style>
+    .new-rollup{
+    	display: none;
+    }
+    .lastItem .new-rollup{
+    	display: inline !important;
+    }
+    .piped li, .filterLinks, .filterEnhancedList input[type="checkbox"], .paginator .left, .rolodex, .refreshListButton{
+    	display: none !important;
+    }
+    .piped li.lastItem{
+    	display: block !important;
+    }
+    </style>
+
+	<apex:form >
+		<apex:pageBlock rendered="{!listId == null}" title="{!$Label.apttus_config2__incentiverollups}">
+			<apex:pageBlockButtons >
+				<a class="btn" style="text-decoration:none;" href="javascript:window.location.href = '{!$Page.IncentiveRollup}'">{!$Label.New}</a>
+			</apex:pageBlockButtons>
+		    <apex:pageBlockTable value="{!searchFilters}" var="searchFilter">
+				<apex:column style="width:60px;">
+					<apex:facet name="header">{!$Label.apttus_config2__action}</apex:facet>
+					<apex:outputText rendered="{!searchFilter.Apttus_Config2__UseType__c == 'Rollup'}">
+						<a style="color:#015ba7;" href="{!$Page.IncentiveRollup}?id={!searchFilter.Id}"><span>{!$Label.Edit}</span></a> |&nbsp;
+						<apex:outputLink style="color:#015ba7;" styleClass="actionLink" value="{!URLFOR($Action.SearchFilter__c.Delete, searchFilter.id, [retURL='{!$Page.IncentiveRollupTab}'])}" onclick="return confirmDelete();">{!$Label.apttus_config2__del}</apex:outputLink> 
+					</apex:outputText>
+				</apex:column>
+		    	<apex:column >
+					<apex:facet name="header">{!$Label.apttus_config2__name}</apex:facet>
+					<apex:outputText rendered="{!searchFilter.Apttus_Config2__UseType__c == 'Rollup'}" value="{!searchFilter.name}"/>
+				</apex:column>
+		    </apex:pageBlockTable>
+		    <apex:panelGrid columns="2">
+                <apex:commandLink action="{!previous}">Previous</apex:commandlink>
+                <apex:commandLink action="{!next}">Next</apex:commandlink>
+            </apex:panelGrid>
+		</apex:pageBlock>
+	</apex:form>
+
+	<apex:outputPanel styleClass="filterEnhancedList" layout="block" rendered="{!listId != null}">
+		<script type="text/javascript">
+			function loadUI(){
+				//j$('.filterLinks, .filterEnhancedList input[type="checkbox"], .paginator .left, .rolodex, .refreshListButton').hide();
+				j$(".piped li").each(function(index) {
+					if(j$(this).hasClass('lastItem') && !j$(this).has('.new-rollup').length){
+						j$(this).prepend(j$('.new-rollup').clone());
+					}
+				});
+				j$(".x-grid3-col-ACTION_COLUMN a").each(function(index) {
+					if(j$(this).text() == 'Edit'){
+						herfAttr = j$(this).attr('href').split('.com/');
+						hrefConverted = herfAttr[1].replace('/e?','&');
+						j$(this).attr('href','{!rollupURL}?id=' + hrefConverted);
+					}
+				});
+				j$('.list-wrapper').show();
+			}
+
+			j$(document).ready(function(){
+				setTimeout(function(){
+					loadUI();
+
+				}, 1000);
+
+				j$('body').on('click', '.prevNext a, .selector', function(){
+			        setTimeout(function(){
+			        	loadUI();
+			        }, 2000);
+			    });
+
+				j$('body').on('click', '.x-grid3-cell', function(){
+					setTimeout(function(){
+						loadUI();
+
+					}, 1000);
+				});
+			});
+
+		</script>
+		<input value="{!$Label.New}" class="new-rollup btn" name="newrollup" onclick="this.form.action = '{!rollupURL}?retURL={!rollupTabURL}'; this.form.onsubmit = function() { return true }" title="New Rollup" type="submit"/>
+		
+		<apex:enhancedList height="400" rowsPerPage="25" id="SearchFilterList" listId="{!LEFT(listId,15)}" />
+	</apex:outputPanel>
+</apex:page>

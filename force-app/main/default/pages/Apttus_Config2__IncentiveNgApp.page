@@ -1,0 +1,258 @@
+<!-- 
+    Apttus Config & Pricing
+    IncentiveManager
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page lightningStylesheets="true" standardStylesheets="false"
+            sidebar="false"
+            showHeader="false"
+            docType="html-5.0"
+            extensions="Apttus_Config2.IncentiveNgAppController"
+            standardController="Apttus_Config2__Incentive__c">
+    
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jQueryUIStyle.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/incentives-style.css')}" rel="stylesheet" />
+    
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jQueryDatePicker.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/apttusUtils-1.0.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/jQueryDateTimePicker.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/navigation.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/optionController.js')}" />    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/autoCompleteWidget.js')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jquery-ui.multipickSearch-1.0.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/jquery-ui.multipickSearch-1.0.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/angular-1.4.8.js')}"/>
+    <apex:include pageName="Apttus_Config2__IncentiveAngularConfig"/>
+    <script>
+        var incentivesStandardPicklistCols = "{!JSENCODE(StandardPicklistColsJSON)}",
+            nsPrefix = '{!nsPrefix}';
+
+        (function (angular) {
+            // navigation initial configuration
+            angular.module('incentivesApp').provider('navConfig', navConfigProvider);
+
+            navConfigProvider.$inject = ['USETYPES', 'INCENTIVESTEPCODES'];
+
+            var navToStepURL = "{!NavToStepUrl}";
+
+            function navConfigProvider(USETYPES, INCENTIVESTEPCODES) {
+                var config = {
+                    displayPages: '',
+                    stepMap: function(UseType) {
+                        return {
+                        <apex:repeat value="{!incentiveMgrController.navMgr.steps}" var="navStep">
+                            {!navStep.code}: {
+                                code: '{!navStep.code}',
+                                label: "{!navStep.label}",
+                                fontAwesomeIconClass: "{!navStep.fontAwesomeIconClass}",
+                                url: "{!navStep.url}"{!IF(navStep.code == NavStepCodeSummary, ',', '')}
+                                {!IF(navStep.code == NavStepCodeSummary, 'selected: true', '')}
+                            }{!IF(navStep.code == NavStepCodeSummary, '', ',')}
+                        </apex:repeat>
+                        };
+                    }
+                };
+
+                return {
+                    set: function (value) {
+                        config = value;
+                    },
+                    $get: function () {
+                        return config;
+                    }
+                };
+            }
+        })(angular);
+
+        var benefitDimensionIncentiveFieldDirSettings1,
+            benefitDimensionIncentiveFieldDirSettings2,
+            benefitDimensionIncentiveFieldDirSettings3;
+
+        var j$ = jQuery.noConflict();
+        j$(document).ready(function(){
+            var angularElRef = angular.element(document.getElementById("divIncentiveSummaryCtrl"));
+            angularElRef.scope().summCtrl.loadIncentiveRecord('{!incentiveID}');
+            angularElRef.scope().summCtrl.showNav = {!isEditMode};
+            angularElRef.scope().summCtrl.benefitDimensionIncentiveFieldDirSettings1 = benefitDimensionIncentiveFieldDirSettings1;
+            angularElRef.scope().summCtrl.benefitDimensionIncentiveFieldDirSettings2 = benefitDimensionIncentiveFieldDirSettings2;
+            angularElRef.scope().summCtrl.benefitDimensionIncentiveFieldDirSettings3 = benefitDimensionIncentiveFieldDirSettings3;
+            builtUserDateSettings = Apttus.utils.buildUserDateSettings(getDateTemplate());
+            
+            calendarDateFormat = "";
+
+            for(var i = 0; i < builtUserDateSettings.ordering.length; i++){
+                var ymdSymbol = builtUserDateSettings.ordering[i],
+                        symbolIndex = i;
+                
+                ymdSymbol = ymdSymbol[0].toLowerCase();
+
+                if (ymdSymbol === 'y') {
+                    calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "Y"
+                } else if (ymdSymbol === 'm') {
+                    calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "m"
+                } else if (ymdSymbol === 'd') {
+                    calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "d"
+                }
+            }
+
+        });
+
+        function getDateTemplate() {
+            var dateTemplate = '01/23/45';
+            var templateText = Apttus.utils.getOutputFieldText('idDateTemplate');
+            if (!templateText) {
+                return dateTemplate;
+
+            }
+            dateTemplate = templateText;
+            return dateTemplate;
+
+        }
+
+        function displaySpinner(){
+        }
+
+        function hideSpinner(){
+        }
+    </script>
+    <apex:form id="incentiveForm">
+        <span ng-app="incentivesApp">
+            <div id="idUserSettingsSection" style="display:none;">
+                <div id="idDateTemplate">
+                    <apex:outputField value="{!templateIncentive.Apttus_Config2__EffectiveDate__c}"/>
+                </div>
+            </div>
+            <div id="divIncentiveSummaryCtrl" ng-controller="incentiveSummaryController as summCtrl">
+                <div id="pnlHeader" class="primary">
+                    <div class="back-nav">
+                        <a href="javascript:window.history.back();">
+                            <i class="fa fa-arrow-left"></i>
+                        </a>
+                    </div>
+                    <div class="sub-title">
+                        <h2>{{summCtrl.incentiveInfoComponentSettings.dataModel.incentiveRecord['{!$ObjectType.Incentive__c.fields.UseType__c.Name}'].label}}:</h2>&nbsp;&nbsp;
+                        <h1> {{summCtrl.incentiveInfoComponentSettings.dataModel.incentiveRecord.Name}}</h1>&nbsp;&nbsp;
+                        <h3>{{summCtrl.incentiveInfoComponentSettings.dataModel.incentiveRecord['{!$ObjectType.Incentive__c.fields.Status__c.Name}']}}</h3>
+                    </div>
+                </div>
+                <div class="main" id="mainAppDiv">
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td ng-show="summCtrl.showNav">
+                                    <div id="leftSection" class="nav-container">
+                                        <ul class="nav">
+                                            <li ng-repeat="(key, value) in summCtrl.steps"
+                                                ng-class="{'active': value.selected}"
+                                                ng-click="summCtrl.navigateTo(value)">
+                                                <i class="fa {{value.fontAwesomeIconClass}}"></i>
+                                                <h4>{{value.label}}</h4>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                                <td style="vertical-align: top;">
+                                    <div class="body-content-container">
+                                        <div class="main-sub summary-view">
+                                            <span ng-repeat="section in summCtrl.sections track by section.name">
+                                                <div class="header" slide-toggle="#comp{{section.name}}" expanded="true" ng-click="section.expanded = !section.expanded">
+                                                    <h2><i class="fa" ng-class="{'fa-caret-down' : section.expanded,
+                                                                        'fa-caret-right' : !section.expanded}"></i> {{section.label}}
+                                                    </h2>
+                                                </div>
+                                                <div id="comp{{section.name}}" class="slideable" expanded="true" duration="500ms">
+                                                    <incentive-information ng-if="section.name == summCtrl.stepKeys.INFORMATION" settings="summCtrl.incentiveInfoComponentSettings"></incentive-information>
+                                                    <incentive-limits ng-if="section.name == summCtrl.stepKeys.LIMITS" settings="summCtrl.limitsSettings"></incentive-limits>
+                                                    <incentive-scope ng-if="section.name == summCtrl.stepKeys.SCOPE" settings="summCtrl.incentiveScope"></incentive-scope>
+                                                    <apex:outputPanel rendered="{!incentiveMgrController.showCriteria && (NOT(ISBLANK(criteria)) || NOT(ISBLANK(exclusionCriteria)))}" layout="none">
+                                                    <div ng-if="section.name == summCtrl.stepKeys.CRITERIA" class="inner-container field">
+                                                        <apex:outputPanel rendered="{!NOT(ISBLANK(criteria))}">
+                                                            <h3>Inclusion Criteria</h3>
+                                                            <p class="text-to-search">{!criteria}</p>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel rendered="{!NOT(ISBLANK(exclusionCriteria))}">
+                                                            <h3>Exclusion Criteria</h3>
+                                                            <p class="text-to-search">{!exclusionCriteria}</p>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                    </apex:outputPanel>
+
+                                                    <apex:outputpanel id="incentiveLoyaltyTiersPanel" styleClass="loyaltytiers-component-wrapper" rendered="{!incentiveMgrController.showLoyaltyTiers}" layout="block">
+                                                        <div id="pnlIncentiveTiersSection" ng-show="section.name == summCtrl.stepKeys.TIER">
+                                                            <c:IncentiveLoyaltyTiers theIncentiveSO="{!incentiveMgrController.IncentiveSO}"
+                                                                                     isReadOnly="true"
+                                                                                     rendered="{!incentiveMgrController.isLoyalty}" />
+                                                        </div>
+                                                    </apex:outputpanel>
+                                                    <apex:outputpanel id="incentiveBenefitsPanel" styleClass="benefits-component-wrapper" rendered="{!incentiveMgrController.showBenefits || incentiveMgrController.showPointAccrual}" layout="block">
+                                                        <div id="pnlIncentiveBenefitsSection" ng-if="section.name == summCtrl.stepKeys.BENEFITS || section.name == summCtrl.stepKeys.POINTACCRUAL">
+                                                            <c:IncentiveBenefits theIncentiveSO="{!incentiveMgrController.IncentiveSO}" 
+                                                                thePriceRuleSO="{!incentiveMgrController.priceRuleSO}" 
+                                                                thePriceRulesetSO="{!incentiveMgrController.priceRulesetSO}"
+                                                                thePriceRuleEntrySO="{!incentiveMgrController.priceRuleEntrySO}"
+                                                                rendered="{!NOT(incentiveMgrController.isMilestone)}"
+                                                                theBenefitType="benefit"
+                                                                isReadOnly="true" />
+
+                                                            <c:IncentiveMilestoneBenefits theIncentiveSO="{!incentiveMgrController.IncentiveSO}" 
+                                                                thePriceRuleSO="{!incentiveMgrController.priceRuleSO}" 
+                                                                thePriceRulesetSO="{!incentiveMgrController.priceRulesetSO}"
+                                                                thePriceRuleEntrySO="{!incentiveMgrController.priceRuleEntrySO}"
+                                                                theAgreementId="{!incentiveMgrController.agreementId}"
+                                                                theBenefitType=""
+                                                                rendered="{!incentiveMgrController.isMilestone}"
+                                                                isReadOnly="true" />
+                                                        </div>
+                                                    </apex:outputpanel>
+
+                                                    <apex:outputPanel rendered="{!incentiveMgrController.showDeductions}">
+                                                    <div ng-if="section.name == summCtrl.stepKeys.DEDUCTIONS">
+                                                        <apex:outputpanel id="incentiveDeductionsPanel" styleClass="deductions-component-wrapper" rendered="{!incentiveMgrController.showDeductions}" layout="block">
+                                                            <c:IncentiveDeductions theIncentiveSO="{!incentiveMgrController.IncentiveSO}"
+                                                                                 thePriceRuleSO="{!incentiveMgrController.priceRuleSO}"
+                                                                                 thePriceRulesetSO="{!incentiveMgrController.priceRulesetSO}"
+                                                                                 thePriceRuleEntrySO="{!incentiveMgrController.priceRuleEntrySO}"
+                                                                                 isMilestone="{!incentiveMgrController.isMilestone}"
+                                                                                 theBenefitType="deduction"
+                                                                                 isReadOnly="true" />
+                                                        </apex:outputpanel>
+                                                    </div>
+                                                    </apex:outputPanel>
+
+                                                    <apex:outputPanel rendered="{!incentiveMgrController.showCoupons}">
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="footer">
+                    <script>
+                        if("{!returnUrl}" == "#") { // no return URL specified from SFDC standard layout page
+                            // get previous page/screen URL since none was specified
+                            Apttus.utils.updateReturnUrlFromReferrer('{!URLFOR("/")}', "retURL");
+                        }
+                    </script>
+                    <div class="inner-footer">
+                        <div class="primary-commands">
+                            <apex:outputPanel rendered="{!NOT(isEditMode)}"><a class="primary-btn secondary save" href="{!EditUrl}">{!$Label.apttus_config2__edit}</a></apex:outputPanel>
+                            <apex:commandLink styleClass="primary-btn secondary save" action="{!deleteIncentive}" value="{!$Label.apttus_config2__delete}" id="lnkDeleteIncentive"/>
+                            <apex:commandLink styleClass="primary-btn secondary save" action="{!cloneIncentive}" value="{!$Label.apttus_config2__clone}" id="lnkCloneIncentive" rendered="{!NOT(HideCloseButton)}"/>
+                            <a class="primary-btn secondary save" href="{!returnUrl}">Close</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </span>
+    </apex:form>
+</apex:page>

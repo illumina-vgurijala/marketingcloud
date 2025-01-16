@@ -1,0 +1,51 @@
+<aura:component extends="c:BaseSuperComponent" implements="force:hasRecordId,force:lightningQuickActionWithoutHeader,flexipage:availableForRecordHome" 
+                controller="GlobalLanguageController" access="global" >
+    
+    <aura:attribute name="lstPostPrimaryMsg" type="List"/>
+    <aura:attribute name="strPostPrimaryMsg" type="String"/>
+    <aura:attribute name="mapLabels" type="Map"/>
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="lstGlobalLanguage" type="List"/>
+    <aura:attribute name="booDisablePostpricingList" type="Boolean"/>
+    <aura:attribute name="booIsPageLoaded" type="Boolean" default = "false"/>
+    <aura:attribute name="setNonStandardPicklistValues" type="Set"/>
+
+    <aura:attribute name="objQuote" type="Apttus_Proposal__Proposal__c"/>
+    <aura:attribute name="objTargetQuote" type="Apttus_Proposal__Proposal__c"/>
+    <aura:attribute name="strRecordError" type="String"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <!-- Load the Quote using LDS -->                
+   <force:recordData aura:id="quoteRecordHandler"
+                      recordId="{!v.recordId}"
+                      targetError="{!v.strRecordError}"
+                      targetRecord="{!v.objQuote}"
+                      targetFields ="{!v.objTargetQuote}"
+                      fields = "Post_Pricing_Message_List__c,Post_Pricing_Message__c,Preferred_Language__c"
+                      recordUpdated="{!c.handleRecordUpdated}"
+                      mode="EDIT"/>
+
+    
+    <lightning:layoutItem flexibility="grow" padding="around-small" size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12">
+        <lightning:select name = "ppmPicklist"
+                          aura:id = "fieldId"
+                          label = "{!v.mapLabels.Post_Pricing_Message_List}"
+                          value = "{!v.strPostPrimaryMsg}"
+                          onchange = "{!c.changeGlobalLanguage}"
+                          disabled = "{!v.booDisablePostpricingList}">
+            <aura:iteration items="{!v.lstPostPrimaryMsg}" var="val">
+                <option text="{!val.strValue}" value="{!val.strKey}" selected="{!val.strValue == v.strPostPrimaryMsg}"/>
+            </aura:iteration>
+        </lightning:select>
+    </lightning:layoutItem>
+    
+    <lightning:layoutItem flexibility="grow" padding="around-small" size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12">
+        <c:GlobalLanguage aura:id="idGlblLang" mapLabels="{!v.mapLabels}" strGlobalLang="{!v.lstGlobalLanguage}"/>   
+    </lightning:layoutItem>
+    
+    <lightning:layoutItem flexibility="grow" padding="around-small" size="12" largeDeviceSize="12" mediumDeviceSize="12" smallDeviceSize="12">
+        <lightning:button class = "slds-button_accent slds-float_left" variant="success" label="Save" onclick="{!c.validate}"/>
+    </lightning:layoutItem>
+    
+</aura:component>

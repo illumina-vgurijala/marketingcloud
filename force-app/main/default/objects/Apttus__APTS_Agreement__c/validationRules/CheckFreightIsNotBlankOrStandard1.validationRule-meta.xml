@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckFreightIsNotBlankOrStandard1</fullName>
+    <active>true</active>
+    <description>description</description>
+    <errorConditionFormula>AND(
+    OR(
+        $RecordType.Name = &apos;Standing Quote&apos;,
+        $RecordType.Name = &apos;Tender&apos;,
+        AND($RecordType.Name = &apos;Special Programs&apos;, ISPICKVAL( Apttus__Subtype__c , &apos;Reagent Rental&apos;)),
+        $RecordType.Name = &apos;Open Offer Agreement&apos;
+    ),
+    OR(
+        ISBLANK(TEXT(Freight_Charge__c)),
+        NOT(ISPICKVAL(Freight_Charge__c, &apos;Standard&apos;))
+    ),
+    ISBLANK(Reason_for_Non_Standard_Freight__c),
+ AND(
+        NOT(ISBLANK($Label.Go_Live_Date)), 
+        IF(ISNEW(),
+          TODAY() >= DATEVALUE($Label.Go_Live_Date),
+          DATEVALUE(CreatedDate ) >=DATEVALUE($Label.Go_Live_Date)
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Reason_for_Non_Standard_Freight__c</errorDisplayField>
+    <errorMessage>Provide reason for Non-Standard Freight or Do Not Charge</errorMessage>
+</ValidationRule>

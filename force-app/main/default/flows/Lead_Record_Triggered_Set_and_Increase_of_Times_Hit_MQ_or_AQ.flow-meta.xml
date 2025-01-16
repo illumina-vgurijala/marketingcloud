@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <decisions>
+        <description>This Flow updates Count on # of Time Hit MQ Field on Lead to 1 if Lead status is changed to either &quot;Marketing Qualified&quot; for the first time.</description>
+        <name>Update_Count_on_of_Time_Hit_MQ_for_MQ_Lead_Status</name>
+        <label>Update Count on # of Time Hit MQ for MQ Lead Status</label>
+        <locationX>536</locationX>
+        <locationY>346</locationY>
+        <defaultConnector>
+            <targetReference>Update_count_on_of_Time_Hit_MQ_for_MQ_Lead_Status_Subsequent_Change</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Update_Count_on_of_Time_Hit_MQ_Field_on_Lead_to_1</name>
+            <conditionLogic>1 AND 2</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Status</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Marketing Qualified</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Number_Of_Times_MQ_Or_AQ__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Count_On_ofTimeHitMQ_To_1</targetReference>
+            </connector>
+            <label>Update Count on # of Time Hit MQ Field on Lead to 1</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>This Flow updates incremental Count on # of Time Hit MQ Field on Lead if Lead status is changed to &quot;Marketing Qualified&quot; subsequently.</description>
+        <name>Update_count_on_of_Time_Hit_MQ_for_MQ_Lead_Status_Subsequent_Change</name>
+        <label>Update count on # of Time Hit MQ for MQ Lead Status Subsequent Change</label>
+        <locationX>532</locationX>
+        <locationY>519</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Update_incremental_Count_on_of_Time_Hit_MQ_Field</name>
+            <conditionLogic>1 AND 2</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Status</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Marketing Qualified</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Number_Of_Times_MQ_Or_AQ__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Incremental_Count_On_OfTimeHitMQ</targetReference>
+            </connector>
+            <label>Update incremental Count on # of Time Hit MQ Field</label>
+        </rules>
+    </decisions>
+    <description>This Flow updates Count on # of Time Hit MQ Field on Lead to 1 if Lead status is changed to &quot;Marketing Qualified&quot; for the first time and then add 1 on subsequent times.</description>
+    <environments>Default</environments>
+    <formulas>
+        <description>Increases the # of times AQ or MQ by 1</description>
+        <name>IncreaseTimesAQMQCount</name>
+        <dataType>Number</dataType>
+        <expression>{!$Record.Number_Of_Times_MQ_Or_AQ__c}+1</expression>
+        <scale>0</scale>
+    </formulas>
+    <interviewLabel>Lead : Record Triggered - Set and Increase # of times {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Lead : Record Triggered - Set and Increase # of Times Hit MQ or AQ</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <description>Lead Field Update : # of Time Hit MQ is set to 1.</description>
+        <name>Set_Count_On_ofTimeHitMQ_To_1</name>
+        <label>Set Count On #ofTimeHitMQ To 1</label>
+        <locationX>751</locationX>
+        <locationY>346</locationY>
+        <inputAssignments>
+            <field>Number_Of_Times_MQ_Or_AQ__c</field>
+            <value>
+                <numberValue>1.0</numberValue>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <recordUpdates>
+        <description>Lead Field Update : # of Time Hit MQ is set to incremental Counter to # of Time Hit MQ</description>
+        <name>Set_Incremental_Count_On_OfTimeHitMQ</name>
+        <label>Set Incremental Count On #OfTimeHitMQ</label>
+        <locationX>751</locationX>
+        <locationY>516</locationY>
+        <inputAssignments>
+            <field>Number_Of_Times_MQ_Or_AQ__c</field>
+            <value>
+                <elementReference>IncreaseTimesAQMQCount</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>410</locationX>
+        <locationY>48</locationY>
+        <connector>
+            <targetReference>Update_Count_on_of_Time_Hit_MQ_for_MQ_Lead_Status</targetReference>
+        </connector>
+        <filterFormula>AND( OR( ISNEW(), ISCHANGED({!$Record.Status}) ), NOT({!$Setup.cs_Apex_Settings__c.Bypass_All_Flows__c}))</filterFormula>
+        <object>Lead</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

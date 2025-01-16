@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckVerificationResultForBICase</fullName>
+    <active>true</active>
+    <description>Check verification result for business issue case when status is completed or pending qa review or pending logistic review or closed</description>
+    <errorConditionFormula>/* To Check verification result for business issue case when status is completed or pending qa review or pending logistic review or closed */
+AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    OR(
+        TEXT(Status) = $Label.CaseStatusCompleted,
+        TEXT(Status) = $Label.CaseStatusPendingQAReview,
+        TEXT(Status) = $Label.CaseStatusPendingLogisticsReview,
+        TEXT(Status) = $Label.CaseStatusClosed
+      ),
+    RecordType.Name = $Label.CaseTypeBusinessIssue,
+   AND (
+    ISBLANK(Verification_Result__c),
+    NOT(Has_Closed_Duplicate_WO__c),
+    NOT($CustomMetadata.Feature_Flag__mdt.IVD_Workflow.IsOn__c))
+)</errorConditionFormula>
+    <errorMessage>Cases with a DX repair require a Verification Code. Add a Verification Code before completing the case.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,1 @@
+webpackJsonp([13],{"7Lej":function(e,_){e.exports={Apttus_Config2__OrderLineItem__c:"Order Line Item",Apttus_Config2__Order__c:"Order",Apttus__AgreementLineItem__c:"Agreement Line Item",Apttus__APTS_Agreement__c:"Agreement",Apttus_Proposal__Proposal_Line_Item__c:"Proposal Line Item",Apttus_Proposal__Proposal__c:"Quote/Proposal"}}});

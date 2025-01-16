@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckProposalSentOn</fullName>
+    <active>true</active>
+    <description>Validation rule to check if Quote Generated on,Manual Quote Number and Manual Quote Reason is filled before moving to Negotiate &amp; Resolve,Finalize.</description>
+    <errorConditionFormula>AND (
+    OR (
+        AND ( 
+        /*Checking Relevant Record Type*/
+            OR (
+                $RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder,
+                $RecordType.DeveloperName = $Label.FieldServices,
+                $RecordType.DeveloperName = $Label.IndirectFieldServices,
+                $RecordType.DeveloperName = $Label.IndirectReOrder
+            ), 
+        /*Checking Exit Stages*/
+            NOT (
+                OR ( 
+                    TEXT ( StageName ) = $Label.OpportunityStageClosedLost, 
+                    PRIORVALUE ( StageName )= $Label.OpportunityStageClosedLost, 
+                    PRIORVALUE ( StageName )= $Label.OpportunityStageClosedWon, 
+                    TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned,
+                    PRIORVALUE ( StageName )= $Label.OpportunityStageClosedAbandoned,
+                    TEXT ( StageName ) = $Label.OpportunityStageDevelop,
+                    TEXT ( StageName ) = $Label.OpportunityStageCreate,
+                    TEXT ( StageName ) = $Label.OpportunityStageQualify,
+                    TEXT ( StageName ) = $Label.OpportunityStageNegotiateResolve,
+                    TEXT ( StageName ) = $Label.OpportunityStageProve
+                )
+	    )
+        ),
+        AND ( 
+             /*Checking Relevant Record Type*/
+	    OR ( 
+	        RecordType.DeveloperName = $Label.OpportunityRTDirectStandard,  
+	        RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard
+	    ), 
+             /*Checking Exit Stages*/ 
+	    NOT (
+	        OR ( 
+		    TEXT ( StageName ) = $Label.OpportunityStageClosedLost, 
+                    PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedLost,
+                    TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned,
+                    PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+                    PRIORVALUE ( StageName  ) = $Label.OpportunityStageClosedWon, 
+                    TEXT ( StageName ) = $Label.OpportunityStageCreate,
+                    TEXT ( StageName ) = $Label.OpportunityStageQualify,
+                    TEXT ( StageName ) = $Label.OpportunityStageDevelop,
+                    TEXT ( StageName ) = $Label.OpportunityStageProve
+	        )
+	    )
+        )
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    /*Check if any of the field is populated*/
+    ISBLANK ( Proposal_Sent_On__c ),
+    ISBLANK ( Manual_Quote_Number__c ),
+    ISBLANK ( Manual_Quote_Reason__c ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>Please send Proposal to Customer through APTTUS. If Quote is manual and Proposal is sent manually, indicate Manual Quote # , Date Quote was generated, and Manual Quote Reason in Quote &amp; Order Information section.</errorMessage>
+</ValidationRule>

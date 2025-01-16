@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Modify_Users</fullName>
+    <active>true</active>
+    <description>Restricts access to modifying user details unless a specific profile or granted via customer setting &quot;Apex Settings&quot; &quot;Modify users&quot;</description>
+    <errorConditionFormula>/* 
+Check if user is allowed to modify the user record. Restricted by Profile/User, Fields, and User Type. 
+1. Users with &quot;Modify Users&quot; checkbox on the Apex Settings custom setting, Integration Users or users with the Manage Partner Portal Users permission (Manage Partner Portal users only gives access to manage partner users) 
+*****NOTE: this validation rule excludes the GIS Illumina (deployment) user, AND the System Admin profile. This is for deployment purposes as the &quot;Only_UserProvisioning_Edit_UserRecords&quot; only runs in production and will still stop a System Admin from making a user change unless they are assigned the custom setting***** 
+2. RESTRICTED/SECURITY FIELDS 
+3. Added USER&apos;S PROFILE NAME DOES NOT INCLUDE &quot;CHANNEL PARTNER&quot; IN THE CONDITION - INC0448984
+*/ 
+
+AND(
+    /*1: CRITERIA FOR EDITING RESTRICTED FIELDS BASED ON RUNNING USER, USER TYPE AND PROFILE*/
+    NOT($Setup.cs_Apex_Settings__c.Modify_Users__c),
+    NOT(CONTAINS( $Profile.Name , &quot;Integration&quot;)),
+	NOT(CONTAINS( $Profile.Name , &quot;Channel Partner&quot;)),
+    $User.Id != &quot;0051N000005F3VK&quot;,
+    NOT($Profile.Id = &quot;00e1N000001uZ18&quot; ),
+    NOT($Profile.Id = &quot;00e3l000001RB1U&quot; ), /*for community guest profile to allow self-registration*/
+    NOT($Permission.CP_Manage_Partner_Portal_Users),
+    
+    /*2:RESTRICTED SECURITY FIELDS*/
+    OR (
+        ISNEW(),
+        ISCHANGED( Alias ),
+        ISCHANGED( CompanyName ),
+        ISCHANGED( ContactId ),
+        ISCHANGED( Cost_Center__c ),
+        ISCHANGED( Department ),
+        ISCHANGED( Division ),
+        ISCHANGED( Email ),
+        ISCHANGED( EmployeeNumber ),
+        ISCHANGED( ExemptFromValidation__c ),
+        ISCHANGED( FederationIdentifier ),
+        ISCHANGED( FirstName ),
+        ISCHANGED( Functional_Area__c ),
+        ISCHANGED( IsActive ),
+        ISCHANGED( LastName ),
+        ISCHANGED( Legacy_User_ID__c ),
+        ISCHANGED( ManagerId ),
+        ISCHANGED( NCMO_Approver_Tier_1__c ),
+        ISCHANGED( NCMO_Approver_Tier_2__c ),
+        ISCHANGED( Region__c ),
+        ISCHANGED( PartnerOrganization__c ),
+        ISCHANGED( PartnerRegion__c ),
+        ISCHANGED( PartnerType__c ),
+        ISCHANGED( ProfileId ),
+        ISCHANGED( SVMXC__ServiceMax_User__c ),
+        ISCHANGED( Title ),
+        ISCHANGED( Unique_Id__c ),
+        ISCHANGED( UserRoleId )
+    )
+)</errorConditionFormula>
+    <errorMessage>That field can only be changed by the GIS User Provisioning team. Please submit a SNOW request to the GIS SFDC Access team to request any changes.</errorMessage>
+</ValidationRule>

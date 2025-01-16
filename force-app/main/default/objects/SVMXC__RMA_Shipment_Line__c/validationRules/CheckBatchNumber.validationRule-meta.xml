@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckBatchNumber</fullName>
+    <active>true</active>
+    <description>For batched Product Stock item, Batch Number field is required</description>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($User.FirstName ==$Label.Automated_Process_User),
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)),
+Product_Stock__r.SVMXC__Product__r.Batch_Management__c ,
+ISBLANK( Batch_Number__c),
+  OR(Parts_Order_Type__c == $Label.PartsOrderTypeStockTransfer,
+       AND(Parts_Order_Type__c == $Label.PartsOrderTypeReturn,
+           ISBLANK(SVMXC__RMA_Shipment_Order__r.SVMXC__Case__c),
+           ISBLANK( SVMXC__RMA_Shipment_Order__r.SVMXC__Service_Order__c)
+          )
+     )
+)</errorConditionFormula>
+    <errorMessage>A batch number was not supplied for a batched product.  Enter the batch number on the order line.</errorMessage>
+</ValidationRule>

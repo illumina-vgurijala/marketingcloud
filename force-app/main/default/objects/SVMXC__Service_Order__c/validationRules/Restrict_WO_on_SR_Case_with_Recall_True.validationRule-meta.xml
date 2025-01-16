@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Restrict_WO_on_SR_Case_with_Recall_True</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+/* Bypass conditions */
+NOT(
+OR(
+$Profile.Name = $Label.Integration_SAP_Service,
+$Profile.Name = $Label.Integration_Service_SNAP_Profile,
+$User.FirstName = $Label.Automated_Process_User,
+$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+)
+),
+/* Original validation conditions */
+AND(
+SVMXC__Case__r.Recall__c = TRUE,
+SVMXC__Case__r.RecordType.Name = $Label.CaseRecordTypeServiceRequest,
+NOT(
+OR(
+AND(
+RecordType.Name = $Label.WorkOrderRecordTypeRemoteSupport,
+TEXT(SVMXC__Order_Type__c) = $Label.WorkOrderTypeRemoteSupport
+),
+AND(
+RecordType.Name = $Label.WorkOrderRecordTypeFieldService,
+TEXT(SVMXC__Order_Type__c) = $Label.WorkOrderTypeServiceActivities
+)
+)
+)
+)
+)</errorConditionFormula>
+    <errorMessage>The recall service request case only permits work orders with the record types field service and remote support and the order types service activities and remote support associated. If any other type is required, create a new case or work order.</errorMessage>
+</ValidationRule>

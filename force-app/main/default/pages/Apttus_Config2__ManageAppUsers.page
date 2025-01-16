@@ -1,0 +1,409 @@
+<!--   
+				Apttus Config & Pricing
+				ManageAppUsers
+						
+				@2014-2015 Apttus Inc. All rights reserved.
+ -->
+
+<apex:page lightningStylesheets="true" controller="Apttus_Config2.ManageAppUsersController" 
+					 title="{!$Label.apttus_config2__manageapplicationusers}"
+					 sidebar="{!ShowAdminSidebar}"
+					 cache="false">
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__AdminCSS)}" />
+
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JSTreeLibrary, 'jstree-v.pre1.0/jquery.jstree.js')}"/>
+	<apex:includeScript value="{!$Resource.Apttus_Config2__JQueryUITouch0_2_2}"/>
+
+	<style>
+	.hasErrorDialog {
+		cursor: pointer;
+	}
+	.hasTooltip {
+		cursor: help;
+		font-weight: bold;
+	}
+	.hasTooltip::after{
+		content: url("{!$Resource.Image_Info}");
+	}
+	.dialog-content, .tooltip-content {
+		display: none;
+	}
+	</style>
+
+	<script type="text/javascript">
+	var j$ = jQuery.noConflict();
+
+	var checkboxHelper = {
+		controllerId: "controller-checkbox",
+		childClass: "user-checkbox", 
+		clickController: function() {
+			var isChecked = j$("#" + this.controllerId).prop("checked");
+			j$("." + this.childClass).prop("checked", isChecked);
+		},
+		clickChild: function() {
+			j$("#" + this.controllerId).prop("checked", false);
+		},
+		resetAll: function() {
+			j$("#" + this.controllerId).prop("checked", false);
+			j$("." + this.childClass).prop("checked", false);
+		}
+	};
+	
+	//Open Popup to create New Option Groups
+	function openEditPermissionPopup() {
+		j$("#idEditLicensePermissionsPopup").dialog({
+					autoOpen: true,
+					title: '{!JSENCODE($Label.EditLicensePermissions)}',
+					modal: true,
+					resizable:false,
+					width:450,
+					open: function(event, ui) {
+							RefreshPopup();
+					}
+			});
+	}
+
+	function invokeUpdateLicensePermissions() {
+		var permissionSetIdCSV = j$(".idDropPermissionSet").val().join(',');
+		var activateLicense = j$(".idActiavteLicenseBox").prop("checked");
+		UpdateLicensePermissions(permissionSetIdCSV, activateLicense);
+		j$("#idEditLicensePermissionsPopup").dialog("close");
+
+	}
+
+	// Close Loading Dialog after Constraint Rule Copy or Delete is completed.
+	function closeLoadingDialog() {
+			j$("#idLoadingDialog").dialog('close');
+	
+	}
+	
+	// Open Loading Dialog for Constraint Rule on Copy or Delete action.
+	function openLoadingDialog() {
+		message = '{!JSENCODE($Label.Loading)}';
+		
+		j$("#idLoadingMessage").html(message);
+		
+		j$("#idLoadingDialog").dialog({
+			autoOpen: true,          
+			modal: true,
+			resizable: false,
+			width: 400,
+			height: 150,
+			dialogClass: "dialog-loading",
+			title: '{!JSENCODE($Label.EditLicensePermissions)}'                  
+		});
+		return false;
+					
+	}
+
+	/**
+	 * Tooltips are used to display assigned records and access links.
+	 */
+	function bindTooltip() {
+		j$('.hasTooltip').tooltip({
+			items: "span",
+			content: function() {
+				var elementIdTags = j$(this).prop('id').split('-');
+				elementIdTags[1] = 'content';
+				return j$('#' + elementIdTags.join('-')).html();
+			},
+			close: function(event, ui) {
+				//Let user interact with tooltip while hovering
+				ui.tooltip.hover(
+          function () {
+              j$(this).stop(true).fadeTo(400, 1); 
+          },
+          function () {
+              j$(this).fadeOut("400", function(){
+                  j$(this).remove(); 
+              })
+          }
+      	);
+			}
+		});
+	}
+
+	/**
+	 * Error dialog is used to report detailed errors with links to records
+	 */
+	function bindErrorDialog() {
+		j$('.hasErrorDialog').each(function(index, element) {
+			var boundElement = j$(element);
+			var splitId = boundElement.prop('id').split('-');
+			splitId[1] = 'errorDiv';
+			var dialogContentId = splitId.join('-');
+			var dialogElement = j$('#' + dialogContentId).dialog({
+				autoOpen: false,
+				modal: false,
+				resizable: true,
+				minWidth: 650,
+				maxWidth: 650,
+				height: 300
+			});
+
+			boundElement.on("click", function(){
+				j$(".dialog-content").dialog("close");
+				dialogElement.dialog("open");
+			}); 
+
+		});
+	}
+
+	</script>
+
+	<apex:sectionHeader title="{!$Label.apttus_config2__sprintcpq}" subtitle="{!$Label.apttus_config2__manageapplicationusers}" />
+	<apex:form id="idForm">
+		<apex:pageMessages id="idMessages" 
+											escape="true"
+											showDetail="true"/>
+		<apex:PageBlock id="idUserAssignmentPageBlock"
+										mode="edit" 
+										title="{!$Label.apttus_config2__userassignment}">
+			<apex:pageBlockButtons id="idUserAssignmentButtons"
+														 location="both">
+				<apex:commandButton id="idEditLicense" 
+														value="{!$Label.apttus_config2__editlicensepermissions}"
+														onClick="openEditPermissionPopup(); return false;" />
+			</apex:pageBlockButtons>
+			<apex:outputPanel id="idSearchPanel" 
+											styleClass="tabLink" >
+					<apex:inputText id="idSearchText" 
+													label="Search" 
+													value="{!searchString}" /> 
+					&nbsp;&nbsp;
+					<apex:selectList id="idDropSearchOption" 
+													 size="1" 
+													 value="{!selectedSearchOption}">
+							<apex:selectOptions value="{!userSearchOptions}"></apex:selectOptions>
+					</apex:selectList>
+					<apex:commandButton value="{!$Label.apttus_config2__search}" 
+															action="{!doUserSearch}"
+															onclick="checkboxHelper.resetAll();" 
+															rerender="idUserSettingsPanel">                          
+					</apex:commandButton><br />
+			</apex:outputPanel>
+			<br/>
+			<apex:outputPanel id="idUserSettingsPanel">
+					<apex:pageBlockTable id="idUserSettingtable"
+															 value="{!availableUserList}"
+															 rowClasses="oddRow, evenRow"
+															 var="user"
+															 columns="7"
+															 columnswidth="10px, 100px, 100px, 100px, 100px, 100px, 100px">
+							<apex:column >
+									<apex:facet name="header">
+										<input type="checkbox" 
+														id="controller-checkbox" 
+														onclick="checkboxHelper.clickController();"/>
+										{!JSENCODE($Label.Select) + ' ' + $ObjectType.User.Label}
+									</apex:facet>
+									<apex:inputCheckbox value="{!user.isChecked}" 
+																			styleClass="user-checkbox"
+																			onclick="checkboxHelper.clickChild();"/>
+							</apex:column>
+							<apex:column headerValue="{!$ObjectType.User.Fields.Name.Label}">
+									<apex:outputField value="{!user.userSO.Name}" />
+							</apex:column>
+							<apex:column headerValue="{!$ObjectType.Profile.Label}">
+									<apex:outputField value="{!user.userSO.Profile.Name}" />
+							</apex:column>
+							<apex:column headerValue="{!$ObjectType.UserRole.Label}">
+									<apex:outputField value="{!user.userSO.UserRole.Name}" />
+							</apex:column>
+							<apex:column headerValue="{!$ObjectType.User.Fields.isActive.Label}">
+								<input type="checkbox" 
+												checked="{!user.userSO.isActive}"
+												disabled="true"/>
+							</apex:column>
+							<!-- Needs label -->
+							<apex:column headerValue="{!$Label.apttus_config2__apttuslicenses}">
+								<!-- Error indicator and info popups -->
+								<apex:outputPanel rendered="{!user.hasLicenseError}">
+									<img id="license-errorImage-{!user.userSO.Id}" 
+											 src="{!URLFOR($Resource.Image_Error)}"
+											 class="hasErrorDialog"/>
+									<div id="license-errorDiv-{!user.userSO.Id}" 
+											 class="dialog-content"
+											 title="{!$Label.Error}: {!user.userSO.Name}">
+										<ul>
+										<apex:repeat value="{!user.licenseErrorIdList}"
+																 var="licenseId">
+											<li>
+												{!$ObjectType.PackageLicense.Fields.Id.Label & ': ' & licenseId} 
+												<ul>
+												<apex:repeat value="{!user.licenseErrorMap[licenseId]}"
+																		 var="errorMessage">
+													<li>{!errorMessage}</li>	
+												</apex:repeat>
+												</ul>
+											</li>
+										</apex:repeat>
+										</ul>
+									</div>
+								</apex:outputPanel>
+								<!-- License should display as checkbox -->
+								<apex:outputPanel >
+									<span id="license-header-{!user.userSO.Id}" class="hasTooltip"> 
+										<input type="checkbox" 
+														checked="{!user.isLicenseActivated}"
+														disabled="true"/>
+									</span>
+									<div id="license-content-{!user.userSO.Id}" class="tooltip-content">
+										<table>
+											<apex:repeat value="{!user.licenses}"
+																	 var="license">
+												<tr>
+													<td>{!license.PackageLicense.NamespacePrefix}</td>
+												</tr>
+											</apex:repeat>
+										</table>
+									</div>
+								</apex:outputPanel>
+							</apex:column>
+							<apex:column headerValue="Permissions">
+								<!-- Error indicator and info popups -->
+								<apex:outputPanel rendered="{!user.hasPermissionError}">
+									<img id="permission-errorImage-{!user.userSO.Id}" 
+											 src="{!URLFOR($Resource.Image_Error)}"
+											 class="hasErrorDialog"/>
+									<div id="permission-errorDiv-{!user.userSO.Id}" 
+											 class="dialog-content"
+											 title="{!$Label.Error}: {!user.userSO.Name}">
+										<ul>
+										<apex:repeat value="{!user.permissionErrorIdList}"
+																 var="permissionId">
+											<li>
+												<apex:outputLink value="/{!permissionId}"
+																				 target="_{!permissionId}">
+													{!$ObjectType.PermissionSet.Fields.Id.Label & ': ' & permissionId} 
+													</apex:outputLink>
+												<ul>
+												<apex:repeat value="{!user.permissionErrorMap[permissionId]}"
+																		 var="errorMessage">
+													<li>{!errorMessage}</li>	
+												</apex:repeat>
+												</ul>
+											</li>
+										</apex:repeat>
+										</ul>
+									</div>
+								</apex:outputPanel>
+								<!-- If only one permission set -->
+								<apex:outputLink value="/{!user.permissions[0].PermissionSet.Id}"
+																 target="_{!user.permissions[0].PermissionSet.Id}"
+																 rendered="{!user.permissions.size == 1}">
+									{!user.permissions[0].PermissionSet.Label}
+								</apex:outputLink>
+								<!-- If multiple permission sets -->
+								<apex:outputPanel rendered="{!user.permissions.size > 1}">
+									<span id="permission-header-{!user.userSO.Id}" class="hasTooltip"> 
+										{!user.permissions.size} {!$Label.PermissionSets}
+									</span>
+									<div id="permission-content-{!user.userSO.Id}" class="tooltip-content">
+										<table>
+											<apex:repeat value="{!user.permissions}"
+																	 var="permission">
+												<tr>
+												<td><apex:outputLink value="/{!permission.PermissionSet.Id}"
+																					 target="_{!permission.PermissionSet.Id}">
+														{!permission.PermissionSet.Label}
+													</apex:outputLink></td>
+												</tr>
+											</apex:repeat>
+										</table>
+									</div>
+								</apex:outputPanel>
+							</apex:column>
+					</apex:pageBlockTable>
+					<script type="text/javascript">
+					//Generate tooltips for record links
+					bindTooltip();
+					//Generate error dialogs
+					bindErrorDialog();
+					</script>
+					<apex:outputPanel >
+							<div style="float:right;">
+									<apex:outputPanel rendered="{!NOT(PreviousUserSettingStatus)}" 
+																		styleClass="greyedLink">
+											&lt;{!$Label.PreviousPage}
+									</apex:outputPanel>
+									<apex:commandLink action="{!previousUserSettingPage}" 
+																			rendered="{PreviousUserSettingStatus}"
+																			status="loadStatus"
+																			reRender="idUserSettingsPanel">
+											&lt;{!$Label.PreviousPage}
+									</apex:commandLink>
+									<span> | </span>
+									<apex:outputPanel rendered="{!NOT(NextUserSettingStatus)}" 
+																		styleClass="greyedLink">
+											{!$Label.NextPage}&gt;
+									</apex:outputPanel>
+									<apex:commandLink action="{!nextUserSettingPage}" 
+																			rendered="{NextUserSettingStatus}"
+																			status="loadStatus"
+																			reRender="idUserSettingsPanel">
+											{!$Label.NextPage}&gt;
+									</apex:commandLink>
+							</div>
+					</apex:outputPanel>          
+			</apex:outputPanel>
+		</apex:PageBlock>
+		
+		<div id="idEditLicensePermissionsPopup" style="display:none;">
+			<apex:outputPanel id="idEditLicensePermissionsPanel" styleClass="content">
+				<table>                
+					<tr>
+						<td> <apex:outputLabel value="Activate License" /> </td>
+						<td> <apex:inputCheckbox id="idActiavteLicenseBox" styleClass="idActiavteLicenseBox"/> </td>
+					</tr>
+					<tr>
+						<td> <apex:outputLabel value="Permission Set" /> </td>
+						<td> <apex:selectList id="idDropPermissionSet"
+																multiselect="true"
+																size="{!IF(permissionSetItems.size < 10, permissionSetItems.size, 5)}"
+																styleClass="idDropPermissionSet">
+									<apex:selectOptions value="{!permissionSetItems}" />
+							</apex:selectList> </td>
+					</tr>
+					<tr>
+						<td></td>
+						<td>
+							<apex:commandButton value="{!$Label.apttus_config2__save}"
+																	onclick="invokeUpdateLicensePermissions(); return false"/>
+						</td>
+					</tr>
+				</table>
+			</apex:outputPanel>
+		</div>
+		
+		<div id="idLoadingDialog" style="display:none;">
+			<span class="loading-image">
+				<img id="theImage" src="/img/loading.gif" width="20" height="20"/>
+			</span>
+			<span id="idLoadingMessage" class="loading-message">                
+			</span>
+		</div>
+
+
+		<apex:actionFunction id="idUpdateLicensePermissions" 
+												 name="UpdateLicensePermissions" 
+												 action="{!doUpdateLicensePermissions}" 
+												 status="idLoadingStatus"
+												 reRender="idUserSettingsPanel, idMessages">
+			<apex:param assignTo="{!selectedPermissionSetIdCSV}" name="selectedPermissionSetIdCSV" value=""/>
+			<apex:param assignTo="{!isActivateLicense}" name="isActivateLicense" value=""/>
+		</apex:actionFunction>
+
+		<apex:actionFunction id="idRefreshPopup" name="RefreshPopup" reRender="idEditLicensePermissionsPanel" />
+
+		<apex:actionStatus id="idLoadingStatus"
+											 onstart="return openLoadingDialog();"
+											 onstop="return closeLoadingDialog();" />
+	</apex:form>
+</apex:page>

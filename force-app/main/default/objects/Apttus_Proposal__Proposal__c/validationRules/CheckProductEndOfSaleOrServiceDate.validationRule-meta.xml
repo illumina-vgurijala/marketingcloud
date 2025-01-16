@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckProductEndOfSaleOrServiceDate</fullName>
+    <active>false</active>
+    <description>Check if any of the line items end of sales date or end of service date is different than null</description>
+    <errorConditionFormula>AND (
+    OR(
+        NOT(ISNULL(Product_End_Of_Sale_Date__c)),
+        NOT(ISNULL(Product_End_Of_Service_Date__c))
+    ),
+    NOT ( 
+        OR ( 
+            ISCHANGED ( Is_Updated_By_System__c ), 
+            Is_Updated_By_System__c, 
+            Invalid_Quote__c 
+        ) 
+    ), 
+    ISCHANGED ( Apttus_Proposal__ExpectedEndDate__c ),
+    NOT(
+       OR(
+           Apttus_Proposal__ExpectedEndDate__c=IF(ISNULL(Product_End_Of_Sale_Date__c), Product_End_Of_Service_Date__c , IF(ISNULL(Product_End_Of_Service_Date__c),Product_End_Of_Sale_Date__c , IF(Product_End_Of_Sale_Date__c &gt; Product_End_Of_Service_Date__c, Product_End_Of_Service_Date__c, Product_End_Of_Sale_Date__c)))
+,
+           Apttus_Proposal__ExpectedEndDate__c= DateValue(Apttus_QPConfig__PricingDate__c)+30 
+       )
+    )
+)</errorConditionFormula>
+    <errorMessage>You are not allowed to modify the valid to date if any of the line items have an End Of Sale or End of Service date</errorMessage>
+</ValidationRule>

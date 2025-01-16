@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.sfmconsole.constants");a.init=function(){a.Class("Constants",com.servicemax.client.lib.api.Object,{__constructor:function(){}},{PREF_LOGGING:"LOGGING"});};})();

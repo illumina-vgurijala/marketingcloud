@@ -1,0 +1,300 @@
+<!-- 
+    Apttus Config & Pricing
+    AgreementPriceRule
+     
+    @2010-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__ProductConfiguration__c"
+		   extensions="Apttus_Config2.AgreementPriceRuleController" 
+		   lightningStylesheets="true"
+		   showHeader="{!ShowHeader}" 
+		   sidebar="true"
+		   cache="false" 
+		   standardStylesheets="true"
+		   tabstyle="Product2" >
+	
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQJSLibrary}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+	<apex:include pageName="Apttus_Config2__ConfigJSLibInclude" />
+	
+	<apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources,'CPQCommon.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources,'CPQCart.css')}" />
+    
+    <apex:outputPanel layout="none" rendered="{!IsFixedButtonBar}">
+		<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources, 'CPQDelight.css')}"/>	  
+	</apex:outputPanel>	
+    
+    <apex:outputPanel layout="none" rendered="{!isUsingEnhancedCSS}">
+		<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources, 'CPQEnhanced.css')}"/>	  
+	</apex:outputPanel>	
+	
+    <apex:outputPanel rendered="{!NOT(ISNULL(CSSOverride))}">
+        <apex:dynamicComponent componentValue="{!CSSOverrideComponent}"/>
+    </apex:outputPanel>
+	
+	<style>
+		textarea {
+			width: 10%;
+		}
+		
+	</style>
+	
+	<script type="text/javascript">
+ 		j$(document).ready(function(){
+			// setup the remove confirmation dialog
+			j$("#confirmationPanel").dialog({
+				autoOpen: false,
+				draggable: false,
+				modal: true,
+				resizable: false,
+				position: 'center'
+				
+			});
+			j$('#stepMenu').hide();
+			j$('#apt-helpIcon').hide();
+		 
+		});
+		// setup to set the styleClass on the adjustment amount dynamically
+		// based on the adjustemnt type on change.
+		j$(document).on('change', '[class^=aptAdjustmentType]', function(){
+			j$.APTTUS.applyDynamicClasses(j$(this));
+				
+		})
+		/**
+		 * Show remove confirmation dialog
+		 * @param rowNumber the row number to delete
+		 */
+		function showRemoveConfirmation(rowNumber) {
+			
+	      	// store the line number in the global namespace
+	      	j$.APTTUS.RowNumber = rowNumber;
+	      	
+	      	j$("#confirmationPanel").dialog("open");
+	      	j$("#confirmationPanel").dialog("option" , "title" , "{!JSINHTMLENCODE($Label.RemoveConfirmation)}");
+	      	j$("#confirmationPanel").dialog("option", "position", "center");
+	      	
+	      	return false;
+	      	
+	   	}
+   		
+   		/**
+		 * Hide the remove confirmation dialog
+		 */
+   		function hideRemoveConfirmation(){
+	    	// close the confirmation dialog
+	      	j$("#confirmationPanel").dialog("close");
+	      
+	   	}
+	   	
+	    /**
+		 * Delete the price rule row from the table
+		 */
+		function deletePriceRuleRow() {
+			// delete the price rule
+			//alert('deletePriceRuleRow:' + j$.APTTUS.RowNumber);
+    		doDeleteRow(j$.APTTUS.RowNumber);
+			    			
+		}
+ 
+    </script>    
+    
+	<apex:form id="idPriceRule">
+		
+		<!--  required fields -->
+		
+		<!--  Cart Header  -->
+	    <c:CartHeader2 id="idCartHeader" 
+	    			  cartId="{!ConfigurationId}" 
+	    			  requestId="{!RequestId}" 
+	    			  readOnly="{!ReadOnlyMode || IsLookupMode}" />
+	    	<apex:outputPanel layout="block" style="width:99%; padding-left: 0.5%;">
+	    	
+		    	<div style="margin-top: 40px;" class="aptRoundedDiv aptPageTitleBarPanel" >
+	              	<div class="title">{!$Label.CreatePriceAgreement}</div>
+	            </div>	  
+				<apex:pageBlock id="idPriceRuleBlock" 
+								rendered="{!NOT(IsLookupMode)}">
+					
+		   					   	
+					<apex:pageMessages />
+					
+					<apex:pageBlockButtons location="both" >
+						<apex:commandButton value="{!$Label.apttus_config2__addmoreproducts}" 
+											action="{!doLookupPriceListItem}" 
+											styleClass="aptListButton" />
+				        <apex:commandButton value="{!$Label.apttus_config2__save}"
+				        					action="{!doSave}" 
+				        					styleClass="aptListButton" />
+				        <apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+				        					action="{!doCancel}" 
+				        					immediate="true" 
+				        					styleClass="aptListButton" />
+				    </apex:pageBlockButtons>
+					<apex:outputPanel style="overflow:auto;" layout="block">	 	    
+					    <apex:pageBlockSection id="idPriceRuleSection" 
+					    					   columns="2" 
+					    					   collapsible="false">
+					    	
+					    	<!-- <apex:outputPanel style="font-size: .8em;" > -->	   
+					        <apex:pageBlockTable id="idPriceRuleTable" 
+					        					 value="{!rules}" 
+					        					 var="ruleInfo" 
+					        					 width="100%" 
+					        					 rowClasses="oddRow,evenRow"  
+					        					 rendered="{!HasRules}" >
+					        	
+					        	<apex:repeat value="{!PriceRuleColumns}" var="ruleColumnInfo">
+									<apex:column headerValue="{!ruleColumnInfo.Label}" 
+												 rendered="true" >
+										
+			                           	<div class="{!ruleColumnInfo.ColumnSO.Apttus_Config2__StyleClass__c}" 
+			                           		 style="{!ruleColumnInfo.ColumnSO.Apttus_Config2__Style__c}" >
+			                            	<apex:outputField value="{!ruleInfo.ruleSO[ruleColumnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+			                            					  styleClass="{!ruleColumnInfo.ColumnSO.Apttus_Config2__StyleClass__c}" 
+			                            					  style="{!ruleColumnInfo.ColumnSO.Apttus_Config2__Style__c}"
+			                            					  rendered="{!NOT(ruleInfo.ruleSO.IsModifiable__c) || 
+			                            					  			  NOT(ruleColumnInfo.ColumnSO.IsEditable__c)}" />
+			                           	</div>
+										<apex:inputField value="{!ruleInfo.ruleSO[ruleColumnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+			                           					 styleClass="{!ruleColumnInfo.ColumnSO.Apttus_Config2__StyleClass__c}" 
+			                           					 style="{!ruleColumnInfo.ColumnSO.Apttus_Config2__Style__c}"
+			                           					 onkeypress="return aptIgnoreEnterKey(event);"
+			                           					 rendered="{!ruleInfo.ruleSO.IsModifiable__c && 
+			                           					 			 ruleColumnInfo.ColumnSO.IsEditable__c}" >
+			                            		
+			                            		
+					                       							  		 
+			                            </apex:inputField>
+									</apex:column>
+								
+								</apex:repeat> 
+								
+								<apex:column headerValue="{!$Label.apttus_config2__tiers}">
+									<apex:outputPanel id="idTiersTable">
+										<apex:pageBlockTable value="{!ruleInfo.Tiers}" 
+						        					    	 var="tierInfo" >
+						        			
+						        			<apex:column width="5%" >
+										   		<apex:commandLink action="{!doAddTierRow}" 
+										   						  rendered="{!ruleInfo.ruleSO.Apttus_Config2__IsModifiable__c}"
+														  	  	  reRender="idTiersTable" >
+													<apex:param name="ruleRowNum" value="{!ruleInfo.ruleSO.Apttus_Config2__Sequence__c}" />
+													<apex:param name="rowNum" value="{!tierInfo.tierSO.Apttus_Config2__Sequence__c}" />
+													<apex:image url="{!$Resource.Apttus_Config2__Image_Plus}" 
+							                       				title="{!$Label.apttus_config2__add}" 
+							                       				alt="{!$Label.apttus_config2__add}" />
+												</apex:commandLink>
+												<apex:commandLink action="{!doDeleteTierRow}" 
+														  	  	  reRender="idTiersTable" 
+														  	  	  rendered="{!ruleInfo.ruleSO.IsModifiable__c && 
+														  	  	  			  tierInfo.tierSO.Sequence__c > 1}" >
+													<apex:param name="ruleRowNum" value="{!ruleInfo.ruleSO.Apttus_Config2__Sequence__c}" />
+													<apex:param name="rowNum" value="{!tierInfo.tierSO.Apttus_Config2__Sequence__c}" />
+													<apex:image url="{!$Resource.Apttus_Config2__Image_Minus}" 
+							                       				title="{!$Label.apttus_config2__remove}" 
+							                       				alt="{!$Label.apttus_config2__remove}" />
+												</apex:commandLink>
+										   	</apex:column>
+										   	
+						        			<apex:repeat value="{!PriceTierColumns}" var="tierColumnInfo">
+												<apex:column headerValue="{!tierColumnInfo.Label}" 
+															 rendered="true" 
+															 styleClass="{!tierColumnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!tierInfo.tierSO.Apttus_Config2__Sequence__c}"
+															 style="{!tierColumnInfo.ColumnSO.Apttus_Config2__Style__c}">
+			
+					                            	<apex:outputField value="{!tierInfo.tierSO[tierColumnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+					                            					  style="{!tierColumnInfo.ColumnSO.Apttus_Config2__Style__c}"
+					                            					  styleClass="{!tierColumnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!tierInfo.tierSO.Apttus_Config2__Sequence__c}"
+					                            					  rendered="{!NOT(ruleInfo.ruleSO.IsModifiable__c) || 
+					                            					  			  NOT(tierColumnInfo.ColumnSO.IsEditable__c)}" />
+						                     
+													<apex:inputField value="{!tierInfo.tierSO[tierColumnInfo.ColumnSO.Apttus_Config2__FieldName__c]}"  
+						                           					 styleClass="{!tierColumnInfo.ColumnSO.Apttus_Config2__StyleClass__c}Item-{!tierInfo.tierSO.Apttus_Config2__Sequence__c}"
+						                           					 style="{!tierColumnInfo.ColumnSO.Apttus_Config2__Style__c}"
+						                           					 onkeypress="return aptIgnoreEnterKey(event);"
+						                           					 rendered="{!ruleInfo.ruleSO.IsModifiable__c && 
+						                           					 			 tierColumnInfo.ColumnSO.IsEditable__c}" >
+						                            				  		 
+						                            </apex:inputField>
+												</apex:column>
+											</apex:repeat> 
+						        		</apex:pageBlockTable>
+						        		<script>
+									    	j$('[class^=aptAdjustmentType]').each(function(){
+												j$.APTTUS.applyDynamicClasses(j$(this));
+											})
+									    	j$.APTTUS.formatFields("{!currencyFieldPrecision}", "{!percentageFieldPrecision}", "{!quantityFieldPrecision}");
+									    	
+									    </script>
+						        	</apex:outputPanel>
+					        		
+								</apex:column>
+								
+								<apex:column width="5%" >
+								   	<apex:commandLink onclick="return showRemoveConfirmation('{!ruleInfo.ruleSO.Apttus_Config2__Sequence__c}');"
+												  	  rendered="{!ruleInfo.ruleSO.Apttus_Config2__AllowRemoval__c}" >
+										<apex:image url="{!$Resource.Apttus_Config2__Image_Remove}" 
+						                       		title="{!$Label.apttus_config2__remove}" 
+						                       		alt="{!$Label.apttus_config2__remove}" />		  
+									</apex:commandLink>
+								</apex:column>
+								
+					        </apex:pageBlockTable>
+					        <!-- </apex:outputPanel> -->
+					        <apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}" rendered="{!NOT(HasRules)}" />
+					    </apex:pageBlockSection>
+					    <script>
+					    	j$('[class^=aptAdjustmentType]').each(function(){
+								j$.APTTUS.applyDynamicClasses(j$(this));
+							})
+					    	j$.APTTUS.formatFields("{!currencyFieldPrecision}", "{!percentageFieldPrecision}", "{!quantityFieldPrecision}");
+					    	
+					    </script>
+				    </apex:outputPanel>
+				</apex:pageBlock>
+			
+		<!--  Price List Item Lookup -->
+	    <c:PriceListItemLookup id="idItemSearch" 
+		    				   pageController="{!this}"  
+		    				   priceListId="{!PriceListId}" 
+		    				   autoSearch="true" />   
+		</apex:outputPanel> 	
+		<apex:actionFunction name="doDeleteRow" 
+							 action="{!doDeleteRow}"
+							 oncomplete="hideRemoveConfirmation();" 
+							 reRender="idPriceRuleBlock" >
+			<apex:param name="rowNum" value="" />
+		</apex:actionFunction>
+					 
+	</apex:form>
+	
+	<!-- This panel represents the delete confirmation dialog that will pop up -->
+	<apex:outputPanel >
+		<div id="confirmationPanel" style="display: none">
+		    <div>
+		    	<apex:outputText value="{!$Label.apttus_config2__removeagreementpricerulemessage}" />
+		    </div>
+		    <p/>
+		    <div>
+		    	<apex:form >
+		            <apex:actionRegion >
+		                <div style="text-align: center; padding-left: 4px;" >
+		                    <apex:commandButton value="{!$Label.apttus_config2__yes}"
+		                    					onclick="deletePriceRuleRow();"
+		                    					style="width: 50px;"   
+		                    					immediate="true" 
+		                    					oncomplete="hideRemoveConfirmation();" />
+		                    <apex:commandButton value="{!$Label.apttus_config2__no}" 
+		                    					style="width: 50px;"   
+		                    					onclick="hideRemoveConfirmation();return false;" />
+		                </div>
+		            </apex:actionRegion>
+		         </apex:form>
+		    </div>
+		</div>
+	</apex:outputPanel>
+	
+</apex:page>

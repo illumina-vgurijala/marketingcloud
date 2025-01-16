@@ -1,0 +1,1295 @@
+<!-- 
+    Apttus Approvals Management
+    SObjectApprovals2SubmitSf1
+     
+    @2010-2019 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Approval_Request__c"
+           extensions="Apttus_Approval.SObjectApprovals2SubmitController" 
+           recordSetVar="ApprovalReqList" 
+           showHeader="false"
+           sidebar="false"
+           docType="html-5.0"
+           standardStylesheets="true"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                   $User.UIThemeDisplayed == 'Theme4u' ||
+                                   $User.UIThemeDisplayed == 'Theme4t'}">
+    
+    <script type="text/javascript">
+        // determine if we are in Classic, Lightning, or Sf1 mobile theme
+        // Theme3—Salesforce Classic 2010 user interface theme
+        // Theme4d—Modern “Lightning Experience” Salesforce theme
+        // Theme4u-Lightning Console theme
+        // Theme4t—Salesforce mobile app theme
+        
+        var inClassicMode = "{!$User.UIThemeDisplayed == 'Theme3'}";
+        var inLightningMode = "{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}";
+        var inSf1Mode = "{!$User.UIThemeDisplayed == 'Theme4t'}";
+        
+        //console.log('SObjectApprovals2SubmitSf1::inClassicMode='+inClassicMode+'\n'+
+            //'inLightningMode='+inLightningMode+'\n'+
+            //'inSf1Mode='+inSf1Mode+'\n'+
+            //"{!$User.UIThemeDisplayed}");
+    </script>
+
+    <script type="text/javascript" src="/soap/ajax/50.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/50.0/apex.js"></script>
+
+    <apex:include pageName="Apttus_Approval__ApprovalsJSLibInclude" />
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__ApprovalsSF1Assets, 'css/fonts.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__ApprovalsSF1Assets, 'css/bootstrap.min.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.css')}" />
+    <apex:stylesheet value="{!$Resource.Apttus_Approval__ApprovalsSf1CSS}"/>
+    <apex:stylesheet value="{!$Resource.Apttus_Approval__ApprovalsSF1CSS2}"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Approval__JQuery22, 'jquery-2.2.2.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.js')}" />
+    <apex:includeScript value="{!$Resource.Apttus_Approval__ApprovalsSF1UIJSLib}" />
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+    
+    <!-- style overrides -->
+    <style>
+        .lineItemsNoLeftBorder {
+            border-left: none;
+        }
+        .commentItem {
+            margin-left: 5px;
+            list-style-type: none;
+        }
+        .commentItem li {
+            margin-left: 5px;
+            list-style-type: none;
+        }
+        /* Header stuff*/
+        .icon {
+            height: 32px;
+            width: 32px;
+            background-size: 100%;
+            display: inline-block;
+            background-position: 50%;
+            background-repeat: no-repeat;
+            border-radius: 5px;
+        }
+        .icon--quotes {
+            background-color: #88c651;
+            background-image: url({!URLFOR($Resource.SF1QuoteIcon)});
+        }
+        [class^="apttusIcon-"]:before, [class*=" apttusIcon-"]:before {
+            margin-right: 0 !important;
+        }
+        header {
+            padding-top: 18px;
+            padding-left: 14px;
+            padding-right: 14px;
+            display: block;
+            width: 100%;
+            background-color: #344a5f;
+            text-align: center !important;
+            position: relative;
+            height: 75px;
+        }
+        .clear:before, .clear:after {
+            content: " ";
+            display: table;
+        }
+        .clear:after {
+            clear: both;
+        }
+        .mt-audit {
+            margin-top: -22px;
+        }
+        .t50 {
+            top: 50%;
+        }
+        .warning {
+            right: 0;
+        }
+        [class*="icon-utility-"] {
+            font-family: 'icomoon';
+            speak: none;
+            font-style: normal;
+            font-weight: normal;
+            font-variant: normal;
+            text-transform: none;
+            line-height: 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .prs {
+            padding-right: 7px;
+        }
+        .pos-abs {
+            position: absolute;
+        }
+        .tc {
+            text-align: center !important;
+        }
+        .text-color-4 {
+            color: #5c7995;
+        }
+        i {
+            line-height: 44px !important;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        icon {
+            float: left;
+            margin: 6px 8px 0 0;
+        }
+        .man {
+            margin: 0;
+        }
+        .text-color-5 {
+            color: white;
+        }
+        header h1 {
+            text-align: left;
+            font-size: 22px;
+            font-weight: bold;
+            display: block
+        }
+        header h2 {
+            font-weight: bolder;
+            text-align: left;
+            display: block;
+        }
+        .pbm {
+            padding-bottom: 14px;
+        }
+        .man {
+            margin: 0;
+        }
+        .f5 {
+            font-size: 14px;
+        }
+        .text-color-7 {
+            color: rgba(255,255,255,0.5);
+        }
+        .ng-modal-overlay {
+            position: absolute;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            opacity: 0.3;
+        }
+        .ng-modal-dialog {
+            z-index: 10000;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-height: 90%;
+        }
+        .pbm {
+            padding-bottom: 14px;
+        }
+        .size-full {
+            display: block;
+            width: 100%;
+        }
+        .db {
+            display: block;
+        }
+        .tr {
+            text-align: right !important;
+        }
+        .pam {
+            padding: 14px;
+        }
+        .pos-rel {
+            position: relative;
+        }
+        .tc {
+            text-align: center !important;
+        }
+        .brm {
+            border-radius: 5px;
+        }
+        .bg-1 {
+            background-color: white;
+        }
+        .w100 {
+            width: 100%;
+        }
+        .overflowList {
+            list-style: none;
+            padding: 0;
+        }
+        .overflowList li {
+            margin-left: 0;
+            padding-top: 10px;
+            padding-right: 15px;
+            padding-bottom: 2px;
+            padding-left: 15px;
+        }
+        #pageActions .btn {
+            height: 45px;
+        }
+        .menuUpArrow {
+            position: initial;
+            top: 0;
+            left: 0;
+        }
+        /* make step names smaller */
+        .stepAssigneeName {
+            font-size: 18px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .stepAssigneeNameMiddle {
+            display: table-cell;
+            background: none;
+            font-size: 18;
+            font-weight: bold;
+            text-align: left;
+            vertical-align: middle;
+            padding-right: 5px;
+            white-space: nowrap;
+        }
+        .stepLabel {
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        /* use class css instead of element css for component */
+        .header {
+            padding-top: 18px;
+            padding-left: 14px;
+            padding-right: 14px;
+            display: block;
+            width: 100%;
+            background-color: #344a5f;
+            text-align: center !important;
+            position: relative;
+        }
+        .header h1 {
+            text-align: left;
+            font-size: 22px;
+            font-weight: bold;
+            display: block
+        }
+        .header h2 {
+            font-weight: bolder;
+            text-align: left;
+            display: block;
+        }
+        body {
+          overflow: hidden;
+          /*position: fixed;*/
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          background-color: #FFF;
+          -webkit-user-select:none;
+        }
+        .container {
+            position: fixed;
+            overflow-x: hidden !important;
+            overflow-y: scroll !important;
+            width: 100%;
+            padding: 0;
+            margin: 0;
+            margin-top: -1px; /*weird semi-transparent border bug fix*/
+        }
+        .content {
+            overflow-x: hidden !important;
+            overflow-y: scroll !important;
+            /*-webkit-overflow-scrolling: touch;*/
+            transition-property: all;
+            transition-duration: .7s;
+            transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
+        
+            -webkit-transition-property: all;
+            -webkit-transition-duration: .7s;
+            -webkit-transition-timing-function: cubic-bezier(0, 1, 0.5, 1);
+        }
+    </style>
+
+    <apex:outputPanel >
+        <script type="text/javascript">
+            // make sure jQuery doesn't conflict with any other JS libraries
+            j$ = jQuery.noConflict();
+    
+            // indicator to exist after submit / cancel
+            var doExitAfterAction = 'false';
+            var actionTaken = 'return';            
+             
+            /**
+             * Initializes the call
+             */
+            function initCall() {
+             
+                try {
+                    sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+                } catch(e) {
+                    ap_erroralert(ap_cERROR_UNKNOWN,e);
+                }
+             
+            }
+             
+            /**
+             * Show wait dialog
+             */
+            function showWaitDialog(msgText) {
+                
+                j$("#waitPanel").html('<center><img src="{!URLFOR($Resource.Apttus_Approval__Image_LoadingPage)}" /></center>');
+                j$("#waitPanel").dialog("open");
+                j$("#waitPanel").dialog("option" , "title" , msgText);
+                j$("#waitPanel").dialog("option", "position", "center");
+                
+                return false;
+                
+            }
+        
+            /**
+             * Hide the wait dialog
+             */
+            function hideWaitDialog(){
+            
+                // close the wait dialog
+                j$("#waitPanel").dialog("close");
+                
+                // exit after submit
+                if (doExitAfterAction == 'true') {
+                    invokeDoReturn(actionTaken);
+                }
+                return true;
+                
+            }
+             
+            // setup the wait panel and set autoOpen to false
+            function buildWaitDialog(){
+            
+                j$("#waitPanel").dialog({
+                    autoOpen: false,    // set this to false so we can manually open it
+                    dialogClass: "waitDialog",
+                    closeOnEscape: false,
+                    draggable: false,
+                    width: 300,
+                    minHeight: 50,
+                    modal: true,
+                    buttons: {},
+                    resizable: false,
+                    position: 'center',
+                    open: function() {
+                        // scrollbar fix for IE
+                        j$('body').css('overflow','hidden');
+                    },
+                    close: function() {
+                        // reset overflow
+                        j$('body').css('overflow','hidden');
+                    }
+                });
+                
+            };
+    
+            /**
+             * Copies attachments to the list of email templates
+             * @param templateIds the email template ids to copy attachments to
+             * @param docIds the attachment ids to copy
+             */
+            function copyAttachmentsAsync(templateIds, docIds) {
+                
+                // show the modal panel
+                showWaitDialog("{!$Label.apttus_approval__submittingapprovals2}");
+                // copy attachments
+                // delay to display progress message    
+                setTimeout(function() {
+                    copyAttachments(templateIds, docIds);
+                }, 500);
+                            
+            }
+          
+            /**
+             * Copies attachments to the list of email templates
+             * @param templateIds the email template ids to copy attachments to
+             * @param docIds the attachment ids to copy
+             */
+            function copyAttachments(templateIds, docIds) {
+                
+                try {
+                    // STEP I - initialize the call
+                    initCall();
+                    // STEP II - copy attachments
+                    var numTemplates = templateIds.length;
+                    var numDocs = docIds.length;
+                    
+                    for (var i = 0; i < numTemplates; i++) {
+                        // copy each attachment
+                        for (var j = 0; j < numDocs; j++) {
+                            //alert('templateIds['+i+']='+templateIds[i]+'\ndocIds['+j+']='+docIds[j]+'\nap_copyAttachment');
+                            ap_copyAttachment(templateIds[i], docIds[j]);
+                            
+                        }
+                                         
+                    }
+                    
+                    // STEP IV - submit
+                    doSubmit();
+                    
+                } catch(ex) {
+                    // hide the modal panel
+                    // display the error
+                    ap_erroralert(ap_cERROR_UNKNOWN, ex);
+                    // back to context object
+                    doReturn();
+                    
+                } 
+                
+            }
+          
+            /**
+             * Copies attachments to the list of email templates
+             * @param templateIds the email template ids to copy attachments to
+             * @param docIds the attachment ids to copy
+             */
+            function doSubmitAsync() {
+                
+                // show the modal panel
+                showWaitDialog("{!$Label.apttus_approval__submittingapprovals2}");
+                // delay to display progress message    
+                setTimeout(function() {
+                    doSubmitSync();
+                }, 500);
+                            
+            }
+            
+            /**
+             * Copies attachments to the list of email templates
+             * @param templateIds the email template ids to copy attachments to
+             * @param docIds the attachment ids to copy
+             */
+            function doSubmitSync() {
+                
+                try {
+                    // STEP I - initialize the call
+                    initCall();
+                    
+                    // STEP II - submit
+                    doSubmit();
+                    
+                } catch(ex) {
+                    // hide the modal panel
+                    // display the error
+                    ap_erroralert(ap_cERROR_UNKNOWN, ex);
+                    // back to context object
+                    doReturn();
+                    
+                } 
+                
+            }
+          
+            /**
+             * Callback when the submit action button is clicked
+             */
+            function onSubmitActionClick() {
+                // show the modal panel
+                showWaitDialog("{!$Label.apttus_approval__submittingapprovals2}");
+                // return false to allow the action to proceed
+                return false;
+                
+            }
+            
+            /**
+             * Callback when the submit action is completed
+             */
+            function onSubmitActionComplete() {
+                // hide the modal panel
+                hideWaitDialog();
+                
+            }
+    
+            /**
+             * Callback when the upload attachments action button is clicked
+             * @param isTypeContentVersion true if the file type is ContentVersion otherwise false
+             */
+            function onUploadAttachmentActionClick(isTypeContentVersion) {
+            
+                // show the modal panel
+                showWaitDialog("{!$Label.apttus_approval__pleasewait}");
+                
+                // upload the file
+                doUploadFile(isTypeContentVersion);
+                
+                // return false to allow the action to proceed
+                return false;
+                
+            }
+            
+            /**
+             * Callback when the upload attachments action is completed
+             */
+            function onUploadAttachmentActionComplete() {
+            
+                // hide the modal panel
+                hideWaitDialog();
+                
+            }
+        
+            /**
+             * Uploads a file to salesforce
+             * @param isTypeContentVersion true if the file type is ContentVersion otherwise false
+             */
+            function doUploadFile(isTypeContentVersion) {    
+               
+                try {
+                    // initialize the call
+                    initCall();
+                    
+                    // upload attachment
+                    var input = document.getElementById('idMyInputFile');
+                    var parentId = '{!attachmentParentId}';
+                    
+                    var filesToUpload = input.files;
+                    for (var i = 0, f; f = filesToUpload[i]; i++) {
+                        var reader = new FileReader();
+                        
+                        // Keep a reference to the File in the FileReader so it can be accessed in callbacks
+                        reader.file = f; 
+                        
+                        reader.onerror = function(e) {
+                            switch(e.target.error.code) {
+                                case e.target.error.NOT_FOUND_ERR:
+                                    alert('{!$Label.apttus_approval__filenotfound}');
+                                    break;
+                                case e.target.error.NOT_READABLE_ERR:
+                                    alert('{!$Label.apttus_approval__filenotreadable}');
+                                    break;
+                                case e.target.error.ABORT_ERR:
+                                    break; // noop
+                                default:
+                                    //alert('An error occurred reading this file.');
+                            };
+                        };
+                        
+                        reader.onabort = function(e) {
+                            //alert('File read cancelled');
+                        };
+                        
+                        reader.onload = function(e) {
+                            if (isTypeContentVersion == 'true') {
+                                // create ContentVersion
+                                var cv = new sforce.SObject("ContentVersion");
+                                
+                                cv.ContentLocation = 'S';
+                                cv.PathOnClient = this.file.name;
+                                cv.Title = this.file.name;
+                                cv.VersionData = (new sforce.Base64Binary(e.target.result)).toString();
+                                
+                                // set publish location to share with record
+                                cv.FirstPublishLocationId = parentId;
+    
+                                sforce.connection.create([cv], {
+                                    onSuccess : function(result, source) {
+                                        //alert('result='+result);
+                                        if (result[0].getBoolean("success")) {
+                                            // invoke upload attachment on server
+                                            invokeDoUploadAttachment(result[0].id);
+        
+                                            // set flag to indicate we uploaded an attachment
+                                            fldHasUploadedAttachments = true;
+                                        }
+                                        
+                                    }, 
+                                    onFailure : function(error, source) {
+                                        alert('error='+error);
+                                    }
+                                });
+                                
+                            } else {
+                                // create Attachment
+                                var att = new sforce.SObject("Attachment");
+                                
+                                att.Name = this.file.name;
+                                att.ContentType = this.file.type;
+                                att.ParentId = parentId;
+                                att.Body = (new sforce.Base64Binary(e.target.result)).toString();
+                                
+                                sforce.connection.create([att], {
+                                    onSuccess : function(result, source) {
+                                        if (result[0].getBoolean("success")) {
+                                            // invoke upload attachment on server
+                                            invokeDoUploadAttachment(result[0].id);
+        
+                                            // set flag to indicate we uploaded an attachment
+                                            fldHasUploadedAttachments = true;
+                                        }
+                                        
+                                    }, 
+                                    onFailure : function(error, source) {
+                                        alert('error='+error);
+                                    }
+                                });
+                            
+                            }
+                        };
+                        
+                        reader.readAsBinaryString(f);
+    
+                    }
+    
+                } catch(ex) {
+                    // hide the modal panel
+                    //hideWaitDialog();
+                    
+                    // display the error
+                    ap_erroralert(ap_cERROR_UNKNOWN, ex);
+                    
+                    // back to context object
+                    //invokeDoReturn();
+                    
+                } 
+            }    
+
+            // perform initialization
+            initCall();
+    
+            // setup approval request detail view drill down
+            j$('div[data-role="page"]').ready(function() {
+            
+                // build the wait dialog
+                buildWaitDialog();
+
+                drillDownFunction = function() {
+                    showWaitDialog("Please wait...");
+                    showApprovalRequestDetail(drillDownObjId); 
+                }
+                
+            });
+        </script>
+    </apex:outputPanel>
+    
+    <apex:form >
+        <apex:outputPanel id="idDoReturnPanel">
+            <script type="text/javascript">
+                // call this once the page is ready
+                j$(document).ready(function() {
+                          
+                    var pageLoaded = "{!pageLoaded}";
+                    var pageURL = "{!JSENCODE(pageURL)}";
+
+                    if (pageLoaded == 'false') {
+                        // build the wait dialog
+                        buildWaitDialog();
+
+                        checkAndSubmit(inSf1Mode);
+
+                    } else {
+                        if (pageURL.length > 0) {
+                            // determine if we are in lightning or mobile and set navigation link appropriately
+                            try {
+                                if (inLightningMode || inSf1Mode) {
+                                    // the correct way once the platform redirect issue is fixed
+                                    sforce.one.navigateToURL(pageURL);
+                        
+                                    // temporary workaround until platform issue is fixed
+                                    /**var hasCustomPage = "{!hasCustomReturnPage}";
+                                    if (hasCustomPage == 'false') {
+                                        // the correct way once the platform redirect issue is fixed
+                                        sforce.one.navigateToURL(pageURL);
+                                        
+                                    } else {
+                                        // redirect using salesforce recommended hack until the bug in sforce.one.navigateToURL
+                                        // that cannot redirect to a page outside the managed package domain is fixed
+                                        window.location = pageURL + "&isdtp=p1";
+                        
+                                    }*/
+                                }
+                                else {
+                                    top.location.replace(pageURL);
+                                    return true;
+                                }
+                            }
+                            catch(err) {
+                            }
+                        }
+                    }
+                });
+
+            </script>
+        </apex:outputPanel>
+
+        <div id="bigbox">
+            <div id="home_content" class="container">
+                <div class="panel panel-default content">
+
+                    <apex:outputPanel id="idApprovalContextSubmitBlock">
+                    
+                        <apex:pageMessages />
+                        
+                        <!-- select attachments page -->
+                        <apex:outputPanel id="idAttachmentsPanel">
+                            <apex:pageBlock rendered="{!IsAttachmentStep || (IsUploadAttachmentEnabled && IsAttachmentWarningStep)}">
+                                <apex:pageBlockSection title="{!$Label.apttus_approval__selectattachments}" collapsible="false" 
+                                                       rendered="{!HasAttachments && UsingFileTypeAttachments}">
+                                    <apex:pageBlockTable value="{!Attachments}" var="attachInfo" columns="5">
+                                        <apex:column >
+                                            <apex:facet name="header">{!$Label.apttus_approval__select}</apex:facet>
+                                            <apex:inputCheckbox selected="{!attachInfo.selected}"
+                                                                value="{!attachInfo.selected}" />
+                                        </apex:column>
+                                        <apex:column >
+                                            <apex:facet name="header">{!$Label.apttus_approval__addtofiles}</apex:facet>
+                                            <apex:inputCheckbox selected="{!attachInfo.permanent}"
+                                                                value="{!attachInfo.permanent}" />
+                                        </apex:column>
+                                        <apex:column value="{!attachInfo.fileSO.PathOnClient}" />
+                                        <apex:column value="{!attachInfo.fileSO.ContentSize}" />
+                                        <apex:column value="{!attachInfo.fileSO.SystemModstamp}" />
+                                    </apex:pageBlockTable>
+                                </apex:pageBlockSection>
+                                <apex:pageBlockSection title="{!$Label.apttus_approval__selectattachments}" collapsible="false" 
+                                                       rendered="{!HasAttachments && NOT(UsingFileTypeAttachments)}">
+                                    <apex:pageBlockTable value="{!Attachments}" var="attachInfo" columns="5">
+                                        <apex:column >
+                                            <apex:facet name="header">{!$Label.apttus_approval__select}</apex:facet>
+                                            <apex:inputCheckbox selected="{!attachInfo.selected}"
+                                                                value="{!attachInfo.selected}" />
+                                        </apex:column>
+                                        <apex:column >
+                                            <apex:facet name="header">{!$Label.apttus_approval__addtonotesandattachments}</apex:facet>
+                                            <apex:inputCheckbox selected="{!attachInfo.permanent}"
+                                                                value="{!attachInfo.permanent}" />
+                                        </apex:column>
+                                        <apex:column value="{!attachInfo.attachmentSO.Name}" />
+                                        <apex:column value="{!attachInfo.attachmentSO.BodyLength}" />
+                                        <apex:column value="{!attachInfo.attachmentSO.SystemModstamp}" />
+                                    </apex:pageBlockTable>
+                                </apex:pageBlockSection>
+                                <apex:pageBlockSection title="{!$Label.apttus_approval__selectattachmentstoupload}" collapsible="false"
+                                                       rendered="{!IsUploadAttachmentEnabled && (IsAttachmentStep || IsAttachmentWarningStep)}">
+                                    <apex:pageBlockSectionItem >
+                                        <label for="idMyInputFile">{!$Label.SelectFileToUpload}</label>
+                                        <input id="idMyInputFile" type="file" name="file" />
+                                        <apex:commandButton value="{!$Label.apttus_approval__uploadfile}" 
+                                                            onclick="onUploadAttachmentActionClick('{!UsingFileTypeAttachments}');"
+                                                            oncomplete="onUploadAttachmentActionComplete();"/>
+                                    </apex:pageBlockSectionItem>
+                                </apex:pageBlockSection>
+                            </apex:pageBlock>
+                        </apex:outputPanel>
+
+                        <!-- enter submission comments page -->
+                        <apex:outputPanel id="idApprovalsPanel">
+                            <!-- approval requests preview -->
+                            <apex:outputPanel rendered="{!IsSubmitCommentsStep && showApprovals}">
+                                <apex:repeat value="{!approvalStepWrappers}" var="stepWrapper">
+                                    <!-- stepWrapper -->
+                                    <div id="idStepWrapperSection">
+            
+                                        <!-- stepWrapper header -->
+                                        <div id="idStepWrapperHeader"
+                                             class="panel-heading aptSectionHeading"
+                                             onclick="toggleDrilldownPanel(this,'{!JSENCODE(stepWrapper.stepKey)}');" style="display:table;">
+                                             
+                                            <h3 class="aptGroupLabel" style="display:table-cell; width:100%;">
+                                                {!stepWrapper.stepSequence & ': ' & stepWrapper.stepName}</h3>
+                                            <span class="glyphicon glyphicon-chevron-down"></span>
+                                        </div>
+                                        
+                                        <!-- stepWrapper body -->
+                                        <div id="{!stepWrapper.stepKey}"
+                                             style="overflow: hidden; display: block; padding-left: 0; padding-right: 0;">
+                                             <!--class="panel-body aptSectionBody borderBottom"-->
+                                             
+                                            <ul class="lineItems">
+                                                <!-- step requests -->
+                                                <apex:repeat value="{!stepWrapper.stepRequests}" var="stepRequest">
+                                                    
+                                                    <!-- context object display fields -->
+                                                    <apex:outputPanel styleClass="listItem" style="min-height: 40px;">
+   
+                                                        <!-- header display field -->
+                                                        <apex:outputPanel rendered="{!stepRequest.headerDisplayField != null && stepRequest.doRenderDisplayFields}">
+                                                            <table style="display:table; width:100%; margin-left:15px; margin-right:15px;">
+                                                                <tr>
+                                                                    <td class="displayFieldLabel"
+                                                                        style="display:table-cell; vertical-align:top; width:90%; margin-top:10px; margin-bottom:0px; color:#999999;">
+                                                                        <apex:outputText rendered="{!stepRequest.headerDisplayFieldInfo.IsLocal}"
+                                                                                         value="{!$ObjectType[stepRequest.ctxObjectType].fields[stepRequest.headerDisplayField].Label}" />
+                                                                        <apex:outputText rendered="{!NOT(stepRequest.headerDisplayFieldInfo.IsLocal)}"
+                                                                                         value="{!stepRequest.headerDisplayFieldInfo.Label}" />
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td class="headerDisplayFieldValue"
+                                                                        style="display:table-cell; vertical-align:top; width:90%; margin-top:0px; margin-bottom:0px;">
+                                                                        <apex:outputField value="{!stepRequest.ctxObject[stepRequest.headerDisplayField]}" />
+                                                                    </td>
+                                                                </tr>
+                                                                <tr><td class="displayFieldLabel">&nbsp;</td></tr>
+                                                            </table>
+                                                        </apex:outputPanel>
+   
+                                                        <!-- display fields -->
+                                                        <apex:outputPanel rendered="{!stepRequest.displayFields.size > 0}">
+                                                            <div class="listItemContent" id="idDisplayFieldLabels"
+                                                                 style="display:table-cell; width: 50%;">
+                                                                <apex:repeat value="{!stepRequest.displayFieldLabels}" var="dspFieldLabel">
+                                                                    <div class="displayFieldLabel">
+                                                                        <apex:outputText value="{!dspFieldLabel}" />:
+                                                                    </div>
+                                                                </apex:repeat>
+                                                            </div>
+                                                            <div class="listItemContent" id="idDisplayFieldValues"
+                                                                 style="display:table-cell; width: 50%;">
+                                                                <apex:repeat value="{!stepRequest.displayFields}" var="dspField">
+                                                                    <div class="displayFieldValue">
+                                                                        <apex:outputField value="{!stepRequest.ctxObject[dspField]}" />
+                                                                    </div>
+                                                                </apex:repeat>
+                                                            </div>
+                                                        </apex:outputPanel>
+    
+                                                        <!-- context object approval status -->
+                                                        <apex:outputPanel id="idStepRequestApprovalStatus"
+                                                                          style="min-height: 40px;"
+                                                                          rendered="{!stepRequest.ctxObject[stepRequest.ctxObjectApprovalStatusFieldName] != 'Not Submitted'}">
+                                                            <apex:outputPanel rendered="{!stepRequest.ctxObject[stepRequest.ctxObjectApprovalStatusFieldName] == 'Approval Required'}">
+                                                                <span class="apttusIcon-attention aptColor-red">&nbsp;</span>
+                                                                <span class="displayFieldValue aptColor-red">Approval Required</span>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!stepRequest.ctxObject[stepRequest.ctxObjectApprovalStatusFieldName] == 'Pending Approval'}">
+                                                                <span class="apttusIcon-clock aptColor-yellow">&nbsp;</span>
+                                                                <span class="displayFieldValue aptColor-yellow">Pending Approval</span>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!stepRequest.ctxObject[stepRequest.ctxObjectApprovalStatusFieldName] == 'Approved'}">
+                                                                <span class="apttusIcon-ok aptColor-green">&nbsp;</span>
+                                                                <span class="displayFieldValue aptColor-green">Approved</span>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!stepRequest.ctxObject[stepRequest.ctxObjectApprovalStatusFieldName] == 'Rejected'}">
+                                                                <span class="apttusIcon-cancel aptColor-red">&nbsp;</span>
+                                                                <span class="displayFieldValue aptColor-red">Rejected</span>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel rendered="{!stepRequest.ctxObject[stepRequest.ctxObjectApprovalStatusFieldName] == 'Cancelled'}">
+                                                                <span class="apttusIcon-cancel aptColor-black">&nbsp;</span>
+                                                                <span class="displayFieldValue aptColor-black">Cancelled</span>
+                                                            </apex:outputPanel>
+                                                        </apex:outputPanel>
+                                                    </apex:outputPanel>
+
+                                                    <!-- context object approval requests -->
+                                                    <apex:outputPanel id="idStepRequestApprovalRequests" rendered="{!stepRequest.ApprovalRequests.size > 0}">
+                                                        <apex:repeat value="{!stepRequest.ApprovalRequests}" var="approvalRequest">
+                                                            
+                                                            <!-- approvalRequest -->
+                                                            <li class="listItem prodLine" id="{!approvalRequest.Id}">
+                                                                
+                                                                <!-- approval request approval status icon-->
+                                                                <div class="stepApprovalStatusIcon" style="display:table-cell; width: 15%;">
+                                                                    <apex:outputPanel layout="block"
+                                                                                      rendered="{!approvalRequest.Approval_Status__c == 'Not Submitted' ||
+                                                                                                  approvalRequest.Approval_Status__c == 'Cancelled' ||
+                                                                                                  approvalRequest.Approval_Status__c == ''}">
+                                                                        <span class="apttusIcon-th aptColor-activeIcon"></span>
+                                                                    </apex:outputPanel>
+                                                                    <apex:outputPanel layout="block"
+                                                                                      rendered="{!approvalRequest.Apttus_Approval__Approval_Status__c == 'Approval Required'}">
+                                                                        <span class="apttusIcon-attention aptColor-red"></span>
+                                                                    </apex:outputPanel>
+                                                                    <apex:outputPanel layout="block"
+                                                                                      rendered="{!approvalRequest.Apttus_Approval__Approval_Status__c == 'Approved'}">
+                                                                        <span class="apttusIcon-ok aptColor-green"></span>
+                                                                    </apex:outputPanel>
+                                                                    <apex:outputPanel layout="block"
+                                                                                      rendered="{!approvalRequest.Approval_Status__c == 'Pending Approval' ||
+                                                                                                  approvalRequest.Approval_Status__c == 'On Hold' ||
+                                                                                                  approvalRequest.Approval_Status__c == 'Assigned' ||
+                                                                                                  approvalRequest.Approval_Status__c == 'Reassigned'}">
+                                                                        <span class="apttusIcon-clock aptColor-yellow"></span>
+                                                                    </apex:outputPanel>
+                                                                    <apex:outputPanel layout="block"
+                                                                                      rendered="{!approvalRequest.Apttus_Approval__Approval_Status__c == 'Rejected'}">
+                                                                        <span class="apttusIcon-cancel aptColor-red"></span>
+                                                                    </apex:outputPanel>
+                                                                </div> 
+            
+                                                                <!-- approval request assignee with step label -->
+                                                                <apex:outputPanel styleClass="listItemContent"
+                                                                                  style="display:table-cell; width: 60%;" layout="block"
+                                                                                  rendered="{!approvalRequest.Apttus_Approval__StepLabel__c != ''}">
+                                                                    <div class="stepAssigneeName">
+                                                                        <span>{!approvalRequest.Apttus_Approval__Assigned_To_Name__c}</span>
+                                                                    </div>
+                                                                    <div class="stepLabel">
+                                                                        <span>{!approvalRequest.Apttus_Approval__StepLabel__c}</span>
+                                                                    </div>
+                                                                </apex:outputPanel>
+                                                        
+                                                                <!-- approval request assignee with step label missing -->
+                                                                <apex:outputPanel styleClass="stepAssigneeNameMiddle"
+                                                                                  style="font-size: 20px; display:table-cell; width: 60%;" layout="block"
+                                                                                  rendered="{!approvalRequest.Apttus_Approval__StepLabel__c == ''}">
+                                                                    <span>{!approvalRequest.Apttus_Approval__Assigned_To_Name__c}</span>
+                                                                </apex:outputPanel>
+            
+                                                                <!-- approval request sequence -->
+                                                                <div class="stepSequenceRight" style="display:table-cell; width: 15%;">
+                                                                    <span>{!approvalRequest.Sequence__c}</span>
+                                                                </div> 
+
+                                                                <!-- approval request details drill down -->
+                                                                <div class="listItemDetailButton" style="display:table-cell; width: 10%;"
+                                                                     objId="{!HTMLENCODE(approvalRequest.Id)}"
+                                                                     onclick="drillDownSetup(this);">
+                                                                     
+                                                                    <button class="drillDownBtn has-spinner" type="button">
+                                                                        <span class="glyphicon glyphicon-chevron-right"></span>
+                                                                    </button>
+                                                                </div>
+                                                            </li>
+                                                        </apex:repeat>
+                                                    </apex:outputPanel>
+                                                </apex:repeat>
+                                                
+                                                <!-- step level submission comments -->
+                                                <apex:outputPanel rendered="{!stepWrapper.comment1Enabled ||
+                                                                              stepWrapper.comment2Enabled ||
+                                                                              stepWrapper.comment3Enabled}">
+                                                    <li class="listItem prodLine">
+                                                        <div class="listItemContent">
+                                                            <apex:outputPanel id="idComment1" rendered="{!stepWrapper.comment1Enabled}">
+                                                                <div class="stepLabel">
+                                                                    <span>{!$Label[comment1Label]}</span>
+                                                                </div>
+                                                                <div class="stepLabel">
+                                                                    <apex:inputTextarea value="{!stepWrapper.submitComment1Text}" styleClass="sf1textarea" />
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel id="idComment2" rendered="{!stepWrapper.comment2Enabled}">
+                                                                <div class="stepLabel">
+                                                                    <span>{!$Label[comment2Label]}</span>
+                                                                </div>
+                                                                <div class="stepLabel">
+                                                                    <apex:inputTextarea value="{!stepWrapper.submitComment2Text}" styleClass="sf1textarea" />
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                            <apex:outputPanel id="idComment3" rendered="{!stepWrapper.comment3Enabled}">
+                                                                <div class="stepLabel">
+                                                                    <span>{!$Label[comment3Label]}</span>
+                                                                </div>
+                                                                <div class="stepLabel">
+                                                                    <apex:inputTextarea value="{!stepWrapper.submitComment3Text}" styleClass="sf1textarea" />
+                                                                </div>
+                                                            </apex:outputPanel>
+                                                        </div>
+                                                    </li>
+                                                </apex:outputPanel>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </apex:repeat>
+            
+                                <!-- process level submission comments -->
+                                <apex:outputPanel id="idProcessLevelComment"
+                                                  styleClass="listItem prodLine"
+                                                  rendered="{!IsSubmitCommentsStep && IsProcessLevelComment}">
+                                    <div class="listItemContent">
+                                        <div class="stepLabelBold">
+                                            {!$Label.apttus_approval__submissioncommententry}
+                                        </div>
+                                        <div class="stepLabel">
+                                            <span>{!$Label[submissionComments.processCommentLabel]}</span>
+                                        </div>
+                                        <div class="stepLabel">
+                                            <apex:inputTextArea value="{!submissionComments.processComment}" styleClass="sf1textarea" />
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        
+                        <apex:outputPanel id="idPageButtonsContainer" layout="block">
+                            <apex:outputPanel id="idPageButtons" layout="block" style="text-align:center; margin-top: 20px; margin-bottom: 20px;">
+                                <apex:commandButton action="{!doNext}" 
+                                                    value="{!$Label.apttus_approval__submit}" 
+                                                    onclick="onSubmitActionClick();"
+                                                    oncomplete="onSubmitActionComplete();"
+                                                    rendered="{!NOT(hasErrors) && 
+                                                              (IsReSubmitStep || IsAttachmentStep || IsSubmitCommentsStep)}" 
+                                                    reRender="idApprovalContextSubmitBlock"
+                                                    styleClass="sf1buttonSFBlue" />
+            
+                                <apex:commandButton action="{!doNext}" 
+                                                    value="{!$Label.apttus_approval__yes}" 
+                                                    onclick="onSubmitActionClick();"
+                                                    oncomplete="onSubmitActionComplete();"
+                                                    rendered="{!NOT(hasErrors) && IsAttachmentWarningStep && HasSubmissionComments}" 
+                                                    reRender="idApprovalContextSubmitBlock"
+                                                    styleClass="sf1buttonSFBlue" />
+                                
+                                <apex:commandButton action="{!doNext}" 
+                                                    value="{!$Label.apttus_approval__yes}" 
+                                                    onclick="onSubmitActionClick();"
+                                                    oncomplete="onSubmitActionComplete();"
+                                                    rendered="{!NOT(hasErrors) && IsAttachmentWarningStep && NOT(HasSubmissionComments)}" 
+                                                    reRender="idApprovalContextSubmitBlock"
+                                                    styleClass="sf1buttonSFBlue" />
+                                
+                                <apex:commandButton action="{!doCancel}" 
+                                                    value="{!$Label.apttus_approval__no}" 
+                                                    rendered="{!NOT(hasErrors) && IsAttachmentWarningStep}"
+                                                    styleClass="sf1buttonSFBlue" />
+                                                                                                    
+                                <apex:commandButton action="{!doCancel}" 
+                                                    value="{!$Label.apttus_approval__cancel}" 
+                                                    rendered="{!NOT(hasErrors) && 
+                                                                NOT(IsConfirmationStep) && 
+                                                                NOT(IsAttachmentWarningStep) && 
+                                                                NOT(IsPrepareStep)
+                                                                && pageLoaded}"
+                                                    styleClass="sf1buttonSFBlue" />
+                                                                
+                                <apex:commandButton action="{!doCancel}" 
+                                                    value="{!$Label.apttus_approval__return}" 
+                                                    rendered="{!hasErrors || IsConfirmationStep}"
+                                                    styleClass="sf1buttonSFBlue" />
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        
+                        <!-- prepare to submit with attachments (copies attachments to email templates) -->
+                        <apex:outputPanel >
+                            <apex:outputPanel rendered="{!IsPrepareStep && HasSelectedDocIds}" >
+                                <script>
+                                
+                                    // get the comma separated list of email template ids
+                                    var templateIdStr = "{!JSENCODE(EmailTemplateIdsCsv)}";
+                                    // get the comma separated list of selected document ids
+                                    var docIdStr = "{!JSENCODE(SelectedDocIdsCsv)}";
+                                    // show the modal panel
+                                    // copy attachments
+                                    // delay to display progress message    
+                                    setTimeout(function() {
+                                        copyAttachmentsAsync(templateIdStr.split(","), docIdStr.split(","));
+                                    }, 500);
+                                    
+                                </script>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+            
+                        <!-- prepare to submit without attachments -->
+                        <apex:outputPanel >
+                            <apex:outputPanel rendered="{!IsPrepareStep && NOT(HasSelectedDocIds)}" >
+                                <script>
+                                
+                                    // show the modal panel
+                                    // submit
+                                    // delay to display progress message    
+                                    setTimeout(function() {
+                                        doSubmitAsync();
+                                    }, 500);
+                                    
+                                </script>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </div>
+            </div>
+
+            <!--approval request details drill down -->
+            <div id="about_content" class="container">
+                <apex:outputPanel id="idSelectedApprovalRequest" layout="block">
+                    <div class="panel panel-default">
+                        <div id="idProductInformation">
+                            <div class="panel panel-default content">
+                                <div class="panel-heading pageHeading">
+                                    <span class="backIcon">
+                                        <a id="backIcon" href="#" onclick="drillNavigation('home');"><span>Back</span></a>
+                                    </span>
+                                    <h3 class="panel-title panel-title_wBack">Approval Request Details</h3>
+                                </div>
+                                <div class="panel-heading aptSubheading">
+                                    <h3 id="productTitle" class="aptSubtitle">{!selectedApprovalRequest.Apttus_Approval__StepLabel__c}</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <ul class="lineItems">
+                                    
+                                        <!-- context object display fields -->
+                                        <li class="listItem prodLine">
+                                            <apex:outputPanel rendered="{!selectedStepRequest != null && selectedStepRequest.displayFields.size > 0}">
+                                                <div>
+                                                    <div class="listItemContent" id="idDisplayFieldLabels"
+                                                         style="display:table-cell; width: 50%;">
+                                                        <apex:repeat value="{!selectedStepRequest.displayFieldLabels}" var="dspFieldLabel">
+                                                            <div class="displayFieldLabel">
+                                                                <apex:outputText value="{!dspFieldLabel}" />:
+                                                            </div>
+                                                        </apex:repeat>
+                                                    </div>
+                                                    <div class="listItemContent" id="idDisplayFieldValues"
+                                                         style="display:table-cell; width: 50%;">
+                                                        <apex:repeat value="{!selectedStepRequest.displayFields}" var="dspField">
+                                                            <div class="displayFieldValue">
+                                                                <apex:outputField value="{!selectedStepRequest.ctxObject[dspField]}" />
+                                                            </div>
+                                                        </apex:repeat>
+                                                    </div>
+                                                </div>
+
+                                                <!-- context object approval status -->
+                                                <apex:outputPanel id="idStepRequestApprovalStatus"
+                                                                  styleClass="listItem"
+                                                                  style="min-height: 40px;"
+                                                                  rendered="{!selectedStepRequest.ctxObject[selectedStepRequest.ctxObjectApprovalStatusFieldName] != 'Not Submitted'}">
+                                                    <apex:outputPanel rendered="{!selectedStepRequest.ctxObject[selectedStepRequest.ctxObjectApprovalStatusFieldName] == 'Approval Required'}">
+                                                        <span class="apttusIcon-attention aptColor-red">&nbsp;</span>
+                                                        <span class="displayFieldValue aptColor-red">Approval Required</span>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!selectedStepRequest.ctxObject[selectedStepRequest.ctxObjectApprovalStatusFieldName] == 'Pending Approval'}">
+                                                        <span class="apttusIcon-clock aptColor-yellow">&nbsp;</span>
+                                                        <span class="displayFieldValue aptColor-yellow">Pending Approval</span>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!selectedStepRequest.ctxObject[selectedStepRequest.ctxObjectApprovalStatusFieldName] == 'Approved'}">
+                                                        <span class="apttusIcon-ok aptColor-green">&nbsp;</span>
+                                                        <span class="displayFieldValue aptColor-green">Approved</span>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!selectedStepRequest.ctxObject[selectedStepRequest.ctxObjectApprovalStatusFieldName] == 'Rejected'}">
+                                                        <span class="apttusIcon-cancel aptColor-red">&nbsp;</span>
+                                                        <span class="displayFieldValue aptColor-red">Rejected</span>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!selectedStepRequest.ctxObject[selectedStepRequest.ctxObjectApprovalStatusFieldName] == 'Cancelled'}">
+                                                        <span class="apttusIcon-cancel aptColor-black">&nbsp;</span>
+                                                        <span class="displayFieldValue aptColor-black">Cancelled</span>
+                                                    </apex:outputPanel>
+                                                </apex:outputPanel>
+                                            </apex:outputPanel>
+                                        </li>
+    
+                                        <!-- step label -->
+                                        <li class="listItem prodLine">
+                                            <div class="listItemContentNoPadding stepLabel" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!$ObjectType.Apttus_Approval__Approval_Request__c.Fields.Apttus_Approval__StepLabel__c.Label}" />
+                                                </div>
+                                            </div>
+                                            <div class="listItemContentNoPadding stepLabelBold" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!selectedApprovalRequest.Apttus_Approval__StepLabel__c}" />
+                                                </div>
+                                            </div>
+                                        </li>
+    
+                                        <!-- assigned to -->
+                                        <li class="listItem prodLine">
+                                            <div class="listItemContentNoPadding stepLabel" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!$ObjectType.Apttus_Approval__Approval_Request__c.Fields.Apttus_Approval__Assigned_To_Name__c.Label}" />
+                                                </div>
+                                            </div>
+                                            <div class="listItemContentNoPadding stepLabelBold" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!selectedApprovalRequest.Apttus_Approval__Assigned_To_Name__c}" />
+                                                </div>
+                                            </div>
+                                        </li>
+    
+                                        <!-- status -->
+                                        <li class="listItem prodLine">
+                                            <div class="listItemContentNoPadding stepLabel" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!$ObjectType.Apttus_Approval__Approval_Request__c.Fields.Apttus_Approval__Approval_Status__c.Label}" />
+                                                </div>
+                                            </div>
+                                            <div class="listItemContentNoPadding stepLabelBold" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!selectedApprovalRequest.Apttus_Approval__Approval_Status__c}" />
+                                                </div>
+                                            </div>
+                                        </li>
+    
+                                        <!-- approval details -->
+                                        <li class="listItem prodLine">
+                                            <div class="listItemContentNoPadding stepLabel" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!$ObjectType.Apttus_Approval__Approval_Request__c.Fields.Apttus_Approval__Request_Comments__c.Label}" />
+                                                </div>
+                                            </div>
+                                            <div class="listItemContentNoPadding stepLabelBold" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!selectedApprovalRequest.Apttus_Approval__Request_Comments__c}" />
+                                                </div>
+                                            </div>
+                                        </li>
+    
+                                        <!-- approval comments -->
+                                        <li class="listItem prodLine">
+                                            <div class="listItemContentNoPadding stepLabel" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!$ObjectType.Apttus_Approval__Approval_Request__c.Fields.Apttus_Approval__Approver_Comments__c.Label}" />
+                                                </div>
+                                            </div>
+                                            <div class="listItemContentNoPadding stepLabelBold" style="display:table; width: 100%;">
+                                                <div style="display:table-cell; width: 100%;">
+                                                    <apex:outputText value="{!selectedApprovalRequest.Apttus_Approval__Approver_Comments__c}" />
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="aptBottomBar relativeBottom">
+                                <div id="pageActions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+            </div>
+        </div>
+            
+        <!-- This panel represents the waiting dialog that will pop up -->
+        <apex:outputPanel >
+            <div id="waitPanel"></div>
+        </apex:outputPanel>
+
+        <!-- action functions -->
+        <apex:actionFunction name="invokeDoUploadAttachment" 
+                             action="{!doUploadAttachment}"
+                             reRender="idApprovalContextSubmitBlock"
+                             status="idPleaseWaitStatus">
+            <apex:param name="attachmentId" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="checkAndSubmit"
+                             action="{!doCheckAndSubmit}"
+                             reRender="idDoReturnPanel,idApprovalContextSubmitBlock"
+                             oncomplete="hideWaitDialog();">
+            <apex:param name="param1" assignTo="{!inSf1Mode}" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="showApprovalRequestDetail"
+                             action="{!getApprovalRequestDrillDownDetail}"
+                             rerender="idSelectedApprovalRequest"
+                             oncomplete="hideWaitDialog();">
+            <apex:param name="requestId" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="doSubmit" 
+                             action="{!doSubmit}"
+                             reRender="idApprovalContextSubmitBlock"
+                             oncomplete="hideWaitDialog();">
+        </apex:actionFunction>      
+           
+        <apex:actionFunction name="doReturn" 
+                             action="{!doCancel}" 
+                             oncomplete="hideWaitDialog();">
+        </apex:actionFunction>      
+        
+    </apex:form>
+</apex:page>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckIndirectAllDirSaleToUCNoDistAdded</fullName>
+    <active>true</active>
+    <description>Direct Sale to Ultimate Consignee must be checked If both Account &amp; Ultimate Consignee&apos;s Account Group is not distributor.</description>
+    <errorConditionFormula>AND (
+    OR (
+        $RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard, 
+        $RecordType.DeveloperName = $Label.IndirectReOrder, 
+        $RecordType.DeveloperName = $Label.IndirectFieldServices 
+    ),
+    TEXT ( Account.Account_Group__c ) != $Label.AccountGroupDistributor,
+    NOT ( Direct_Sale_to_Ultimate_Consignee__c ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( Is_Converted_From_Lead__c ) = &apos;Yes&apos;, 
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward,
+            CONTAINS($Label.Bypassed_Sales_Integration_Profiles_Id,$Profile.Id),
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c 
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Direct_Sale_to_Ultimate_Consignee__c</errorDisplayField>
+    <errorMessage>Based on Account (Sold-To) selection, please update Direct Sales to Ultimate Consignee checkbox.</errorMessage>
+</ValidationRule>

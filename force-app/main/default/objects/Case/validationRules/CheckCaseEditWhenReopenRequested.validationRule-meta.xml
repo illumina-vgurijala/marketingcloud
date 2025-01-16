@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCaseEditWhenReopenRequested</fullName>
+    <active>false</active>
+    <description>User cannot edit cases when it is closed
+Source: Rule fires when user try to edit cases which are closed
+Ability For Super Users, QA and Admin To Edit &apos;Reopen Requested&apos; or Closed Case.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    TEXT(PRIORVALUE(Status)) == $Label.ReopenRequested,
+    NOT(ISCHANGED(Reopen_Requester__c)),
+	NOT(ISCHANGED(Reopen_Request_Receiver__c)),
+    NOT(ISCHANGED(  Date_Time_Reopened__c )),
+    NOT(ISCHANGED( OwnerId )),
+    NOT(ISCHANGED( Work_Order_Status__c )),
+    NOT(ISCHANGED( Parts_Order_Status__c )),
+	NOT(ISCHANGED(Record_Updated_from_SFM__c)),
+    $Profile.Name &lt;&gt; $Label.ProfileSystemAdmin, 
+    $Profile.Name &lt;&gt; $Label.ProfileQualityAssurance, 
+    $Permission.SS_ByPass_Case_Lock = FALSE,
+    /*To allow updating Unread Email Check Box*/
+    NOT(ISCHANGED( Unread_Emails__c )),
+    /* Added below fields to over come the validation since these are hidden fields*/
+    NOT(ISCHANGED( Regional_Email__c )), 
+    /*To allow change of owner upon new incoming email and owner is inactive*/
+    NOT(
+        AND(
+            ISCHANGED(OwnerId),
+            NOT(ISBLANK(Owner:Queue.QueueName)),
+            Unread_Emails__c
+            )
+        )
+)</errorConditionFormula>
+    <errorMessage>Case can not be edited when Reopen Requested.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Update_recipient_email_and_customer_account</name>
+        <label>Update recipient email and customer account</label>
+        <locationX>50</locationX>
+        <locationY>395</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Recipient_Email__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>PartnerAccountOwnerEmailIDFormula</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.Customer_Account__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>CustomerAccountFieldFormula</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <assignments>
+        <name>Update_status_and_recipient_email</name>
+        <label>Update status and recipient email</label>
+        <locationX>314</locationX>
+        <locationY>395</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Status__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Pending</stringValue>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Record.Recipient_Email__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>RecipientEmailAddressFieldFormula</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <decisions>
+        <name>Update_Decison</name>
+        <label>Update Decision</label>
+        <locationX>314</locationX>
+        <locationY>287</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_Send_New_Reagent_Rental_Request</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>SendNewReagentRentalRequestFormula</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_recipient_email_and_customer_account</targetReference>
+            </connector>
+            <label>TRUE_Send  New Reagent Rental Request</label>
+        </rules>
+        <rules>
+            <name>TRUE_Send_New_Account_Request_Creation_Notification</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>NewAccountRequestCreationNotificationFormula</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_status_and_recipient_email</targetReference>
+            </connector>
+            <label>TRUE_Send New Account Request Creation  Notification</label>
+        </rules>
+    </decisions>
+    <description>Partner_Request__c to update the fields recipient email , customer account and status on before insert context</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>CustomerAccountFieldFormula</name>
+        <dataType>String</dataType>
+        <expression>IF(NOT(ISBLANK({!$Record.Owner:User.Contact.Account.Id})),{!$Record.Owner:User.Contact.Account.Id},null)</expression>
+    </formulas>
+    <formulas>
+        <name>NewAccountRequestCreationNotificationFormula</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.RecordType.DeveloperName} =$Label.PartnerRequestRecordTypeNewAccountRequest</expression>
+    </formulas>
+    <formulas>
+        <name>PartnerAccountOwnerEmailIDFormula</name>
+        <dataType>String</dataType>
+        <expression>IF(NOT(ISBLANK({!$Record.Owner:User.Contact.Account.Owner.Email})),{!$Record.Owner:User.Contact.Account.Owner.Email} ,&apos;&apos;)</expression>
+    </formulas>
+    <formulas>
+        <name>RecipientEmailAddressFieldFormula</name>
+        <dataType>String</dataType>
+        <expression>{!$Record.Owner:User.Contact.Account.Owner.Email}</expression>
+    </formulas>
+    <formulas>
+        <name>SendNewHelpRequestNotificationFormula</name>
+        <dataType>Boolean</dataType>
+        <expression>And (ISNEW(),{!$Record.RecordType.DeveloperName} =$Label.PartnerRequestRecordTypeHelpRequest)</expression>
+    </formulas>
+    <formulas>
+        <name>SendNewReagentRentalRequestFormula</name>
+        <dataType>Boolean</dataType>
+        <expression>{!$Record.RecordType.DeveloperName} =$Label.PartnerRequestRecordTypeReagentRentalRequest</expression>
+    </formulas>
+    <interviewLabel>Partner Request : Before Insert {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Partner_Request__c : Before Insert</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>188</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Update_Decison</targetReference>
+        </connector>
+        <object>Partner_Request__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

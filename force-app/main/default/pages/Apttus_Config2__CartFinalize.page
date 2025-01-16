@@ -1,0 +1,268 @@
+<!--
+	Apttus Config & Pricing
+	CartFinalize
+
+	@2011-2012 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page lightningStylesheets="true" standardController="Apttus_Config2__ProductConfiguration__c"
+			extensions="Apttus_Config2.CartFinalizeController"
+			showHeader="{!ShowHeader}"
+			sidebar="true"
+			cache="false"
+			title="{!bizObjectName}"
+			standardStylesheets="true"
+			tabstyle="Product2">
+
+	<apex:include pageName="Apttus_Config2__ConfigJSLibInclude" />
+
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/assets/skins/sam/skin.css')}" />
+
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/dragdrop/dragdrop-min.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/container/container-min.js')}" />
+	<apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/animation/animation-min.js')}" />
+
+	<script type="text/javascript">
+		const isAsyncFinalizeEnabledForCart='{!IsAsyncFinalizeEnabledForCart}';
+		let headerMessage;
+		let panelWidth;
+		if (isAsyncFinalizeEnabledForCart === 'true') {
+			headerMessage = '{!JSINHTMLENCODE($Label.SplitCartSuccess)}';
+			panelWidth = "450px";
+		} else {
+			headerMessage = '{!JSINHTMLENCODE($Label.Finalizing)}';
+			panelWidth = "300px";
+		}
+		// Create a namespace for our custom functions
+		YAHOO.namespace("force.com");
+
+		// wait panel
+
+		/**
+		 * Builds the wait panel.
+		 */
+		YAHOO.force.com.buildWaitPanel = function() {
+			document.body.className = document.body.className + " yui-skin-sam";
+			YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+				"waitPanel",  // The id of our dialog container
+				{
+						width           :   panelWidth, // You can play with this until it's right
+						visible         :   false,   // Should be invisible when rendered
+						draggable       :   false,   // Make the dialog draggable
+						close           :   false,   // Don't include a close title button
+						modal           :   true,    // Make it modal
+						fixedCenter     :   true,    // Keep centered if window is scrolled
+						zindex          :   40,      // Make sure it's on top of everything
+						constraintoviewport: true,
+
+						// This line adds the appear/disapper fade effect
+						effect			:   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+
+				}
+			);
+
+			// header
+			YAHOO.force.com.waitPanel.setHeader(headerMessage);
+			// set image
+			YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+			// Render the dialog to the document.body level of the DOM
+			YAHOO.force.com.waitPanel.render(document.body);
+
+		}
+
+		/**
+		 * Callback after generate is done
+		 */
+		function afterGenerate() {
+			// hide modal panel
+			YAHOO.force.com.waitPanel.hide();
+
+		}
+
+		/**
+		 * Callback after submit approval is done
+		 */
+		function afterSubmitApproval() {
+			// hide modal panel
+			YAHOO.force.com.waitPanel.hide();
+
+		}
+
+		/**
+		 * Callback after the document was downloaded
+		 */
+		function afterDownload() {
+
+			// delay to allow the document to be downloaded
+			setTimeout(function() {
+
+				// return to the proposal detail page
+				doReturn();
+			}, 5000);
+
+			// return true to allow the download to proceed
+			return true;
+
+		}
+
+		// Function called when the DOM is ready to create the dialog,
+		// render the dialog into the document body, add our dialog skin
+		// css to the body tag, and wire up the buttons on our dialog
+		YAHOO.force.com.onDOMReady = function() {
+
+			// build the wait panel
+			YAHOO.force.com.buildWaitPanel();
+			// show modal panel
+			YAHOO.force.com.waitPanel.show();
+			// invoke finalize cart function
+			doFinalizeCart();
+
+		}
+
+		// build the tree as soon as the DOM is in a usable state
+		YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady);
+
+	</script>
+
+	<apex:form id="finalizeCart">
+
+		<!--  Cart Header  -->
+		<c:CartHeader id="idCartHeader"
+					  cartId="{!ConfigurationId}"
+					  requestId="{!RequestId}" />
+
+		<apex:outputPanel id="idOutputPanel" >
+
+			<apex:outputPanel rendered="{!NOT(hasErrors)}" >
+
+				<!-- after finalize step -->
+				<apex:outputPanel rendered="{!IsAfterFinalizeStep}" >
+				  <script>
+					doAfterFinalizeCart();
+				  </script>
+				</apex:outputPanel>
+
+				<!-- approval step -->
+				<apex:outputPanel rendered="{!IsApprovalStep}" >
+				  <script>
+					doSubmitApproval();
+				  </script>
+				</apex:outputPanel>
+
+				<!-- generate step -->
+				<apex:outputPanel rendered="{!IsGenerateStep}" >
+				  <script>
+					doGenerateDoc();
+				  </script>
+				</apex:outputPanel>
+
+				<!-- finish step -->
+				<apex:outputPanel rendered="{!IsFinishStep}" >
+				  <script>
+					doReturn();
+				  </script>
+				</apex:outputPanel>
+
+			</apex:outputPanel>
+
+			<apex:pageBlock mode="edit" rendered="{!hasErrors}" >
+				<apex:pageMessages />
+				<apex:pageBlockButtons location="bottom" >
+					<apex:commandButton action="{!doCancel}"
+										value="{!$Label.apttus_config2__cancel}"
+										immediate="true"
+										oncomplete="if ((typeof sforce != 'undefined') && (sforce != null)) { sforce.one.navigateToSObject('{!returnId}'); }"/>
+				</apex:pageBlockButtons>
+
+				<script>
+					// hide modal panel
+					YAHOO.force.com.waitPanel.hide();
+				</script>
+			</apex:pageBlock>
+
+			<apex:pageBlock mode="edit" rendered="{!SubmittedForApproval}" >
+				<apex:pageBlockButtons location="bottom" >
+					<apex:commandButton action="{!doReturn}"
+										value="{!$Label.apttus_config2__return}"
+										immediate="true" />
+				</apex:pageBlockButtons>
+
+				<apex:outputText style="font-size: 12px; font-weight: bold;"
+								 value="{!SubmitConfirmationMessage}" />
+				<p/>
+			</apex:pageBlock>
+
+			<apex:pageBlock rendered="{!DocGenerated}">
+
+				<apex:pageBlockButtons location="bottom">
+					<apex:commandButton value="{!$Label.apttus_config2__return}"
+										action="{!doReturn}"
+										immediate="true" />
+				</apex:pageBlockButtons>
+				<apex:outputText style="font-size: 12px; font-weight: bold;"
+								 value="{!$Label.apttus_config2__documentgenerationsuccess}" />
+				<p/>
+				<apex:pageBlockSection title="{!$Label.apttus_config2__documentdetail}" columns="1">
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel style="font-weight: bold;"
+										  value="{!$Label.apttus_config2__filename}"
+										  for="idFileName" />
+						<apex:outputText id="idFileName" value="{!docInfo.docName}" />
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel style="font-weight: bold;"
+										  value="{!$Label.apttus_config2__size}"
+										  for="idFileSize" />
+						<apex:outputText id="idFileSize"
+										 style="font-weight: bold;"
+										 value="{!docInfo.bodyLength}KB" />
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="" for="idFileLink" />
+						<apex:outputLink id="idFileLink"
+										 value="{!docURL}"
+										 charset="UTF-8"
+										 type="{!docInfo.contentType}"
+										 title="{!$Label.apttus_config2__viewdocument}"
+										 target="_blank"
+										 onclick="afterDownload();">{!$Label.apttus_config2__viewfileinstruction}</apex:outputLink>
+					</apex:pageBlockSectionItem>
+				</apex:pageBlockSection>
+			</apex:pageBlock>
+
+		</apex:outputPanel>
+
+		<apex:actionFunction name="doFinalizeCart"
+							 action="{!doFinalizeCart}"
+							 immediate="true"
+							 reRender="idOutputPanel" />
+
+		<apex:actionFunction name="doAfterFinalizeCart"
+							 action="{!doAfterFinalizeCart}"
+							 immediate="true"
+							 reRender="idOutputPanel" />
+
+		<apex:actionFunction name="doSubmitApproval"
+							 action="{!doSubmitApproval}"
+							 immediate="true"
+							 reRender="idOutputPanel"
+							 oncomplete="afterSubmitApproval();" />
+
+		<apex:actionFunction name="doGenerateDoc"
+							 action="{!doGenerateDoc}"
+							 reRender="idOutputPanel"
+							 oncomplete="afterGenerate()" >
+
+			<apex:param name="sessionId" value="{!$Api.Session_ID}" />
+			<apex:param name="serverUrl" value="{!$Api.Partner_Server_URL_260}" />
+		</apex:actionFunction>
+
+		<apex:actionFunction name="doReturn"
+							 action="{!doReturn}"
+							 immediate="true"
+							 oncomplete="if ((typeof sforce != 'undefined') && (sforce != null)) { sforce.one.navigateToSObject('{!returnId}'); }"/>
+
+	</apex:form>
+
+</apex:page>

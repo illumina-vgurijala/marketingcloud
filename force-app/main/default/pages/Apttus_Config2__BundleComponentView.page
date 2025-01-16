@@ -1,0 +1,375 @@
+<!-- 
+    Apttus Config & Pricing
+    BundleComponentView
+     
+    @2010-2011 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page extensions="Apttus_Config2.BundleComponentViewController" 
+		   lightningStylesheets="true"
+           showHeader="true"
+           sidebar="{!ShowAdminSidebar}" 
+           cache="false"  
+           standardController="Apttus_Config2__BatchJob__c">	
+     
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/> 
+          
+    <apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+           
+    <script type="text/javascript">
+    
+    var j$ = jQuery.noConflict();
+    var selectedProductIds = new Array();
+    
+    j$(document).ready(function() { 
+    	updateSelectedCount();	     		
+    });
+ 	
+    j$(document).on('keypress',function(event) {
+		if(event.keyCode==13) {
+			j$('.search-button').trigger('click');
+			return false;
+		}
+	});
+	
+	/**
+	 * close spinner after fast mode is complete.
+	 */ 
+	function closeSpinner() {
+    	j$("[id$=spinner]").hide();	
+    	return false;
+    	    
+    }
+   
+    /**
+     * select or deselect Product.
+     */
+    function addSelectedAssetId(checkbox,itemId) {
+    
+		var selectedId = itemId;
+		var elem = document.getElementsByClassName(selectedId);
+		var isCheckBoxSelected = j$(elem).prop("checked");
+		var index = selectedProductIds.indexOf(selectedId);
+		
+		// add on checkbox select or remove on checkbox deselect.
+		if(isCheckBoxSelected) {
+			if(index == -1) {
+				selectedProductIds.push(selectedId);
+		}
+		
+		} else {
+			if(index != -1) {
+				selectedProductIds.splice(index, 1);
+			}
+		
+		}
+		// update numbers of selected product.	
+		updateSelectedCount();
+	}
+   	
+   	/**
+   	 * select-all or deselect-all products.
+   	 */
+   	function selectAllAsset(){
+		var isSelectAll = j$(".select-all").prop("checked");
+		
+		j$(".bundle-check").each(function() {
+			var selectedId = j$(this).attr('class').split('bundle-check ')[1];				
+				
+			if(selectedId) {
+				var index = selectedProductIds.indexOf(selectedId);					
+				
+			if(isSelectAll) {
+				 if(!j$(this).is(':disabled')) {
+				 	j$(this).prop('checked', true);
+					if(index == -1) {
+						selectedProductIds.push(selectedId);
+				 	}
+					
+				 }
+				
+			} else {
+				j$(this).prop('checked', false);
+					if(index != -1) {
+						selectedProductIds.splice(index, 1);		
+					}
+				}
+			}				
+		});
+
+		updateSelectedCount();
+
+	}
+	
+	/**
+	 * display updated selected records count
+	 */
+	function updateSelectedCount() {
+   		var numSelected = selectedProductIds.length;
+   		numSelected = (numSelected == undefined) ? 0 : numSelected;
+
+   		// set number selected
+   		j$('.selectedRecordsCount').text('['+ numSelected + ' Records Selected]');   
+   					 			
+   	}
+   	
+   	/**
+   	 * Select bundle-update mode.
+   	 */
+   	function selectAction(action) {
+   		if(action == '{!UpdateInFastMode}') {
+   			if(selectedProductIds.length == 1) {
+   				invokeUpdateBundleInFastMode(selectedProductIds.toString());
+   				// empty selectedProductIds array.
+   				selectedProductIds = [];
+   			} else {
+   				j$( "#idProdCountAlertFastMdode" ).dialog({
+        			autoOpen: false,
+        			draggable: false,
+        			resizable: false,
+        			modal: true
+   		 		});
+   				j$("#idProdCountAlertFastMdode").html( "<p> {!$Label.FastModeAlertMessage} </p>" );
+   				j$("#idProdCountAlertFastMdode").append( "<button  class='aptButton' onclick='closeFastModeAlert();return false;'> {!$Label.apttus_config2__ok} </button>");
+                j$("#idProdCountAlertFastMdode").dialog("open");
+         
+   			}
+   			
+   		} else if(action == '{!UpdateInBatchMode}') {
+   		  	invokeUpdateBundleComponents(selectedProductIds.toString());
+   			// empty selectedProductIds array.
+   			selectedProductIds = [];
+   		} else if(action == '{!UpdateAll}') {
+   			invokeUpdateAllBundleComponents(selectedProductIds.toString());
+   			// empty selectedProductIds array.
+   			selectedProductIds = [];
+   		}
+   	}
+   	
+   	function closeFastModeAlert() {
+   		j$("#idProdCountAlertFastMdode").dialog("close");
+   	}
+   	
+    </script>
+    
+    <style>
+    	.aptButton {
+			border-radius: 2px !important;
+			display: block;
+			font-family: arial !important;
+			font-size: 12px !important;
+			font-weight: normal !important;
+			padding: 1px 12px !important;
+			text-decoration: none !important;
+			margin-left: Auto;
+			margin-right: Auto;
+		}
+		
+		.ui-dialog > .ui-widget-header {
+			background: #F3F3F3;
+		}
+    </style>
+    <apex:sectionHeader title="{!$Label.apttus_config2__updatebundlecomponents}" />
+						
+    <apex:form id="idBundleComponents">
+        <apex:outputPanel id="idErrorMsg">
+          <apex:pageMessages />
+        </apex:outputPanel>
+
+        <apex:outputPanel id="idFastModeOutputPanel">
+        	<apex:pageBlock id="idFastModeBlock" rendered="{!IsFastMode}">
+        		
+        		<div id="idSpinner" style="float: left; padding-right: 10px;">
+        			<apex:image id="spinner" value="/img/loading.gif" />
+        		</div>
+        		<div>
+   					<apex:actionStatus startText="{!$Label.apttus_config2__bundleupdating}" 
+   										id="fastModeStatus" 
+   										onstop="return closeSpinner();">
+   						
+   						<apex:facet name="stop">{!message}</apex:facet>
+    				</apex:actionStatus>  
+            	</div>
+            	<apex:pageBlockSection >
+        			<apex:commandButton id="OkButton" 
+        			                    value="{!$Label.apttus_config2__ok}"    
+        			                    style="width:50px;"
+        			                    action="{!completeFastMode}"
+                             			rerender="idBundleComponents" />
+        		</apex:pageBlockSection>	 
+        	</apex:pageBlock>
+        	
+        </apex:outputPanel>
+        
+
+		
+		<!--  batch job monitor -->
+	    <c:BatchJobMonitor id="idBatchJobMonitor" 
+	    				   pageController="{!this}" 
+	    				   jobClassName="BundleUpdateJob;InsertSObjectJob" 
+	    				   rendered="{!NOT(IsFastMode)}" />
+	    
+        <apex:pageBlock title="{!$Label.apttus_config2__bundleproducts}" id="idBundleProducts">
+        	<script>
+        		// On page rerenders deselect bundle-check-all select-all input checkbox if selected. 
+        		j$(function() {
+        			var isSelectAllChecked = j$(".select-all").prop("checked");
+        			if(isSelectAllChecked) {
+        				j$(".select-all").prop("checked",false)	
+        			}
+        		});
+        	</script>
+        	<apex:pageBlockButtons location="top" >
+        		<apex:commandButton value="{!$Label.apttus_config2__updateinfastmode}" 
+        		                    onclick="selectAction('{!UpdateInFastMode}'); return false;" 
+        		                       />
+	 			<apex:commandButton value="{!$Label.apttus_config2__updateinbatchmode}" 
+	 								onclick="selectAction('{!UpdateInBatchMode}'); return false;"
+	 								 />
+				<apex:commandButton value="{!$Label.apttus_config2__updateall}" 
+									onclick="selectAction('{!UpdateAll}'); return false;"
+									disabled="{!IsUpdateScheduled}"  
+									rerender="idBundleComponents, idErrorMsg" />
+				<apex:commandButton value="{!$Label.apttus_config2__refresh}" 
+									action="{!doRefresh}" 
+									rerender="idBundleComponents" />
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<apex:inputText styleClass="search-term" value="{!searchTerm}"/>
+				<apex:commandButton styleClass="search-button" value="{!$Label.apttus_config2__search}" action="{!doSearch}"/>
+            </apex:pageBlockButtons>
+           
+			<label class="selectedRecordsCount">
+                <script>
+                	//display current selected records. 
+                	j$(function() {
+                		updateSelectedCount();
+                	});
+                	
+                </script>
+            </label>
+            
+            <!-- next, previous and page info -->
+            <div style="float:right;">
+<!-- 	            <apex:commandButton action="{!doPreviousLarge}" 
+	                                reRender="idBundleProducts" 
+	                                rendered="{!hasPreviousLarge}" 
+	                                value="{!$Label.apttus_config2__previous} {!maxRecords}" /> -->
+	            
+	            <apex:commandButton action="{!doPrevious}" 
+	                                reRender="idBundleProducts" 
+	                                disabled="{!NOT(hasPrevious)}" 
+	                                value="{!$Label.apttus_config2__previous}" />
+	 
+	            <apex:outputLabel value=" (page {!pageNumber} of {!totalPages}) " />
+	 
+	            <apex:commandButton action="{!doNext}" 
+	                                reRender="idBundleProducts" 
+	                                disabled="{!NOT(hasNext)}" 
+	                                value="{!$Label.apttus_config2__next}" />
+	            
+<!-- 	            <apex:commandButton action="{!doNextLarge}" 
+	                                reRender="idBundleProducts" 
+	                                rendered="{!hasNextLarge}" 
+	                                value="{!$Label.apttus_config2__next} {!maxRecords}" /> -->
+            </div>
+            <!-- table of data -->
+            <apex:pageBlockTable id="idBundles" title="{!$Label.apttus_config2__bundleproducts}" value="{!products}" var="bundle">
+                <apex:column >
+                    <apex:facet name="header"><apex:inputCheckbox styleClass="bundle-check-all select-all" onchange="selectAllAsset();$('.bundle-check').prop('disabled',true)"/></apex:facet>
+                    <apex:inputCheckbox styleClass="bundle-check {!bundle.productSO.Id}" 
+                    					value="{!bundle.IsSelected}"
+                    					disabled="{!bundle.IsScheduled}" 
+                    					onchange="addSelectedAssetId(this,'{!bundle.productSO.Id}');"/>
+                </apex:column>
+                <apex:column value="{!bundle.productSO.Name}"/>
+                <apex:column headerValue="{!$Label.apttus_config2__lastupdated}">
+                	<apex:outputPanel rendered="{!NOT(bundle.productSO.SystemComponents__r.empty)}">
+                		<apex:outputField value="{!bundle.productSO.SystemComponents__r[0].LastModifiedDate}" />
+                	</apex:outputPanel>
+                	<apex:outputPanel rendered="{!bundle.productSO.SystemComponents__r.empty}">
+                		<strong>{!$Label.apttus_config2__needstoberun}</strong>
+                	</apex:outputPanel>
+                </apex:column>
+            </apex:pageBlockTable>
+ 
+            <!-- count of selected items -->
+            <label class="selectedRecordsCount">
+                <script>
+                	//display current selected records.
+                	j$(function() {
+                		updateSelectedCount();
+                	});
+                	
+                </script>
+            </label>
+ 			
+ 			<div style="float:right;">
+<!-- 	           <apex:commandButton action="{!doPreviousLarge}" 
+	                               reRender="idBundleProducts" 
+	                               rendered="{!hasPreviousLarge}" 
+	                               value="{!$Label.apttus_config2__previous} {!maxRecords}" /> -->
+	            
+	            <apex:commandButton action="{!doPrevious}" 
+	                                reRender="idBundleProducts" 
+	                                disabled="{!NOT(hasPrevious)}" 
+	                                value="{!$Label.apttus_config2__previous}" />
+	 
+	            <apex:outputLabel value=" (page {!pageNumber} of {!totalPages}) " />
+	 
+	            <apex:commandButton action="{!doNext}" 
+	                                reRender="idBundleProducts" 
+	                                disabled="{!NOT(hasNext)}" 
+	                                value="{!$Label.apttus_config2__next}" />
+	            
+<!-- 	            <apex:commandButton action="{!doNextLarge}"  
+	                                reRender="idBundleProducts" 
+	                                rendered="{!hasNextLarge}" 
+	                                value="{!$Label.apttus_config2__next} {!maxRecords}" /> -->
+ 			</div>
+ 			
+ 			<script>
+ 				// retain products which are selected and are stored in selectedproductIds.
+        		j$(function() {
+        			j$("input[type=checkbox]").prop('checked', false);
+        		    for(var i = 0; i < selectedProductIds.length; i++) {
+        		    	var checkboxId = selectedProductIds[i];
+        		    	var elem = document.getElementsByClassName(checkboxId);
+        		    	j$(elem).prop('checked',true); 
+        		    	
+        		    }
+        		});
+        		
+        	</script>
+        </apex:pageBlock>
+        
+        <!-- update bundle in fast mode -->
+        <apex:actionFunction name="invokeUpdateBundleInFastMode" 
+        					 action="{!doUpdateBundleComponentsInFastMode}" 
+        					 rerender="idErrorMsg,idBundles" 
+        					 status="fastModeStatus" >
+        	
+        	<apex:param name="selectedProductIdsCSV" value="" assignTo="{!selectedProductIdsCSV}" />
+        </apex:actionFunction>
+        
+         <!-- update bundle in batch mode -->
+        <apex:actionFunction name="invokeUpdateBundleComponents" 
+        					 action="{!doUpdateBundleComponents}" 
+        					 rerender="idErrorMsg,idBundles">
+          
+        	<apex:param name="selectedProductIdsCSV" value="" assignTo="{!selectedProductIdsCSV}" />
+        </apex:actionFunction>
+        
+         <!-- update all bundle -->
+        <apex:actionFunction name="invokeUpdateAllBundleComponents" 
+                             action="{!doUpdateAllBundleComponents}" 
+                             rerender="idErrorMsg,idBundles" >
+          
+        	<apex:param name="selectedProductIdsCSV" value="" assignTo="{!selectedProductIdsCSV}" />
+        </apex:actionFunction>
+        
+		<div id="idProdCountAlertFastMdode" title="{!$Label.FastModeAlert}" >
+		</div>	
+	</apex:form>
+</apex:page>

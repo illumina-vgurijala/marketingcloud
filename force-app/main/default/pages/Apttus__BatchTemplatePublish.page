@@ -1,0 +1,236 @@
+<!-- 
+    Apttus Contract Management
+    BatchTemplatePublish
+     
+    @2012-2013 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus.BatchTemplatePublishController" 
+           showHeader="{!NOT(IsAuthoringMode)}" 
+           sidebar="{!NOT(IsAuthoringMode)}" 
+           cache="false" 
+           standardStylesheets="true"
+           tabStyle="Apttus__APTS_Template__c">	
+     
+    <style>
+		textarea {
+			width: 35%;
+		}
+	</style>
+	
+	<script type="text/javascript">
+		
+		/**
+		 * Callback after a partial page update
+		 */
+		function afterPageUpdate() {
+			
+			// delay to allow the page to be rendered	
+           	setTimeout(function() {
+           		
+           		// callback the object
+				try {
+					window.external.PageRefreshed();
+				} catch(ex) {
+					// object not available
+				}
+          	}, 0);
+           	
+		}
+		
+		// function to handle the enter key
+		function noenter(ev)  {
+		   	if (window.event && (window.event.keyCode == 13 || ev.which == 13)) {
+		       	return false;
+		       	
+		     } else {
+		          return true;
+		          
+		     }
+		     
+		}
+	
+	</script>
+	
+	<apex:form id="idPublishTemplates">
+		
+		<apex:pageBlock id="idSearchBlock" title="{!$Label.apttus__publishtemplates}" mode="detail">
+			<apex:pageMessages />
+			
+			<apex:pageBlockButtons location="both">
+		        <apex:commandButton value="{!$Label.apttus__publish}" 
+		        					action="{!doPublish}" 
+		        					disabled="{!NOT(HasRecordsSelected)}" />
+		        <apex:commandButton value="{!$Label.apttus__abortpending}" 
+		        					action="{!doAbortPending}" 
+		        					disabled="{!NOT(HasRunningJobs)}" />
+		        <apex:commandButton value="{!$Label.apttus__clearpending}" 
+		        					action="{!doClearPending}" 
+		        					disabled="{!HasRunningJobs || NOT(HasPendingTemplates)}" />
+		        <apex:commandButton value="{!$Label.apttus__refresh}" 
+		        				    action="{!doRefresh}" 
+		        				    immediate="true" />
+		        <apex:commandButton value="{!$Label.apttus__return}" 
+		        				    action="{!doReturn}" 
+		        				    immediate="true" 
+		        				    rendered="{!NOT(IsAuthoringMode)}" />
+		        				    
+		    </apex:pageBlockButtons>
+		    
+		    
+		    <apex:pageBlockSection title="{!$Label.apttus__publisher}" 
+		    					   columns="2" 
+		    					   collapsible="false" 
+		    					   rendered="true" >
+		    					   <!--
+		    					   rendered="{!hasTemplates}" >
+			    				   -->
+			    <apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$Label.apttus__publishusername}" for="idPubUserName" />
+ 					<apex:outputPanel styleClass="requiredInput" layout="block">
+   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+  						<apex:inputText id="idPubUserName" 
+	 									size="50"
+	 									value="{!PublishUserName}" 
+			    						onkeypress="return noenter(event);" />
+ 					</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem />
+				
+			    <apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$Label.apttus__publishusercredentials}" for="idPubUserCredentials" />
+					<apex:outputPanel styleClass="requiredInput" layout="block">
+   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+  						<apex:inputSecret id="idPubUserCredentials" 
+ 									  size="50"
+ 									  value="{!PublishUserCredentials}" 
+ 									  redisplay="true"
+		    						  onkeypress="return noenter(event);" />
+ 					</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$Label.apttus__enableautopublish}" for="idAutoPublish" />
+					<apex:inputCheckbox id="idAutoPublish" value="{!AutoPublish}">
+						<apex:actionSupport event="onclick" 
+											action="{!doToggleAutoPublish}" 
+											reRender="idSearchBlock" 
+											status="idAutoPublishStatus" />
+						<apex:actionStatus id="idAutoPublishStatus" >
+                        	<apex:facet name="start">
+                             	<img src="/img/loading.gif"/>
+                          	</apex:facet>
+                          	<apex:facet name="stop" />		                             
+                     	</apex:actionStatus>		
+					
+					</apex:inputCheckbox>
+				</apex:pageBlockSectionItem>
+				
+				<apex:outputText value="{!$Label.apttus__templatepublishinstruction}" escape="false" />	
+				<apex:pageBlockSectionItem />	
+				<apex:outputText value="{!$Label.apttus__manualtemplatepublishinstruction}" escape="false" />
+				<apex:outputText value="{!$Label.apttus__autotemplatepublishinstruction}" escape="false" />		  
+			</apex:pageBlockSection>
+		    
+		    <apex:outputPanel >
+				<apex:outputText style="font-weight: bold" value="{!statusText}" />
+			</apex:outputPanel>    	
+			
+		    <apex:outputPanel id="idResultSetPanel">
+			    <apex:outputPanel id="idResultStatsPanel" styleClass="bNext" layout="block" style="text-align: right;" rendered="{!hasTemplates}">
+					<font size="1px">{!$Label.PageNbr}:&nbsp;<apex:outputLabel value="{!currentPageNumber}"/>&nbsp;{!$Label.OutOf}&nbsp;<apex:outputLabel value="{!totalPages}"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font>
+					<br></br>
+					<apex:outputPanel id="idNavigationPanel" styleClass="next" layout="block" rendered="{!OR(hasNextPage,hasPreviousPage)}">
+						<apex:outputPanel rendered="{!NOT(hasPreviousPage)}" styleClass="greyedLink">&lt;{!$Label.PreviousPage}</apex:outputPanel>
+						<apex:commandLink rendered="{!hasPreviousPage}" action="{!previousPage}" reRender="idResultSetPanel">&lt;{!$Label.PreviousPage}</apex:commandLink>
+						<span> | </span>
+						<apex:outputPanel rendered="{!NOT(hasNextPage)}" styleClass="greyedLink">{!$Label.NextPage}&gt;</apex:outputPanel>
+						<apex:commandLink rendered="{!hasNextPage}" action="{!nextPage}" reRender="idResultSetPanel">{!$Label.NextPage}&gt;</apex:commandLink>
+					</apex:outputPanel>
+				</apex:outputPanel>
+				<apex:pageBlockSection columns="2" />
+				<apex:outputPanel id="idRecordSetPanel" >
+					<apex:pageBlockSection title="{!$Label.apttus__templates}"  columns="1" collapsible="false">
+				        <apex:pageBlockTable value="{!templates}" 
+				        					 var="templateInfo" 
+				        					 rowClasses="oddRow,evenRow" 
+				        					 width="100%" 
+				        					 rendered="{!hasTemplates}" >
+				        
+				        	<apex:column >
+								<apex:facet name="header" >
+									<apex:inputCheckbox value="{!isAllRecordsSelected}" >
+										<apex:actionSupport event="onclick" 
+															action="{!doSelectAll}" 
+															reRender="idSearchBlock" 
+															status="idSelectAllStatus" />
+										<apex:actionStatus id="idSelectAllStatus" >
+				                        	<apex:facet name="start">
+				                             	<img src="/img/loading.gif"/>
+				                          	</apex:facet>
+				                          	<apex:facet name="stop" />		                             
+				                     	</apex:actionStatus>		
+									</apex:inputCheckbox>
+										
+								</apex:facet>
+								<apex:inputCheckbox value="{!templateInfo.selected}" disabled="{!NOT(templateInfo.selectable)}" >
+				        			<apex:actionSupport event="onclick" 
+				        								action="{!doSelect}" 
+				        								reRender="idSearchBlock" 
+				        								status="idSelectStatus"/>  
+					        		<apex:actionStatus id="idSelectStatus" >
+				                    	<apex:facet name="start">
+				                        	<img src="/img/loading.gif"/>
+				                        </apex:facet>
+				                        <apex:facet name="stop" />		                             
+				                    </apex:actionStatus>						
+				        		</apex:inputCheckbox>
+							</apex:column>
+				        	
+				        	<!--  Browse Templates Result Field Set  -->
+							<apex:repeat value="{!ResultFields}" 
+										 var="fd">
+			
+								<apex:column >
+									<apex:facet name="header">
+										<apex:outputPanel > 
+							        		<apex:commandLink value="{!fd.member.Label}" 
+							        						  action="{!doSortTemplates}" 
+							        						  rendered="{!fd.isSortable}"
+							        						  reRender="idResultSetPanel">        
+			                        			<apex:param name="sortFieldName" value="{!fd.member.FieldPath}" />	
+			                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+			                        						title="{!$Label.apttus__sortedascending}" 
+			                        						alt="{!$Label.apttus__sortedascending}" 
+			                        						rendered="{!sortFieldName == fd.member.FieldPath && sortOrder != 'DESC'}" />                     						
+			                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+			                        						title="{!$Label.apttus__sorteddescending}" 
+			                        						alt="{!$Label.apttus__sorteddescending}" 
+			                        						rendered="{!sortFieldName == fd.member.FieldPath && sortOrder == 'DESC'}" />
+			                        		</apex:commandLink>
+			                        		<apex:outputText value="{!fd.member.Label}" 
+			                        						 rendered="{!NOT(fd.isSortable)}" />			 
+		                        		</apex:outputPanel>
+			        				</apex:facet>
+									<apex:outputField value="{!templateInfo.lookupSO.Apttus__TemplateId__c}"  
+                                					  rendered="{!fd.isTemplateLookup}" />
+                                	<apex:outputField value="{!templateInfo.templateSO[fd.member.FieldPath]}"  
+                                					  rendered="{!NOT(fd.isTemplateLookup)}" />
+                                					  					  			   
+								</apex:column>
+							</apex:repeat>	   
+							
+				        </apex:pageBlockTable>
+				        <apex:outputText value="{!$Label.apttus__norecordstodisplay}" rendered="{!NOT(hasTemplates)}" />
+				    </apex:pageBlockSection>
+				</apex:outputPanel>
+			
+			</apex:outputPanel>
+		</apex:pageBlock>
+		
+		<!--  batch job monitor -->
+	    <c:BatchJobMonitor id="idBatchJobMonitor" 
+	    				   jobClassName="TemplatePublishJob" />
+	    				   
+	</apex:form>
+
+</apex:page>

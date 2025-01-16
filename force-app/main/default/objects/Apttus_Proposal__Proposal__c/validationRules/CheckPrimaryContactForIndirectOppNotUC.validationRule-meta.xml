@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckPrimaryContactForIndirectOppNotUC</fullName>
+    <active>true</active>
+    <description>Primary Contact for Indirect Opportunities that are NOT Direct to Ultimate Consignee, should belong to Ultimate Consignee account
+
+Story #: DCP-58826 (AC #2)</description>
+    <errorConditionFormula>AND(
+    CONTAINS(Apttus_Proposal__Opportunity__r.RecordType.DeveloperName, &apos;Indirect&apos;),
+    Apttus_Proposal__Primary_Contact__r.AccountId = Apttus_Proposal__Opportunity__r.Ultimate_Consignee__c,
+    Apttus_Proposal__Opportunity__r.Direct_Sale_to_Ultimate_Consignee__c = false,
+    NOT(Text(Apttus_Proposal__Opportunity__r.Ultimate_Consignee__r.Account_Group__c)=&apos;Distributor&apos;),
+
+   NOT(
+       OR(
+           ISCHANGED ( Is_Updated_By_System__c ),
+	   Is_Updated_By_System__c,
+	   $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+	)
+   )
+)</errorConditionFormula>
+    <errorDisplayField>Apttus_Proposal__Primary_Contact__c</errorDisplayField>
+    <errorMessage>For Indirect Quotes (except Direct to UC), do not use a contact/email address associated with a UC contact as the Primary Contact. Instead, use a  contact/e-mail address associated with a Distributor</errorMessage>
+</ValidationRule>

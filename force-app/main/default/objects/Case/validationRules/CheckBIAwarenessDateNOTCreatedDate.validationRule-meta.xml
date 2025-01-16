@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckBIAwarenessDateNOTCreatedDate</fullName>
+    <active>true</active>
+    <description>Reason for Awareness Date Difference is required when the Date selected is earlier or later than Case Creation Date</description>
+    <errorConditionFormula>AND(
+    Record_Type__c = $Label.CaseRecordTypeBusinessIssue,
+    NOT($Profile.Name == $Label.Integration_SAP_Service),
+    NOT($Profile.Name ==  $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName == $Label.Automated_Process_User),
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    NOT($User.LastName == &apos;Illumina&apos;),
+    ISBLANK(TEXT(Awareness_Date_Difference_Reason__c)),
+    OR(
+    AND(IsNew(),Date_of_Issue_Awareness__c &lt; Today()),
+    AND(ISCHANGED(Status),
+    Date_of_Issue_Awareness__c &lt;&gt; DATEVALUE(CreatedDate),
+    OR (
+    TEXT(PRIORVALUE(Status)) = $Label.CaseStatusInitiated,
+    TEXT(PRIORVALUE(Status)) = $Label.CaseStatusInProgress,
+    TEXT(PRIORVALUE(Status)) = $Label.CaseStatusAwaitingResponseCustomer,
+    TEXT(PRIORVALUE(Status)) = $Label.CaseStatusAwaitingResponseInternal
+    ),
+    OR(
+    TEXT(Status) = $Label.CaseStatusPendingLogisticsReview,
+    TEXT(Status) = $Label.CaseStatusPendingQAReview,
+    TEXT(Status) = $Label.CaseStatusCompleted ,
+    TEXT(Status) = $Label.CaseStatusClosedDuplicate,
+    TEXT(Status) = $Label.CaseStatusClosed,
+    TEXT(Status) = $Label.CaseStatusCompleted
+    )
+    ),
+    AND(
+    OR(ISCHANGED(Date_of_Issue_Awareness__c), ISCHANGED(Awareness_Date_Difference_Reason__c)),
+    Date_of_Issue_Awareness__c &lt;&gt; DATEVALUE(CreatedDate)
+    )))</errorConditionFormula>
+    <errorDisplayField>Awareness_Date_Difference_Reason__c</errorDisplayField>
+    <errorMessage>Reason for Awareness Date Difference is required when the Date selected is earlier or later than Case Creation Date. Select a Reason or Select a new Date of Issue Awareness.</errorMessage>
+</ValidationRule>

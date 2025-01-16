@@ -1,0 +1,158 @@
+<!-- 
+	Apttus Echosign Adapter
+	EchoSignSendUICustom
+	
+	@2010 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="echosign_dev1__SIGN_Agreement__c"
+	extensions="Apttus_Echosign.EchoSignSendUIController"
+	showHeader="true"
+	sidebar="true"
+	tabStyle="Apttus__APTS_Agreement__c">
+	
+	<style>
+		.comments_w {
+			width: 300px;
+		}
+	</style>
+	<apex:sectionHeader title="Send For eSignature" subtitle="{!echosign_dev1__SIGN_Agreement__c.Name}" />
+	
+	<apex:form id="idForm">
+		<apex:pageBlock id="idPageBlock">
+			<apex:pageBlockButtons >
+				<apex:commandButton id="idBtnSend" action="{!doSend}" value="Send" />
+				<apex:commandButton id="idBtnCancel" action="{!doCancel}" value="Cancel" />
+			</apex:pageBlockButtons>
+			<apex:pageMessages />
+
+			<apex:pageBlockSection id="idSignature" title="eSignature Information" collapsible="false" columns="1">
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="Agreement" for="idAgmtName"/>
+					<apex:outputLink id="idAgmtName"
+						value="{!URLFOR($Action.Apttus__APTS_Agreement__c.View, echosign_dev1__SIGN_Agreement__c.Apttus_Echosign__Apttus_Agreement__c)}">
+						{!echosign_dev1__SIGN_Agreement__c.Name}
+					</apex:outputLink>
+				</apex:pageBlockSectionItem>
+				
+				<!-- CUSTOMIZATION SAMPLE: remove default fields
+				<apex:inputField value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignatureType__c}" />
+				<apex:inputField value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SenderSigns__c}" />
+				<apex:inputField value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignatureOrder__c}" /> -->
+			   
+				<!-- CUSTOMIZATION SAMPLE: insert custom fields -->
+			</apex:pageBlockSection>
+
+			<apex:pageBlockSection id="idEMail" title="eMail" collapsible="false" columns="1">
+				<!-- CUSTOMIZATION SAMPLE: rename default label "Recipient (Contact)" to "Customer Signatory" -->
+				<!-- <apex:inputField value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient__c}" /> -->
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel for="idRecipient" value="Customer Signatory" />
+					<apex:outputPanel >
+						<apex:inputField id="idRecipient" value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient__c}" />
+					</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+				
+				<!-- CUSTOMIZATION SAMPLE: make more recipients field longer using style attribute -->
+				<apex:inputField value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__More_Recipients__c}" style="width:400px;"/>
+				<apex:inputField value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Cc__c}" />
+				<apex:inputField value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Message__c}" />
+			</apex:pageBlockSection>
+
+			<apex:pageBlockSection id="idAttachments" title="Attachments" collapsible="false" columns="1">
+				<apex:pageBlockTable value="{!attachments}" var="attachment" width="100%" >
+						<apex:column >
+							<apex:commandLink action="{!doMoveDown}" reRender="idAttachments">
+								<apex:outputPanel rendered="{!NOT(attachment.Id = lastAttachmentId)}">
+									<img src="/img/s.gif" alt="Down"  class="downArrowIcon" title="Down"/>
+								</apex:outputPanel>
+								<apex:param name="param" assignTo="{!moveDownId}" value="{!attachment.Id}" />
+							</apex:commandLink>
+						</apex:column>
+						<apex:column >
+							<apex:commandLink action="{!doMoveUp}" reRender="idAttachments">
+								<apex:outputPanel rendered="{!NOT(attachment.Id = firstAttachmentId)}">
+									<img src="/img/s.gif" alt="Up"  class="upArrowIcon" title="Up"/>
+								</apex:outputPanel>
+								<apex:param name="param" assignTo="{!moveUpId}" value="{!attachment.Id}" />
+							</apex:commandLink>
+						</apex:column>
+					<apex:column >
+						<apex:facet name="header">File Name</apex:facet>
+						<apex:outputLink value="/{!attachment.Id}">{!attachment.Name}</apex:outputLink>
+					</apex:column>
+					<apex:column >
+						<apex:facet name="header">Size</apex:facet>
+						<apex:outputText value="{!attachment.BodyLength}"/>
+					</apex:column>
+					<apex:column >
+						<apex:facet name="header">Created Date</apex:facet>
+						<apex:outputText value="{!attachment.CreatedDate}"/>
+					</apex:column>
+				</apex:pageBlockTable>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+
+		<!-- required fields -->
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.Apttus_Echosign__Apttus_Agreement__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.Apttus_Echosign__Is_Transient__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.Name}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.CreatedById}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.CreatedDate}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.IsDeleted}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.LastModifiedById}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.LastModifiedDate}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.OwnerId}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.SystemModstamp}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__AdditionalOptions__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Authoring__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__AutoUpdate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Cc__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Contract__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSentDate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSent__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSignedDate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSigned__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateViewedDate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateViewed__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DaysUnsigned__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DaysUntilSigned__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Document__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__EncodedPassword__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__ErrorMessage__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__LastEventId__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Message__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Minutes_Until_Signed__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__More_Recipients__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__NewPassword__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Opportunity__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__PasswordProtectPDF__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__PasswordProtectSign__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Percent_Signed__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__PreferFax__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient2__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient3__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient4__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead2__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead3__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead4__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__RemindRecipient__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Result__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SenderSigns__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignatureOrder__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignatureType__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignedPDF__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__StatusVisible__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Status__c}" rendered="false"/>
+
+		<!-- CUSTOMIZATION SAMPLE: add custom fields here for them to be referenced in the page layout above --> 
+
+		// register to invoke the function after the page load
+    	window.onload = function() { 
+    		invokeDoLoad();
+    	}
+		<!-- Check if send completed succesfully, if not delete echosign-agreement -->
+		<apex:actionFunction action="{!doLoad}"name="invokeDoLoad"immediate="true" rerender="dummy"/>
+	</apex:form>
+</apex:page>

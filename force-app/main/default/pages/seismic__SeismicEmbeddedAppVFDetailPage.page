@@ -1,0 +1,110 @@
+<apex:page controller="seismic.SeismicEmbeddedAppVFDetailPageController" action="{!Init}" docType="html-5.0" applyBodyTag="false" showHeader="true" sidebar="false" standardStylesheets="false">
+
+  <script type="text/javascript" src="{!URLFOR($Resource.jquery_3_1_1_min_js)}"></script>
+  <script type="text/javascript" src="{!URLFOR($Resource.jquery_base64_js)}"></script>
+  <script type="text/javascript" src="{!URLFOR($Resource.lodash_min_js)}"></script>
+  <script type="text/javascript" src="{!URLFOR($Resource.embeddedpage_js)}"></script>
+  <script type="text/javascript" src="{!URLFOR($Resource.SeismicIntegratedSDK_js)}"></script>
+  <script type="text/javascript">
+    if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position) {
+    position = position || 0;
+    return this.indexOf(searchString, position) === position;
+    };
+    }
+  </script>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seismic Content Viewer</title>
+
+    <style type="text/css">
+      html, body { height: 100%; margin: 0; padding: 0; }
+      body { background-color: white; font-size: 12px !important; line-height: 1.2 !important; }
+      body #contentWrapper .bodyDiv .outerNoSidebar .noSidebarCell { padding: 0; }
+      body #contentWrapper #bodyTable { padding: 0; }
+      body #contentWrapper #bodyTable #detailIFrame { height: 765px !important; }
+      body.sfdcBody { padding: 0 !important; }
+      body.sfdcBody.apexPageInline { margin: 0; }
+    </style>
+  </head>
+  <body>
+    <iframe id="detailFrame" frameborder="no" width="100%" height="765" marginwidth="0" marginheight="0" scrolling="no" allowfullscreen="true" allow="autoplay; fullscreen"></iframe>
+    <script type="text/javascript">
+      getParamsReadyToInit();
+
+      function getParamsReadyToInit(){
+      var initialData = {!EmbeddedAppInfoJSON};
+      var hash = window.location.hash.substring(1, window.location.hash.length);
+      var mainPageDataString = $.base64.decode(hash);
+      var mainPageData = JSON.parse(mainPageDataString);
+
+      if (mainPageData.hasOwnProperty("SObjectName") && mainPageData.SObjectName.startsWith("encoded:"))
+      {
+      var encodedName = mainPageData.SObjectName.substring(8);
+      var decodedName = decodeURIComponent(encodedName);
+      mainPageData.SObjectName = decodedName;
+      }
+
+      var pageInfo = {};
+
+      pageInfo.objectType = mainPageData.SObjectType;
+      pageInfo.objectId = mainPageData.SObjectId;
+      pageInfo.objectName = mainPageData.SObjectName;
+      pageInfo.applicationName = mainPageData.EmbeddAppName;
+      pageInfo.backUrl = mainPageData.BackUrl;
+      pageInfo.viewInfo = JSON.parse(mainPageData.DocumentParam);
+
+      var contextInfo = initialData.ContextInfo;
+      var credentialInfo = initialData.CredentialInfo;
+      var settingsInfo = initialData.SettingInfo;
+
+      pageInfo.currentPageBaseUrl = contextInfo.CurrentPageBaseUrl;
+      pageInfo.currentTabLabel = mainPageData.CurrentTabLabel;
+
+      var sObjectType = pageInfo.objectType;
+      var sObjectId = pageInfo.objectId;
+      var sObjectName = pageInfo.objectName;
+      var applicationName = pageInfo.applicationName;
+      var currentPageBaseUrl = pageInfo.currentPageBaseUrl;
+      var currentTabLabel = pageInfo.currentTabLabel;
+      var viewInfo = pageInfo.viewInfo;
+
+      var configInfo = {
+      applicationName: applicationName,
+      showUserAvatar: true,
+      enableCartContext: settingsInfo.EnableCartContext,
+      showHeader: true,
+      hideLogOutButton: settingsInfo.HideLogOutButton === '1',
+      showGoBack: true,
+      pageId: sObjectId,
+      startView: viewInfo
+      };
+
+      var iframeDom = document.getElementById('detailFrame');
+      var embeddedApp = Seismic.IntegratedSDK.loadEmbeddedApplication(iframeDom, contextInfo, credentialInfo, configInfo, sObjectType, sObjectId, sObjectName, currentTabLabel, currentPageBaseUrl);
+      embeddedApp.on('action',function(data){
+      switch(data.type){
+      case Seismic.IntegratedSDK.actions.goBack:
+      handleGoBackRequest(pageInfo, data.data);
+      break;
+      default:
+      break;
+      }
+      });
+
+      $(window).on('unload', function onWindowUnload() {
+          embeddedApp.dispose();
+          embeddedApp = null;
+      });
+
+
+      }
+
+      function handleGoBackRequest(pageInfo, data){
+      window.top.location.href = pageInfo.backUrl;
+      }
+    </script>
+  </body>
+</apex:page>

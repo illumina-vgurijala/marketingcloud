@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>myRule_1_A1</name>
+        <label>CRFS : Send Email to CRFS owner on on CRF Support Assignment</label>
+        <locationX>50</locationX>
+        <locationY>431</locationY>
+        <actionName>Customer_Readiness_Form_Support__c.CRF_Support_Send_Email_to_Channel_Partner_on_CRF_Support_Assignment</actionName>
+        <actionType>emailAlert</actionType>
+        <faultConnector>
+            <targetReference>Assign_Current_Failure_Element</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+    </actionCalls>
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Assign_Current_Failure_Element</name>
+        <label>Assign Current Failure Element</label>
+        <locationX>314</locationX>
+        <locationY>539</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>CRFS : Send Email to CRFS owner on on CRF Support Assignment</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>CRFS_Decision</name>
+        <label>CRFS Decision</label>
+        <locationX>314</locationX>
+        <locationY>323</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>CRFS_Decision_Change</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.OwnerId</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.UserType</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <elementReference>$Label.UserTypePartner</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.CreatedById</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>$Record.OwnerId</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>myRule_1_A1</targetReference>
+            </connector>
+            <label>CRFS Decision Change</label>
+        </rules>
+    </decisions>
+    <description>Migrated from the CRFS : Send Email to CRF Support owner on CRF Support Assignment process using Owner Is Changed to Channel Partner? criteria.
+Send Email to CRFS owner on on CRF Support Assignment</description>
+    <formulas>
+        <name>FlowandFailureElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;CRFS : After Insert Update- &apos;+{!currentElement}</expression>
+    </formulas>
+    <interviewLabel>CRFS : After Insert Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CRFS : After Insert Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>188</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>CRFS_Decision</targetReference>
+        </connector>
+        <object>Customer_Readiness_Form_Support__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>314</locationX>
+        <locationY>647</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFailureElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Sales</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <variables>
+        <name>currentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCaseCompletionIfQAReviewNull</fullName>
+    <active>true</active>
+    <description>This rule mandates the QA Review field to complete QA Review.</description>
+    <errorConditionFormula>AND(
+   NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+     RecordType.Name = $Label.CaseTypeBusinessIssue,
+     TEXT(PRIORVALUE(Status))= $Label.CaseStatusPendingQAReview,
+       OR( 
+           TEXT(Status) = $Label.CaseStatusCompleted,
+           TEXT(Status) = $Label.CaseStatusClosed
+          ),
+     OR(
+ISBLANK(TEXT(QA_Review__c)),
+ISPICKVAL(QA_Review__c, &quot;In Progress&quot;),
+ISPICKVAL(QA_Review__c, &quot;In Progress - Awaiting Internal SME Review&quot;)
+)
+   )</errorConditionFormula>
+    <errorMessage>If Completing a QA Review, the QA status cannot be in &quot;In Progress&quot; or null. Select a final QA review decision.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

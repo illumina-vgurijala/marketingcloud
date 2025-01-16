@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSECCreateStageProjectedBudgetRange</fullName>
+    <active>true</active>
+    <description>Projected Budget Range is required to progress past Create.  Direct Standard Opportunity only.</description>
+    <errorConditionFormula>IF (
+    AND (
+        !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+        NOT (
+            OR (     
+                ISCHANGED ( Is_Updated_By_System__c ),
+                Is_Updated_By_System__c = true,
+				$Profile.Name =  $Label.ProfileSystemAdmin,
+				$Profile.Name =  $Label.ProfileDataSteward
+            )
+        ),
+        RecordType.DeveloperName == $Label.OpportunityRTDirectStandard,
+        OR (
+            TEXT ( Account.Account_Status__c ) = $Label.AccountStatusActive, 
+            TEXT ( Account.Account_Status__c ) = $Label.AccountStatusPendingValidation, 
+            TEXT ( Account.Account_Status__c ) = $Label.AccountStatusUnverified
+        ),
+        AND ( 
+	    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+        ),
+        ISBLANK ( TEXT ( Projected_Budget_Range__c ) ), 
+        NOT ( 
+            OR (
+               ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Lost&apos; ),
+               ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Abandoned&apos; ),
+               ISPICKVAL ( PRIORVALUE ( StageName ) ,&apos;Closed Won&apos; ),
+               ISPICKVAL ( StageName, &apos;Closed Lost&apos; ), 
+               ISPICKVAL ( StageName, &apos;Closed Abandoned&apos; ), 
+               ISPICKVAL ( StageName, &apos;Create&apos; ), 
+               TEXT ( StageName ) = $Label.OpportunityStageClosedWon 
+               ) 
+            ) 
+        ),
+    true, 
+    false
+)</errorConditionFormula>
+    <errorDisplayField>Projected_Budget_Range__c</errorDisplayField>
+    <errorMessage>Please provide a &quot;Projected Budget Range&quot; (Key Fields).</errorMessage>
+</ValidationRule>

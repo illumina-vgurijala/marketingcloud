@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckFSAndROSwitchFromStandardToNonStd</fullName>
+    <active>true</active>
+    <description>Validation Rule created to check if we are switching to a non Standard record type then if it has instruments or type LOV&apos;s of Standard record types then displays error message.</description>
+    <errorConditionFormula>AND ( 
+    OR ( 
+        PRIORVALUE ( RecordTypeName__c ) = $Label.OpportunityRTDirectStandard, 
+        PRIORVALUE ( RecordTypeName__c ) = $Label.OpportunityRTIndirectStandard
+    ), 
+    OR ( 
+        RecordType.DeveloperName = $Label.IndirectFieldServices, 
+        RecordType.DeveloperName = $Label.FieldServices, 
+        RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+        RecordType.DeveloperName = $Label.IndirectReOrder
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    CONTAINS ( Product_Type__c , $Label.OpportunityProdTypeInstrument ),
+    Is_Record_Type_Switched_To_Standard__c = true,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+			 $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )	   
+)</errorConditionFormula>
+    <errorMessage>Cannot switch to a different Opportunity record type when Instrument is included in Opportunity.</errorMessage>
+</ValidationRule>

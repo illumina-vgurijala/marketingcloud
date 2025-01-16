@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>PreventPartOrderBillingTypeEdit</fullName>
+    <active>true</active>
+    <description>DCP-823 Prevent editing Billing Type without entering Reason and Cost Centre.</description>
+    <errorConditionFormula>AND(
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    TEXT(PRIORVALUE(SVMXC__Billing_Type__c)) == $Label.Paid,
+    TEXT(SVMXC__Billing_Type__c) &lt;&gt; $Label.Paid,
+    OR(
+        ISBLANK(Reason__c),
+        ISBLANK(Cost_Center__c)
+    )
+)</errorConditionFormula>
+    <errorMessage>Billing type cannot be changed without a Reason and Cost Center.  Enter both fields prior to attempting to change the billing type.</errorMessage>
+</ValidationRule>

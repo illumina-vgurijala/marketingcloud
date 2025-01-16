@@ -1,0 +1,57 @@
+<aura:component controller="AccountPlanMobileNavController" access="global" extends="c:BaseSuperComponent"
+       implements="flexipage:availableForAllPageTypes"> 
+      <aura:attribute name="options" type="List" default="[
+       {'label': 'Stakeholder Analysis', 'value': 'Stakeholder'},
+       {'label': 'All Active Plans In Hierarchy', 'value': 'All Active Plans In Hierarchy'},
+       {'label': 'Objectives', 'value': 'Objectives'},
+       {'label': 'Competitive and Complementary Technology', 'value': 'Competitive and Complementary Technology'}
+       ]"/>
+       <aura:attribute name="valueRadioButton" type="String" default=""/>
+
+    <lightning:card>        
+       
+           <lightning:radioGroup name="radioTabs"
+                          label="Select an option to view details"
+                          options="{!v.options }"
+                          value="{!v.valueRadioButton }"
+                          type="radio"
+                          class="customRadioCls"
+                          variant="label-inline"/>
+            
+    </lightning:card>  
+
+    
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+    <aura:attribute name="fieldNames" type="String" />
+    <aura:attribute name="objectApiName" type="String" />
+    <aura:attribute name="errorMessageDraft" type="String" />
+    <aura:attribute name="errorMessageClosed" type="String" />
+    
+    <aura:attribute name="objAccountPlan" type="Account_Plan__c" />
+    <aura:attribute name="strRecordId" type="String"/>
+    <aura:if isTrue="{!not(empty(v.objAccountPlan.Id)) }">
+        <lightning:card>
+                    <aura:if isTrue="{!v.valueRadioButton == 'Stakeholder'}">
+                        <aura:if isTrue="{!v.objAccountPlan.Plan_Status__c=='Active'}">
+                            <c:stakeHolderCmp recordId="{!v.objAccountPlan.Id}" isAppPage="true"/>
+                        </aura:if>
+                        <aura:if isTrue="{!v.objAccountPlan.Plan_Status__c=='Draft'}">
+                            <c:displayErrorMessageComponent strErrorMessage="{!v.errorMessageDraft}" />
+                        </aura:if>
+                        <aura:if isTrue="{!v.objAccountPlan.Plan_Status__c=='Closed'}">
+                             <c:displayErrorMessageComponent strErrorMessage="{!v.errorMessageClosed}" />
+                        </aura:if>
+                    </aura:if>
+                    <aura:if isTrue="{!v.valueRadioButton=='All Active Plans In Hierarchy'}">
+                        <c:viewActivePlans objectApiName="{!v.objectApiName}" fieldNames="{!v.fieldNames}" recordId="{!v.objAccountPlan.Id}"/>  
+                    </aura:if>
+                    <aura:if isTrue="{!v.valueRadioButton=='Objectives'}">
+                        <c:accountPlanObjectives recordId="{!v.objAccountPlan.Id}" isAppPage="true"/>
+                    </aura:if>
+                    <aura:if isTrue="{!v.valueRadioButton=='Competitive and Complementary Technology'}">
+                            <c:competitiveDataRollUpSummary recordId="{!v.objAccountPlan.Id}" isAppPage="true"/>
+                    </aura:if>
+       </lightning:card>
+</aura:if>
+
+</aura:component>

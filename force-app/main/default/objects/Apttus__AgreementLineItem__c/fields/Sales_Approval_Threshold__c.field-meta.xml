@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Sales_Approval_Threshold__c</fullName>
+	<businessOwnerGroup>Sales_Schema_Owners</businessOwnerGroup>
+    <businessStatus>Active</businessStatus>
+    <description>Sales Discretionary Discount, in percent, before Sales approval is required. Combination of Median, Max, and Histical Customer Discount from Discount Recommendation Grid, and minimum Level 1 percentage from the Sales Approval Matrix.</description>
+    <externalId>false</externalId>
+    <formula>IF(
+	OR(
+		IF(Apttus__AgreementId__r.RecordType.Name == &apos;Open Offer Agreement&apos;, true, false),
+ISNULL(Min_Discount__c)
+	),
+	
+	NULL,
+	
+	IF(
+		OR(
+			Do_Not_Run_Discount_Guidance__c,
+ISNULL(Discount_Guidance__c)
+		),
+		
+		Min_Discount__c,
+		
+		IF(
+			OR(
+				ISNULL(Customer_Historical_Discount__c),
+				Customer_Historical_Discount__c &gt; Max_Discount_Guidance__c
+			),
+			
+			IF(Max_Discount_Guidance__c &gt; Min_Discount__c, Max_Discount_Guidance__c, Min_Discount__c),
+			
+			IF(
+				Customer_Historical_Discount__c &gt; Median_Discount_Guidance__c,
+				
+				IF(Customer_Historical_Discount__c &gt; Min_Discount__c, Customer_Historical_Discount__c, Min_Discount__c),
+				
+				IF(Median_Discount_Guidance__c &gt; Min_Discount__c, Median_Discount_Guidance__c, Min_Discount__c)
+			)
+		)
+	)
+)</formula>
+    <inlineHelpText>Reflects the highest discount that can be applied before an approval would be triggered</inlineHelpText>
+    <label>Sales Approval Threshold</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>2</scale>
+    <securityClassification>Internal</securityClassification>
+    <trackHistory>false</trackHistory>
+    <type>Percent</type>
+</CustomField>

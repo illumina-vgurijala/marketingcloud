@@ -1,0 +1,2503 @@
+<!-- 
+    Apttus Approvals Management
+    ApprovalProcessDefn
+     
+    @2010-2021 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Approval_Process__c" 
+           extensions="Apttus_Approval.ApprovalProcessDefnController" 
+           showHeader="true" 
+           sidebar="true"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                   $User.UIThemeDisplayed == 'Theme4u'}">
+    
+    <!--<html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+    <head>
+        <apex:slds />
+    </head>
+    <body>-->
+    
+    <style>
+        textarea {
+            width: 70%;
+        }
+    </style>
+
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__JQuery22, 'jquery-2.2.2.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.js')}" />
+    <apex:includeScript value="{!$Resource.Apttus_Approval__ApprovalsJSLib}" />
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.css')}" />
+    <apex:stylesheet value="{!$Resource.Apttus_Approval__ApprovalsStyles}" />
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+    <style>
+        .apttusConfigStage {
+            font-weight:bold;
+            background-color:#A4A4A4;
+            background-image:none;
+            color:white;
+            font-size:80%;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            padding: 4px 6px;
+            border-top: 2px solid white;
+            border-right: 2px solid grey;
+            border-bottom: 2px solid grey;
+            border-left: 2px solid white;
+            text-align: center;
+            text-transform:uppercase;
+        }
+
+        .apttusCurrentConfigStage {
+            font-weight:bold;
+            background-color:#6B92B9;
+            background-image:none;
+            color:white;
+            font-size:80%;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            padding: 4px 6px;
+            border-top: 2px solid white;
+            border-right: 2px solid #5D7FA1;
+            border-bottom: 2px solid #5D7FA1;
+            border-left: 2px solid white;
+            text-align: center;
+            text-transform:uppercase;
+        }
+        
+        .apttusGrandTotal {
+            font-style: italic;
+            font-weight: bold; 
+        }
+        
+        /* hide the close x on the loading screen */
+        .repriceWaitDialog .ui-dialog-titlebar-close {
+            display: none;
+        }
+
+		/* center the dialog on the screen */
+		.ui-dialog {
+			position: absolute !important;
+			top: 40% !important;
+			left: 40% !important;
+		}
+		/* hide the close box on the dialog */
+		.ui-dialog-titlebar-close {
+			visibility: hidden !important;
+		}
+    </style>
+    
+    <script type="text/javascript">
+    
+        // This to make sure jQuery doesn't conflict with any other JS libraries
+        var j$ = jQuery.noConflict();
+    
+        // call this once the page is ready
+        j$(document).ready(function(){
+            
+            // setup namespace
+            j$.APTTUS = {};
+            
+			// build the wait dialog
+			buildWaitDialog();
+	         
+			// show the wait dialog
+			//showWaitDialog("{!$Label.PleaseWait}");
+
+            // setup the remove process confirmation dialog
+            j$("#idRemoveProcessConfirmationPanel").dialog({
+                autoOpen: false,
+                draggable: false,
+                modal: true,
+                resizable: false,
+                position: 'center'
+                
+            });
+            
+            // setup the remove step confirmation dialog
+            j$("#idRemoveStepConfirmationPanel").dialog({
+                autoOpen: false,
+                draggable: false,
+                modal: true,
+                resizable: false,
+                position: 'center'
+                
+            });
+            
+            // setup the remove initial action confirmation dialog
+            j$("#idRemoveInitialActionConfirmationPanel").dialog({
+                autoOpen: false,
+                draggable: false,
+                modal: true,
+                resizable: false,
+                position: 'center'
+                
+            });
+            
+            // setup the remove final approval action confirmation dialog
+            j$("#idRemoveFinalApprovalActionConfirmationPanel").dialog({
+                autoOpen: false,
+                draggable: false,
+                modal: true,
+                resizable: false,
+                position: 'center'
+                
+            });
+
+            // setup the remove final rejection action confirmation dialog
+            j$("#idRemoveFinalRejectionActionConfirmationPanel").dialog({
+                autoOpen: false,
+                draggable: false,
+                modal: true,
+                resizable: false,
+                position: 'center'
+                
+            });
+
+            // setup the reprice wait panel and set autoOpen to false
+            j$("#idWaitPanel").dialog({
+                autoOpen: false,
+                dialogClass: "no-close",
+                closeOnEscape: false,
+                draggable: false,
+                width: 300,
+                minHeight: 50,
+                modal: true,
+                buttons: {},
+                resizable: false,
+                position: 'center',
+                open: function() {
+                    // scrollbar fix for IE
+                    j$('body').css('overflow','hidden');
+                },
+                close: function() {
+                    // reset overflow
+                    j$('body').css('overflow','auto');
+                }
+            });
+    
+            
+        });
+            
+	     /**
+	      * Show wait dialog
+	      */
+	     function showWaitDialog(msgText) {
+	         
+	         j$("#idWaitPanel").html('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+	         j$("#idWaitPanel").dialog("open");
+	         j$("#idWaitPanel").dialog("option" , "title" , msgText);
+	         j$("#idWaitPanel").dialog("option", "position", "center");
+	         
+	         return false;
+	         
+	     }
+	
+	     /**
+	      * Hide the wait dialog
+	      */
+	     function hideWaitDialog() {
+	     
+	         // close the wait dialog
+	         j$("#idWaitPanel").dialog("close");
+	         
+	         return true;
+	
+	     }
+	     
+	     
+	     // setup the wait panel and set autoOpen to false
+	     function buildWaitDialog() {
+	     
+	         j$("#idWaitPanel").dialog({
+	             autoOpen: false,
+	             dialogClass: "no-close",
+	             closeOnEscape: false,
+	             draggable: false,
+	             width: 300,
+	             minHeight: 50,
+	             modal: true,
+	             buttons: {},
+	             resizable: false,
+	             open: function() {
+	                 // scrollbar fix for IE
+	                 j$('body').css('overflow','hidden');
+	             },
+	             close: function() {
+	                 // reset overflow
+	                 j$('body').css('overflow','auto');
+	             }
+	         });
+	
+	     };
+	
+	     /**
+	      * Callback when the action button is clicked
+	      */
+	     function onActionClick() {
+	     
+	         // show the modal panel
+	         showWaitDialog("{!$Label.PleaseWait}");
+	         
+	         // return false to allow the action to proceed
+	         return false;
+	     }
+	     
+	     /**
+	      * Callback when the action is completed
+	      */
+	     function onActionComplete() {
+	     
+	         // hide the modal panel
+	         hideWaitDialog();
+	         
+	         return true;
+	
+	     }
+
+        /**
+         * Show remove process confirmation dialog
+         * @param ProcessId the ID of the approval process to delete
+         */
+        function showRemoveProcessConfirmation(processId) {
+            
+            // store the process id in the global namespace
+            j$.APTTUS.ProcessId = processId;
+            
+            j$("#idRemoveProcessConfirmationPanel").dialog("open");
+            j$("#idRemoveProcessConfirmationPanel").dialog("option" , "title" , "{!$Label.ApprovalProcessDelete}");
+            j$("#idRemoveProcessConfirmationPanel").dialog("option", "position", "center");
+            
+            return false;
+            
+        }
+        
+        /**
+         * Show remove step confirmation dialog
+         * @param stepId the ID of the approval process step to delete
+         */
+        function showRemoveStepConfirmation(stepId) {
+            
+            // store the step id in the global namespace
+            j$.APTTUS.StepId = stepId;
+            
+            j$("#idRemoveStepConfirmationPanel").dialog("open");
+            j$("#idRemoveStepConfirmationPanel").dialog("option" , "title" , "{!$Label.ApprovalProcessStepDelete}");
+            j$("#idRemoveStepConfirmationPanel").dialog("option", "position", "center");
+            
+            return false;
+            
+        }
+        
+        /**
+         * Show remove initial action confirmation dialog
+         * @param initialActionId the ID of the approval process initial action to delete
+         */
+        function showRemoveInitialActionConfirmation(initialActionId) {
+            
+            // store the initial action id in the global namespace
+            j$.APTTUS.InitialActionId = initialActionId;
+            
+            j$("#idRemoveInitialActionConfirmationPanel").dialog("open");
+            j$("#idRemoveInitialActionConfirmationPanel").dialog("option" , "title" , "{!$Label.ApprovalProcessInitialActionDelete}");
+            j$("#idRemoveInitialActionConfirmationPanel").dialog("option", "position", "center");
+            
+            return false;
+            
+        }
+        
+        /**
+         * Show remove final approval action confirmation dialog
+         * @param finalApprovalActionId the ID of the approval process final approval action to delete
+         */
+        function showRemoveFinalApprovalActionConfirmation(finalApprovalActionId) {
+            
+            // store the final approval action id in the global namespace
+            j$.APTTUS.FinalApprovalActionId = finalApprovalActionId;
+            
+            j$("#idRemoveFinalApprovalActionConfirmationPanel").dialog("open");
+            j$("#idRemoveFinalApprovalActionConfirmationPanel").dialog("option" , "title" , "{!$Label.ApprovalProcessFinalActionDelete}");
+            j$("#idRemoveFinalApprovalActionConfirmationPanel").dialog("option", "position", "center");
+            
+            return false;
+            
+        }
+        
+        /**
+         * Show remove final rejection action confirmation dialog
+         * @param finalRejectionActionId the ID of the approval process final rejection action to delete
+         */
+        function showRemoveFinalRejectionActionConfirmation(finalRejectionActionId) {
+            
+            // store the final rejection action id in the global namespace
+            j$.APTTUS.FinalRejectionActionId = finalRejectionActionId;
+            
+            j$("#idRemoveFinalRejectionActionConfirmationPanel").dialog("open");
+            j$("#idRemoveFinalRejectionActionConfirmationPanel").dialog("option" , "title" , "{!$Label.ApprovalProcessFinalActionDelete}");
+            j$("#idRemoveFinalRejectionActionConfirmationPanel").dialog("option", "position", "center");
+            
+            return false;
+            
+        }
+
+        /**
+         * Hide the remove process confirmation dialog
+         */
+        function hideRemoveProcessConfirmation(){
+            // close the confirmation dialog
+            j$("#idRemoveProcessConfirmationPanel").dialog("close");
+          
+        }
+
+        /**
+         * Hide the remove process step confirmation dialog
+         */
+        function hideRemoveStepConfirmation(){
+            // close the confirmation dialog
+            j$("#idRemoveStepConfirmationPanel").dialog("close");
+          
+        }
+
+        /**
+         * Hide the remove process initial action confirmation dialog
+         */
+        function hideRemoveInitialActionConfirmation(){
+            // close the confirmation dialog
+            j$("#idRemoveInitialActionConfirmationPanel").dialog("close");
+          
+        }
+
+        /**
+         * Hide the remove process final approval action confirmation dialog
+         */
+        function hideRemoveFinalApprovalActionConfirmation(){
+            // close the confirmation dialog
+            j$("#idRemoveFinalApprovalActionConfirmationPanel").dialog("close");
+          
+        }
+
+        /**
+         * Hide the remove process final rejection action confirmation dialog
+         */
+        function hideRemoveFinalRejectionActionConfirmation(){
+            // close the confirmation dialog
+            j$("#idRemoveFinalRejectionActionConfirmationPanel").dialog("close");
+          
+        }
+
+        /**
+         * Delete the approval process
+         */
+        function deleteProcess() {
+            // delete the process
+            doDeleteProcess(j$.APTTUS.ProcessId);
+                            
+        }
+        
+        /**
+         * Delete the approval process step from the approval process
+         */
+        function deleteStep() {
+            // delete the step
+            doDeleteStep(j$.APTTUS.StepId);
+                            
+        }
+        
+        /**
+         * Delete the approval process initial action from the approval process
+         */
+        function deleteInitialAction() {
+            // delete the initial action
+            doDeleteInitialAction(j$.APTTUS.InitialActionId);
+                            
+        }
+
+        /**
+         * Delete the approval process final approval action from the approval process
+         */
+        function deleteFinalApprovalAction() {
+            // delete the final approval action
+            doDeleteFinalApprovalAction(j$.APTTUS.FinalApprovalActionId);
+                            
+        }
+
+        /**
+         * Delete the approval process final rejection action from the approval process
+         */
+        function deleteFinalRejectionAction() {
+            // delete the final rejection action
+            doDeleteFinalRejectionAction(j$.APTTUS.FinalRejectionActionId);
+                            
+        }
+        
+    </script>        
+   
+    <apex:form id="idApprovalProcessDefnForm">
+        <apex:outputPanel id="idDoReturnInternal">
+            <script type="text/javascript">
+				// make sure jQuery doesn't conflict with any other JS libraries
+				j$ = jQuery.noConflict();      
+	            
+            </script>
+        </apex:outputPanel>
+    
+        <!--  required process fields -->
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Name}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Active__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Description__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Name__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Label__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Type__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Process_Name__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.RecordTypeId}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Assignment_Email_Template__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Reassignment_Email_Template__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Escalation_Email_Template__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Cancellation_Email_Template__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__NotifyOnly_Email_Template__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Reminder_Email_Template__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ApprovalSummaryPage__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__CustomPreviewPage__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__CustomMyApprovalsPage__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateApprovals__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateNotifications__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ContextType__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__EntryCriteriaFilterLogic__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__BackupAdminUser__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ProcessAutoEscalate__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ProcessExpectedDaysToComplete__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ProcessExpectedHoursToComplete__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ProcessExpectedMinutesToComplete__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ProcessEscalateToType__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ProcessEscalateToName__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ProcessEscalateToId__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsEnabled__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsType__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsPerStep__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment1Label__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment2Label__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment3Label__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsMandatory__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ApprovalCommentsMandatory__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__RejectionCommentsMandatory__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__IsAdhoc__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__StepDisplayFieldNameHeader__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__StepDisplayFieldNames__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocStepAutoReapprove__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocAutoReapprovalStatusLabel__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocAllowApprovedRequestsToBeDeleted__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__StepAutoReapprove__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__StepAutoReapprovalCriteria__c}" rendered="false" />
+
+	    <!-- ADD mode -->
+	    <apex:sectionHeader id="idAddProcessSectionHeader"
+	    					title="{!$Label.apttus_approval__new & ' ' & $ObjectType.Apttus_Approval__Approval_Process__c.Label}" 
+	                        subtitle="{!businessObjectLabel & ' (' & StepStats & ')'}" 
+	                        rendered="{!IsAddMode && NOT(IsAddModeDone) && NOT(inSearchMode)}" />
+	
+	    <!-- ADD mode final step -->
+	    <apex:sectionHeader id="idProcessSectionHeaderFinal"
+	    					title="{!$Label.apttus_approval__approvalprocessfinalstep}" 
+	                        rendered="{!IsAddMode && IsAddModeDone && IsRuleBasedProcess && NOT(inSearchMode)}" />
+	
+	    <!-- EDIT mode -->
+	    <apex:sectionHeader title="{!$Label.apttus_approval__edit & ' ' & $ObjectType.Apttus_Approval__Approval_Process__c.Label}" 
+	                        subtitle="{!businessObjectLabel & ': ' & Apttus_Approval__Approval_Process__c.Apttus_Approval__Process_Name__c}" 
+	                        rendered="{!IsEditMode && NOT(inSearchMode)}" />
+	                        
+	    <!-- VIEW mode -->
+	    <apex:sectionHeader title="{!$Label.apttus_approval__view & ' ' & $ObjectType.Apttus_Approval__Approval_Process__c.Label}" 
+	                        subtitle="{!businessObjectLabel & ': ' & Apttus_Approval__Approval_Process__c.Apttus_Approval__Process_Name__c}" 
+	                        rendered="{!IsViewMode && NOT(inSearchMode)}" />
+                        
+        <!--
+            ADD/EDIT mode
+        	
+        	STEP		DESCRIPTION							RULE-BASED?		ADHOC?
+            step 1		Name & Description					Y (1)			Y (1)
+            step 2 		Entry Criteria						Y (2)			N ---
+            step 3 		Consolidation Settings Page			Y (3)			Y (2)
+            step 4 		Email Notification Templates		Y (4)			Y (3)
+            step 5 		Custom Pages						Y (5)			N ---
+            step 6 		Backup Admin User					Y (6)			Y (4)
+            step 7 		Submission Comments Settings		Y (7)			Y (5)
+            step 8 		Display Fields						N ---			Y (6)
+            step 9 		Auto-Reapproval Settings			N ---			Y (7)
+        -->
+        <apex:pageBlock id="idApprovalProcessBlock" 
+                        title="{!IF(NOT(IsViewMode), $Label.apttus_approval__step & ' ' & TEXT(CurrentStep) & ': ' & CurrentStepName, '')}"
+                        rendered="{!((IsAddMode && NOT(IsAddModeDone)) || IsEditMode) && NOT(inSearchMode)}"
+                        mode="edit" >
+                        
+            <apex:pageMessages />
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__previous}" 
+                                    action="{!doPrevious}"
+                                    rendered="{!(IsAddMode && (CurrentStep > 1) && NOT(IsAddModeDone)) ||
+                                                (isEditMode && (CurrentStep > 1))}"
+                                    reRender="idApprovalProcessDefnForm"
+                                    status="idPleaseWaitStatus2" />
+                
+                <apex:commandButton value="{!$Label.apttus_approval__next}" 
+                                    action="{!doNext}"
+                                    rendered="{!NOT(isLastStep)}"
+                                    reRender="idApprovalProcessDefnForm"
+                                    status="idPleaseWaitStatus2" />
+                
+                <apex:commandButton value="{!$Label.apttus_approval__save}" 
+                                    action="{!doSave}"
+                                    rendered="{!(IsAddMode && isLastStep) || isEditMode}"
+                                    reRender="idApprovalProcessDefnForm"
+                                    status="idPleaseWaitStatus2" />
+                
+                <apex:commandButton value="{!$Label.apttus_approval__cancel}"
+                                    action="{!doCancel}"
+                                    immediate="true"
+                                    reRender="idApprovalProcessDefnForm"
+                                    status="idPleaseWaitStatus2" />
+
+                <apex:actionStatus id="idPleaseWaitStatus2">
+                    <apex:facet name="start">
+                        {!$Label.apttus_approval__statuspleasewait}...
+                        <img src="/apexpages/devmode/img/saveStatus.gif" />
+                    </apex:facet>
+                    <apex:facet name="stop" />
+                </apex:actionStatus>
+            </apex:pageBlockButtons>
+            
+            <!-- Step 1 - Specify Name & Description -->
+            <apex:pageBlockSection columns="1" rendered="{!CurrentStep == 1}">
+                {!$Label.apttus_approval__approvalprocessinst1}
+            </apex:pageBlockSection>
+
+            <apex:pageBlockSection id="idProcessTypeSection" 
+                                   title="Process Type" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!CurrentStep == 1}">
+                <apex:pageBlockSectionItem >
+	                <apex:selectRadio id="idProcessTypeSelection"
+	                                  value="{!processType}"
+	                                  layout="pageDirection">
+	                    <apex:selectOption itemValue="Rule-Based" 
+	                    				   itemLabel="{!$Label.apttus_approval__ruledrivenprocess}" />
+	                    <apex:selectOption itemValue="Adhoc"
+	                    				   itemLabel="{!$Label.apttus_approval__adhocprocess}" />
+	                    <apex:actionSupport event="onchange"
+	                    					action="{!doProcessTypeChanged}"
+	                    					reRender="idAddProcessSectionHeader" />
+	                </apex:selectRadio>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection id="idProcessNameSection" 
+                                   title="{!$Label.apttus_approval__approvalprocessstep1}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!CurrentStep == 1}">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__businessobject}" 
+                                      for="idBusinessObject2" />
+                    <apex:outputText id="idBusinessObject2" value="{!businessObjectLabel}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Process_Name__c.Label}" 
+                                      for="idName" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:inputField id="idName" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Process_Name__c}" 
+                                         style="width:500px;"
+                                         required="true" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Description__c.Label}"
+                                      for="idDescription" />
+                    <apex:outputPanel layout="block">
+                        <apex:inputField id="idDescription" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Description__c}" 
+                                         style="width:500px;" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+
+            <!-- Step 2 - Select Entry Criteria -->
+            <apex:pageBlockSection columns="1" rendered="{!IsRuleBasedProcess && CurrentStep == 2}">
+                {!$Label.apttus_approval__approvalprocessinst2}
+            </apex:pageBlockSection>
+            
+            <!-- debug entry criteria
+            	(IsRuleBasedProcess || IsAdhocProcess) && CurrentStep == 2 
+            -->
+                
+            <apex:pageBlockSection id="idEntryCriteriaSection" 
+                                   title="{!$Label.apttus_approval__approvalprocessentrycriteria}" 
+                                   columns="2" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 2}">
+                                   
+                <apex:pageBlockTable value="{!predicates}" 
+                                     var="predicate" 
+                                     columns="7" 
+                                     rowClasses="oddRow,evenRow">
+                    
+                    <!-- 1. rownum -->
+                    <apex:column width="5%" rendered="{!isAdvancedOptionsMode}" >
+                        <apex:outputText id="idRowNum" value="{!predicate.RowNum}. " />
+                    </apex:column>
+                    
+                    <!-- 2. field -->
+                    <apex:column headerValue="{!$Label.apttus_approval__field}" width="25%" >
+                        <apex:outputPanel styleClass="{!IF(predicate.FieldInError, 'errorRow', '')}" layout="block" >
+                            <apex:selectList id="idField" size="1" value="{!predicate.FieldName}" >
+                                <apex:selectOptions value="{!fieldItems}"></apex:selectOptions>
+                                <apex:actionSupport event="onchange"
+                                                    action="{!predicate.doFieldNameChanged}"
+                                                    reRender="idApprovalProcessDefnForm" 
+                                                    status="idStatusWaitFieldName" />
+                            </apex:selectList>
+                            <apex:actionStatus id="idStatusWaitFieldName" startText="{!$Label.apttus_approval__statuspleasewait}..." />
+                        </apex:outputPanel>
+                    </apex:column>
+                    
+                    <!-- 3. operator -->
+                    <apex:column headerValue="{!$Label.apttus_approval__operator}" width="25%" >
+                        <apex:outputPanel styleClass="{!IF(predicate.CompOperInError, 'errorRow', '')}" layout="block" >
+                            <apex:selectList id="idCompOper" size="1" value="{!predicate.CompOper}" >
+                                <apex:selectOptions value="{!compOperItems}"></apex:selectOptions>
+                            </apex:selectList>
+                        </apex:outputPanel>
+                    </apex:column>
+                    
+                    <!-- 4. value -->
+                    <apex:column headerValue="{!$Label.apttus_approval__value}" width="25%">
+                        <apex:outputPanel rendered="{!predicate.FieldType == 'PICKLIST'}"
+                                          styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" layout="block">
+                            <apex:selectList id="idPicklistFieldValue" 
+                                             value="{!predicate.FieldValue}" 
+                                             multiselect="false" 
+                                             required="false" 
+                                             size="1" >
+                                <apex:selectOptions value="{!predicate.FieldValueOptions}"></apex:selectOptions>
+                            </apex:selectList>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!predicate.FieldType == 'MULTIPICKLIST'}"
+                                          styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" layout="block">
+                            <apex:selectList id="idMultiPicklistFieldValue" 
+                                             value="{!predicate.FieldValues}" 
+                                             multiselect="true" 
+                                             required="false" 
+                                             size="5" >
+                                <apex:selectOptions value="{!predicate.FieldValueOptions}"></apex:selectOptions>
+                            </apex:selectList>
+                        </apex:outputPanel>
+                        <!--<apex:outputPanel rendered="{!predicate.FieldType == 'REFERENCE'}"
+                                          styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" layout="block">
+                            <apex:actionRegion >
+                                <apex:inputText id="idReferenceFieldValue" 
+                                                value="{!predicate.FieldValue}">
+                                    <apex:commandLink id="idSelectReferenceFieldValue"
+                                                      action="{!predicate.doSelectReferenceFieldValue}">
+                                        <img src="/img/s.gif" class="lookupIcon"/>
+                                    </apex:commandLink>
+                                </apex:inputText>
+                            </apex:actionRegion>
+                        </apex:outputPanel>-->
+                        <apex:outputPanel rendered="{!predicate.FieldType != 'PICKLIST' &&
+                                                      predicate.FieldType != 'MULTIPICKLIST'}"
+                                          styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" layout="block">
+                            <apex:inputText id="idTextFieldValue" size="25"
+                                            value="{!predicate.FieldValue}" />
+                        </apex:outputPanel>
+                    </apex:column>
+                    
+                    <!-- 5. join/add -->
+                    <apex:column width="5%" rendered="{!NOT(isAdvancedOptionsMode)}">
+                        <apex:outputText id="idBoolOper" 
+                                         value="{!predicate.BoolOper}" 
+                                         rendered="{!NOT(isAdvancedOptionsMode) && NOT(ISBLANK(predicate.BoolOper))}" />
+                        <apex:commandLink action="{!doAddRow}" 
+                                          reRender="idEntryCriteriaSection" 
+                                          rendered="{!NOT(isAdvancedOptionsMode) && ISBLANK(predicate.BoolOper)}"
+                                          status="idPleaseWaitAddRow" > 
+                            <apex:image url="{!$Resource.Apttus_Approval__Image_Plus2}" 
+                                        title="{!$Label.apttus_approval__add}" 
+                                        alt="{!$Label.apttus_approval__add}" />                
+                        </apex:commandLink>
+                        <apex:actionStatus id="idPleaseWaitAddRow">
+                            <apex:facet name="start">
+                                {!$Label.apttus_approval__statuspleasewait}...
+                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>
+                            <apex:facet name="stop" />
+                        </apex:actionStatus>
+                    </apex:column>
+
+                    <!-- 6. del row -->
+                    <apex:column width="5%" >
+                        <apex:commandLink id="idDeleteRow" 
+                                          action="{!doDeleteRow}" 
+                                          reRender="idEntryCriteriaSection" 
+                                          rendered="{!predicate.RowNum > 1}"
+                                          status="idPleaseWaitDeleteRow" >
+                            <apex:param name="rowNum" value="{!predicate.RowNum}" />    
+                            <apex:image url="{!$Resource.Apttus_Approval__Image_Minus2}" 
+                                        title="{!$Label.apttus_approval__remove}" 
+                                        alt="{!$Label.apttus_approval__remove}" />     
+                        </apex:commandLink>
+                        <apex:actionStatus id="idPleaseWaitDeleteRow">
+                            <apex:facet name="start">
+                                {!$Label.apttus_approval__statuspleasewait}...
+                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>
+                            <apex:facet name="stop" />
+                        </apex:actionStatus>
+                    </apex:column>
+                    
+                    <!-- 7. error msg -->
+                    <apex:column width="10%" rendered="{!NOT(predicate.ErrorMsg == null)}">
+                        <apex:outputText value="{!predicate.ErrorMsg}" style="color:red;" />
+                    </apex:column>
+                   
+                </apex:pageBlockTable>
+                
+            </apex:pageBlockSection>
+                    
+            <!-- Step 2 - Entry Criteria Advanced Options -->
+            <apex:pageBlockSection id="idEntryCriteriaAdvOptionsSection" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 2}">
+            
+                <apex:actionStatus id="idPleaseWaitAdvOptions">
+                    <apex:facet name="start">
+                        {!$Label.apttus_approval__statuspleasewait}...
+                        <img src="/apexpages/devmode/img/saveStatus.gif" />
+                    </apex:facet>
+                    <apex:facet name="stop" />
+                </apex:actionStatus>
+                
+                <apex:commandLink id="idShowAdvancedOptions" 
+                                  action="{!doShowAdvancedOptions}" 
+                                  value="{!$Label.apttus_approval__advancedoptions}" 
+                                  reRender="idEntryCriteriaAdvOptionsSection,idEntryCriteriaSection" 
+                                  rendered="{!NOT(isAdvancedOptionsMode)}" 
+                                  status="idPleaseWaitAdvOptions" />
+                
+                <apex:outputPanel rendered="{!isAdvancedOptionsMode}">
+                    <apex:commandLink id="idAddRow" 
+                                      action="{!doAddRow}" 
+                                      value="{!$Label.apttus_approval__addrow}" 
+                                      reRender="idEntryCriteriaAdvOptionsSection,idEntryCriteriaSection"
+                                      status="idPleaseWaitAdvOptions" />
+                    <span>  </span>
+                    <apex:commandLink id="idRemoveRow" 
+                                      action="{!doRemoveRow}" 
+                                      value="{!$Label.apttus_approval__removerow}" 
+                                      reRender="idEntryCriteriaAdvOptionsSection,idEntryCriteriaSection" 
+                                      rendered="{!OkToRemoveRow}"
+                                      status="idPleaseWaitAdvOptions" />
+                    
+                    <apex:outputPanel id="idRemoveRow2" styleClass="greyedLink" rendered="{!NOT(OkToRemoveRow)}" >Remove Row</apex:outputPanel>
+                    <p/>    
+                    <apex:commandLink id="idHideAdvancedOptions" 
+                                      action="{!doHideAdvancedOptions}" 
+                                      value="{!$Label.apttus_approval__clearadvancedoptions}" 
+                                      reRender="idEntryCriteriaAdvOptionsSection,idEntryCriteriaSection"
+                                      status="idPleaseWaitAdvOptions" />
+                    <br/>
+                    <apex:outputText value="{!$Label.apttus_approval__advancedfiltercondition}" />
+                    <br/>
+                    <apex:inputText id="idAdvancedOptions" size="80" value="{!advancedOptions}" />
+                </apex:outputPanel>
+                
+            </apex:pageBlockSection>
+
+            <!-- step 3 - Specify Consolidation Settings -->
+            <apex:pageBlockSection columns="1" rendered="{!IsRuleBasedProcess && CurrentStep == 3 || IsAdhocProcess && CurrentStep == 2}">
+                {!$Label.apttus_approval__approvalprocessinst3}
+            </apex:pageBlockSection> 
+
+            <apex:pageBlockSection id="idConsolidateApprovalsSection" 
+                                   title="{!$Label.apttus_approval__approvalprocessconsolidationsettings}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 3 || IsAdhocProcess && CurrentStep == 2}">
+                
+                <apex:pageBlockSectionItem helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateApprovals__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateApprovals__c.Label}" 
+                                      for="idConsolidateApprovals" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:inputField id="idConsolidateApprovals" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateApprovals__c}" 
+                                         required="false" onchange="doUpdateConsolidateNotification();"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateNotifications__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateNotifications__c.Label}" 
+                                      for="idConsolidateNotifications" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:inputField id="idConsolidateNotifications" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateNotifications__c}" 
+                                         required="false" 
+                                         rendered="{!NOT(Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateApprovals__c)}"/>
+                        <apex:outputField value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateNotifications__c}" 
+                                         rendered="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateApprovals__c}"/>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ContinuePendingApprovalsOnAReject__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ContinuePendingApprovalsOnAReject__c.Label}" 
+                                      for="idContinueApprovalsOnAReject" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:inputField id="idContinueApprovalsOnAReject" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ContinuePendingApprovalsOnAReject__c}" 
+                                         required="false" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+            </apex:pageBlockSection>
+
+            <!-- Step 4 - Select Email Notification Templates -->
+            <apex:pageBlockSection columns="1" rendered="{!IsRuleBasedProcess && CurrentStep == 4 || IsAdhocProcess && CurrentStep == 3}">
+                {!$Label.apttus_approval__approvalprocessinst4}
+            </apex:pageBlockSection>
+                
+            <apex:pageBlockSection id="idNotificationTemplatesSection"
+                                   title="{!$Label.apttus_approval__approvalprocessnotificationtemplates}"
+                                   columns="1"
+                                   collapsible="false"
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 4 || IsAdhocProcess && CurrentStep == 3}">
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idAssignmentEmailTemplate" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Assignment_Email_Template__c.Label}"/>
+                    <apex:outputPanel id="idAssignmentEmailTemplatePanel">
+                        <apex:actionRegion >
+                            <apex:inputField id="idAssignmentEmailTemplateValue"
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Assignment_Email_Template__c}"
+                                             style="width:340px;">
+                                <apex:commandLink id="idSelectAssignmentEmailTemplate"
+                                                  action="{!doSelectEmailTemplate}"
+                                                  title="{!$Label.apttus_approval__search}"
+                                                  type="image/gif"
+                                                  reRender="idApprovalProcessDefnForm"
+                                                  status="idPleaseWaitStatusTemplate1">
+                                    <apex:image rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                    <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                                    <!--
+                                    <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d'}" styleClass="imageStyle" url="{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#search')}" />
+                                    <span class="slds-icon_container">
+                                        <svg class="slds-icon" aria-hidden="true">
+                                            <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#search')}" />
+                                        </svg>
+                                        <span class="slds-assistive-text">Search</span>
+                                    </span>
+                                    <div class="slds-scope">
+                                        <div id="target" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                            <div id="messageOnPageLoad" class="slds-notify slds-notify--alert slds-theme--alert-texture slds-theme--warning" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" role="alert">
+                                                <span class="slds-icon_container">
+                                                    <svg class="slds-icon slds-icon-text-default slds-icon--small slds-m-right--x-small" aria-hidden="true">
+                                                        <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#info')}"></use>
+                                                    </svg>
+                                                </span>
+                                                <h2><span>Here is a toast message!</span></h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="slds-scope">
+                                        <div id="target" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                            <span class="slds-icon_container">
+                                                <svg class="slds-icon slds-icon-text-default slds-icon--large" aria-hidden="true">
+                                                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="/apexpages/slds/latest/assets/icons/utility-sprite/svg/symbols.svg#search"></use>
+                                                </svg>
+                                            </span>
+                                            <h2><span>Here is a toast message!</span></h2>
+                                        </div>
+                                    
+                                        <svg aria-hidden="true" class="slds-icon slds-icon--large slds-icon-standard-user">
+                                            <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/standard-sprite/svg/symbols.svg#user')}" />
+                                        </svg>
+                                    </div>
+                                    -->
+                                    <apex:param name="param1"
+                                                assignTo="{!selectedEmailTemplateFieldName}"
+                                                value="Assignment_Email_Template__c"/>
+                                    <apex:param name="param2"
+                                                assignTo="{!selectedEmailTemplateLabel}"
+                                                value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Assignment_Email_Template__c.Label}"/>
+                                </apex:commandLink>
+                            </apex:inputField>
+                            <apex:actionStatus id="idPleaseWaitStatusTemplate1">
+                                <apex:facet name="start">
+                                    {!$Label.apttus_approval__statuspleasewait}...
+                                    <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                </apex:facet>
+                                <apex:facet name="stop" />
+                            </apex:actionStatus>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idReasignmentEmailTemplate" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Reassignment_Email_Template__c.Label}"/>
+                    <apex:outputPanel id="idReassignmentEmailTemplatePanel">
+                        <apex:actionRegion >
+                            <apex:inputField id="idReassignmentEmailTemplateValue"
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Reassignment_Email_Template__c}"
+                                             style="width:340px;">
+                                <apex:commandLink id="idSelectReassignmentEmailTemplate"
+                                                  action="{!doSelectEmailTemplate}"
+                                                  title="{!$Label.apttus_approval__search}"
+                                                  type="image/gif"
+                                                  reRender="idApprovalProcessDefnForm"
+                                                  status="idPleaseWaitStatusTemplate2">
+                                    <apex:image rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                    <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                                    <apex:param name="param1"
+                                                assignTo="{!selectedEmailTemplateFieldName}"
+                                                value="Reassignment_Email_Template__c"/>
+                                    <apex:param name="param2"
+                                                assignTo="{!selectedEmailTemplateLabel}"
+                                                value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Reassignment_Email_Template__c.Label}"/>
+                                </apex:commandLink>
+                            </apex:inputField>
+
+                            <apex:actionStatus id="idPleaseWaitStatusTemplate2">
+                                <apex:facet name="start">
+                                    {!$Label.apttus_approval__statuspleasewait}...
+                                    <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                </apex:facet>
+                                <apex:facet name="stop" />
+                            </apex:actionStatus>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem rendered="{!IsRuleBasedProcess}">
+                    <apex:outputLabel for="idEscalationEmailTemplate" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Escalation_Email_Template__c.Label}"/>
+                    <apex:outputPanel id="idEscalationEmailTemplatePanel">
+                        <apex:actionRegion >
+                            <apex:inputField id="idEscalationEmailTemplateValue"
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Escalation_Email_Template__c}"
+                                             style="width:340px;">
+                                <apex:commandLink id="idSelectEscalationEmailTemplate"
+                                                  action="{!doSelectEmailTemplate}"
+                                                  title="{!$Label.apttus_approval__search}"
+                                                  type="image/gif"
+                                                  reRender="idApprovalProcessDefnForm"
+                                                  status="idPleaseWaitStatusTemplate3">
+                                    <apex:image rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                    <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                                    <apex:param name="param1"
+                                                assignTo="{!selectedEmailTemplateFieldName}"
+                                                value="Escalation_Email_Template__c"/>
+                                    <apex:param name="param2"
+                                                assignTo="{!selectedEmailTemplateLabel}"
+                                                value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Escalation_Email_Template__c.Label}"/>
+                                </apex:commandLink>
+                            </apex:inputField>
+
+                            <apex:actionStatus id="idPleaseWaitStatusTemplate3">
+                                <apex:facet name="start">
+                                    {!$Label.apttus_approval__statuspleasewait}...
+                                    <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                </apex:facet>
+                                <apex:facet name="stop" />
+                            </apex:actionStatus>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idCancellationEmailTemplate" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Cancellation_Email_Template__c.Label}"/>
+                    <apex:outputPanel id="idCancellationEmailTemplatePanel">
+                        <apex:actionRegion >
+                            <apex:inputField id="idCancellationEmailTemplateValue"
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Cancellation_Email_Template__c}"
+                                             style="width:340px;">
+                                <apex:commandLink id="idSelectCancellationEmailTemplate"
+                                                  action="{!doSelectEmailTemplate}"
+                                                  title="{!$Label.apttus_approval__search}"
+                                                  type="image/gif"
+                                                  reRender="idApprovalProcessDefnForm"
+                                                  status="idPleaseWaitStatusTemplate4">
+                                    <apex:image rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                    <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                                    <apex:param name="param1"
+                                                assignTo="{!selectedEmailTemplateFieldName}"
+                                                value="Cancellation_Email_Template__c"/>
+                                    <apex:param name="param2"
+                                                assignTo="{!selectedEmailTemplateLabel}"
+                                                value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Cancellation_Email_Template__c.Label}"/>
+                                </apex:commandLink>
+                            </apex:inputField>
+
+                            <apex:actionStatus id="idPleaseWaitStatusTemplate4">
+                                <apex:facet name="start">
+                                    {!$Label.apttus_approval__statuspleasewait}...
+                                    <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                </apex:facet>
+                                <apex:facet name="stop" />
+                            </apex:actionStatus>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idNotifyOnlyEmailTemplate" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__NotifyOnly_Email_Template__c.Label}"/>
+                    <apex:outputPanel id="idNotifyOnlyEmailTemplatePanel">
+                        <apex:actionRegion >
+                            <apex:inputField id="idNotifyOnlyEmailTemplateValue"
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__NotifyOnly_Email_Template__c}"
+                                             style="width:340px;">
+                                <apex:commandLink id="idSelectNotifyOnlyEmailTemplate"
+                                                  action="{!doSelectEmailTemplate}"
+                                                  title="{!$Label.apttus_approval__search}"
+                                                  type="image/gif"
+                                                  reRender="idApprovalProcessDefnForm"
+                                                  status="idPleaseWaitStatusTemplate5">
+                                    <apex:image rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                    <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                                    <apex:param name="param1"
+                                                assignTo="{!selectedEmailTemplateFieldName}"
+                                                value="NotifyOnly_Email_Template__c"/>
+                                    <apex:param name="param2"
+                                                assignTo="{!selectedEmailTemplateLabel}"
+                                                value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__NotifyOnly_Email_Template__c.Label}"/>
+                                </apex:commandLink>
+                            </apex:inputField>
+
+                            <apex:actionStatus id="idPleaseWaitStatusTemplate5">
+                                <apex:facet name="start">
+                                    {!$Label.apttus_approval__statuspleasewait}...
+                                    <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                </apex:facet>
+                                <apex:facet name="stop" />
+                            </apex:actionStatus>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem rendered="{!IsRuleBasedProcess}">
+                    <apex:outputLabel for="idReminderEmailTemplate" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Reminder_Email_Template__c.Label}"/>
+                    <apex:outputPanel id="idReminderEmailTemplatePanel">
+                        <apex:actionRegion >
+                            <apex:inputField id="idReminderEmailTemplateValue"
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Reminder_Email_Template__c}"
+                                             style="width:340px;">
+                                <apex:commandLink id="idSelectReminderEmailTemplate"
+                                                  action="{!doSelectEmailTemplate}"
+                                                  title="{!$Label.apttus_approval__search}"
+                                                  type="image/gif"
+                                                  reRender="idApprovalProcessDefnForm"
+                                                  status="idPleaseWaitStatusTemplate2">
+                                    <apex:image rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                    <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                                    <apex:param name="param1"
+                                                assignTo="{!selectedEmailTemplateFieldName}"
+                                                value="Reminder_Email_Template__c"/>
+                                    <apex:param name="param2"
+                                                assignTo="{!selectedEmailTemplateLabel}"
+                                                value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Reminder_Email_Template__c.Label}"/>
+                                </apex:commandLink>
+                            </apex:inputField>
+
+                            <apex:actionStatus id="idPleaseWaitStatusTemplate2">
+                                <apex:facet name="start">
+                                    {!$Label.apttus_approval__statuspleasewait}...
+                                    <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                </apex:facet>
+                                <apex:facet name="stop" />
+                            </apex:actionStatus>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+
+            <!-- Step 5 - Select Custom Pages -->
+            <apex:pageBlockSection columns="1" rendered="{!IsRuleBasedProcess && CurrentStep == 5}">
+                {!$Label.apttus_approval__approvalprocessinst5}
+            </apex:pageBlockSection> 
+
+            <apex:pageBlockSection id="idApprovalSummaryPageSection" 
+                                   title="{!$Label.apttus_approval__custompages}"
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 5}" >
+                
+                <apex:pageBlockSectionItem id="idCustomApprovalSummaryPageItem"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ApprovalSummaryPage__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__approvalprocesssummarypage}" 
+                                      for="idApprovalSummaryPage" />
+                    <apex:outputPanel id="idApprovalSummaryPage" layout="block">
+                        <apex:actionRegion >
+                            <apex:inputField id="idApprovalSummaryPageValue" 
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ApprovalSummaryPage__c}"
+                                             style="width:240px;">
+                            </apex:inputField>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idCustomMyApprovalsPageItem"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__CustomMyApprovalsPage__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__CustomMyApprovalsPage__c.Label}" 
+                                      for="idCustomMyApprovalsPage" />
+                    <apex:outputPanel id="idCustomMyApprovalsPage" layout="block">
+                        <apex:actionRegion >
+                            <apex:inputField id="idCustomMyApprovalsPageValue" 
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__CustomMyApprovalsPage__c}"
+                                             style="width:240px;">
+                            </apex:inputField>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!--<apex:pageBlockSectionItem id="idCustomPreviewPageItem"
+                                           helpText="{!$ObjectType.Approval_Process__c.Fields.CustomPreviewPage__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Approval_Process__c.Fields.CustomPreviewPage__c.Label}" 
+                                      for="idCustomPreviewPage" />
+                    <apex:outputPanel id="idCustomPreviewPage" layout="block">
+                        <apex:actionRegion >
+                            <apex:inputField id="idCustomPreviewPageValue" 
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__CustomPreviewPage__c}"
+                                             style="width:240px;">
+                            </apex:inputField>
+                        </apex:actionRegion>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>-->
+
+            </apex:pageBlockSection>
+
+            <!-- Step 6 - Select Backup Admin User -->
+            <apex:pageBlockSection columns="1" rendered="{!IsRuleBasedProcess && CurrentStep == 6 || IsAdhocProcess && CurrentStep == 4}">
+                {!$Label.apttus_approval__approvalprocessinst6}
+            </apex:pageBlockSection> 
+
+            <apex:pageBlockSection id="idBackupAdminUserSection" 
+                                   title="{!$Label.apttus_approval__approvalprocessbackupadminsettings}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 6 || IsAdhocProcess && CurrentStep == 4}" >
+                
+                <apex:pageBlockSectionItem id="idBackupAdminUserItem"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__BackupAdminUser__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__BackupAdminUser__c.Label}" 
+                                      for="idBackupAdminUser" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:inputField id="idBackupAdminUser" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__BackupAdminUser__c}" 
+                                         required="false" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+
+            <!-- Step 7 - Submission Comments Settings -->
+            <apex:pageBlockSection columns="1" rendered="{!IsRuleBasedProcess && CurrentStep == 7 || IsAdhocProcess && CurrentStep == 5}">
+                {!$Label.apttus_approval__approvalprocessinst7}<br/>
+            </apex:pageBlockSection> 
+
+            <apex:pageBlockSection id="idSubmissionComments" 
+                                   title="{!$Label.apttus_approval__submissioncomments}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 7 || IsAdhocProcess && CurrentStep == 5}" >
+                
+                <apex:pageBlockSectionItem id="idSubmissionCommentsEnabledItem"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsEnabled__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsEnabled__c.Label}" 
+                                      for="idProcessSubmissionCommentsEnabled" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block" />
+                        <apex:inputField id="idProcessSubmissionCommentsEnabled" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsEnabled__c}">
+                            <apex:actionSupport event="onchange"
+                                                action="{!doSubmissionCommentsEnabledChanged}"
+                                                reRender="idSubmissionComments"
+                                                status="idStatusWaitSubmissionComments" />
+                        </apex:inputField>
+                        <apex:actionStatus id="idStatusWaitSubmissionComments">
+                            <apex:facet name="start">
+                                {!$Label.apttus_approval__statuspleasewait}...
+                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>
+                            <apex:facet name="stop" />
+                        </apex:actionStatus>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idSubmissionCommentsMandatoryItem"
+										   rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsMandatory__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsMandatory__c.Label}" 
+                                      for="idProcessSubmissionCommentsMandatory" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block" />
+                        <apex:inputField id="idProcessSubmissionCommentsMandatory" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsMandatory__c}">
+                        </apex:inputField>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idSubmissionCommentsTypeItem"
+                                           rendered="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsEnabled__c}"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsType__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsType__c.Label}" 
+                                      for="idSubmissionCommentsType" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block" />
+                        <apex:inputField id="idSubmissionCommentsType" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsType__c}">
+                            <apex:actionSupport event="onchange"
+                                                action="{!doSubmissionCommentsTypeChanged}"
+                                                reRender="idSubmissionComments"
+                                                status="idStatusWaitSubmissionComments" />
+                        </apex:inputField>
+                        <apex:actionStatus id="idStatusWaitSubmissionComments">
+                            <apex:facet name="start">
+                                {!$Label.apttus_approval__statuspleasewait}...
+                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>
+                            <apex:facet name="stop" />
+                        </apex:actionStatus>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idSubmissionCommentsPerStepItem"
+                                           rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsPerStep__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsPerStep__c.Label}" 
+                                      for="idSubmissionCommentsPerStep" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:inputField id="idSubmissionCommentsPerStep" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsPerStep__c}">
+                            <apex:actionSupport event="onchange"
+                                                action="{!doSubmissionCommentsPerStepChanged}"
+                                                reRender="idSubmissionComments"
+                                                status="idStatusWaitSubmissionComments" />
+                        </apex:inputField>
+                        <apex:actionStatus id="idStatusWaitSubmissionComments">
+                            <apex:facet name="start">
+                                {!$Label.apttus_approval__statuspleasewait}...
+                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>
+                            <apex:facet name="stop" />
+                        </apex:actionStatus>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+               <apex:pageBlockSectionItem id="idSubmissionComment1Label"
+                                          rendered="{!isSubmissionCommentsEnabled &&
+                                                      (isSubmissionCommentsTypeProcess ||
+                                                      (isSubmissionCommentsTypeStep && numSubmissionCommentsPerStep >= 1))}"
+                                          helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment1Label__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment1Label__c.Label}" />
+                    <apex:inputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment1Label__c}"
+                                    disabled="{!isReadOnly}"
+                                    style="width:300px;"/>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idSubmissionComment2Label"
+                                           rendered="{!isSubmissionCommentsEnabled &&
+                                                       isSubmissionCommentsTypeStep &&
+                                                       numSubmissionCommentsPerStep >= 2}"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment2Label__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment2Label__c.Label}" />
+                    <apex:inputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment2Label__c}"
+                                    disabled="{!isReadOnly}"
+                                    style="width:300px;"/>
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idSubmissionComment3Label"
+                                           rendered="{!isSubmissionCommentsEnabled &&
+                                                       isSubmissionCommentsTypeStep &&
+                                                       numSubmissionCommentsPerStep == 3}"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment3Label__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment3Label__c.Label}" />
+                    <apex:inputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment3Label__c}"
+                                    disabled="{!isReadOnly}"
+                                    style="width:300px;"/>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+
+            <apex:pageBlockSection id="idApprovalComments" 
+                                   title="{!$Label.apttus_approval__approvalcomments}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 7 || IsAdhocProcess && CurrentStep == 5}" >
+                <apex:pageBlockSectionItem id="idApprovalCommentsMandatoryItem"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ApprovalCommentsMandatory__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ApprovalCommentsMandatory__c.Label}" 
+                                      for="idProcessApprovalCommentsMandatory" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block" />
+                        <apex:inputField id="idProcessApprovalCommentsMandatory" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ApprovalCommentsMandatory__c}">
+                        </apex:inputField>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection id="idRejectionComments" 
+                                   title="{!$Label.apttus_approval__rejectioncomments}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsRuleBasedProcess && CurrentStep == 7 || IsAdhocProcess && CurrentStep == 5}" >
+                <apex:pageBlockSectionItem id="idRejectionCommentsMandatoryItem"
+                                           helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__RejectionCommentsMandatory__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__RejectionCommentsMandatory__c.Label}" 
+                                      for="idProcessRejectionCommentsMandatory" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block" />
+                        <apex:inputField id="idProcessRejectionCommentsMandatory" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__RejectionCommentsMandatory__c}">
+                        </apex:inputField>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+            </apex:pageBlockSection>
+
+
+            <!-- Step 8 - Step Display Field Names -->
+            <apex:pageBlockSection id="idStepDisplayHeaderFieldNameSection" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   showHeader="false"
+                                   rendered="{!IsAdhocProcess && CurrentStep == 6}">
+        
+                <apex:pageBlockSectionItem >
+                    {!$Label.apttus_approval__approvalprocessstep9inst}
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem id="idHeaderDisplayField" helpText="{!$Label.apttus_approval__dependsonhelp}">
+                    <apex:panelGroup >
+                        <apex:panelGrid columns="1">
+                            <apex:outputLabel for="idHeaderDisplayFields"
+                                              value="{!'Header ' & $Label.apttus_approval__displayfield}" 
+                                              style="font-weight: bold;"/>
+                            <apex:selectList id="idHeaderDisplayFields" size="1"
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__StepDisplayFieldNameHeader__c}"
+                                             disabled="{!isReadOnly}">
+                                <apex:selectOptions value="{!headerDisplayFields}" />
+                            </apex:selectList>
+                        </apex:panelGrid>
+                    </apex:panelGroup>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+
+            <apex:pageBlockSection id="idStepDisplayStandardFieldNames" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsAdhocProcess && CurrentStep == 6}">
+
+                <c:UIDisplayFieldNames id="idDisplayFieldNames" 
+                                       pageControllerAttr="{!this}"
+                                       contextSOAttr="{!Apttus_Approval__Approval_Process__c}"
+                                       contextSOFieldAttr="StepDisplayFieldNames__c"
+                                       contextSOLabelAttr="{!businessObjectName}"
+                                       itemValuesAttr="{!displayFieldNameValues}" />
+            </apex:pageBlockSection>
+
+            <!-- Step 9 - Auto-Reapproval Settings -->
+            <apex:pageBlockSection columns="1" rendered="{!IsAdhocProcess && CurrentStep == 7}">
+                {!$Label.apttus_approval__approvalprocessstep3}
+            </apex:pageBlockSection> 
+
+            <apex:pageBlockSection id="idAdhocAutoReapprovalsSection" 
+                                   title="{!$Label.apttus_approval__autoreapprovalsettings}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!IsAdhocProcess && CurrentStep == 7}">
+                
+                <apex:pageBlockSectionItem helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__AdhocStepAutoReapprove__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__enableautoreapproval}" for="idEnableAutoReapproval" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:inputField id="idEnableAutoReapproval" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocStepAutoReapprove__c}" 
+                                         required="false" />
+                                         <!--onchange="doUpdateAdhocAutoReapprove();" -->
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!--<apex:pageBlockSectionItem helpText="{!$ObjectType.Approval_Process__c.Fields.AdhocAutoReapprovalStatusLabel__c.inlineHelpText}"
+                						   rendered="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocStepAutoReapprove__c}">
+                    <apex:outputLabel value="{!$ObjectType.Approval_Process__c.Fields.AdhocAutoReapprovalStatusLabel__c.Label}" for="idAutoReapprovalStatusLabel" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:selectList id="idAutoReapprovalStatusLabel" size="1" 
+                        				 value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocAutoReapprovalStatusLabel__c}" >
+                            <apex:selectOptions value="{!autoReapprovalStatusLabels}"></apex:selectOptions>
+                            <apex:actionSupport event="onchange"
+                                                action="{!doAdhocStepAutoReapproveFlagToggled}"
+                                                reRender="idApprovalProcessDefnForm" />
+                        </apex:selectList>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>-->
+
+                <apex:pageBlockSectionItem helpText="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__AdhocAllowApprovedRequestsToBeDeleted__c.inlineHelpText}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__allowapprovedrequeststobedeleted}" for="idAllowApprovedRequestsToBeDeleted" />
+                    <apex:outputPanel layout="block">
+                        <apex:outputPanel layout="block"/>
+                        <apex:inputField id="idAllowApprovedRequestsToBeDeleted" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocAllowApprovedRequestsToBeDeleted__c}" 
+                                         required="false" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+            </apex:pageBlockSection>
+
+        </apex:pageBlock>
+
+        <!--
+            ADD mode final step
+        -->
+        
+        <!-- What Would You Like To Do Now? -->
+        <apex:pageBlock id="idApprovalProcessNextStepBlock" 
+                        rendered="{!IsAddMode && IsAddModeDone && NOT(inSearchMode)}"
+                        mode="edit" >
+                        
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton id="idProcessNextStepButton" value="{!$Label.apttus_approval__go}" action="{!doProcessNextStep}" />   
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="idProcessNextStepSection" 
+                                   columns="1" 
+                                   collapsible="false" >
+
+                <apex:outputLabel value="{!$Label.apttus_approval__approvalprocesscreatestepconfirmation}"
+                                  for="idNextStepSelected" 
+                                  rendered="{!NOT(IsAgreementTermExceptionProcess) && IsRuleBasedProcess}" />
+                <apex:outputLabel value="{!$Label.apttus_approval__approvalprocesscreatestepconfirmationadhoc}"
+                                  for="idNextStepSelected" 
+                                  rendered="{!NOT(IsAgreementTermExceptionProcess) && IsAdhocProcess}" />
+                <apex:outputLabel value="{!$Label.apttus_approval__approvalprocesscreatetermexconfirmation}"
+                                  for="idNextTermExStepSelected" 
+                                  rendered="{!IsAgreementTermExceptionProcess && IsRuleBasedProcess}" />
+                <br/>
+                <apex:selectRadio id="idNextStepSelected"
+                                  value="{!processNextStep}"
+                                  layout="pageDirection"
+                                  rendered="{!NOT(IsAgreementTermExceptionProcess)}">
+                    <apex:selectOption itemValue="createStep"
+                                       itemLabel="{!$Label.apttus_approval__approvalprocesscreatestepnow}"
+                                       rendered="{!IsRuleBasedProcess}" />
+                    <apex:selectOption itemValue="navigateDetail"
+                                       itemLabel="{!$Label.apttus_approval__approvalprocesscreatesteplaterdetail}"
+                                       rendered="{!IsRuleBasedProcess}" />
+                    <apex:selectOption itemValue="navigateTab"
+                                       itemLabel="{!$Label.apttus_approval__approvalprocesscreatesteplaterlist}"
+                                       rendered="{!IsRuleBasedProcess}" />
+                    <apex:selectOption itemValue="navigateDetail"
+                                       itemLabel="{!$Label.apttus_approval__approvalprocessreviewdetail}"
+                                       rendered="{!IsAdhocProcess}" />
+                    <apex:selectOption itemValue="navigateTab"
+                                       itemLabel="{!$Label.apttus_approval__approvalprocessreviewlist}"
+                                       rendered="{!IsAdhocProcess}" />
+                </apex:selectRadio>
+
+                <apex:selectRadio id="idNextTermExStepSelected"
+                                  value="{!processNextStep}"
+                                  layout="pageDirection"
+                                  rendered="{!IsAgreementTermExceptionProcess && IsRuleBasedProcess}">
+                    <apex:selectOption itemValue="navigateDetail"
+                                       itemLabel="{!$Label.apttus_approval__approvalprocesscreatetermexlaterdetail}" />
+                    <apex:selectOption itemValue="navigateTab"
+                                       itemLabel="{!$Label.apttus_approval__approvalprocesscreatetermexlaterlist}" />
+                </apex:selectRadio>
+            </apex:pageBlockSection>
+        </apex:pageBlock> 
+
+        <!--
+            VIEW mode
+        -->
+        
+        <!-- Process Definition Detail -->
+        <apex:pageBlock id="idApprovalProcessDetailBlock"
+                        title="{!$Label.apttus_approval__approvalprocessdetail}"
+                        rendered="{!IsViewMode && NOT(inSearchMode)}"
+                        mode="detail">
+        
+			<apex:pageMessages />
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__edit}"
+                                    action="{!doEditProcess}"
+                                    reRender="idApprovalProcessDefnForm"
+                                    status="idPleaseWaitStatus1">
+                    <apex:param name="param1"
+                                assignTo="{!processId}"
+                                value="{!Apttus_Approval__Approval_Process__c.Id}" />
+                </apex:commandButton>
+
+                <apex:commandButton value="{!$Label.apttus_approval__delete}"
+                                    action="{!doDeleteProcess}"
+                                    onclick="return showRemoveProcessConfirmation('{!Apttus_Approval__Approval_Process__c.Id}');"
+                                    rendered="{!NOT(IsActive)}">
+                    <apex:param name="param1"
+                                assignTo="{!processId}"
+                                value="{!Apttus_Approval__Approval_Process__c.Id}" />
+                </apex:commandButton>
+
+                <apex:commandButton value="{!$Label.apttus_approval__activate}"
+                                    action="{!doActivate}"
+                                    rendered="{!NOT(IsActive) && 
+                                               ((NOT(IsAgreementTermExceptionProcess) && hasSteps) ||
+                                               (IsAgreementTermExceptionProcess && hasStepGroup))}"
+                                    reRender="idApprovalProcessDefnForm"
+                                    status="idPleaseWaitStatus1">
+                    <apex:param name="param1"
+                                assignTo="{!processId}"
+                                value="{!Apttus_Approval__Approval_Process__c.Id}" />
+                </apex:commandButton>
+
+                <apex:commandButton value="{!$Label.apttus_approval__deactivate}"
+                                    action="{!doDeactivate}"
+                                    rendered="{!IsActive}"
+                                    reRender="idApprovalProcessDefnForm"
+                                    status="idPleaseWaitStatus1">
+                    <apex:param name="param1"
+                                assignTo="{!processId}"
+                                value="{!Apttus_Approval__Approval_Process__c.Id}" />
+                </apex:commandButton>
+                
+                <apex:actionStatus id="idPleaseWaitStatus1">
+                    <apex:facet name="start">
+                        {!$Label.apttus_approval__statuspleasewait}...
+                        <img src="/apexpages/devmode/img/saveStatus.gif" />
+                    </apex:facet>
+                    <apex:facet name="stop" />
+                </apex:actionStatus>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="idRuleBasedProcessDefinitionDetail"
+                                   columns="2" 
+                                   collapsible="false"
+                                   rendered="{!IsRuleBasedProcess}">
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__businessobject}" for="idBusinessObject" />
+                    <apex:outputText id="idBusinessObject" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Label__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Active__c.Label}" for="idActive" />
+                    <apex:outputField id="idActive" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Active__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Process_Name__c.Label}" for="idName" />
+                    <apex:outputField id="idName" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Process_Name__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__IsAdhoc__c.Label}" for="idIsAdhoc" />
+                    <apex:outputField id="idIsAdhoc" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__IsAdhoc__c}" />
+                </apex:pageBlockSectionItem>
+                            
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Description__c.Label}" for="idDescription" />
+                    <apex:outputField id="idDescription" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Description__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ContextType__c.Label}" for="idContextType" />
+                    <apex:outputText id="idContextType" value="{!contextType}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Entry_Criteria__c.Label}" for="idEntryCriteria" />
+                    <apex:outputText id="idEntryCriteria" value="{!entryCriteriaExpr}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__BackupAdminUser__c.Label}" for="idBackupAdminUser" />
+                    <apex:outputField id="idBackupAdminUser" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__BackupAdminUser__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Assignment_Email_Template__c.Label}" for="idAssignmentEmailTemplate" />
+                    <apex:outputField id="idAssignmentEmailTemplate" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Assignment_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__approvalprocesssummarypage}" for="idApprovalSummaryPage" />
+                    <apex:outputField id="idApprovalSummaryPage" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ApprovalSummaryPage__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Reassignment_Email_Template__c.Label}" for="idReassignmentEmailTemplate" />
+                    <apex:outputField id="idReassignmentEmailTemplate" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Reassignment_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__CustomMyApprovalsPage__c.Label}" for="idCustomMyApprovalsPage" />
+                    <apex:outputField id="idCustomMyApprovalsPage" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__CustomMyApprovalsPage__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Escalation_Email_Template__c.Label}" for="idEscalationEmailTemplate" />
+                    <apex:outputField id="idEscalationEmailTemplate" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Escalation_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateApprovals__c.Label}" for="idConsolidateApprovals" />
+                    <apex:outputField id="idConsolidateApprovals" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateApprovals__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Cancellation_Email_Template__c.Label}" for="idCancellationEmailTemplate" />
+                    <apex:outputField id="idCancellationEmailTemplate" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Cancellation_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateNotifications__c.Label}" for="idConsolidateNotifications" />
+                    <apex:outputField id="idConsolidateNotifications" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateNotifications__c}" />
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__NotifyOnly_Email_Template__c.Label}" for="idNotifyOnlyEmailTemplate" />
+                    <apex:outputField id="idNotifyOnlyEmailTemplate" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__NotifyOnly_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ContinuePendingApprovalsOnAReject__c.Label}" for="idContinueApprovalsOnAReject" />
+                    <apex:outputField id="idContinueApprovalsOnAReject" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ContinuePendingApprovalsOnAReject__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Reminder_Email_Template__c.Label}" for="idReminderEmailTemplate" />
+                    <apex:outputField id="idReminderEmailTemplate" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Reminder_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem />
+
+                <!-- process level comments -->
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionCommentsEnabled" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsEnabled__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsEnabled" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsEnabled__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionCommentsMandatory" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsMandatory__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsMandatory" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsMandatory__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionCommentsType" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsType__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsType" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsType__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionComment1Label" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment1Label__c.Label}" />
+                    <apex:outputField id="idSubmissionComment1Label" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment1Label__c}" />
+                </apex:pageBlockSectionItem>
+                <!--<apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}" />-->
+
+                <!-- step level comments -->
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionCommentsEnabled" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsEnabled__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsEnabled" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsEnabled__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionComment1Label" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment1Label__c.Label}"
+                                      rendered="{!numSubmissionCommentsPerStep >= 1}" />
+                    <apex:outputField id="idSubmissionComment1Label" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment1Label__c}"
+                                      rendered="{!numSubmissionCommentsPerStep >= 1}" />
+                </apex:pageBlockSectionItem>
+          
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionCommentsType" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsType__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsType" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsType__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionComment2Label" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment2Label__c.Label}"
+                                      rendered="{!numSubmissionCommentsPerStep >= 2}" />
+                    <apex:outputField id="idSubmissionComment2Label" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment2Label__c}" 
+                                      rendered="{!numSubmissionCommentsPerStep >= 2}" />
+                </apex:pageBlockSectionItem>
+          
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionCommentsPerStep" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsPerStep__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsPerStep" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsPerStep__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionComment3Label" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment3Label__c.Label}"
+                                      rendered="{!numSubmissionCommentsPerStep == 3}" />
+                    <apex:outputField id="idSubmissionComment3Label" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment3Label__c}" 
+                                      rendered="{!numSubmissionCommentsPerStep == 3}" />
+                </apex:pageBlockSectionItem>
+
+                <!-- approval and rejection comments -->
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idApprovalCommentsMandatory" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ApprovalCommentsMandatory__c.Label}" />
+                    <apex:outputField id="idApprovalCommentsMandatory" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ApprovalCommentsMandatory__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idRejectionCommentsMandatory" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__RejectionCommentsMandatory__c.Label}" />
+                    <apex:outputField id="idRejectionCommentsMandatory" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__RejectionCommentsMandatory__c}" />
+                </apex:pageBlockSectionItem>
+
+                <!-- creation/last modified date info -->
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.CreatedById.Label}" for="idCreatedById" />
+                    <apex:outputField id="idCreatedById" value="{!Apttus_Approval__Approval_Process__c.CreatedById}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.LastModifiedById.Label}" for="idLastModifiedById" />
+                    <apex:outputField id="idLastModifiedById" value="{!Apttus_Approval__Approval_Process__c.LastModifiedById}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.CreatedDate.Label}" for="idCreatedDate" />
+                    <apex:outputField id="idCreatedDate" value="{!Apttus_Approval__Approval_Process__c.CreatedDate}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.LastModifiedDate.Label}" for="idLastModifiedDate" />
+                    <apex:outputField id="idLastModifiedDate" value="{!Apttus_Approval__Approval_Process__c.LastModifiedDate}" />
+                </apex:pageBlockSectionItem>
+
+            </apex:pageBlockSection>
+
+            <apex:pageBlockSection id="idAdhocProcessDefinitionDetail"
+                                   columns="2" 
+                                   collapsible="false"
+                                   rendered="{!IsAdhocProcess}">
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__businessobject}" for="idBusinessObject2" />
+                    <apex:outputText id="idBusinessObject2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Label__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Active__c.Label}" for="idActive2" />
+                    <apex:outputField id="idActive2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Active__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Process_Name__c.Label}" for="idName2" />
+                    <apex:outputField id="idName2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Process_Name__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__IsAdhoc__c.Label}" for="idIsAdhoc2" />
+                    <apex:outputField id="idIsAdhoc2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__IsAdhoc__c}" />
+                </apex:pageBlockSectionItem>
+                            
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Description__c.Label}" for="idDescription2" />
+                    <apex:outputField id="idDescription2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Description__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ContextType__c.Label}" for="idContextType2" />
+                    <apex:outputText id="idContextType2" value="{!contextType}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Assignment_Email_Template__c.Label}" for="idAssignmentEmailTemplate2" />
+                    <apex:outputField id="idAssignmentEmailTemplate2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Assignment_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__BackupAdminUser__c.Label}" for="idBackupAdminUser2" />
+                    <apex:outputField id="idBackupAdminUser2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__BackupAdminUser__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Reassignment_Email_Template__c.Label}" for="idReassignmentEmailTemplate2" />
+                    <apex:outputField id="idReassignmentEmailTemplate2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Reassignment_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateApprovals__c.Label}" for="idConsolidateApprovals2" />
+                    <apex:outputField id="idConsolidateApprovals2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateApprovals__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__Cancellation_Email_Template__c.Label}" for="idCancellationEmailTemplate2" />
+                    <apex:outputField id="idCancellationEmailTemplate2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Cancellation_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ConsolidateNotifications__c.Label}" for="idConsolidateNotifications2" />
+                    <apex:outputField id="idConsolidateNotifications2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ConsolidateNotifications__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__NotifyOnly_Email_Template__c.Label}" for="idNotifyOnlyEmailTemplate2" />
+                    <apex:outputField id="idNotifyOnlyEmailTemplate2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__NotifyOnly_Email_Template__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ContinuePendingApprovalsOnAReject__c.Label}" for="idContinueApprovalsOnAReject2" />
+                    <apex:outputField id="idContinueApprovalsOnAReject2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ContinuePendingApprovalsOnAReject__c}" />
+                </apex:pageBlockSectionItem>
+
+                <!-- process level comments -->
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionCommentsEnabled2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsEnabled__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsEnabled2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsEnabled__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionCommentsMandatory2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsMandatory__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsMandatory2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsMandatory__c}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionCommentsType2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsType__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsType2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsType__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeProcess}">
+                    <apex:outputLabel for="idSubmissionComment1Label2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment1Label__c.Label}" />
+                    <apex:outputField id="idSubmissionComment1Label2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment1Label__c}" />
+                </apex:pageBlockSectionItem>
+
+                <!-- step level comments -->
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionCommentsEnabled2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsEnabled__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsEnabled2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsEnabled__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionComment1Label2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment1Label__c.Label}"
+                                      rendered="{!numSubmissionCommentsPerStep >= 1}" />
+                    <apex:outputField id="idSubmissionComment1Label2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment1Label__c}"
+                                      rendered="{!numSubmissionCommentsPerStep >= 1}" />
+                </apex:pageBlockSectionItem>
+          
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionCommentsType2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsType__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsType2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsType__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionComment2Label2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment2Label__c.Label}"
+                                      rendered="{!numSubmissionCommentsPerStep >= 2}" />
+                    <apex:outputField id="idSubmissionComment2Label2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment2Label__c}" 
+                                      rendered="{!numSubmissionCommentsPerStep >= 2}" />
+                </apex:pageBlockSectionItem>
+          
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionCommentsPerStep2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionCommentsPerStep__c.Label}" />
+                    <apex:outputField id="idSubmissionCommentsPerStep2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionCommentsPerStep__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem rendered="{!isSubmissionCommentsEnabled && isSubmissionCommentsTypeStep}">
+                    <apex:outputLabel for="idSubmissionComment3Label2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__SubmissionComment3Label__c.Label}"
+                                      rendered="{!numSubmissionCommentsPerStep == 3}" />
+                    <apex:outputField id="idSubmissionComment3Label2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__SubmissionComment3Label__c}" 
+                                      rendered="{!numSubmissionCommentsPerStep == 3}" />
+                </apex:pageBlockSectionItem>
+
+                <!-- approval and rejection comments -->
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idApprovalCommentsMandatory2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__ApprovalCommentsMandatory__c.Label}" />
+                    <apex:outputField id="idApprovalCommentsMandatory2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__ApprovalCommentsMandatory__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idRejectionCommentsMandatory2" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__RejectionCommentsMandatory__c.Label}" />
+                    <apex:outputField id="idRejectionCommentsMandatory2" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__RejectionCommentsMandatory__c}" />
+                </apex:pageBlockSectionItem>
+
+                <!-- adhoc auto-reapproval info -->
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idAdhocStepAutoReapprove" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__AdhocStepAutoReapprove__c.Label}" />
+                    <apex:outputField id="idAdhocStepAutoReapprove" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocStepAutoReapprove__c}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel for="idAdhocAllowApprovedRequestsToBeDeleted" value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.Apttus_Approval__AdhocAllowApprovedRequestsToBeDeleted__c.Label}" />
+                    <apex:outputField id="idAdhocAllowApprovedRequestsToBeDeleted" value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__AdhocAllowApprovedRequestsToBeDeleted__c}" />
+                </apex:pageBlockSectionItem>
+
+                <!-- creation/last modified date info -->
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.CreatedById.Label}" for="idCreatedById2" />
+                    <apex:outputField id="idCreatedById2" value="{!Apttus_Approval__Approval_Process__c.CreatedById}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.LastModifiedById.Label}" for="idLastModifiedById2" />
+                    <apex:outputField id="idLastModifiedById2" value="{!Apttus_Approval__Approval_Process__c.LastModifiedById}" />
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.CreatedDate.Label}" for="idCreatedDate2" />
+                    <apex:outputField id="idCreatedDate2" value="{!Apttus_Approval__Approval_Process__c.CreatedDate}" />
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__Approval_Process__c.Fields.LastModifiedDate.Label}" for="idLastModifiedDate2" />
+                    <apex:outputField id="idLastModifiedDate2" value="{!Apttus_Approval__Approval_Process__c.LastModifiedDate}" />
+                </apex:pageBlockSectionItem>
+
+            </apex:pageBlockSection>
+
+        </apex:pageBlock>
+
+        <!-- Initial Submission Actions -->
+        <apex:pageBlock id="idInitialActionsBlock"
+                        title="{!$Label.apttus_approval__approvalprocessinitialactions}"
+                        rendered="{!IsViewMode && NOT(inSearchMode)}"
+                        mode="detail">
+        
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__addnew}" action="{!doNewInitialAction}" />
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="idInitialActionsBlock" 
+                                   columns="1" 
+                                   collapsible="false" >
+                                   
+                <apex:pageBlockTable value="{!initialActions}" 
+                                     var="initialActionInfo" 
+                                     columns="5" 
+                                     rowClasses="oddRow,evenRow"
+                                     rendered="{!initialActions.size > 0}" >
+                    
+                    <apex:column headerValue="{!$Label.apttus_approval__action}" styleClass="apttusActionColumn">
+                        <apex:commandLink value="{!$Label.apttus_approval__edit}"
+                                          styleClass="apttusActionLink"
+                                          onclick="invokeDoEditInitialAction('{!initialActionInfo.id}');"
+                                          reRender="idInitialActionsBlock" >
+                            <apex:param name="param1"
+                                        assignTo="{!processInitialActionId}"
+                                        value="{!initialActionInfo.id}" />
+                        </apex:commandLink>
+                        &nbsp;|&nbsp;
+                        <apex:commandLink value="{!$Label.apttus_approval__del}"
+                                          styleClass="apttusActionLink"
+                                          onclick="return showRemoveInitialActionConfirmation('{!initialActionInfo.Id}');"
+                                          reRender="idInitialActionsBlock" >
+                            <apex:param name="param1"
+                                        assignTo="{!processInitialActionId}"
+                                        value="{!initialActionInfo.id}" />
+                        </apex:commandLink>
+                    </apex:column>
+
+                    <apex:column headerValue="{!$Label.apttus_approval__actiontype}">
+                        <apex:outputText id="idInitialActionType" value="{!initialActionInfo.actionType}" />
+                    </apex:column>
+                    
+                    <apex:column headerValue="{!$Label.apttus_approval__fieldname}">
+                        <apex:outputText id="idInitialActionField" value="{!initialActionInfo.fieldLabel}" />
+                    </apex:column>
+                    
+                    <apex:column headerValue="{!$Label.apttus_approval__fieldvalue}">
+                        <apex:outputText id="idInitialActionFieldValue" value="{!initialActionInfo.fieldValue}" />
+                    </apex:column>
+                    
+                    <apex:column headerValue="{!$Label.apttus_approval__description}">
+                        <apex:outputText id="idInitialActionFieldDesc" value="{!initialActionInfo.description}" />
+                    </apex:column>
+                </apex:pageBlockTable>
+                
+                <apex:panelGrid columns="1" rendered="{!initialActions.size == 0}">
+                    <apex:outputText value="{!$Label.apttus_approval__norecordstodisplay}" />
+                </apex:panelGrid>
+                
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+
+        <!-- Approval Steps -->
+        <!-- (not shown for adhoc processes or term exceptions since they cannot be added) -->
+        <apex:pageBlock id="idStepsBlock"
+                        title="{!$Label.apttus_approval__approvalprocesssteps}"
+                        rendered="{!IsViewMode
+                        			&& NOT(inSearchMode)
+                        			&& NOT(IsAgreementTermExceptionProcess)
+                        			&& NOT(IsAdhocProcess)}"
+                        mode="detail">
+                        			
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__addnew}" action="{!doNewStep}" />
+                <apex:commandButton value="{!$Label.apttus_approval__enableall}" action="{!doEnableAllSteps}" />
+                <apex:commandButton value="{!$Label.apttus_approval__disableall}" action="{!doDisableAllSteps}" />
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="idSteps" 
+                                   columns="1" 
+                                   collapsible="false" >
+                               
+                <apex:pageBlockTable value="{!steps}" 
+                                     var="stepInfo" 
+                                     columns="14" 
+                                     rowClasses="oddRow,evenRow"
+                                     rendered="{!steps.size > 0}" >
+
+                    <apex:column headerValue="{!$Label.apttus_approval__action}" styleClass="apttusActionColumn" style="width:60px;">
+                        <apex:commandLink value="{!$Label.apttus_approval__edit}"
+                                          styleClass="apttusActionLink"
+                                          onclick="invokeDoEditStep('{!stepInfo.Id}');"
+                                          reRender="idStepsBlock">
+                            <apex:param name="param1" assignTo="{!processStepId}" value="{!stepInfo.Id}" />
+                            <apex:param name="param2" assignTo="{!processStepGroupId}" value="{!stepInfo.stepGroupId}" />
+                        </apex:commandLink>
+                        &nbsp;|&nbsp;
+                        <apex:commandLink value="{!$Label.apttus_approval__del}"
+                                          styleClass="apttusActionLink"
+                                          onclick="return showRemoveStepConfirmation('{!stepInfo.Id}');"
+                                          reRender="idStepsBlock" >
+                            <apex:param name="param1" assignTo="{!processStepId}" value="{!stepInfo.Id}" />
+                        </apex:commandLink>
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__active}">
+                        <apex:inputCheckbox id="idStepActive"
+                                            onclick="invokeDoSaveStep('{!stepInfo.Id}','{!stepInfo.stepGroupId}','{!stepInfo.stepActive}');"
+                                            value="{!stepInfo.stepActive}">
+                            <apex:param name="param1" assignTo="{!processStepId}" value="{!stepInfo.Id}" />
+                            <apex:param name="param2" assignTo="{!processStepGroupId}" value="{!stepInfo.stepGroupId}" />
+                            <apex:param name="param3" assignTo="{!processStepActive}" value="{!stepInfo.stepActive}" />
+                        </apex:inputCheckbox>
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__name}" style="width:120px;">
+                        <apex:commandLink value="{!stepInfo.stepName}"
+                                          onclick="invokeDoViewStep('{!stepInfo.Id}');"
+                                          reRender="idStepsBlock" >
+                            <apex:param name="param1" assignTo="{!processStepId}" value="{!stepInfo.Id}" />
+                            <apex:param name="param2" assignTo="{!processStepGroupId}" value="{!stepInfo.stepGroupId}" />
+                        </apex:commandLink>
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__steplabel}">
+                        <apex:outputText id="idStepLabel" value="{!stepInfo.stepLabel}" />
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__steptype}">
+                        <apex:outputText id="idStepType" value="{!stepInfo.stepType}" />
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__assigneetype}">
+                        <apex:outputText id="idStepAssigneeType" value="{!stepInfo.stepAssigneeType}" />
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__assigneelabel}">
+                        <apex:outputText id="idStepAssigneeLabel" value="{!stepInfo.stepAssigneeLabel}" />
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__dependson}">
+                        <apex:outputField id="idStepDependsOn" value="{!stepInfo.processSO.Apttus_Approval__DependsOn__c}" />
+                    </apex:column>
+                    <!--<apex:column headerValue="{!$Label.apttus_approval__active}">
+                        <apex:outputField id="idStepActive2" value="{!stepInfo.processSO.Step_Active__c}" />
+                    </apex:column>-->
+                    <apex:column >
+                        <apex:facet name="header">
+                            <apex:outputText >{!$Label.apttus_approval__auto}<br/>{!$Label.apttus_approval__complete}</apex:outputText>
+                        </apex:facet>
+                        <apex:outputField id="idStepAutoComplete" value="{!stepInfo.processSO.Apttus_Approval__Step_Auto_Complete__c}" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            <apex:outputText >{!$Label.apttus_approval__auto}<br/>{!$Label.apttus_approval__escalate}</apex:outputText>
+                        </apex:facet>
+                        <apex:outputField id="idStepAutoEscalate" value="{!stepInfo.processSO.Apttus_Approval__StepAutoEscalate__c}" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            <apex:outputText >{!$Label.apttus_approval__send}<br/>{!$Label.apttus_approval__email}</apex:outputText>
+                        </apex:facet>
+                        <apex:outputField id="idStepSendEmail" value="{!stepInfo.processSO.Apttus_Approval__Send_Email__c}" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            <apex:outputText >{!$Label.apttus_approval__notify}<br/>{!$Label.apttus_approval__only}</apex:outputText>
+                        </apex:facet>
+                        <apex:outputField id="idStepNotifyOnly" value="{!stepInfo.processSO.Apttus_Approval__Step_Notify_Only__c}" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            <apex:outputText >{!$Label.apttus_approval__skipunresolved}<br/>{!$Label.apttus_approval__assignee}</apex:outputText>
+                        </apex:facet>
+                        <apex:outputField id="idStepSkipUnresolvedAssignee" value="{!stepInfo.processSO.Apttus_Approval__StepSkipUnresolvedAssignee__c}" />
+                    </apex:column>
+                    <apex:column >
+                        <apex:facet name="header">
+                            <apex:outputText >{!$Label.apttus_approval__reminders}</apex:outputText>
+                        </apex:facet>
+                        <apex:outputField id="idStepReminders" value="{!stepInfo.processSO.Apttus_Approval__StepRemindersActive__c}" />
+                    </apex:column>
+                </apex:pageBlockTable>
+
+                <apex:panelGrid columns="1" rendered="{!steps.size == 0}">
+                    <apex:outputText value="{!$Label.apttus_approval__norecordstodisplay}" />
+                </apex:panelGrid>
+
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+
+        <!-- Final Approval Actions -->
+        <apex:pageBlock id="idFinalApprovalActionsBlock"
+                        title="{!$Label.apttus_approval__approvalprocessfinalapprovalactions}"
+                        rendered="{!IsViewMode && NOT(inSearchMode)}"
+                        mode="detail">
+        
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__addnew}" 
+                                    action="{!doNewFinalApprovalAction}" />
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="idFinalApprovalActions" 
+                                   columns="1" 
+                                   collapsible="false" >
+                                   
+                <apex:pageBlockTable value="{!finalApprovalActions}" 
+                                     var="finalApprovalActionInfo" 
+                                     columns="5" 
+                                     rowClasses="oddRow,evenRow"
+                                     rendered="{!finalApprovalActions.size > 0}" >
+                    
+                        <apex:column headerValue="{!$Label.apttus_approval__action}" styleClass="apttusActionColumn">
+                            <apex:commandLink value="{!$Label.apttus_approval__edit}"
+                                              styleClass="apttusActionLink"
+                                              onclick="invokeDoEditFinalApprovalAction('{!finalApprovalActionInfo.id}');"
+                                              reRender="idFinalApprovalActionsBlock" >
+                                <apex:param name="param1"
+                                            assignTo="{!processFinalApprovalActionId}"
+                                            value="{!finalApprovalActionInfo.id}" />
+                            </apex:commandLink>
+                            &nbsp;|&nbsp;
+                            <apex:commandLink value="{!$Label.apttus_approval__del}"
+                                              styleClass="apttusActionLink"
+                                              onclick="return showRemoveFinalApprovalActionConfirmation('{!finalApprovalActionInfo.Id}');"
+                                              reRender="idFinalApprovalActionsBlock" >
+                                <apex:param name="param1"
+                                            assignTo="{!processFinalApprovalActionId}"
+                                            value="{!finalApprovalActionInfo.id}" />
+                            </apex:commandLink>
+                        </apex:column>
+
+                       <apex:column headerValue="{!$Label.apttus_approval__actiontype}">
+                           <apex:outputText id="idFinalApprovalActionType" value="{!finalApprovalActionInfo.actionType}" />
+                       </apex:column>
+                       
+                       <apex:column headerValue="{!$Label.apttus_approval__fieldname}">
+                           <apex:outputText id="idFinalApprovalActionField" value="{!finalApprovalActionInfo.fieldLabel}" />
+                       </apex:column>
+                       
+                       <apex:column headerValue="{!$Label.apttus_approval__fieldvalue}">
+                           <apex:outputText id="idFinalApprovalActionFieldValue" value="{!finalApprovalActionInfo.fieldValue}" />
+                       </apex:column>
+
+                       <apex:column headerValue="{!$Label.apttus_approval__description}">
+                           <apex:outputText id="idFinalApprovalActionDescription" value="{!finalApprovalActionInfo.description}" />
+                       </apex:column>
+                </apex:pageBlockTable>
+
+                <apex:panelGrid columns="1" rendered="{!finalApprovalActions.size == 0}">
+                    <apex:outputText value="{!$Label.apttus_approval__norecordstodisplay}" />
+                </apex:panelGrid>
+
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+
+        <!-- Final Rejection Actions -->
+        <apex:pageBlock id="idFinalRejectionActionsBlock"
+                        title="{!$Label.apttus_approval__approvalprocessfinalrejectionactions}"
+                        rendered="{!IsViewMode && NOT(inSearchMode)}"
+                        mode="detail">
+        
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__addnew}" 
+                                    action="{!doNewFinalRejectionAction}" />
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection id="idFinalRejectionActions" 
+                                   columns="1" 
+                                   collapsible="false" >
+                                   
+                <apex:pageBlockTable value="{!finalRejectionActions}" 
+                                     var="finalRejectionActionInfo" 
+                                     columns="5" 
+                                     rowClasses="oddRow,evenRow"
+                                     rendered="{!finalRejectionActions.size > 0}" >
+                    
+                        <apex:column headerValue="{!$Label.apttus_approval__action}" styleClass="apttusActionColumn">
+                            <apex:commandLink value="{!$Label.apttus_approval__edit}"
+                                              styleClass="apttusActionLink"
+                                              onclick="invokeDoEditFinalRejectionAction('{!finalRejectionActionInfo.id}');"
+                                              reRender="idFinalRejectionActionsBlock" >
+                                <apex:param name="param1"
+                                            assignTo="{!processFinalRejectionActionId}"
+                                            value="{!finalRejectionActionInfo.id}" />
+                            </apex:commandLink>
+                            &nbsp;|&nbsp;
+                            <apex:commandLink value="{!$Label.apttus_approval__del}"
+                                              styleClass="apttusActionLink"
+                                              onclick="return showRemoveFinalRejectionActionConfirmation('{!finalRejectionActionInfo.Id}');"
+                                              reRender="idFinalRejectionActionsBlock" >
+                                <apex:param name="param1"
+                                            assignTo="{!processFinalRejectionActionId}"
+                                            value="{!finalRejectionActionInfo.id}" />
+                            </apex:commandLink>
+                        </apex:column>
+
+                       <apex:column headerValue="{!$Label.apttus_approval__actiontype}">
+                           <apex:outputText id="idFinalRejectionActionType" value="{!finalRejectionActionInfo.actionType}" />
+                       </apex:column>
+                       
+                       <apex:column headerValue="{!$Label.apttus_approval__fieldname}">
+                           <apex:outputText id="idFinalRejectionActionField" value="{!finalRejectionActionInfo.fieldLabel}" />
+                       </apex:column>
+                       
+                       <apex:column headerValue="{!$Label.apttus_approval__fieldvalue}">
+                           <apex:outputText id="idFinalRejectionActionFieldValue" value="{!finalRejectionActionInfo.fieldValue}" />
+                       </apex:column>
+                    
+                       <apex:column headerValue="{!$Label.apttus_approval__description}">
+                           <apex:outputText id="idFinalRejectionActionDescription" value="{!finalRejectionActionInfo.description}" />
+                       </apex:column>
+                </apex:pageBlockTable>
+
+                <apex:panelGrid columns="1" rendered="{!finalRejectionActions.size == 0}">
+                    <apex:outputText value="{!$Label.apttus_approval__norecordstodisplay}" />
+                </apex:panelGrid>
+
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+
+        <!-- search components -->
+        <apex:pageBlock id="idPageBlockSearchEmailTemplate"
+                        title="{!$Label.apttus_approval__editapprovalprocess}"
+                        rendered="{!inSearchMode &&
+                        			(IsAddMode || IsEditMode) && 
+                        			((IsRuleBasedProcess && CurrentStep == 4) || (IsAdhocProcess && CurrentStep == 3))}">
+
+            <c:UISearchEmailTemplate id="idSearchEmailTemplate" 
+                                     pageControllerAttr="{!this}"
+                                     contextSOAttr="{!Apttus_Approval__Approval_Process__c}"
+                                     contextSOFieldAttr="{!selectedEmailTemplateFieldName}"
+                                     parentReRenderIdAttr="idApprovalProcessDefnForm" />
+        </apex:pageBlock>
+
+        <!-- action functions -->
+        <apex:actionFunction name="doDeleteProcess" 
+                             action="{!doDeleteProcess}"
+                             oncomplete="hideRemoveProcessConfirmation();" 
+                             reRender="idApprovalProcessDefnForm" >
+            <apex:param name="processId" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="invokeDoViewStep" 
+                             action="{!doViewStep}"
+                             reRender="idApprovalProcessDefnForm"
+                             status="idPleaseWaitStatus">
+            <apex:param name="processStepId" assignTo="{!processStepId}" value="" />
+            <apex:param name="processStepGroupId" assignTo="{!processStepGroupId}" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="invokeDoEditStep" 
+                             action="{!doEditStep}"
+                             reRender="idApprovalProcessDefnForm"
+                             status="idPleaseWaitStatus">
+            <apex:param name="processStepId" assignTo="{!processStepId}" value="" />
+            <apex:param name="processStepGroupId" assignTo="{!processStepGroupId}" value="" />
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="invokeDoSaveStep" 
+                             action="{!doSaveStep}"
+                             reRender="idStepsBlock"
+                             status="idPleaseWaitStatus">
+            <apex:param name="processStepId" assignTo="{!processStepId}" value="" />
+            <apex:param name="processStepGroupId" assignTo="{!processStepGroupId}" value="" />
+            <apex:param name="processStepActive" assignTo="{!processStepActive}" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="doDeleteStep" 
+                             action="{!doDeleteStep}"
+                             oncomplete="hideRemoveStepConfirmation();" 
+                             reRender="idApprovalProcessDefnForm" >
+            <apex:param name="stepId" value="" />
+        </apex:actionFunction>
+        
+		<apex:actionFunction name="invokeDoEditInitialAction" 
+                             action="{!doEditInitialAction}"
+                             reRender="idApprovalProcessDefnForm"
+                             status="idPleaseWaitStatus">
+            <apex:param name="processInitialActionId" assignTo="{!processInitialActionId}" value="" />
+        </apex:actionFunction>
+        
+        <apex:actionFunction name="doDeleteInitialAction" 
+                             action="{!doDeleteInitialAction}"
+                             oncomplete="hideRemoveInitialActionConfirmation();" 
+                             reRender="idApprovalProcessDefnForm" >
+            <apex:param name="initialActionId" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="invokeDoEditFinalApprovalAction" 
+                             action="{!doEditFinalApprovalAction}"
+                             reRender="idApprovalProcessDefnForm"
+                             status="idPleaseWaitStatus">
+            <apex:param name="processFinalApprovalActionId" assignTo="{!processFinalApprovalActionId}" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="doDeleteFinalApprovalAction" 
+                             action="{!doDeleteFinalApprovalAction}"
+                             oncomplete="hideRemoveFinalApprovalActionConfirmation();" 
+                             reRender="idApprovalProcessDefnForm" >
+            <apex:param name="finalApprovalActionId" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="invokeDoEditFinalRejectionAction" 
+                             action="{!doEditFinalRejectionAction}"
+                             reRender="idApprovalProcessDefnForm"
+                             status="idPleaseWaitStatus">
+            <apex:param name="processFinalRejectionActionId" assignTo="{!processFinalRejectionActionId}" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="doDeleteFinalRejectionAction" 
+                             action="{!doDeleteFinalRejectionAction}"
+                             oncomplete="hideRemoveFinalRejectionActionConfirmation();" 
+                             reRender="idApprovalProcessDefnForm" >
+            <apex:param name="finalRejectionActionId" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="doUpdateConsolidateNotification" 
+                             action="{!doUpdateConsolidateNotification}"
+                             reRender="idConsolidateApprovalsSection" >
+        </apex:actionFunction>
+
+        <!--<apex:actionFunction name="doUpdateAdhocAutoReapprove" 
+                             action="{!doUpdateAdhocAutoReapprove}"
+                             reRender="idAdhocAutoReapprovalsSection" >
+        </apex:actionFunction>-->
+
+        <!-- action status -->
+        <apex:actionStatus id="idPleaseWaitStatus"
+                           onstart="onActionClick();"
+                           onstop="onActionComplete();" />
+
+
+		<!-- This panel represents the waiting dialog that will pop up -->
+	    <div id="idWaitPanel"></div>
+    </apex:form>
+    
+    <!-- This panel represents the delete process confirmation dialog that will pop up -->
+    <apex:outputPanel >
+        <div id="idRemoveProcessConfirmationPanel" style="display: none">
+            <div>
+                <apex:outputText value="{!$Label.apttus_approval__approvalprocessdeleteconfirmation}" />
+            </div>
+            <p/>
+            <div>
+                <apex:form >
+                    <apex:actionRegion >
+                        <div style="text-align: center; padding-left: 4px;" >
+                            <apex:commandButton value="{!$Label.apttus_approval__yes}"
+                                                onclick="deleteProcess();"
+                                                style="width: 50px;"   
+                                                immediate="true" 
+                                                oncomplete="hideRemoveProcessConfirmation();" />
+                            <apex:commandButton value="{!$Label.apttus_approval__no}" 
+                                                style="width: 50px;"   
+                                                onclick="hideRemoveProcessConfirmation();return false;" />
+                        </div>
+                    </apex:actionRegion>
+                 </apex:form>
+            </div>
+        </div>
+    </apex:outputPanel>
+
+    <!-- This panel represents the delete process step confirmation dialog that will pop up -->
+    <apex:outputPanel >
+        <div id="idRemoveStepConfirmationPanel" style="display: none">
+            <div>
+                <apex:outputText value="{!$Label.apttus_approval__approvalprocessstepdeleteconfirmation}" />
+            </div>
+            <p/>
+            <div>
+                <apex:form >
+                    <apex:actionRegion >
+                        <div style="text-align: center; padding-left: 4px;" >
+                            <apex:commandButton value="{!$Label.apttus_approval__yes}"
+                                                onclick="deleteStep();"
+                                                style="width: 50px;"   
+                                                immediate="true" 
+                                                oncomplete="hideRemoveStepConfirmation();" />
+                            <apex:commandButton value="{!$Label.apttus_approval__no}" 
+                                                style="width: 50px;"   
+                                                onclick="hideRemoveStepConfirmation();return false;" />
+                        </div>
+                    </apex:actionRegion>
+                 </apex:form>
+            </div>
+        </div>
+    </apex:outputPanel>
+    
+    <!-- This panel represents the delete process initial action confirmation dialog that will pop up -->
+    <apex:outputPanel >
+        <div id="idRemoveInitialActionConfirmationPanel" style="display: none">
+            <div>
+                <apex:outputText value="{!$Label.apttus_approval__approvalprocessinitialactiondeleteconfirmation}" />
+            </div>
+            <p/>
+            <div>
+                <apex:form >
+                    <apex:actionRegion >
+                        <div style="text-align: center; padding-left: 4px;" >
+                            <apex:commandButton value="{!$Label.apttus_approval__yes}"
+                                                onclick="deleteInitialAction();"
+                                                style="width: 50px;"   
+                                                immediate="true" 
+                                                oncomplete="hideRemoveInitialActionConfirmation();" />
+                            <apex:commandButton value="{!$Label.apttus_approval__no}" 
+                                                style="width: 50px;"   
+                                                onclick="hideRemoveInitialActionConfirmation();return false;" />
+                        </div>
+                    </apex:actionRegion>
+                 </apex:form>
+            </div>
+        </div>
+    </apex:outputPanel>
+
+    <!-- This panel represents the delete process final approval action confirmation dialog that will pop up -->
+    <apex:outputPanel >
+        <div id="idRemoveFinalApprovalActionConfirmationPanel" style="display: none">
+            <div>
+                <apex:outputText value="{!$Label.apttus_approval__approvalprocessfinalactiondeleteconfirmation}" />
+            </div>
+            <p/>
+            <div>
+                <apex:form >
+                    <apex:actionRegion >
+                        <div style="text-align: center; padding-left: 4px;" >
+                            <apex:commandButton value="{!$Label.apttus_approval__yes}"
+                                                onclick="deleteFinalApprovalAction();"
+                                                style="width: 50px;"   
+                                                immediate="true" 
+                                                oncomplete="hideRemoveFinalApprovalActionConfirmation();" />
+                            <apex:commandButton value="{!$Label.apttus_approval__no}" 
+                                                style="width: 50px;"   
+                                                onclick="hideRemoveFinalApprovalActionConfirmation();return false;" />
+                        </div>
+                    </apex:actionRegion>
+                 </apex:form>
+            </div>
+        </div>
+    </apex:outputPanel>
+
+    <!-- This panel represents the delete process final rejection action confirmation dialog that will pop up -->
+    <apex:outputPanel >
+        <div id="idRemoveFinalRejectionActionConfirmationPanel" style="display: none">
+            <div>
+                <apex:outputText value="{!$Label.apttus_approval__approvalprocessfinalactiondeleteconfirmation}" />
+            </div>
+            <p/>
+            <div>
+                <apex:form >
+                    <apex:actionRegion >
+                        <div style="text-align: center; padding-left: 4px;" >
+                            <apex:commandButton value="{!$Label.apttus_approval__yes}"
+                                                onclick="deleteFinalRejectionAction();"
+                                                style="width: 50px;"   
+                                                immediate="true" 
+                                                oncomplete="hideRemoveFinalRejectionActionConfirmation();" />
+                            <apex:commandButton value="{!$Label.apttus_approval__no}" 
+                                                style="width: 50px;"   
+                                                onclick="hideRemoveFinalRejectionActionConfirmation();return false;" />
+                        </div>
+                    </apex:actionRegion>
+                 </apex:form>
+            </div>
+        </div>
+    </apex:outputPanel>
+
+    <!-- This panel represents the waiting dialog that will pop up -->
+    <apex:outputPanel >
+        <div id="idWaitPanel"></div>
+    </apex:outputPanel>
+
+    <!--</body>
+    </html>-->
+</apex:page>

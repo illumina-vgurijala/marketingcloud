@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckEditToolsProfileNextCalibrationDate</fullName>
+    <active>true</active>
+    <description>To show the edit when someone other than &apos;Commercial and Revenue User&apos; Profile tries to change Next Calibration Date</description>
+    <errorConditionFormula>AND(
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT($Profile.Name ==$Label.Profile_Commercial_and_Revenue_Operations),
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name ==$Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User),
+TEXT(SVMXC__Line_Type__c) = &apos;Tools&apos;,
+NOT(ISBLANK(SVMXC__Serial_Number__c)),
+TEXT(SVMXC__Line_Status__c) != &apos;Canceled&apos;,
+OR(
+AND(ISNEW(), Next_Calibration_Date__c &lt;= Datevalue(CreatedDate)),
+AND(ISNEW(),(Next_Calibration_Date__c) != SVMXC__Serial_Number__r.Tool_Calibration_Due_Date__c ),
+AND(ISNEW(),ISBLANK(Next_Calibration_Date__c),(!ISBLANK(SVMXC__Serial_Number__r.Tool_Calibration_Due_Date__c))),
+ISCHANGED(Next_Calibration_Date__c)
+)
+)</errorConditionFormula>
+    <errorMessage>The Next Calibration Date field is not editable by users. If the date is incorrect, please contact your Regional Service Operations to execute the operation.</errorMessage>
+</ValidationRule>

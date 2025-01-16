@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckInstrumentCRFSection1IsPopulated</fullName>
+    <active>true</active>
+    <description>Prevent CRF Section 1 change after Develop Stage of Opportunity.</description>
+    <errorConditionFormula>IF ( 
+    AND (
+        TEXT ( Opportunity_Name__r.StageName ) &lt;&gt; $Label.OpportunityStageCreate, 
+        TEXT ( Opportunity_Name__r.StageName ) &lt;&gt; $Label.OpportunityStageQualify,
+        TEXT ( Opportunity_Name__r.StageName ) &lt;&gt; $Label.OpportunityStageDevelop,
+        RecordType.DeveloperName = $Label.CRFRecordTypeInstrument,
+        Opportunity_Name__r.RecordType.DeveloperName = $Label.OpportunityRTDirectStandard
+
+    ),
+    OR (
+        ISBLANK ( TEXT ( Is_BSL_Level_3_or_Equivalent__c ) ),
+        ISBLANK ( TEXT ( Is_Security_Clearance_Needed__c ) ),
+        NOT (
+            OR ( 
+                Application_Will_Be_DNA_seq__c,  
+                Application_Will_Be_RNA_seq__c,
+                Application_Will_Be_Methyl_seq__c,
+                Application_Will_Be_Microarray__c   
+            )
+        ),
+        NOT (
+            OR (
+                Will_Use_Local_Instrument_For_Data__c,
+                Will_Use_Local_Linux_Server_For_Data__c,
+                Will_Use_BaseSpace_For_Data__c 
+            )
+        )
+    ),
+false
+)</errorConditionFormula>
+    <errorMessage>Respective CRF Section 1 field value(s) must be populated in current opportunity stage.</errorMessage>
+</ValidationRule>

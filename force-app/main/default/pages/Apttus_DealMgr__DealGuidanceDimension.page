@@ -1,0 +1,280 @@
+<!-- 
+	Apttus Deal Manager
+	DealGuidanceDimension
+	 
+	@2012-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_DealMgr__DealGuidanceDimension__c" extensions="Apttus_DealMgr.DealGuidanceDimensionController">
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__FormeeLibrary, '/js/formee.js')}" />
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__FormeeLibrary, '/css/formee-style.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__FormeeLibrary, '/css/formee-structure.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__DealRuleLibrary, '/css/DealGuidancePage.css')}" />
+	<style>
+		#dialog-confirm{
+				display:none;
+		}
+	</style> 
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+		j$.APTTUS = {};
+
+		//set the properties and actions of the remove dialog
+		function promptDelete(){
+			j$( "#dialog-confirm" ).dialog({
+				resizable: false,
+				modal: true,
+				buttons: {
+				"{!$Label.apttus_dealmgr__delete}": function() {
+						doDeleteRule();
+						j$( this ).dialog( "close" );
+					},
+					Cancel: function() {
+						j$( this ).dialog( "close" );
+		
+					}
+		
+				}
+	  	
+	  		});
+		
+		}
+
+		function updateFieldList()
+		{
+			doUpdateFieldList();
+		}
+	
+</script>
+
+<apex:form id="wizardForm">
+
+	<apex:outputPanel id="idErrorMsg">
+			<apex:pageMessages />
+	</apex:outputPanel>
+				
+				<apex:OutputPanel layout="block" rendered="{!dimensionInUse=true && NOT(IsViewMode)}">
+					<br/>
+					<apex:pageMessage summary="{!$Label.apttus_dealmgr__dimensioninusemessage}" severity="info" strength="1" />
+				</apex:OutputPanel>	
+					
+	<div id="contentWrap" class="aptRoundedDiv">
+			<div class="aptGroupHeader">
+			
+				<apex:sectionHeader title="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Label & ' ' & $Label.apttus_dealmgr__edit}" 
+										subtitle="{!$Label.apttus_dealmgr__new & ' ' & $ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Label}" 
+										rendered="{!ISBLANK(Apttus_DealMgr__DealGuidanceDimension__c.Id)}" />
+													
+				<apex:sectionHeader title="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Label & ' ' & $Label.apttus_dealmgr__edit}" 
+									subtitle="{!Apttus_DealMgr__DealGuidanceDimension__c.Name}" 
+									rendered="{!NOT(ISBLANK(Apttus_DealMgr__DealGuidanceDimension__c.Id))}" />				
+			</div>
+			<br/>
+
+	<!--
+    	New/Edit mode
+    -->
+	
+						    
+	<apex:pageBlock mode="edit" id="idDealGuidanceDimensionBlock" 
+					rendered="{!NOT(IsViewMode)}">
+
+		<!-- Page block Buttons -->		
+			<apex:pageBlockButtons location="both">
+				<apex:outputpanel id="buttonBlock" >
+					
+					<apex:commandLink action="{!doSave}" value="{!$Label.apttus_dealmgr__save}" styleClass="aptListButton"/>	
+					<apex:commandLink value="{!$Label.apttus_dealmgr__saveandnew}" action="{!doSaveAndNew}" styleClass="aptListButton"/> 					
+					<apex:commandLink action="{!doCancel}" value="{!$Label.apttus_dealmgr__cancel}" styleClass="aptListButton" immediate="true"/>
+
+				</apex:outputpanel>
+			</apex:pageBlockButtons>
+
+		<!-- Deal Guidance Dimension Header -->		 				
+
+		<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+				<div class="aptGroupHeader">
+					<h1>
+					<apex:outputtext value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Label & ' ' & $Label.apttus_dealmgr__edit}" 
+							/>
+	
+					</h1>
+				</div>
+			
+				<apex:pageBlockSection columns="1"
+									title="{!$Label.apttus_dealmgr__information}" 
+		    					   	collapsible="false"> 
+				
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceDimension__c.Name}" rendered="{!dimensionInUse=true}"/>
+ 
+					<apex:pageBlockSectionItem rendered="{!dimensionInUse=false}">
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Name.Label}" 
+										  for="idName" />
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+	   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+	  						<apex:inputField id="idName" 
+	  										 value="{!Apttus_DealMgr__DealGuidanceDimension__c.Name}" 
+	  										 required="false" />
+	 					</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					
+					<apex:pageBlockSectionItem rendered="{!dimensionInUse=true}">
+							<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__BusinessObject__c.Label}" 
+											  for="idBusinessObject" />
+							<apex:outputtext id="idBusinessObject" value="{!BusinessObjectLabel}"/>
+					</apex:pageBlockSectionItem>					
+					<apex:pageBlockSectionItem rendered="{!dimensionInUse=false}">
+							<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__BusinessObject__c.Label}" 
+											  for="idBusinessObject" />
+							<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+		  						<apex:selectList id="idBusinessObject" 
+		  										 value="{!businessObjectName}" 
+		  										 multiselect="false" 
+		  										 required="false" 
+		  										 size="1" onChange="updateFieldList();" disabled="{!dimensionInUse}">
+									<apex:selectOptions value="{!businessObjectItems}"></apex:selectOptions>
+								</apex:selectList>
+		 					</apex:outputPanel>
+					</apex:pageBlockSectionItem> 	
+										
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__DimensionType__c}" rendered="{!dimensionInUse=true}"/>
+
+					<apex:pageBlockSectionItem rendered="{!dimensionInUse=false}">
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__DimensionType__c.Label}" 
+										  for="idDimensionType" />
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+	   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+							<apex:inputfield id="idDimensionType" value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__DimensionType__c}" rendered="{!dimensionInUse=false}">
+								<apex:actionSupport event="onchange" reRender="idDealGuidanceDimensionBlock" />
+							</apex:inputfield>
+	 					</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+	                
+					<apex:pageBlockSectionItem rendered="{!dimensionInUse=true}">
+							<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__Datasource__c.Label}" 
+											  for="idDatasource" />
+							<apex:outputtext id="idDatasource" value="{!BusinessObjectFieldLabel}"/>
+					</apex:pageBlockSectionItem>	                
+	                <apex:pageBlockSectionItem id="idFieldSection" rendered="{!isFieldDimensionType && dimensionInUse=false}">
+	                    <apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__Datasource__c.Label}" 
+	                                      for="idField" />
+	
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>	                        
+	                            <apex:selectList id="idField" size="1" value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__Datasource__c}">
+	                                <apex:selectOptions value="{!fieldItems}"></apex:selectOptions>
+	                            </apex:selectList>
+                        </apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					
+					<apex:pageBlockSectionItem rendered="{!isFormulaDimensionType && dimensionInUse=false}" >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__Datasource__c.Label}" 
+										  for="idDatasource2" />
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+	   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+	  						<apex:inputText id="idDatasource2"
+	  										value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__Datasource__c}" 
+	  										size="75" />
+	 					</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					
+					<apex:inputfield value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__Description__c}" style="width:500px;"/>
+					 
+				</apex:pageBlockSection>				
+ 	 	</div>
+		
+	</apex:pageBlock>
+
+<!-- action function to invoke javascript to update field list -->
+     <apex:actionFunction name="doUpdateFieldList" 
+                             action="{!doUpdateFieldList}"
+                             reRender="idDealGuidanceDimensionBlock" />
+
+        <!--
+            VIEW mode
+        -->
+        
+        <!-- Deal Guidance Dimension Detail -->
+     <apex:pageBlock id="idDealGuidanceDimensionDetailBlock"
+                        rendered="{!IsViewMode}"
+                        mode="detail">
+
+            <apex:pageBlockButtons location="both">
+						<apex:commandLink action="{!doEditGuidanceDimension}" value="{!$Label.apttus_dealmgr__edit}" styleClass="aptListButton"/>
+						<apex:commandLink action="{!doClone}" 
+										value="{!$Label.apttus_dealmgr__clone}" 
+										reRender="wizardForm"
+										rendered="{!NOT(ISBLANK(Apttus_DealMgr__DealGuidanceDimension__c.Id)) && NOT(isEditMode)}"
+										styleClass="aptListButton"/> 					
+						<apex:commandLink value="{!$Label.apttus_dealmgr__delete}"
+										onClick="promptDelete();"
+										rendered="{!NOT(ISBLANK(Apttus_DealMgr__DealGuidanceDimension__c.Id)) && NOT(isEditMode)}"
+										reRender="wizardForm"
+										styleClass="aptListButton"/>		
+            </apex:pageBlockButtons>
+                    
+			<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+				<div class="aptGroupHeader" >
+					<div style="float:left; min-width:300px;">
+						<h2>{!$ObjectType.DealGuidanceDimension__c.Label & ' ' & $Label.Detail}</h2>
+					</div>
+				</div>		
+	            <apex:pageBlockSection id="idProcessDefinitionDetail"
+	                                   columns="1" 
+	                                   collapsible="false">
+	                
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceDimension__c.Name}"/>
+						
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__BusinessObject__c}" rendered="false"/>	
+					<apex:pageBlockSectionItem rendered="false">
+							<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__BusinessObject__c.Label}" 
+											  for="idBusinessObject" />
+		  						<apex:selectList id="idBusinessObject" 
+		  										 value="{!businessObjectName}" 
+		  										 multiselect="false" 
+		  										 required="false" 
+		  										 size="1" onChange="updateFieldList();" disabled="true">
+									<apex:selectOptions value="{!businessObjectItems}"></apex:selectOptions>
+								</apex:selectList>
+					</apex:pageBlockSectionItem> 
+
+					<apex:pageBlockSectionItem rendered="true">
+							<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__BusinessObject__c.Label}" 
+											  for="idBusinessObject" />
+							<apex:outputtext id="idBusinessObject" value="{!BusinessObjectLabel}"/>
+					</apex:pageBlockSectionItem>
+														
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__DimensionType__c}"/>
+					<apex:pageBlockSectionItem >
+							<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceDimension__c.Fields.Apttus_DealMgr__Datasource__c.Label}" 
+											  for="idDatasource" />
+							<apex:outputtext id="idDatasource" value="{!BusinessObjectFieldLabel}"/>
+					</apex:pageBlockSectionItem>	
+								                
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceDimension__c.Apttus_DealMgr__Description__c}" style="width:500px;"/>
+	
+	            </apex:pageBlockSection>
+	            
+            </div>
+     </apex:pageBlock>
+
+	</div>
+		
+		<apex:actionFunction name="doDeleteRule" 
+								action="{!doDelete}"
+								rerender="wizardForm"
+								/>
+		
+		<div id="dialog-confirm" title="{!$Label.RemoveConfirmation}">
+			<p><span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 20px 0;"></span>{!$Label.RemoveMessage}</p>
+		</div>
+	        		
+	</apex:form>
+
+
+</apex:page>

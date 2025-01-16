@@ -1,0 +1,42 @@
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js"></script>
+<script>
+function storeOauthAccessToken(){
+
+  var oauthResponse = {};
+	var sessionId = null;
+
+	if (window.location.hash) {
+    //state
+		var message = window.location.hash.substr(1);
+		var nvps = message.split('&');
+		for (var nvp in nvps) {
+		    var parts = nvps[nvp].split('=');
+			oauthResponse[parts[0]] = unescape(parts[1]);
+		}
+
+		sessionId = oauthResponse['access_token'];
+
+    if( localStorage.getItem('sourceSessionInfo') !== null && localStorage.getItem('sourceSessionInfo') !== undefined
+    && localStorage.getItem('targetSessionInfo') === null) {
+
+      let value = JSON.stringify({sessionId:sessionId, lmd:new Date().getTime(), oauthResponse:oauthResponse});
+      let encryptedString = CryptoJS.AES.encrypt(value, 'DiagnosticTools');
+      localStorage.setItem('targetSessionInfo', encryptedString);
+    } else {
+      let value = JSON.stringify({sessionId:sessionId, lmd:new Date().getTime(), oauthResponse:oauthResponse});
+      let encryptedString = CryptoJS.AES.encrypt(value, 'DiagnosticTools');
+      localStorage.setItem('sourceSessionInfo', encryptedString);
+    }
+
+    window.close();
+	}
+}
+
+</script>
+</head>
+
+<body onload="storeOauthAccessToken()" />
+
+</html>

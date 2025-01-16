@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckECForStdCompetitorName</fullName>
+    <active>true</active>
+    <description>Competitive &amp; Complementary Technologies entries are required to progress from an open stage to Finalize, Closed Won, or Closed Lost. Excepting Develop or Finalize to Closed Lost.</description>
+    <errorConditionFormula>AND (
+    OR (
+        AND (
+            NOT (
+                OR (
+                    ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Won&apos; ),
+                    ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Abandoned&apos; ),
+                    ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Lost&apos; ),
+                    ISPICKVAL ( StageName, &apos;Closed Abandoned&apos; ),
+                    ISPICKVAL ( StageName, &apos;Create&apos; ), 
+                    ISPICKVAL ( StageName, &apos;Qualify&apos; ),
+                    ISPICKVAL ( StageName, &apos;Develop&apos; ),
+                    ISPICKVAL ( StageName, &apos;Closed Lost&apos; ),
+                    TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+                    AND (
+                        ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Develop&apos; ),
+                        NOT ( ISPICKVAL ( StageName, &apos;Closed Lost&apos; ) ),
+                        RecordType.DeveloperName != $Label.OpportunityRTDirectStandard,
+                        RecordType.DeveloperName != $Label.OpportunityRTIndirectStandard
+                    ),
+                    AND(
+                       ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Finalize&apos; ),
+                       NOT ( ISPICKVAL ( StageName, &apos;Closed Lost&apos; ) )
+                   )
+	      ) 
+	      ),
+              TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+              TEXT ( Account.Account_Status__c )&lt;&gt; $Label.AccountStatusPendingObsolete, 
+              TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+              TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+              TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+              TEXT ( Distributor__r.Account_Status__c )&lt;&gt; $Label.AccountStatusPendingObsolete, 
+              TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+              TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete
+        ),
+        AND (
+            OR (
+                TEXT ( Account.Account_Status__c ) = $Label.AccountStatusObsolete, 
+                TEXT ( Account.Account_Status__c ) = $Label.AccountStatusPendingObsolete, 
+                TEXT ( Ultimate_Consignee__r.Account_Status__c ) = $Label.AccountStatusObsolete, 
+                TEXT ( Ultimate_Consignee__r.Account_Status__c ) = $Label.AccountStatusPendingObsolete, 
+                TEXT ( Distributor__r.Account_Status__c ) = $Label.AccountStatusObsolete, 
+                TEXT ( Distributor__r.Account_Status__c )= $Label.AccountStatusPendingObsolete, 
+                TEXT ( Lessor_Customer__r.Account_Status__c ) = $Label.AccountStatusObsolete, 
+                TEXT ( Lessor_Customer__r.Account_Status__c ) = $Label.AccountStatusPendingObsolete
+            ),
+        ISPICKVAL ( StageName, &apos;Closed Lost&apos;)
+        )
+    ),
+    OR(
+        ISBLANK(TEXT(Competitor_Presence__c)),
+        AND(
+            ISPICKVAL(Competitor_Presence__c, &apos;Yes&apos;),
+            NOT(Has_Competitor_Info__c)
+        )
+    ),
+    NOT ( 
+        OR ( 
+            ISCHANGED ( Is_Updated_By_System__c ), 
+            Is_Updated_By_System__c = true,
+	        $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+	)
+)</errorConditionFormula>
+    <errorMessage>To mark this stage as complete and move to the next stage, or any stage beyond the &apos;Develop&apos; stage, please select a value in the &quot;Competitor Context Needed&quot; field. If you select &apos;Yes,&apos; please add a competitor record (Competitive Info tab).</errorMessage>
+</ValidationRule>

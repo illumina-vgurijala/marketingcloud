@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <description>Chatter Post action to perform when the Case is updated to meet the criteria.</description>
+        <name>QA_Review_Post</name>
+        <label>QA Review Post</label>
+        <locationX>50</locationX>
+        <locationY>695</locationY>
+        <actionName>chatterPost</actionName>
+        <actionType>chatterPost</actionType>
+        <faultConnector>
+            <targetReference>Assign_Current_Failure_Element_0_0</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>text</name>
+            <value>
+                <elementReference>ReviewReopenChatterText</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>subjectNameOrId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>visibility</name>
+            <value>
+                <elementReference>FORMULA_Chatter_Post_Visibility</elementReference>
+            </value>
+        </inputParameters>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>54.0</apiVersion>
+    <assignments>
+        <description>Assign Current Failure Element</description>
+        <name>Assign_Current_Failure_Element</name>
+        <label>Assign Current Failure Element</label>
+        <locationX>842</locationX>
+        <locationY>575</locationY>
+        <assignmentItems>
+            <assignToReference>CurrentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Get Manager Record</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <description>Assign Current Failure Element</description>
+        <name>Assign_Current_Failure_Element_0</name>
+        <label>Assign Current Failure Element</label>
+        <locationX>578</locationX>
+        <locationY>695</locationY>
+        <assignmentItems>
+            <assignToReference>CurrentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Get Case Owner</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <description>Assign Current Failure Element</description>
+        <name>Assign_Current_Failure_Element_0_0</name>
+        <label>Assign Current Failure Element</label>
+        <locationX>314</locationX>
+        <locationY>815</locationY>
+        <assignmentItems>
+            <assignToReference>CurrentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>QA Review Post</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <description>Decision box to check if old status was Pending QA Review</description>
+        <name>check_if_Status_was_Pending_QA_Review</name>
+        <label>check if Status was Pending QA Review</label>
+        <locationX>578</locationX>
+        <locationY>335</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>check_if_Status_was_Pending_QA_Review_outcome</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.Status</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Pending QA Review</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_Manager_Record</targetReference>
+            </connector>
+            <label>check if Status was Pending QA Review outcome</label>
+        </rules>
+    </decisions>
+    <description>Record Trigger flow to run when Case is Reopened from QA, to post on chatter</description>
+    <environments>Default</environments>
+    <formulas>
+        <description>FlowandFailureElementName</description>
+        <name>FlowandFailureElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Record-Trigger : Case After Save:Post On QA Reopen - &apos;+{!CurrentElement}</expression>
+    </formulas>
+    <formulas>
+        <description>This formula contains the visibility text for the chatter post.</description>
+        <name>FORMULA_Chatter_Post_Visibility</name>
+        <dataType>String</dataType>
+        <expression>IF(  ISPICKVAL({!Get_Case_Owner.UserType},&apos;PowerPartner&apos;) , &apos;allusers&apos;, &apos;internalUsers&apos;)</expression>
+    </formulas>
+    <interviewLabel>Record-Trigger : Case After Save:Post On QA Reopen {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Record-Trigger : Case After Save:Post On QA Reopen</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Case_Owner</name>
+        <label>Get Case Owner</label>
+        <locationX>50</locationX>
+        <locationY>575</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>QA_Review_Post</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Assign_Current_Failure_Element_0</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.OwnerId</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>User</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordLookups>
+        <name>Get_Manager_Record</name>
+        <label>Get Manager Record</label>
+        <locationX>50</locationX>
+        <locationY>455</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Get_Case_Owner</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Assign_Current_Failure_Element</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Name</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Case_Owner_Manager__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Email</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Case_Owner_s_Manager_Email__c</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>User</object>
+        <queriedFields>Id</queriedFields>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <start>
+        <locationX>452</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>check_if_Status_was_Pending_QA_Review</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Status</field>
+            <operator>IsChanged</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </filters>
+        <filters>
+            <field>Status</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Reopened</stringValue>
+            </value>
+        </filters>
+        <object>Case</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <description>Create Exception Log</description>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>314</locationX>
+        <locationY>935</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFailureElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Service</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <textTemplates>
+        <description>The chatter post body to display on the Record&apos;s chatter.</description>
+        <name>ReviewReopenChatterText</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Dear @[{!$Record.OwnerId}],
+Please review the following QA Reopen reason and any applicable comments and update the Case/Work Accordingly:
+{!$Record.QA_Reopen_Code_s__c}
+{!$Record.QA_Review_Reopen_Communication__c}
+cc: @[{!$Record.Work_Order__r.OwnerId}]
+Thank you, @[{!$Record.QA_Reviewer__c}]</text>
+    </textTemplates>
+    <variables>
+        <description>CurrentElement</description>
+        <name>CurrentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

@@ -1,0 +1,65 @@
+<!-- 
+    Apttus Contract Management
+    AgreementClauseDetails
+    @2016-2019 Apttus Inc. All rights reserved.    
+ -->
+<apex:page standardController="Apttus__Agreement_Clause__c"  extensions="Apttus.AgreementClauseDetailController" 
+           docType="html-5.0" 
+           showHeader="true" 
+           sidebar="false"
+           lightningStylesheets="true">
+           
+    <apex:includeLightning />
+    
+    <!-- container to hold LWC lightning out Component -->
+    <div id="container"></div>
+    
+    <!-- loading message -->
+    <div id="loading">{!$Label.LoadingPage}</div>
+    
+    <!-- hidden fields -->
+    <apex:outputText value="{!Apttus__Agreement_Clause__c.Apttus__Clause__c}" rendered="false"></apex:outputText>
+    
+    <!-- redirect to Lightning Aura component container if lightning experience else open in Lightning Out -->
+    <!-- using Aura container since redirection to Lightning Web Component directly is not supported -->
+    <script>         
+        
+        // aura container with isUrlAddressable.
+        var lightningRedirectURL = '/lightning/cmp/{!componentNamespace}__LightningWebComponentContainer';
+            
+        // clause id
+        lightningRedirectURL += '?{!componentNamespace}__clauseId={!Apttus__Agreement_Clause__c.Id}';
+        
+        // agreement id
+        lightningRedirectURL += '&{!componentNamespace}__agreementId={!JSENCODE($CurrentPage.parameters.agreementid)}';
+        
+        // clause name
+        lightningRedirectURL += '&{!componentNamespace}__clauseName={!JSENCODE(Apttus__Agreement_Clause__c.Apttus__Clause__c)}';
+        
+        // pass in page source - clauseVersioning
+        lightningRedirectURL += '&{!componentNamespace}__pageSource=ClauseVersioning';
+        
+        // pass clauses change history web component name
+        lightningRedirectURL += '&{!componentNamespace}__componentName=agreementClauseChangeHistoryWebComponent';       
+        
+        if((typeof sforce != 'undefined') && sforce && sforce.one) {
+            sforce.one.navigateToURL(lightningRedirectURL);
+        }
+        else {      
+            $Lightning.use("{!ComponentNamespace}:AgreementEditApp", function() {
+            $Lightning.createComponent(
+                "{!ComponentNamespace}:agreementClauseChangeHistoryWebComponent", {
+                    "clauseId" : "{!Apttus__Agreement_Clause__c.Id}",
+                    "agreementId" : "{!JSENCODE($CurrentPage.parameters.agreementid)}",
+                    "clauseName" : "{!JSENCODE(Apttus__Agreement_Clause__c.Apttus__Clause__c)}",
+                    "pageSource" : "ClauseVersioning"
+                },
+                "container",
+                function(cmp) {
+                    document.getElementById('loading').style.display = 'none';
+                });
+            });
+        } 
+    </script>
+    
+</apex:page>

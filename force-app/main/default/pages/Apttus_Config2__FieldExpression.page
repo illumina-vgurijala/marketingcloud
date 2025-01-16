@@ -1,0 +1,209 @@
+<!-- 
+    Apttus Config & Pricing
+    FieldExpression
+     
+    @2013-2014 Apttus Inc. All rights reserved. 
+
+ -->
+<apex:page standardController="Apttus_Config2__FieldExpression__c"
+           extensions="Apttus_Config2.FieldExpressionController"
+           showHeader="true"
+           sidebar="{!ShowAdminSidebar}"
+           tabStyle="Apttus_Config2__FieldExpression__c" >
+
+   <apex:sectionHeader title="{!$Label.apttus_config2__fieldexpressionedit}" subtitle="{!headerName}"/>
+
+   <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+   <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+   <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+
+   <script type="text/javascript">
+   var j$ = jQuery.noConflict();
+
+   /**
+    * Shows the expression builder dialog popup
+    */
+   function showExpressionDialog(inputField) {
+       j$("#idExpressionPopup").dialog({
+           autoOpen: true,
+           title: '{!$Label.EditExpression}',
+           modal: true,
+           resizable: true,
+           width: 450,
+           open: function(event, ui) {
+
+               // set calculated formula value to focus field
+               j$('.CalculatedFormula').val(j$("[id$=" + inputField + "]").val());
+           },
+           close: function(event, ui) {
+               // update focus field value
+               j$("[id$=" + inputField + "]").val(j$('.CalculatedFormula').val());
+
+           },
+           buttons: {
+               'Ok': function() {
+                   j$(this).dialog("close");
+
+               }
+           }
+       });
+   }
+
+    /**
+     * close spinner after save is complete.
+     */
+    function closeSpinner(spinnerId) {
+        j$("[id$=" + spinnerId + "]").css("visibility", "hidden");
+        return false;
+
+    }
+
+    /**
+     * open spinner
+     */
+    function openSpinner(spinnerId) {
+        j$("[id$="+ spinnerId + "]").css("visibility", "visible");
+        return false;
+
+    }
+   </script>
+
+   <apex:form >
+   
+   		<!--  required fields -->
+		<apex:outputText value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__GroupByField__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__UpdateObject__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__UpdateField__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__Expression__c}" rendered="false" />
+		
+        <!-- information -->
+        <apex:pageBlock title="{!$Label.apttus_config2__fieldexpressionedit}" mode="edit">
+            <apex:pageBlockButtons >
+                <apex:commandButton value="{!$Label.apttus_config2__save}" action="{!doSave}"/>
+                <apex:commandButton value="{!$Label.apttus_config2__saveandnew}" action="{!doSaveAndNew}"/>
+                <apex:commandButton value="{!$Label.apttus_config2__cancel}" action="{!cancel}"/>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection title="{!$Label.apttus_config2__information}" columns="2">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Name.Label}"/>
+                    <apex:inputField value="{!Apttus_Config2__FieldExpression__c.Name}" required="true"/>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Apttus_Config2__ExpressionType__c.Label}"/>
+                    <apex:actionRegion >
+                        <apex:inputField value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__ExpressionType__c}">
+                            <apex:actionSupport action="{!updateType}"
+                                                    event="onchange"
+                                                    reRender="idExpressions"
+                                                    status="changeTypeStatus"/>
+                            <div style="display: inline;">
+                                <apex:image id="spinner" value="/img/loading.gif" style="visibility: hidden;" />
+                            </div>
+                        </apex:inputField>
+                    </apex:actionRegion>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Apttus_Config2__EvaluationContext__c.Label}"/>
+                    <apex:inputField value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__EvaluationContext__c}"/>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_config2__active}"/>
+                    <apex:inputField value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__Active__c}"/>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <!-- expressions -->
+            <apex:actionRegion >
+                <apex:pageBlockSection id="idExpressions" title="{!$Label.apttus_config2__expressions}" columns="2">
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Apttus_Config2__UpdateObject__c.Label}"/>
+                        <apex:selectList value="{!selectedObject}"
+                                         size="1">
+                            <apex:selectOptions value="{!objectList}" />
+                            <apex:actionSupport action="{!updateObjectFieldItems}"
+                                                event="onchange"
+                                                reRender="selectUpdateField"
+                                                status="selectStatus"/>
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>                    
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Apttus_Config2__UpdateField__c.Label}"/>
+                        <apex:selectList id="selectUpdateField"
+                                         value="{!selectedField}"
+                                         size="1"
+                                         style="float:left;">
+                            <apex:selectOptions value="{!objectFieldItems}" />
+                            <div style="display: inline;">
+                                <apex:image id="spinner2" value="/img/loading.gif" style="visibility: hidden;" />
+                            </div>
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>                    
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Apttus_Config2__SourceObject__c.Label}"/>
+                        <apex:selectList id="selectSourceObject"
+                                         value="{!Apttus_Config2__FieldExpression__c.Apttus_Config2__SourceObject__c}"
+                                         size="1"
+                                         style="float:left;">
+                            <apex:selectOptions value="{!SourceObjectNames}" />                            
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>                                        
+                    <apex:pageBlockSectionItem rendered="{!isRollup}"></apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem rendered="{!isRollup}">
+                        <apex:outputLabel value="{!$Label.apttus_config2__operator}"/>
+                        <apex:selectList value="{!selectedOperator}"
+                                         size="1">
+                            <apex:selectOptions value="{!rollupOperators}" />
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Apttus_Config2__Expression__c.Label}"/>
+                        <apex:inputTextarea id="inputExpr"
+                                            value="{!expression}"
+                                            cols="40"
+                                            rows="3"
+                                            style="float:left;">
+                        <apex:commandButton value="{!$Label.apttus_config2__edit}" onclick="showExpressionDialog('inputExpr'); return false;"/>
+                        </apex:inputTextarea>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLabel value="{!$Label.apttus_config2__filterexpression}"/>
+                        <apex:inputTextarea id="inputFilterExpr"
+                                            value="{!filterExpr}"
+                                            cols="40"
+                                            rows="3"
+                                            style="float:left;">
+                        <apex:commandButton value="{!$Label.apttus_config2__edit}" onclick="showExpressionDialog('inputFieldExpr'); return false;"/>
+                        </apex:inputTextarea>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem rendered="{!isRollup}"></apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem rendered="{!isRollup}">
+                        <apex:outputLabel value="{!$ObjectType.Apttus_Config2__FieldExpression__c.Fields.Apttus_Config2__GroupByField__c.Label}"/>
+                        <apex:selectList value="{!fieldExprSO.Apttus_Config2__GroupByField__c}"
+                                         size="1">
+                            <apex:selectOptions value="{!fieldItems}" />
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </apex:actionRegion>
+        </apex:pageBlock>
+    </apex:form>
+
+    <apex:actionStatus onstart="return openSpinner('spinner2');"
+                       id="selectStatus"
+                       onstop="return closeSpinner('spinner2');">
+    </apex:actionStatus>
+
+    <apex:actionStatus onstart="return openSpinner('spinner');"
+                       id="changeTypeStatus"
+                       onstop="return closeSpinner('spinner');">
+    </apex:actionStatus>
+    <!-- expression builder dialog -->
+    <div id="idExpressionPopup" style="display:none; background: #f8f8f8;">
+        <c:ExpressionBuilder rootFields="{!insertFieldJSON}" />
+    </div>
+</apex:page>

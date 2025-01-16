@@ -1,0 +1,1411 @@
+<!-- 
+    Apttus Contract Management
+    WizardDesignEdit
+    
+    @2015-2020 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page sidebar="false"
+           showHeader="false"
+           docType="html-5.0"
+           standardController="Apttus__WizardDesign__c"
+           extensions="Apttus.WizardDesignEditController">
+    <link type="text/css" href="{!URLFOR($Resource.FontAwesome,'css/font-awesome.min.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.WizardDesigner,'css/normalize.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.JQueryUILibrary19,'css/smoothness/jquery-ui-1.12.1.min.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.WizardDesigner,'css/style.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'js/jquery-ui-1.12.1.min.js')}"/>
+    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/Util.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/jquery.activeChangeNotification-1.0.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/jquery.requiredText-1.0.js')}"/>
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/jquery.blockUI.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__WizardDesigner, 'js/wizard-designer.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JSPlumbLibrary204,'js/jsPlumb-2.0.4.js')}" />
+
+    <script type="text/javascript">
+        j$ = jQuery.noConflict();
+
+        function onAjaxStart() {            
+            j$.blockUI({ message: '<img src="{!URLFOR($Resource.WizardUI, '/images/load-icon.gif')}"/><div>{!$Label.LoadingPage}</div>' });
+        }
+        function onAjaxStop() {            
+            j$.unblockUI();
+        }
+
+        function onAjaxStepContainer(isStart) {
+            var $wizardStepsPnl = j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlWizardSteps}"));
+            
+            if(isStart) {
+                $wizardStepsPnl.block({ message: '<img src="{!URLFOR($Resource.WizardUI, '/images/load-icon.gif')}"/>' });
+            } else {
+                $wizardStepsPnl.unblock(); 
+            }
+        }
+
+        function onAjaxInputContainer(isStart) {
+            var $wizardInputsPnl = j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlStepInputs}"));
+
+            if(isStart) {
+                $wizardInputsPnl.block({ message: '<img src="{!URLFOR($Resource.WizardUI, '/images/load-icon.gif')}"/>' });
+            } else {
+                $wizardInputsPnl.unblock(); 
+            }
+        }
+        
+        function getCustomLabels() {
+            return {
+                DefaultRule: '{!$Label.DefaultRule}',
+                RuleFor: '{!$Label.RuleFor}',
+                FailedToSaveRuleset: '{!$Label.FailedToSaveRuleset}',
+                DefaultInput: '{!$Label.DefaultInput}',
+                WantToActivateWizard: '{!$Label.WantToActivateWizard}',
+                WantTodeactivateWizard: '{!$Label.WantToDeactivateWizard}',
+                New: '{!$Label.New}',
+                Edit: '{!$Label.Edit}',
+                Delete: '{!$Label.Delete}',
+                View: '{!$Label.View}',
+                WarnWizardLibraryItemAdd: '{!$Label.WarnWizardLibraryItemAdd}',
+                Ok: '{!$Label.Ok}',
+                Cancel: '{!$Label.apttus__cancel}',
+                Deactivate: '{!$Label.Deactivate}',
+                Activate: '{!$Label.Activate}'
+            };
+        }
+        
+    </script>
+    <style>
+        .numberOfAttach,.uploadText{
+            margin-top: 5px;
+            display: inline-block;
+            color:#0066cc;
+            text-decoration:none;   
+            font-size: 13px;
+            font-weight: 400;
+            cursor:pointer;
+        }
+        
+        .uploadText {
+            float:right;
+            text-align:right;
+        }
+        .threelineLabel{
+         	overflow: hidden;
+        	display: -webkit-box;
+   			text-overflow: hidden;
+   			display: -webkit-box;
+   			line-height: 17px;     /* fallback */
+   			max-height: 81px;      /* fallback */
+        	-webkit-line-clamp: 2;
+        }
+    </style>
+    <apex:form id="frmWizardDesigner" html-novalidate="true">
+        <apex:actionFunction status="ajaxStatusContainer" name="onStepRulesetCreate" action="{!createStepRuleset}" onComplete="_afterRulesEdit(true, '{!JSENCODE(ruleset.WizardStepId__r.Name)}');" reRender="dialogTitle,addRuleContentPanel">
+            <apex:param name="stepId" value=""></apex:param>
+        </apex:actionFunction>
+        <apex:actionFunction status="ajaxStatusContainer" name="onStepRulesetEdit" action="{!openStepRuleset}" onComplete="_afterRulesEdit(true, '{!JSENCODE(ruleset.WizardStepId__r.Name)}');" reRender="dialogTitle,addRuleContentPanel">
+            <apex:param name="stepId" value=""></apex:param>
+            <apex:param name="rulesetId" value=""></apex:param>
+        </apex:actionFunction>
+        <apex:actionFunction status="ajaxStatusContainer" name="onStepRulesetDelete" action="{!deleteStepRuleset}" onComplete="_renderSteps('{!JSENCODE(wizardWrapper.wizardJson)}')">
+            <apex:param name="stepId" value=""></apex:param>
+            <apex:param name="rulesetId" value=""></apex:param>
+        </apex:actionFunction>
+
+        <apex:actionFunction status="ajaxStatusContainer" name="onInputRulesetCreate" action="{!createInputRuleset}" onComplete="_afterRulesEdit(false, '{!ruleset.WizardInputControlId__r.Name}');" reRender="dialogTitle,addRuleContentPanel">
+            <apex:param name="inputId" value=""></apex:param>
+        </apex:actionFunction>
+        <apex:actionFunction status="ajaxStatusContainer" name="onInputRulesetEdit" action="{!openInputRuleset}" onComplete="_afterRulesEdit(false, '{!ruleset.WizardInputControlId__r.Name}');" reRender="dialogTitle,addRuleContentPanel">
+            <apex:param name="inputId" value=""></apex:param>
+            <apex:param name="rulesetId" value=""></apex:param>
+        </apex:actionFunction>
+        <apex:actionFunction status="ajaxStatusContainer" name="onInputRulesetDelete" action="{!deleteInputRuleset}" onComplete="_renderStepInputs('{!JSENCODE(stepWrapper.stepJson)}', {!isUIReadonly});">
+            <apex:param name="inputId" value=""></apex:param>
+            <apex:param name="rulesetId" value=""></apex:param>
+        </apex:actionFunction>
+        <apex:actionFunction name="onActivateWizard" action="{!activateWizard}" onComplete="_renderSteps('{!JSENCODE(wizardWrapper.wizardJson)}')" rerender="pnlMainContainer,pnlPrimaryControls"></apex:actionFunction>
+        <apex:actionFunction name="onDeactivateWizard" action="{!DeactivateWizard}" onComplete="_renderSteps('{!JSENCODE(wizardWrapper.wizardJson)}')" rerender="pnlMainContainer,pnlPrimaryControls"></apex:actionFunction>
+        
+        <apex:outputPanel id="pnlMainContainer" layout="block" styleClass="main-pane-container">
+            <apex:outputPanel id="pnlErrorMessages" layout="block" style="width: calc(100% - 15px);">
+                <script>
+                    // for on click of error message link
+                    function onClickMessageLink(errorType, objectId){
+                        if(errorType == 'REQUIRES_INPUT'){
+                            openStep(objectId);
+                        } else if(errorType == 'REQUIRES_STEP') {
+                            createStep();
+                        }
+
+                    }
+                </script>
+                <ul class="warning-message-cont">
+                    <apex:repeat value="{!wizardErrors}" var="msg">
+                        <li>
+                            <i class="fa fa-exclamation-triangle"></i>
+                            <span>{!msg.errorMessage}</span>
+                            <a href="#" class="nav-to" onclick="onClickMessageLink('{!msg.errorType}', '{!msg.objectId}');">{!msg.actionMessage}</a>
+                            <a class="close" href="#" onclick="j$(this).closest('li').remove();"><i class="fa fa-times"></i></a>
+                        </li>
+                    </apex:repeat>
+                </ul>
+            </apex:outputPanel>
+
+            <div id="pnlFormContainer" class="form-pane primary-form">
+                <div class="head">
+                    <span class="breadcrumb">
+
+                        <apex:outputPanel id="pnlWizardName" layout="{!IF(currentSubView == 'Wizard', 'inline', 'none')}" rendered="{!wizardWrapper != null}" styleClass="active">{!IF(wizardWrapper.wizardDesign.Name == null, $Label.apttus__enterwizardname, wizardWrapper.wizardDesign.Name)}
+                        </apex:outputPanel>
+                        {!IF((currentSubView == 'Step' || currentSubView == 'Input') && wizardWrapper != null, '> ', '')}
+                        <apex:outputPanel id="pnlStepName" layout="{!IF(currentSubView == 'Step', 'inline', 'none')}" rendered="{!stepWrapper != null && currentSubView != 'Wizard'}" styleClass="active">{!IF(stepWrapper.step.Name == null, $Label.apttus__enterstepname, stepWrapper.step.Name)}
+                        </apex:outputPanel>
+                        {!IF(currentSubView == 'Input' && stepWrapper != null, '> ', '')}
+                        <apex:outputPanel id="pnlInputName" layout="{!IF(currentSubView == 'Input', 'inline', 'none')}" rendered="{!inputWrapper.inputControl != null && currentSubView == 'Input'}" styleClass="active">{!IF(inputWrapper.inputControl.Name == null, $Label.apttus__enterinputname, inputWrapper.inputControl.Name)}</apex:outputPanel>
+                    </span>
+                    <apex:outputPanel id="lnkActiveateWizard" rendered="{!currentSubView == 'Wizard' && wizardWrapper.wizardDesign.Apttus__Status__c != DESIGN_STATE_RETIRED}" >
+                        <apex:outputPanel layout="none" rendered="{!wizardWrapper.wizardDesign.Apttus__Status__c == DESIGN_STATE_DRAFT || wizardWrapper.wizardDesign.Apttus__Status__c == DESIGN_STATE_DEACTIVATED}">
+                            <a onclick="promptActivation(false)" class="secondary-ctrl activate-wizard">{!$Label.Activate}</a>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!wizardWrapper.wizardDesign.Apttus__Status__c == DESIGN_STATE_ACTIVATED}">
+                            <a onclick="promptDeactivation(false)" class="secondary-ctrl activate-wizard activated">{!$Label.Deactivate}</a>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="displayreadonlystatus" rendered="{!currentSubView == 'Wizard' && wizardWrapper.wizardDesign.Apttus__Status__c== DESIGN_STATE_RETIRED}" >
+                        <!-- Display Draft and Retired Status which will not able to take action by user-->
+                        <div class="secondary-ctrl activate-wizard">{!IF(wizardWrapper.wizardDesign.Status__c==null, $Label.Draft , if (wizardWrapper.wizardDesign.Status__c=='Retired',$Label.Retired ,'')) } </div>
+                    </apex:outputPanel>
+                                        
+                    <div id="promptActionDialog"  class="activation--dlg wizard--dialog">
+                        <div class="content">
+                            <i class="fa fa-exclamation-triangle warn--icon"></i>                            
+                            <div class="content--text">{!$Label.WantToActivateWizard}</div>
+                        </div>                                            
+
+                    </div>
+                    <!-- Dialog Content prompted while De-Activation -->
+                    <div id="promptDeactionDialog" class="activation--dlg wizard--dialog">
+                        <div class="content">
+                            <i class="fa fa-exclamation-triangle warn--icon"></i>                            
+                            <div class="content--text">{!$Label.WantToDeactivateWizard}</div>
+                        </div>                                            
+                    </div>                    
+                </div>
+
+                <div class="wizardItemAddWarning wizard--dialog">
+                    <div class="content">
+                        <i class="fa fa-exclamation-triangle warn--icon"></i>                            
+                        <div class="content--header">{!$Label.Alert}</div>                    
+                        <div class="content--text">{!$Label.WarnWizardLibraryItemAdd}</div>
+                    </div>
+
+                </div>
+
+                <!--=============== Wizard Form View Starts ===============-->
+                <apex:outputPanel id="wizardFormView" rendered="{!currentSubView == 'Wizard'}" layout="block" styleClass="body">
+                    <apex:outputPanel id="pnlWizardTabs" styleClass="tabs">
+                        <apex:commandLink styleClass="{!IF(currentSubViewTab == 'Properties', 'active', '')}" rerender="pnlWizardBody,pnlWizardTabs,pnlLibraryPane">{!$Label.apttus__wizardsettings}
+                            <apex:param name="currentSubViewTab" value="Properties" assignTo="{!currentSubViewTab}"  />
+                        </apex:commandLink>
+
+                        <apex:commandLink id="lnkWizardRules" styleClass="{!IF(currentSubViewTab == 'Rules', 'active', '')}" action="{!noop}" oncomplete="_renderSteps('{!JSENCODE(wizardWrapper.wizardJson)}')" rerender="pnlWizardBody,pnlWizardTabs,pnlLibraryPane">{!$Label.apttus__wizardsteprules}
+                            <apex:param name="currentSubViewTab"  value="Rules" assignTo="{!currentSubViewTab}" />
+                        </apex:commandLink>
+                    </apex:outputPanel>
+
+                    <apex:outputPanel id="pnlWizardBody" layout="block">
+                        <apex:outputPanel layout="none" rendered="{!currentSubViewTab == 'Properties'}">
+                            <div class="form-container">
+                                <ul class="form-column">
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtDesignName}">{!$ObjectType.WizardDesign__c.fields.Name.Label}</label>
+                                        <apex:inputText id="txtDesignName" styleClass="required text" disabled="{!isUIReadonly}" value="{!wizardWrapper.wizardDesign.Name}" html-placeholder="{!$Label.apttus__enternameplaceholder}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtDescription}">{!$ObjectType.WizardDesign__c.fields.Description__c.Label}</label>
+                                        <apex:inputField id="txtDescription" value="{!wizardWrapper.wizardDesign.Apttus__Description__c}" rendered="{!NOT(isUIReadonly)}" style="resize:none"/>
+                                        <apex:inputField id="txtDescriptionDisabled" value="{!wizardWrapper.wizardDesign.Apttus__Description__c}" rendered="{!isUIReadonly}" html-disabled="disabled" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtKeywords}">{!$ObjectType.WizardDesign__c.fields.Keywords__c.Label}</label>
+                                        <apex:inputText id="txtKeywords" disabled="{!isUIReadonly}" value="{!wizardWrapper.wizardDesign.Apttus__Keywords__c}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.ddlCategoryEnabled}">{!$ObjectType.WizardDesign__c.fields.Category__c.Label}</label>
+                                        <apex:inputField id="ddlCategoryDisabled" value="{!wizardWrapper.wizardDesign.Apttus__Category__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField id="ddlCategoryEnabled" value="{!wizardWrapper.wizardDesign.Apttus__Category__c}" rendered="{!NOT(isUIReadonly)}" />
+                                    </li>
+                                    <li class="indent">
+                                        <label for="{!$Component.frmWizardDesigner.ddlSubCategory}">{!$ObjectType.WizardDesign__c.fields.Subcategory__c.Label}</label>
+                                        <apex:selectList id="ddlSubCategoryDisabled" value="{!wizardWrapper.wizardDesign.Apttus__Subcategory__c}" disabled="true" rendered="{!isUIReadonly}">
+                                            <apex:selectOption itemValue="{!wizardWrapper.wizardDesign.Apttus__Subcategory__c}" itemLabel="{!wizardWrapper.wizardDesign.Apttus__Subcategory__c}" />
+                                        </apex:selectList>
+                                        <apex:inputField id="ddlSubCategory" value="{!wizardWrapper.wizardDesign.Apttus__Subcategory__c}" rendered="{!NOT(isUIReadonly)}" />
+                                    </li>
+                                </ul>
+                                <ul class="form-column">
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtBannerStatementEnabled}">{!$ObjectType.WizardDesign__c.fields.BannerStatement__c.Label}</label>
+                                        <apex:inputField id="txtBannerStatementDisabled" value="{!wizardWrapper.wizardDesign.Apttus__BannerStatement__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField id="txtBannerStatementEnabled" value="{!wizardWrapper.wizardDesign.Apttus__BannerStatement__c}" rendered="{!NOT(isUIReadonly)}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.ddlContextTypeEnabled}">{!$ObjectType.WizardDesign__c.fields.ContextType__c.Label}</label>
+                                        <apex:inputField id="ddlContextTypeDisabled" value="{!wizardWrapper.wizardDesign.Apttus__ContextType__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField id="ddlContextTypeEnabled" value="{!wizardWrapper.wizardDesign.Apttus__ContextType__c}" rendered="{!NOT(isUIReadonly)}">
+                                            <apex:actionSupport event="onchange" reRender="ddlContext,pnlLibraryStepsContainer" status="ajaxStatusContainer">
+                                                <apex:param name="test" value="" assignTo="{!wizardWrapper.wizardDesign.Apttus__ContextObject__c}"></apex:param>
+                                            </apex:actionSupport>
+                                        </apex:inputField>
+                                    </li>
+                                    <li class="indent">
+                                        <label for="{!$Component.frmWizardDesigner.ddlContext}">{!$ObjectType.WizardDesign__c.fields.ContextObject__c.Label}</label>
+                                        <apex:selectList id="ddlContext" value="{!wizardWrapper.wizardDesign.Apttus__ContextObject__c}" size="1"
+                                                         disabled="{!IF(isUIReadonly || wizardWrapper.wizardDesign.Apttus__ContextType__c == null || wizardWrapper.wizardDesign.Apttus__ContextType__c == 'All', true, false)}">
+                                            <apex:selectOptions value="{!lstObjectNames1}" />
+                                            <apex:selectOptions value="{!lstObjectNames2}" rendered="{!lstObjectNames2.size > 0}"/>
+                                            <apex:selectOptions value="{!lstObjectNames3}" rendered="{!lstObjectNames3.size > 0}"/>
+                                            <apex:actionSupport event="onchange" reRender="pnlLibraryStepsContainer" status="ajaxStatusContainer" />
+                                        </apex:selectList>
+                                    </li>
+                                    <!-- Wizard image - start -->    
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtStaticResource}">{!$ObjectType.WizardDesign__c.fields.StaticResource__c.Label}</label>
+                                        <apex:inputText id="txtStaticResource" disabled="{!isUIReadonly}" value="{!wizardWrapper.wizardDesign.Apttus__StaticResource__c}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtCSSFileName}">{!$ObjectType.WizardDesign__c.fields.CSSFilename__c.Label}</label>
+                                        <apex:inputText id="txtCSSFileName" disabled="{!isUIReadonly}" value="{!wizardWrapper.wizardDesign.Apttus__CSSFilename__c}" />
+                                    </li>  
+                                    <!-- Wizard image - end -->
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtDataSourceCallback}">{!$ObjectType.WizardDesign__c.fields.DataSourceCallback__c.Label}</label>
+                                        <apex:inputText id="txtDataSourceCallback" disabled="{!isUIReadonly}" value="{!wizardWrapper.wizardDesign.Apttus__DataSourceCallback__c}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtMetaPropertyFieldSetName}">{!$ObjectType.WizardDesign__c.fields.MetaPropertyFieldSetName__c.Label}</label>
+                                        <apex:inputText id="txtMetaPropertyFieldSetName" disabled="{!isUIReadonly}" value="{!wizardWrapper.wizardDesign.Apttus__MetaPropertyFieldSetName__c}" />
+                                    </li>
+                                    <li>
+                                        <label>{!$Label.SubmitPageOptions}</label>
+                                        <div><apex:inputCheckbox id="chkAllowReview" value="{!wizardWrapper.wizardDesign.Apttus__AllowReviewEdit__c}" disabled="{!isUIReadonly}" /><label for="{!$Component.frmWizardDesigner.chkAllowReview}">{!$ObjectType.WizardDesign__c.fields.AllowReviewEdit__c.Label}</label></div>
+                                    </li>
+                                </ul>
+                                <div class="form-column">
+                                    <label>{!$Label.StepsinWizard}</label>
+                                    <apex:outputPanel id="pnlWizardSteps" layout="block" styleClass="subpane">
+                                        <script>
+                                            j$(document).ready(function() {
+                                                if(!{!isUIReadonly}) {
+                                                    var $pnlStepLibraryList = j$("#lstWizardSteps");                                                    
+
+                                                    var $txtNameField = j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.txtDesignName}"));
+                                        
+                                                    $txtNameField.focus();
+
+                                                    dynamicLabelUpdater({
+                                                        $txtField: $txtNameField,
+                                                        $fieldLabel: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlWizardName}")),
+                                                        defaultNewValue: '{!$Label.EnterWizardName}'
+                                                    });
+
+                                                    sortableList({
+                                                        'onSortListChange': function(event, ui, context) {
+                                                            if(context.action == "clone"){
+                                                                addStepToWizard(context.targetIndex, context.sourceItemId);
+                                                            } else if(context.action == "reorder") {
+                                                                moveWizardSteps(context.sourceIndex, context.targetIndex);
+
+                                                            }
+                                                        },
+                                                        'sortableListId': "lstWizardSteps",
+                                                        'libraryListId': "lstLibrarySteps",
+                                                        'cancelDropAfter': "#liMaxLastPosition"
+                                                    }, jQuery);
+
+                                                    requiredFieldStatusControl({
+                                                        $link: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkCreateStep}")),
+                                                        relatedTabs: [
+                                                            j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkWizardRules}")),
+                                                            j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkWizardSaveAndExit}")),
+                                                            j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkActiveateWizard}"))
+                                                        ],
+                                                        onStatusChange: function(event, hasValue, $link, originalClickEvent) {
+                                                            if(hasValue) {
+                                                                $pnlStepLibraryList.sortable("enable");
+                                                            } else {
+                                                                $pnlStepLibraryList.sortable("disable");
+                                                            }
+                                                        }
+                                                    });
+
+                                                }
+
+                                                highlightableList({
+                                                    listSelector: "#lstWizardSteps li"
+                                                });
+                                            });
+                                        </script>
+                                        <ol id="lstWizardSteps" class="draggable-list">
+                                            <apex:repeat value="{!wizardWrapper.steps}" var="stepWrapper">
+                                                <li class="hoverable" id="{!stepWrapper.step.id}">
+                                                    <span class="handle">
+                                                        <span class="move-icon">
+                                                            <i class="fa fa-ellipsis-v"></i><i class="fa fa-ellipsis-v"></i>
+                                                        </span>
+                                                        <span class="text-data">{!stepWrapper.step.Name}</span>
+                                                    </span>
+                                                    <apex:outputPanel rendered="{!NOT(isUIReadonly)}" styleClass="controls">
+                                                        <a href="#" onclick="openStep('{!stepWrapper.step.id}');" class="edit">{!$Label.Edit}</a><a href="#" onclick="deleteStep('{!stepWrapper.step.id}');" class="delete">{!$Label.Delete}</a>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!isUIReadonly}" styleClass="controls">
+                                                        <a href="#" onclick="openStep('{!stepWrapper.step.id}');" class="edit">View</a>
+                                                    </apex:outputPanel>
+                                                </li>
+                                            </apex:repeat>
+                                            <apex:outputPanel rendered="{!IF(wizardWrapper.steps == null || wizardWrapper.steps.size == 0, true, false)}" layout="none">
+                                                <li class="empty-placeholder">
+                                                    <i class="fa fa-exclamation-triangle"></i><span class="std-step">{!$Label.NoStepsinWizard}</span>
+                                                </li>
+                                            </apex:outputPanel>
+                                            <li id="liMaxLastPosition" class="std-step-cont">
+                                                <span class="std-step">{!$Label.Submit}</span>
+                                                <span class="notification">{!$Label.ConfiguredbyRule}</span>
+                                            </li>
+                                            <li class="std-step-cont">
+                                                <span class="std-step">{!$Label.Abort}</span>
+                                                <span class="notification">{!$Label.ConfiguredbyRule}</span>
+                                            </li>
+                                        </ol>
+                                    </apex:outputPanel>
+                                    <div class="secondary-ctrl-cont">
+                                        <apex:commandLink id="lnkCreateStep" action="{!createStep}" status="ajaxStatusContainer" onclick="{!IF(isUIReadonly, 'return false;', '')}" styleClass="disabled secondary-ctrl">{!$Label.apttus__newstep}
+                                            <apex:param name="currentSubView" value="Step" assignTo="{!currentSubView}" />
+                                        </apex:commandLink>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!currentSubViewTab == 'Rules'}">
+                            <div class="workflow--container"></div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+
+                <!--=============== Wizard Form View Ends ===============-->
+
+                <!--=============== Step Form View Starts ===============-->
+                <apex:outputPanel id="pnlStepFormView" rendered="{!currentSubView == 'Step'}" layout="block" styleClass="body">
+                    <apex:outputPanel id="pnlStepTabs" styleClass="tabs">
+                        <apex:commandLink onclick="{!IF(currentSubViewTab == 'Properties', 'return false;', '')}" styleClass="{!IF(currentSubViewTab == 'Properties', 'active', '')}" rerender="pnlStepBody,pnlStepTabs,pnlLibraryPane,pnlLayoutOptions">{!$Label.apttus__stepsettings}
+                            <apex:param name="currentSubViewTab" value="Properties" assignTo="{!currentSubViewTab}"  />
+                        </apex:commandLink>
+                        <apex:commandLink id="lnkStepRules" onclick="{!IF(currentSubViewTab == 'Rules', 'return false;', '')}" styleClass="{!IF(currentSubViewTab == 'Rules', 'active', '')}" oncomplete="_renderStepInputs('{!JSENCODE(stepWrapper.stepJson)}', {!isUIReadonly})" rerender="pnlStepBody,pnlStepTabs,pnlLibraryPane,pnlLayoutOptions">{!$Label.apttus__inputrules}
+                            <apex:param name="currentSubViewTab" value="Rules" assignTo="{!currentSubViewTab}"  />
+                        </apex:commandLink>
+                        <apex:commandLink id="lnkStepPreview" onclick="{!IF(currentSubViewTab == 'Preview', 'return false;', '')}" styleClass="{!IF(currentSubViewTab == 'Preview', 'active', '')}" rerender="pnlStepBody,pnlStepTabs,pnlLibraryPane,pnlLayoutOptions">{!$Label.apttus__steppreview}
+                            <apex:param name="currentSubViewTab" value="Preview" assignTo="{!currentSubViewTab}"  />
+                        </apex:commandLink>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="pnlLayoutOptions">
+                        <apex:outputPanel id="pnlStepFormPreview" rendered="{!currentSubViewTab == 'Preview'}" styleClass="layout-options" layout="block">
+                            <label for="{!$Component.frmWizardDesigner.ddlStepLayoutPreviewEnabled}">{!$ObjectType.WizardStep2__c.fields.InputGroupOption__c.Label}</label>&nbsp;
+                            <apex:inputField id="ddlStepLayoutPreview" value="{!stepWrapper.step.Apttus__InputGroupOption__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                            <apex:inputField id="ddlStepLayoutPreviewEnabled" value="{!stepWrapper.step.Apttus__InputGroupOption__c}" rendered="{!NOT(isUIReadonly)}">
+                                <apex:actionSupport event="onchange" reRender="pnlStepBody" />
+                            </apex:inputField>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="pnlStepBody" layout="block">
+                        <apex:outputPanel layout="none" rendered="{!currentSubViewTab == 'Properties'}">
+                            <div class="form-container">
+                                <ul class="form-column">
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtStepName}">{!$ObjectType.WizardStep2__c.fields.Name.Label}</label>
+                                        <apex:inputText id="txtStepName" value="{!stepWrapper.step.Name}" disabled="{!isUIReadonly}" styleClass="required text"  html-placeholder="{!$Label.apttus__enternameplaceholder}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtStepDescription}">{!$ObjectType.WizardStep2__c.fields.Description__c.Label}</label>
+                                        <apex:inputField id="txtStepDescription" value="{!stepWrapper.step.Apttus__Description__c}" rendered="{!NOT(isUIReadonly)}" style="resize:none" />
+                                        <apex:inputField id="txtStepDescriptionDisabled" value="{!stepWrapper.step.Apttus__Description__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtStepKeywords}">{!$ObjectType.WizardStep2__c.fields.Keywords__c.Label}</label>
+                                        <apex:inputText id="txtStepKeywords" value="{!stepWrapper.step.Apttus__Keywords__c}" disabled="{!isUIReadonly}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.ddlStepCategoryEnabled}">{!$ObjectType.WizardStep2__c.fields.Category__c.Label}</label>
+                                        <apex:inputField id="ddlStepCategoryDisabled" value="{!stepWrapper.step.Apttus__Category__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField id="ddlStepCategoryEnabled" value="{!stepWrapper.step.Apttus__Category__c}" rendered="{!NOT(isUIReadonly)}" />
+                                    </li>
+                                    <li class="indent">
+                                        <label for="{!$Component.frmWizardDesigner.ddlStepSubCategoryEnabled}">{!$ObjectType.WizardStep2__c.fields.Subcategory__c.Label}</label>
+                                        <apex:selectList id="ddlStepSubCategoryDisabled" value="{!stepWrapper.step.Apttus__Subcategory__c}" disabled="true" rendered="{!isUIReadonly}">
+                                            <apex:selectOption itemValue="{!stepWrapper.step.Apttus__Subcategory__c}" itemLabel="{!stepWrapper.step.Apttus__Subcategory__c}" />
+                                        </apex:selectList>
+                                        <apex:inputField id="ddlStepSubCategoryEnabled" value="{!stepWrapper.step.Apttus__Subcategory__c}" rendered="{!NOT(isUIReadonly)}" />
+                                    </li>
+                                </ul>
+                                <ul class="form-column">
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtStepBannerStatement}">{!$ObjectType.WizardStep2__c.fields.BannerStatement__c.Label}</label>
+                                        <apex:inputText id="txtStepBannerStatement" value="{!stepWrapper.step.Apttus__BannerStatement__c}" disabled="{!isUIReadonly}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtStepHelpText}">{!$ObjectType.WizardStep2__c.fields.RuntimeHelpText__c.Label}</label>
+                                        <apex:inputField id="txtStepHelpText" value="{!stepWrapper.step.Apttus__RuntimeHelpText__c}" rendered="{!NOT(isUIReadonly)}" style="resize:none" />
+                                        <apex:inputField id="txtStepHelpTextDisabled" value="{!stepWrapper.step.Apttus__RuntimeHelpText__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.ddlStepContextEnabled}">{!$ObjectType.WizardStep2__c.fields.ContextType__c.Label}</label>
+
+                                        <apex:inputField id="ddlStepContext" value="{!stepWrapper.step.Apttus__ContextType__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField id="ddlStepContextEnabled" value="{!stepWrapper.step.Apttus__ContextType__c}" rendered="{!NOT(isUIReadonly)}">
+                                            <apex:actionSupport event="onchange" reRender="ddlStepLabel,pnlLibraryInputContainer" status="ajaxStatusContainer">
+                                                <apex:param name="test" value="" assignTo="{!stepWrapper.step.Apttus__ContextObject__c}"></apex:param>
+                                            </apex:actionSupport>
+                                        </apex:inputField>
+                                    </li>
+                                    <li class="indent">
+                                        <label for="{!$Component.frmWizardDesigner.ddlStepLabel}">{!$ObjectType.WizardStep2__c.fields.ContextObject__c.Label}</label>
+                                        <apex:selectList id="ddlStepLabel" value="{!stepWrapper.step.Apttus__ContextObject__c}" size="1" disabled="{!IF(isUIReadonly || stepWrapper.step.Apttus__ContextType__c == null || stepWrapper.step.Apttus__ContextType__c == 'All', true, false)}">
+                                            <apex:selectOptions value="{!lstObjectNames1}" />
+                                            <apex:selectOptions value="{!lstObjectNames2}" rendered="{!lstObjectNames2.size > 0}"/>
+                                            <apex:selectOptions value="{!lstObjectNames3}" rendered="{!lstObjectNames3.size > 0}"/>
+                                            <apex:actionSupport event="onchange" reRender="pnlLibraryInputContainer" status="ajaxStatusContainer" />
+                                        </apex:selectList>
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.ddlStepLayoutEnabled}">{!$ObjectType.WizardStep2__c.fields.InputGroupOption__c.Label}</label>
+
+                                        <apex:inputField id="ddlStepLayout" value="{!stepWrapper.step.Apttus__InputGroupOption__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField id="ddlStepLayoutEnabled" value="{!stepWrapper.step.Apttus__InputGroupOption__c}" rendered="{!NOT(isUIReadonly)}">
+                                        </apex:inputField>
+                                    </li>
+                                    <apex:outputPanel rendered="{!currentView != 'Library'}" layout="none">
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtImageName}">{!$ObjectType.WizardStep2__c.fields.ImageFilename__c.Label}</label>                                        
+                                            <apex:inputText id="txtImageName" disabled="{!isUIReadonly}" value="{!stepWrapper.step.Apttus__ImageFilename__c}" />
+                                    </li>
+                                    </apex:outputPanel>
+                                </ul>
+                                <div class="form-column">
+                                    <label>Inputs</label>
+                                    <apex:outputPanel id="pnlStepInputs" layout="block" styleClass="subpane">
+                                        <script>
+                                            j$(document).ready(function() {
+                                                if(!{!isUIReadonly}) {
+
+                                                    sortableList({
+                                                        'onSortListChange': function(event, ui, context) {
+                                                            if(context.action == "clone") {
+                                                                addInputToStep(context.targetIndex, context.sourceItemId);
+                                                            } else if(context.action == "reorder") {
+                                                                moveStepInputs(context.sourceIndex, context.targetIndex);
+                                                            }
+
+                                                        },
+                                                        'sortableListId': "lstStepInputs",
+                                                        'libraryListId': "lstLibraryInputs"
+                                                    }, jQuery);
+
+                                                    requiredFieldStatusControl({
+                                                        $link: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkCeateInput}")),
+                                                        relatedTabs: [
+                                                            j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkStepRules}")),
+                                                            j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkStepPreview}")),
+                                                            j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkStepSave}"))
+                                                        ],
+                                                        onStatusChange: function(event, hasValue, $link, originalClickEvent) {
+                                                            if(hasValue) {
+                                                                j$("#lstStepInputs").sortable("enable");
+                                                            } else {
+                                                                j$("#lstStepInputs").sortable("disable");
+                                                            }
+                                                            
+                                                        }
+                                                    });
+
+                                                    var $txtNameField = j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.txtStepName}"));
+                                                    $txtNameField.focus();
+
+                                                    dynamicLabelUpdater({
+                                                        $txtField: $txtNameField,
+                                                        $fieldLabel: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlStepName}")),
+                                                        defaultNewValue: '{!$Label.EnterStepName}'
+                                                    });
+                                                }
+
+
+                                                highlightableList({
+                                                    listSelector: "#lstStepInputs li"
+                                                });
+                                            });
+                                        </script>
+                                        <ol id="lstStepInputs" class="draggable-list">
+                                            <apex:repeat value="{!stepWrapper.inputControls}" var="icw">
+                                                <li class="hoverable">
+                                                    <span class="handle">
+                                                        <span class="move-icon">
+                                                            <i class="fa fa-ellipsis-v"></i><i class="fa fa-ellipsis-v"></i>
+                                                        </span>
+                                                        <span class="text-data">{!icw.inputControl.Name}</span>
+                                                    </span>
+                                                    <apex:outputPanel rendered="{!NOT(isUIReadonly)}" styleClass="controls">
+                                                        <a href="#" onclick="openInput('{!icw.inputControl.id}');" class="edit">{!$Label.Edit}</a><a href="#" onclick="deleteInput('{!icw.inputControl.id}');" class="delete">{!$Label.Delete}</a>
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!isUIReadonly}" styleClass="controls">
+                                                        <a href="#" onclick="openInput('{!icw.inputControl.id}');" class="edit">View</a>
+                                                    </apex:outputPanel>
+                                                </li>
+                                            </apex:repeat>
+                                            <apex:outputPanel rendered="{!stepWrapper.inputControls == null || stepWrapper.inputControls.size == 0}" layout="none">
+                                                <li class="empty-placeholder">
+                                                    <i class="fa fa-exclamation-triangle"></i><span class="std-step">{!$Label.Noinputsinstep}</span>
+                                                </li>
+                                            </apex:outputPanel>
+                                        </ol>
+
+                                    </apex:outputPanel>
+                                    <div class="secondary-ctrl-cont">
+                                        <apex:commandLink id="lnkCeateInput" action="{!createInput}" status="ajaxStatusContainer" styleClass="disabled secondary-ctrl" onclick="{!IF(isUIReadonly, 'return false;', '')}">{!$Label.apttus__newinput}
+                                            <apex:param name="currentSubView" value="Input" assignTo="{!currentSubView}" />
+                                        </apex:commandLink>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!currentSubViewTab == 'Rules'}">
+                            <div class="step--container"></div>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!currentSubViewTab == 'Preview'}">
+                            <div class="form-container">
+                                <div class="runtime-container-preview">
+                                    <div class="runtime-header">
+                                        <h2>#. {!stepWrapper.step.Apttus__BannerStatement__c} <i class="help-icon tooltip" title="{!stepWrapper.step.Apttus__Description__c}"></i></h2>
+                                    </div>
+                                    <apex:outputPanel rendered="{!stepWrapper.step.Apttus__InputGroupOption__c == ''}" layout="none">
+                                        <apex:repeat value="{!stepWrapper.inputControls}" var="inp">
+                                            <div class="field-container runtime-field" style="width:'98%'">
+                                                <apex:outputLabel value="{!inp.Question}" styleClass="threelineLabel" />
+    											<apex:outputPanel styleClass="fa fa-question-circle" title="{!inp.inputControl.Apttus__RuntimeHelpText__c}" rendered="{!inp.inputControl.Apttus__RuntimeHelpText__c != null && inp.inputControl.Apttus__RuntimeHelpText__c != ''}" />
+                                                <div style="position:relative;">
+                                                    <apex:outputPanel rendered="{!inp.inputControl.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none">
+                                                        <div style="display:block;width:50%;float:left;" class="{!IF(inp.inputControl.Required__c && inp.inputControl.FieldType__c == TYPE_CHECKBOX, 'required', '')}" >
+                                                            <apex:inputCheckbox value="{!placeholderBoolean}" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_CHECKBOX}" />
+                                                            <apex:selectList styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}" size="1" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_PICKLIST}" disabled="{!inp.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:selectOptions value="{!inp.selectOptions}" />
+                                                            </apex:selectList>
+                                                            <apex:selectCheckboxes styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}" layout="pageDirection" value="{!placeholderMultiSelect}" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_MULTIPICKLIST}" disabled="{!inp.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:selectOptions value="{!inp.selectOptions}" />
+                                                            </apex:selectCheckboxes>
+                                                            <apex:selectRadio layout="pageDirection" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON}" styleClass="{!IF(inp.inputControl.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON, 'radio-picklist', '')}{!IF(inp.inputControl.Apttus__Required__c, ' required', '')}" disabled="{!inp.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:selectOptions value="{!inp.selectOptions}"></apex:selectOptions>
+                                                            </apex:selectRadio>
+                                                            <apex:inputText styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}" html-placeholder="mm/dd/yyyy" value="{!placeholderText}" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_DATE}" disabled="{!inp.inputControl.Apttus__ReadOnly__c}" />
+                                                            <apex:inputText styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}" html-pattern="[0-9]" value="{!placeholderText}" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_NUMBER}" disabled="{!inp.inputControl.Apttus__ReadOnly__c}" />
+                                                            <apex:input styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}" type="text" value="{!placeholderText}" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_TEXT}" disabled="{!inp.inputControl.Apttus__ReadOnly__c}" />
+                                                            <apex:inputTextarea styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}" value="{!placeholderText}" rendered="{!inp.inputControl.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="{!inp.inputControl.Apttus__ReadOnly__c}"></apex:inputTextarea>
+                                                        </div>                                                      
+                                                        <!-- Wizard Attachment - start -->
+                                                        <div style="display:inline-block;width:50%;"> 
+                                                            <apex:outputPanel >
+                                                            <div>
+                                                                <apex:inputTextarea value="{!placeholderCommentText}" style="width:100%;height:88px;" rendered="{!inp.inputControl.Apttus__EnableAttachments__c}"></apex:inputTextarea>
+                                                            </div>
+                                                            <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach" rendered="{!inp.inputControl.Apttus__EnableAttachments__c}"/>                                                                 
+                                                            <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" rendered="{!inp.inputControl.Apttus__EnableAttachments__c}"/> -->                                                                                                                            
+                                                        </apex:outputPanel>    
+                                                        </div>  
+                                                        <div style="clear:both;"></div>
+                                                        <!-- Wizard Attachment - end -->   
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel styleClass="field-container runtime-field" rendered="{!inp.inputControl.Apttus__FieldClass__c == OBJECT_FIELD}" layout="none">
+                                                        <div style="display:block;width:50%;float:left;" class="{!IF(inp.inputControl.Required__c && inp.inputControl.FieldType__c == TYPE_CHECKBOX, 'required', '')}">
+                                                            <apex:inputField id="ofNormal" styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}" value="{!focusObjectMap[inp.inputControl.Apttus__ObjectName__c][inp.inputControl.Apttus__FieldName__c]}" rendered="{!inp.inputControl.Apttus__FieldName__c != null && NOT(inp.inputControl.Apttus__ReadOnly__c)}" required="false"/>
+                                                            <apex:outputPanel styleClass="{!IF(inp.inputControl.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!inp.inputControl.Apttus__FieldName__c != null && inp.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:outputField value="{!focusObjectMap[inp.inputControl.Apttus__ObjectName__c][inp.inputControl.Apttus__FieldName__c]}" styleClass="{!IF(inp.inputControl.Apttus__Required__c, 'required', '')}"/>
+                                                            </apex:outputPanel>
+                                                            <script>
+                                                                HandleRequiredSignForLookupMultiPicklist('ofNormal');
+                                                            </script>
+                                                         </div>                                                        
+                                                         <!-- Wizard Attachment - start object field-->
+                                                         <div style="display:inline-block;width:50%;"> 
+                                                            <apex:outputPanel >
+                                                                <div>
+                                                                    <apex:inputTextarea value="{!placeholderCommentText}" style="width:100%;height:88px;" rendered="{!inp.inputControl.Apttus__EnableAttachments__c}"></apex:inputTextarea>
+                                                                </div>
+                                                                <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach" rendered="{!inp.inputControl.Apttus__EnableAttachments__c}"/>                                                                 
+                                                                <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" rendered="{!inp.inputControl.Apttus__EnableAttachments__c}"/>        -->                                                                                                                     
+                                                            </apex:outputPanel>    
+                                                         </div>  
+                                                         <div style="clear:both;"></div>
+                                                        <!-- Wizard Attachment - end object field -->   
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </apex:repeat>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!stepWrapper.step.Apttus__InputGroupOption__c == 'Table Layout'}" layout="block" style="width:975px;overflow-x:auto;">
+                                        <table class="runtime-table-layout">
+                                            <thead>
+                                                <tr>
+                                                    <apex:repeat value="{!stepWrapper.inputControls}" var="inputControlWrapper">
+                                                        <th>
+                                                            <apex:outputLabel value="{!inputControlWrapper.Question} " style="text-align:left;float:left;" styleClass="threelineLabel"/>
+                                                            <apex:outputPanel styleClass="fa fa-question-circle" style="float:left;padding-left:10px;" title="{!inputControlWrapper.inputControl.Apttus__RuntimeHelpText__c}" rendered="{!inputControlWrapper.inputControl.Apttus__RuntimeHelpText__c != null && inputControlWrapper.inputControl.Apttus__RuntimeHelpText__c != ''}" />
+                                                        </th>
+                                                    </apex:repeat>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <apex:repeat value="{!stepWrapper.inputControls}" var="inputControlWrapper">
+                                                        <apex:outputPanel rendered="{!inputControlWrapper.inputControl.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none">
+                                                            <td class="field-container runtime-field">
+                                                                <apex:selectList styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" size="1" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                    <apex:selectOptions value="{!inputControlWrapper.selectOptions}" />
+                                                                </apex:selectList>
+                                                                <apex:selectCheckboxes styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" layout="pageDirection" value="{!placeholderMultiSelect}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_MULTIPICKLIST}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                    <apex:selectOptions value="{!inputControlWrapper.selectOptions}" />
+                                                                </apex:selectCheckboxes>
+                                                                <apex:selectRadio styleClass="radio-picklist{!IF(inputControlWrapper.inputControl.Apttus__Required__c, ' required', '')}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON}" layout="pageDirection" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                    <apex:selectOptions value="{!inputControlWrapper.selectOptions}"></apex:selectOptions>
+                                                                </apex:selectRadio>
+                                                                <div class="{!IF(inputControlWrapper.inputControl.Required__c && inputControlWrapper.inputControl.FieldType__c == TYPE_CHECKBOX, 'required', '')}" >                            
+                                                                    <apex:inputCheckbox value="{!placeholderBoolean}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_CHECKBOX}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}" />
+                                                                </div>
+                                                                <apex:inputText styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" html-placeholder="mm/dd/yyyy" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_DATE}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}"></apex:inputText>
+                                                                <apex:inputText styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" html-pattern="[0-9]" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_NUMBER}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}" />
+                                                                <apex:input styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" type="text" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_TEXT}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}"></apex:input>
+                                                                <apex:inputTextarea styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}"></apex:inputTextarea>
+                                                                <!-- Wizard attachment - table - start -->
+                                                                <div style="position:relative; margin-top:5px;width:479px;">
+                                                                    <apex:inputTextarea style="float:left;margin-right:5px;width:100%;height:88px;" value="{!placeholderCommentText}" rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c == true}"></apex:inputTextarea>                                                                    
+                                                                                                                                  
+                                                                    <apex:outputPanel rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}">                                                                    
+                                                                        <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach"/>           
+                                                                        <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" />  -->
+                                                                    </apex:outputPanel>   
+                                                                 </div>   
+                                                                <!-- Wizard attachment - table - end -->
+                                                            </td>
+                                                        </apex:outputPanel>
+                                                        <apex:outputPanel styleClass="field-container runtime-field"  rendered="{!inputControlWrapper.inputControl.Apttus__FieldClass__c == OBJECT_FIELD}" layout="none">
+                                                            <td>
+                                                                <div class="{!IF(inputControlWrapper.inputControl.Apttus__Required__c && inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_CHECKBOX, 'required', '')}">
+                                                                    <apex:inputField id="oft" styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, ' required', '')}" value="{!focusObjectMap[inputControlWrapper.inputControl.Apttus__ObjectName__c][inputControlWrapper.inputControl.Apttus__FieldName__c]}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldName__c != null && NOT(inputControlWrapper.inputControl.Apttus__ReadOnly__c)}" required="false"></apex:inputField>
+                                                                    <apex:outputPanel styleClass="{!IF(inputControlWrapper.inputControl.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldName__c != null && inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                        <apex:outputField value="{!focusObjectMap[inputControlWrapper.inputControl.Apttus__ObjectName__c][inputControlWrapper.inputControl.Apttus__FieldName__c]}" styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, ' required', '')}"/>
+                                                                    </apex:outputPanel>
+                                                                    <script>
+                                                                        HandleRequiredSignForLookupMultiPicklist('oft');
+                                                                    </script>
+                                                                </div>
+                                                                <!-- Wizard attachment - table object field - start -->
+                                                                <div style="position:relative; margin-top:5px;width:479px;">
+                                                                    <apex:inputTextarea style="float:left;margin-right:5px;width:100%;height:88px;" value="{!placeholderCommentText}" rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c == true}"></apex:inputTextarea>                                                                    
+                                                                                                                                  
+                                                                    <apex:outputPanel rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}">                                                                    
+                                                                        <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach"/>           
+                                                                        <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" />  -->
+                                                                    </apex:outputPanel>   
+                                                                </div>   
+                                                                <!-- Wizard attachment - table object field - end -->
+                                                            </td>
+                                                        </apex:outputPanel>
+                                                    </apex:repeat>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <a href="#" class="secondary-ctrl">{!$Label.AddItem}</a>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!stepWrapper.step.Apttus__InputGroupOption__c == 'Repeatable'}" layout="none">
+                                        <apex:repeat value="{!stepWrapper.inputControls}" var="inputControlWrapper">
+                                            <div class="field-container runtime-field">
+                                                <apex:outputLabel value="{!inputControlWrapper.Question} " styleClass="threelineLabel"/>
+                                                <apex:outputPanel styleClass="fa fa-question-circle" title="{!inputControlWrapper.inputControl.Apttus__RuntimeHelpText__c}" rendered="{!inputControlWrapper.inputControl.Apttus__RuntimeHelpText__c != null && inputControlWrapper.inputControl.Apttus__RuntimeHelpText__c != ''}" />
+                                                <div style="position:relative;">
+                                                    <apex:outputPanel rendered="{!inputControlWrapper.inputControl.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none">
+                                                        <div style="display:block;width:50%;float:left;" class="{!IF(inputControlWrapper.inputControl.FieldClass__c == WIZARD_INPUT_FIELD && inputControlWrapper.inputControl.FieldType__c == TYPE_CHECKBOX && inputControlWrapper.inputControl.Required__c, 'required', '')}">
+                                                            <apex:inputCheckbox value="{!placeholderBoolean}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldClass__c == WIZARD_INPUT_FIELD && inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_CHECKBOX}" />
+                                                            <apex:selectList styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" size="1" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:selectOptions value="{!inputControlWrapper.selectOptions}" />
+                                                            </apex:selectList>
+                                                            <apex:selectCheckboxes styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" layout="pageDirection" value="{!placeholderMultiSelect}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_MULTIPICKLIST}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:selectOptions value="{!inputControlWrapper.selectOptions}" />
+                                                            </apex:selectCheckboxes>
+                                                            <apex:selectRadio layout="pageDirection" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON}" styleClass="{!IF(inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON, 'radio-picklist', '')}{!IF(inputControlWrapper.inputControl.Apttus__Required__c, ' required', '')}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:selectOptions value="{!inputControlWrapper.selectOptions}"></apex:selectOptions>
+                                                            </apex:selectRadio>
+                                                            <apex:inputText styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" html-placeholder="mm/dd/yyyy" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_DATE}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}" />
+                                                            <apex:inputText styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" html-pattern="[0-9]" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_NUMBER}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}" />
+                                                            <apex:input styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" type="text" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_TEXT}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}" />
+                                                            <apex:inputTextarea styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" value="{!placeholderText}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="{!inputControlWrapper.inputControl.Apttus__ReadOnly__c}"></apex:inputTextarea>
+                                                        </div>   
+                                                        <!-- Wizard Attachment - start -->
+                                                        <div style="display:inline-block;width:50%;">
+                                                            <apex:outputPanel >
+                                                                <div>
+                                                                    <apex:inputTextarea rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}" value="{!placeholderCommentText}" style="height:88px;width:100%;" ></apex:inputTextarea>                                                                        
+                                                                </div>
+                                                                <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach" rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}"/>                                                            
+                                                                <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}"/>  -->
+                                                            </apex:outputPanel>    
+                                                        </div>  
+                                                        <div style="clear:both;"></div>
+                                                        <!-- Wizard Attachment - end -->
+                                                    </apex:outputPanel>
+                                                    <apex:outputPanel rendered="{!inputControlWrapper.inputControl.Apttus__FieldClass__c == OBJECT_FIELD}" layout="none">
+                                                        <div style="display:block;width:50%;float:left;" class="{!IF(inputControlWrapper.inputControl.Required__c && inputControlWrapper.inputControl.FieldType__c == TYPE_CHECKBOX, 'required', '')}">
+                                                            <apex:inputField id="ofr" styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}" value="{!focusObjectMap[inputControlWrapper.inputControl.Apttus__ObjectName__c][inputControlWrapper.inputControl.Apttus__FieldName__c]}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldName__c != null && NOT(inputControlWrapper.inputControl.Apttus__ReadOnly__c)}" required="false"/>
+                                                            <apex:outputPanel styleClass="{!IF(inputControlWrapper.inputControl.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!inputControlWrapper.inputControl.Apttus__FieldName__c != null && inputControlWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                                <apex:outputField value="{!focusObjectMap[inputControlWrapper.inputControl.Apttus__ObjectName__c][inputControlWrapper.inputControl.Apttus__FieldName__c]}" styleClass="{!IF(inputControlWrapper.inputControl.Apttus__Required__c, 'required', '')}"/>
+                                                            </apex:outputPanel>
+                                                            <script>
+                                                                HandleRequiredSignForLookupMultiPicklist('ofr');
+                                                            </script>
+                                                        </div>
+                                                        <!-- Wizard Attachment - start -->
+                                                        <div style="display:inline-block;width:50%;">
+                                                            <apex:outputPanel >
+                                                                <div>
+                                                                    <apex:inputTextarea rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}" value="{!placeholderCommentText}" style="height:88px;width:100%;" ></apex:inputTextarea>                                                                        
+                                                                </div>
+                                                                <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach" rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}"/>                                                            
+                                                                <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" rendered="{!inputControlWrapper.inputControl.Apttus__EnableAttachments__c}"/>  -->
+                                                            </apex:outputPanel>    
+                                                        </div>  
+                                                        <div style="clear:both;"></div>
+                                                        <!-- Wizard Attachment - end -->   
+                                                    </apex:outputPanel>
+                                                </div>
+                                            </div>
+                                        </apex:repeat>
+                                        <a href="#" class="secondary-ctrl">{!$Label.AddAnother}</a>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+                <!--=============== Step Form View Ends ===============-->
+
+                <!--=============== Input Form View Starts ===============-->
+                <apex:outputPanel id="pnlInputFormView" rendered="{!currentSubView == 'Input'}" layout="block" styleClass="body">
+                    <apex:outputPanel id="pnlInputTabs" styleClass="tabs">
+                        <apex:commandLink onclick="{!IF(currentSubViewTab == 'Properties', 'return false;', '')}" styleClass="{!IF(currentSubViewTab == 'Properties', 'active', '')}" rerender="pnlInputBody,pnlInputTabs,pnlLibraryPane">{!$Label.apttus__inputsettings}
+                            <apex:param name="currentSubViewTab" value="Properties" assignTo="{!currentSubViewTab}"  />
+                        </apex:commandLink>
+                        <apex:commandLink id="lnkInputPreview" onclick="{!IF(currentSubViewTab == 'Preview', 'return false;', '')}" styleClass="{!IF(currentSubViewTab == 'Preview', 'active', '')}" rerender="pnlInputBody,pnlInputTabs,pnlLibraryPane">{!$Label.apttus__preview}
+                            <apex:param name="currentSubViewTab" value="Preview" assignTo="{!currentSubViewTab}"  />
+                        </apex:commandLink>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="pnlInputBody" layout="block">
+                        <apex:outputPanel layout="none" rendered="{!currentSubViewTab == 'Properties'}">
+                            <script>
+                                var inputFormValidator;
+
+                                j$(document).ready(function(){                                        
+                                    
+                                    var fieldTypeSelectionWidget = new inputFieldTypeSection({
+                                        $ddlFieldClass: j$(UtilWizard.sfIdSelector("{!IF(isUIReadonly, 
+                                            $Component.frmWizardDesigner.ddlInputFieldClass,
+                                            $Component.frmWizardDesigner.ddlInputFieldClassEnabled)}")),
+                                        ddlFieldClassObjectFieldValue: 'Object Field',
+                                        ddlFieldClassInputFieldValue: 'Wizard Input Field',
+                                        ddlFieldClassDefaultValue: '',
+                                        $liResDataType: j$('#liInputResDataType'),
+                                        $ddlResDataType: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.ddlInputResDataType}")),
+                                        ddlResDataTypeDefaultValue: '--None--',
+                                        $liObjectName: j$('#liInputObjectName'),
+                                        $ddlObjectName: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.ddlInputObjectName}")),
+                                        ddlObjectNameDefaultValue: '',
+                                        $liFieldName: j$('#liInputFieldName'),
+                                        $ddlFieldName: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.ddlInputFieldName}")),
+                                        ddlFieldNameDefaultValue: '',
+                                        $liPicklistItems: j$('#liInputPicklistItems'),
+                                        $txtPicklistItems: j$(UtilWizard.sfIdSelector("{!IF(!isUIReadonly, 
+                                            $Component.frmWizardDesigner.txtInputPicklistItems,
+                                            $Component.frmWizardDesigner.txtInputPicklistItemsDisabled)}")), 
+                                        isListSearchString: 'Picklist'
+                                    });                                                                     
+                                        
+                                    if(!{!isUIReadonly}) {
+                                        inputFormValidator = inputFormValidation({
+                                            onInputControlDetailChange: function(event, changeInfo) {
+                                                onInputPropertyUpdate();
+                                            },
+                                            $saveInputFormLink: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkSaveInput}")),
+                                            txtInputName: UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.txtInputName}"),
+                                            ddlInputFieldClassEnabled: UtilWizard.sfIdSelector("{!IF(isUIReadonly, 
+                                                $Component.frmWizardDesigner.ddlInputFieldClass,
+                                                $Component.frmWizardDesigner.ddlInputFieldClassEnabled)}"),
+                                            ddlInputFieldName: UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.ddlInputFieldName}"),
+                                            ddlInputResDataType: UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.ddlInputResDataType}"),
+                                            txtInputPicklistItems: UtilWizard.sfIdSelector("{!IF(isUIReadonly,
+                                                $Component.frmWizardDesigner.txtInputPicklistItemsDisabled,
+                                                $Component.frmWizardDesigner.txtInputPicklistItems)}"),
+                                            ddlInputObjectName: UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.ddlInputObjectName}"),
+                                            OBJECT_FIELD: 'Object Field',
+                                            WIZARD_INPUT_FIELD: 'Wizard Input Field',
+                                            TYPE_PICKLIST: 'Picklist',
+                                            TYPE_MULTIPICKLIST: 'MultiPicklist',
+                                            TYPE_PICKLIST_RADIO_BUTTON: 'Picklist Radio Button',
+                                            relatedTabs: [
+                                                j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkInputPreview}")),
+                                                j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.lnkSaveInput}"))
+                                            ]
+
+                                        });
+
+                                        var $txtNameField = j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.txtInputName}"));
+
+                                        $txtNameField.focus();
+
+                                        dynamicLabelUpdater({
+                                            $txtField: $txtNameField,
+                                            $fieldLabel: j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlInputName}")),
+                                            defaultNewValue: '{!$Label.EnterInputName}'
+                                        });
+                                    }
+
+
+                                });
+
+                                function rebindFieldNameChangeEvent() {
+                                    inputFormValidator.rebindFieldName();
+                                }
+                            </script>
+                            <div class="form-container">
+                                <ul class="form-column">
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtInputName}">{!$ObjectType.WizardInputControl2__c.fields.Name.Label}</label>
+                                        <apex:inputText id="txtInputName" styleClass="required" value="{!inputWrapper.inputControl.Name}" disabled="{!isUIReadonly}" html-placeholder="{!$Label.apttus__enternameplaceholder}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtInputDescription}">{!$ObjectType.WizardInputControl2__c.fields.Description__c.Label}</label>
+                                        <apex:inputField id="txtInputDescription" value="{!inputWrapper.inputControl.Apttus__Description__c}" rendered="{!NOT(isUIReadonly)}" style="resize:none" />
+                                        <apex:inputField id="txtInputDescriptionDisabled" value="{!inputWrapper.inputControl.Apttus__Description__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtInputKeywords}">{!$ObjectType.WizardInputControl2__c.fields.Keywords__c.Label}</label>
+                                        <apex:inputText id="txtInputKeywords" value="{!inputWrapper.inputControl.Apttus__Keywords__c}" disabled="{!isUIReadonly}" />
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.ddlInputCategoryEnabled}">{!$ObjectType.WizardInputControl2__c.fields.Category__c.Label}</label>
+                                        <apex:inputField id="ddlInputCategoryDisabled" value="{!inputWrapper.inputControl.Apttus__Category__c}" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField id="ddlInputCategoryEnabled" value="{!inputWrapper.inputControl.Apttus__Category__c}" rendered="{!NOT(isUIReadonly)}" />
+                                    </li>
+                                    <li class="indent">
+                                        <label for="{!$Component.frmWizardDesigner.ddlInputSubCategoryEnabled}">{!$ObjectType.WizardInputControl2__c.fields.Subcategory__c.Label}</label>
+                                        <apex:selectList id="ddlInputSubCategoryDisabled" value="{!inputWrapper.inputControl.Apttus__Subcategory__c}" disabled="true" rendered="{!isUIReadonly}">
+                                            <apex:selectOption itemValue="{!inputWrapper.inputControl.Apttus__Subcategory__c}" itemLabel="{!inputWrapper.inputControl.Apttus__Subcategory__c}" />
+                                        </apex:selectList>
+                                        <apex:inputField id="ddlInputSubCategoryEnabled" value="{!inputWrapper.inputControl.Apttus__Subcategory__c}" rendered="{!NOT(isUIReadonly)}" />
+                                    </li>
+                                </ul>
+                                <ul class="form-column">
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtInputInstructions}">{!$ObjectType.WizardInputControl2__c.fields.Question__c.Label}</label>
+                                        <apex:inputTextarea id="txtInputInstructions" value="{!inputWrapper.inputControl.Apttus__Question__c}" disabled="{!isUIReadonly}" styleClass="short" style="resize:none" rendered="{!not(isWizardUseLongQuestion)}"/>
+                                        <apex:inputTextarea id="txtInputInstructions1" value="{!inputWrapper.inputControl.Apttus__LongQuestion__c}" disabled="{!isUIReadonly}" styleClass="short"  rendered="{!isWizardUseLongQuestion}"/>
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.txtInputRuntimeHelp}">{!$ObjectType.WizardInputControl2__c.fields.RuntimeHelpText__c.Label}</label>
+                                        <apex:inputField id="txtInputRuntimeHelp" value="{!inputWrapper.inputControl.Apttus__RuntimeHelpText__c}" styleClass="short" rendered="{!NOT(isUIReadonly)}" style="resize:none" />
+                                        <apex:inputField id="txtInputRuntimeHelpDisabled" value="{!inputWrapper.inputControl.Apttus__RuntimeHelpText__c}" styleClass="short" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                    </li>
+                                    <li>
+                                        <label>{!$Label.RuntimeInput}</label>
+                                        <!-- Wizard Attachment - start -->
+                                        <div>
+                                            <apex:inputCheckbox id="attachmentEnabled" value="{!inputWrapper.inputControl.Apttus__EnableAttachments__c}" disabled="{!isUIReadonly}" /><label for="{!$Component.frmWizardDesigner.attachmentEnabled}">{!$ObjectType.WizardInputControl2__c.fields.EnableAttachments__c.Label}</label>
+                                        </div>
+                                        <!-- Wizard Attachment - end -->                                        
+                                        <div>
+                                            <apex:inputCheckbox id="chRequired" value="{!inputWrapper.inputControl.Apttus__Required__c}" disabled="{!isUIReadonly}" /><label for="{!$Component.frmWizardDesigner.chRequired}">{!$ObjectType.WizardInputControl2__c.fields.Required__c.Label}</label>
+                                        </div>
+                                        <div>
+                                            <apex:inputCheckbox id="chkReadyOnly" value="{!inputWrapper.inputControl.Apttus__ReadOnly__c}" disabled="{!isUIReadonly}" /><label for="{!$Component.frmWizardDesigner.chkReadyOnly}">{!$ObjectType.WizardInputControl2__c.fields.ReadOnly__c.Label}</label>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <label for="{!$Component.frmWizardDesigner.ddlInputFieldClassEnabled}">{!$ObjectType.WizardInputControl2__c.fields.FieldClass__c.Label}</label>
+                                        <apex:inputField value="{!inputWrapper.inputControl.Apttus__FieldClass__c}" id="ddlInputFieldClass" html-disabled="disabled" rendered="{!isUIReadonly}" />
+                                        <apex:inputField value="{!inputWrapper.inputControl.Apttus__FieldClass__c}" id="ddlInputFieldClassEnabled" rendered="{!NOT(isUIReadonly)}" styleClass="required">
+                                        </apex:inputField>
+                                    </li>
+                                </ul>
+                                <div class="form-column">
+                                    <label>{!$Label.InputControl}</label>
+                                    <div id="pnlFieldClassInputField" class="subpane input-field-class-form">
+                                        <ul class="form-column">
+                                            <li id="liInputResDataType" style="display: none;">
+                                                <label for="{!$Component.frmWizardDesigner.ddlInputResDataType}">{!$ObjectType.WizardInputControl2__c.fields.FieldType__c.Label}</label>
+                                                <apex:selectList id="ddlInputResDataType" value="{!inputWrapper.inputControl.Apttus__FieldType__c}" size="1" disabled="{!isUIReadonly}" styleClass="required">
+                                                    <apex:selectOptions value="{!inputFieldTypeSelectOptions}" />
+                                                </apex:selectList>
+                                            </li>
+                                            <li id="liInputObjectName" style="display: none;">
+                                                <label for="{!$Component.frmWizardDesigner.ddlInputObjectName}">{!$ObjectType.WizardInputControl2__c.fields.ObjectName__c.Label}</label>
+                                                <apex:selectList id="ddlInputObjectName" value="{!inputWrapper.inputControl.Apttus__ObjectName__c}" size="1" disabled="{!isUIReadonly}" styleClass="required">
+                                                    <apex:selectOptions value="{!lstObjectNames1}" />
+                                                    <apex:selectOptions value="{!lstObjectNames2}" rendered="{!lstObjectNames2.size > 0}"/>
+                                                    <apex:selectOptions value="{!lstObjectNames3}" rendered="{!lstObjectNames3.size > 0}"/>
+                                                    <apex:actionSupport event="onchange" action="{!populateFieldsBasedOnObjectSelection}" reRender="ddlInputFieldName" oncomplete="rebindFieldNameChangeEvent();" />
+                                                </apex:selectList>
+                                            </li>
+                                            <li id="liInputFieldName" style="display: none;">
+                                                <label for="{!$Component.frmWizardDesigner.ddlInputFieldName}">{!$ObjectType.WizardInputControl2__c.fields.FieldName__c.Label}</label>
+                                                <apex:selectList id="ddlInputFieldName" value="{!inputWrapper.inputControl.Apttus__FieldName__c}" size="1" disabled="{!isUIReadonly}" styleClass="required">
+                                                    <apex:selectOptions value="{!lstFieldNames1}" />
+                                                    <apex:selectOptions value="{!lstFieldNames2}" rendered="{!lstFieldNames2.size > 0}"/>
+                                                    <apex:selectOptions value="{!lstFieldNames3}" rendered="{!lstFieldNames3.size > 0}"/>
+                                                </apex:selectList>
+                                            </li>
+                                            <li id="liInputPicklistItems" style="display: none;">
+                                                <label for="{!$Component.frmWizardDesigner.txtInputPicklistItems}">{!$ObjectType.WizardInputControl2__c.fields.PicklistValues__c.Label}</label>
+                                                <apex:inputField id="txtInputPicklistItems" value="{!inputWrapper.inputControl.Apttus__PicklistValues__c}" rendered="{!NOT(isUIReadonly)}" styleClass="required">
+                                                    <apex:actionSupport event="onchange" action="{!onInputPropertyUpdate}" rerender="pnlDoNothing" onsubmit="onAjaxStart();" oncomplete="onAjaxStop();"></apex:actionSupport>
+                                                </apex:inputField>
+                                                <apex:inputField id="txtInputPicklistItemsDisabled" value="{!inputWrapper.inputControl.Apttus__PicklistValues__c}" rendered="{!isUIReadonly}" html-disabled="disabled"  />
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel layout="none" rendered="{!currentSubViewTab == 'Preview'}">
+                            <div class="form-container">
+                                <div class="runtime-container-preview">
+                                    <div class="field-container">
+                                        <!-- Preview Current Input Control -->
+                                        <apex:outputText value="{!inputWrapper.Question} " styleClass="threelineLabel"/>
+                                        <apex:outputPanel styleClass="fa fa-question-circle" title="{!inputWrapper.inputControl.Apttus__RuntimeHelpText__c}" rendered="{!inputWrapper.inputControl.Apttus__RuntimeHelpText__c != null && inputWrapper.inputControl.Apttus__RuntimeHelpText__c != ''}"></apex:outputPanel>
+                                        <div style="position:relative;">
+                                            <apex:outputPanel rendered="{!inputWrapper.inputControl.Apttus__FieldClass__c == WIZARD_INPUT_FIELD}" layout="none">
+                                                <div style="display:block;width:50%;float:left;" class="{!IF(inputWrapper.inputControl.Required__c && inputWrapper.inputControl.FieldType__c == TYPE_CHECKBOX, 'required', '')}">
+                                                    <apex:selectList styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}" size="1" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                        <apex:selectOptions value="{!inputWrapper.selectOptions}" />
+                                                    </apex:selectList>
+                                                    <apex:selectCheckboxes styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}" layout="pageDirection" value="{!placeholderMultiSelect}" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_MULTIPICKLIST}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                        <apex:selectOptions value="{!inputWrapper.selectOptions}" />
+                                                    </apex:selectCheckboxes>
+                                                    <apex:selectRadio layout="pageDirection" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON}" styleClass="{!IF(inputWrapper.inputControl.Apttus__FieldType__c == TYPE_PICKLIST_RADIO_BUTTON, 'radio-picklist', '')}{!IF(inputWrapper.inputControl.Apttus__Required__c, ' required', '')}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                        <apex:selectOptions value="{!inputWrapper.selectOptions}"></apex:selectOptions>
+                                                    </apex:selectRadio>
+    
+                                                    <apex:inputCheckbox value="{!placeholderBoolean}" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_CHECKBOX}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}" />
+                                                    <apex:inputText styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}" html-placeholder="mm/dd/yyyy" value="{!placeholderText}" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_DATE}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}"></apex:inputText>
+                                                    <apex:inputText styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}" html-pattern="[0-9]" value="{!placeholderText}" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_NUMBER}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}" />
+                                                    <apex:input styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}" type="text" value="{!placeholderText}" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_TEXT}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}"></apex:input>
+                                                    <apex:inputTextarea styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}" value="{!placeholderText}" rendered="{!inputWrapper.inputControl.Apttus__FieldType__c == TYPE_TEXTAREA}" disabled="{!inputWrapper.inputControl.Apttus__ReadOnly__c}"></apex:inputTextarea>
+                                                </div>
+                                                <!-- Wizard Attachment - start -->
+                                                <div style="display:inline-block;width:50%;">
+                                                    <apex:outputPanel rendered="{!inputWrapper.inputControl.Apttus__EnableAttachments__c}">
+                                                        <div>
+                                                            <apex:inputTextarea value="{!placeholderCommentText}" style="width:100%;height:88px;" ></apex:inputTextarea>
+                                                        </div>
+                                                        <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach"/>                                                   
+                                                        <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" />  -->
+                                                    </apex:outputPanel>    
+                                                </div>  
+                                                <div style="clear:both;"></div>
+                                                <!-- Wizard Attachment - end -->
+                                            </apex:outputPanel>
+                                            <apex:outputPanel styleClass="field-container" rendered="{!inputWrapper.inputControl.Apttus__FieldClass__c == OBJECT_FIELD}" layout="none">
+                                                <div style="display:block;width:50%;float:left;" >
+                                                    <apex:inputField styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}" value="{!focusObjectMap[inputWrapper.inputControl.Apttus__ObjectName__c][inputWrapper.inputControl.Apttus__FieldName__c]}" rendered="{!inputWrapper.inputControl.Apttus__FieldName__c != null && NOT(inputWrapper.inputControl.Apttus__ReadOnly__c)}" id="ofPreview"></apex:inputField>
+                                                    <apex:outputPanel styleClass="{!IF(inputWrapper.inputControl.Apttus__ReadOnly__c, 'readonly', '')}" rendered="{!inputWrapper.inputControl.Apttus__FieldName__c != null && inputWrapper.inputControl.Apttus__ReadOnly__c}">
+                                                        <apex:outputField value="{!focusObjectMap[inputWrapper.inputControl.Apttus__ObjectName__c][inputWrapper.inputControl.Apttus__FieldName__c]}" styleClass="{!IF(inputWrapper.inputControl.Apttus__Required__c, 'required', '')}"/>
+                                                    </apex:outputPanel>
+                                                    <script>
+                                                        HandleRequiredSignForLookupMultiPicklist('ofPreview');
+                                                    </script>
+                                                </div>
+                                                <!-- Wizard Attachment - start -->
+                                                <div style="display:inline-block;width:50%;">
+                                                    <apex:outputPanel rendered="{!inputWrapper.inputControl.Apttus__EnableAttachments__c}">
+                                                        <div>
+                                                            <apex:inputTextarea value="{!placeholderCommentText}" style="width:100%;height:88px;" ></apex:inputTextarea>
+                                                        </div>
+                                                        <apex:outputText value="{!$Label.apttus__zero} {!$Label.apttus__wizardattachments}" styleClass="numberOfAttach"/>                                                   
+                                                        <!-- <apex:outputText value="{!$Label.AddFiles}" styleClass="uploadText" />  -->
+                                                    </apex:outputPanel>    
+                                                </div>  
+                                                <div style="clear:both;"></div>
+                                                <!-- Wizard Attachment - end -->
+                                            </apex:outputPanel>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </div>
+            <!--=============== Input Form View Ends ===============-->
+
+            <apex:outputPanel id="pnlLibraryPane" layout="none">
+                <apex:outputPanel id="tmpId1" rendered="{!currentSubView == 'Wizard' && currentView != 'Library' && currentSubViewTab == 'Properties'}" layout="block" styleClass="form-pane condensed side-pane">
+                    <div class="head">
+                        <h3>{!$Label.StepsLibrary}</h3>
+                        <section class="search">
+                            <input type='text' placeholder='Search Wizard Steps' id='txtWizardStepLibrarySearch' />
+                            <a href="#" class="fa fa-search"></a>
+                        </section>
+                    </div>
+                    <apex:outputPanel id="pnlLibraryStepsContainer" styleClass="body" layout="block">
+                        <script>
+                            j$(document).ready(function(){
+                                draggableClonableList({
+                                    'sortableListId': "lstWizardSteps",
+                                    'libraryListId': "lstLibrarySteps"
+                                }, jQuery);
+
+                                var $libraryPanel = j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlLibraryStepsContainer}"));
+                                stepFormHeight = j$("#pnlFormContainer").outerHeight();
+
+                                highlightableList({
+                                    listSelector: UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlLibraryStepsContainer}") + " > ol > li"
+                                });
+
+                                searchableList(j$("#txtWizardStepLibrarySearch"));
+                            });
+                        </script>
+                        <ol id="lstLibrarySteps" class="draggable-list">
+                            <apex:repeat value="{!LibrarySteps}" var="libraryStep">
+                                <li id="{!libraryStep.Id}" search-text="{!libraryStep.Name} {!libraryStep.Category__c} {!libraryStep.Subcategory__c} {!libraryStep.Keywords__c}" class="hoverable">
+                                <span class="handle">
+                                    <span class="move-icon">
+                                        <i class="fa fa-ellipsis-v"></i><i class="fa fa-ellipsis-v"></i>
+                                    </span>
+                                    <span class="text-data no-resize">{!libraryStep.Name}</span>
+                                </span>
+                                </li>
+                            </apex:repeat>
+                        </ol>
+                    </apex:outputPanel>
+                    <div class="foot"></div>
+                </apex:outputPanel>
+
+                <apex:outputPanel id="tmpId2" rendered="{!currentSubView == 'Step' && currentSubViewTab != 'Preview' && currentSubViewTab != 'Rules'}" layout="block" styleClass="form-pane condensed side-pane">
+                    <div class="head">
+                        <h3>{!$Label.InputsLibrary}</h3>
+                        <section class="search">
+                            <input type='text' placeholder='Search Wizard Inputs' id='txtWizardInputLibrarySearch' />
+                            <a href="#" class="fa fa-search"></a>
+                        </section>
+                    </div>
+                    <apex:outputPanel id="pnlLibraryInputContainer" styleClass="body" layout="block">
+                        <script>
+                            j$(document).ready(function() {
+                                draggableClonableList({
+                                    'sortableListId': "lstStepInputs",
+                                    'libraryListId': "lstLibraryInputs"
+                                }, jQuery);
+
+                                var $libraryPanel = j$(UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlLibraryInputContainer}"));
+                                stepFormHeight = j$("#pnlFormContainer").outerHeight();
+
+                                highlightableList({
+                                    listSelector: UtilWizard.sfIdSelector("{!$Component.frmWizardDesigner.pnlLibraryInputContainer}") + " > ol > li"
+                                });
+
+                                searchableList(j$("#txtWizardInputLibrarySearch"));
+
+                            });
+                        </script>
+                        <ol id="lstLibraryInputs" class="draggable-list">
+                            <apex:repeat value="{!LibraryInputs}" var="libraryInput">
+                                <li id="{!libraryInput.Id}" search-text="{!libraryInput.Name} {!libraryInput.Category__c} {!libraryInput.Subcategory__c} {!libraryInput.Keywords__c}" class="hoverable">
+                                    <span class="handle">
+                                        <span class="move-icon"><i class="fa fa-ellipsis-v"></i><i class="fa fa-ellipsis-v"></i></span>
+                                        <span class="text-data no-resize">{!libraryInput.Name}</span>
+                                    </span>
+                                </li>
+                            </apex:repeat>
+                        </ol>
+                    </apex:outputPanel>
+                    <div class="foot"></div>
+                </apex:outputPanel>
+            </apex:outputPanel>
+
+
+        </apex:outputPanel>
+
+        <div class="header">
+            <div class="header-container">
+                <div class="header-controls-wrapper">
+                    <apex:outputPanel id="pnlPrimaryControls" layout="block" styleClass="controls-container">
+                        <apex:outputPanel rendered="{!currentSubView == 'Wizard'}" layout="none">
+                            <apex:commandLink id="lnkWizardCancel" action="{!navigateBack}" styleClass="primary">{!$Label.apttus__cancel}</apex:commandLink>
+                            <apex:commandLink id="lnkWizardSaveAndExit" action="{!saveWizard}" status="ajaxStatusContainer" styleClass="primary{!IF(isUIReadonly, ' disabled', '')}" onclick="{!IF(isUIReadonly, 'return false;', '')}">{!$Label.apttus__saveandexit}</apex:commandLink>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!currentSubView == 'Step'}" layout="none">
+                            <apex:commandLink action="{!cancelstep}" styleClass="primary">{!$Label.apttus__cancel}
+                                <apex:param name="currentSubView" value="Wizard" assignTo="{!currentSubView}" />
+                            </apex:commandLink>
+                            <apex:commandLink id="lnkStepSave" action="{!saveStep}" reRender="pnlMainContainer,pnlPrimaryControls" value="{!IF(currentView == 'Library', $Label.apttus__save, $Label.apttus__saveanduseinwizard)}" status="ajaxStatusContainer" styleClass="primary{!IF(isUIReadonly, ' disabled', '')}" onclick="{!IF(isUIReadonly, 'return false;', '')}">
+                                <apex:param name="currentSubView" value="Wizard" assignTo="{!currentSubView}" />
+                            </apex:commandLink>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!currentSubView == 'Input'}" layout="none">
+                            <apex:commandLink action="{!cancelInput}" styleClass="primary">{!$Label.apttus__cancel}
+                                <apex:param name="currentSubView" value="Step" assignTo="{!currentSubView}" />
+                            </apex:commandLink>
+                            <apex:commandLink id="lnkSaveInput" action="{!saveInput}" reRender="pnlMainContainer,pnlPrimaryControls" status="ajaxStatusContainer" value="{!IF(currentView == 'Library' && stepWrapper == null, $Label.apttus__save, $Label.apttus__saveanduseinstep)}" styleClass="{!IF(isUIReadonly, 'primary disabled', 'primary')}" onclick="{!IF(isUIReadonly, 'return false;', '')}">
+                                <apex:param name="currentSubView" value="Step" assignTo="{!currentSubView}" />
+                            </apex:commandLink>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                </div>
+                <span class="logo-container">
+                    <div class="logo"><img src="{!URLFOR($Resource.WizardDesigner, 'images/Wizard.png')}" /></div>
+                    <div class="title">{!$Label.WizardDesigner}</div>
+                </span>
+            </div>
+        </div>
+
+        <!-- THIS PANEL IS FOR NON-POSTBACK CONTROLLER ACTIONS. RERENDER ATTRIBUTE NEEDS TO BE SPECIFIED TO KEEP PAGE FROM REFRESHING -->
+        <apex:outputPanel id="pnlDoNothing" />
+        <apex:actionStatus id="ajaxStatusContainer" onstart="onAjaxStart();" onstop="onAjaxStop();">
+        </apex:actionStatus>
+        <apex:actionStatus id="ajaxStepContainer" onstart="onAjaxStepContainer(true);" onstop="onAjaxStepContainer(false);">
+        </apex:actionStatus>
+        <apex:actionStatus id="ajaxInputContainer" onstart="onAjaxInputContainer(true);" onstop="onAjaxInputContainer(false);">
+        </apex:actionStatus>
+        <apex:actionFunction action="{!moveWizardSteps}" name="moveWizardSteps" reRender="pnlWizardSteps" status="ajaxStepContainer">
+            <apex:param name="index" assignTo="{!index}" value="" />
+            <apex:param name="toIndex" assignTo="{!toIndex}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!moveStepInputs}" name="moveStepInputs" reRender="pnlStepInputs" status="ajaxInputContainer">
+            <apex:param name="index" assignTo="{!index}" value="" />
+            <apex:param name="toIndex" assignTo="{!toIndex}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!addInputToStep}" name="addInputToStep" reRender="pnlStepInputs" status="ajaxInputContainer" oncomplete="promptFirstAdd();">
+            <apex:param name="index" assignTo="{!index}" value="" />
+            <apex:param name="inputId" assignTo="{!inputId}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!addStepToWizard}" name="addStepToWizard" reRender="pnlWizardSteps" status="ajaxStepContainer" oncomplete="promptFirstAdd();">
+            <apex:param name="index" assignTo="{!index}" value="" />
+            <apex:param name="stepId" assignTo="{!stepId}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!openStep}" name="openStep" reRender="pnlMainContainer,pnlPrimaryControls" status="ajaxStatusContainer">
+            <apex:param name="stepId" assignTo="{!stepId}" value="" />
+            <apex:param name="currentSubView" value="Step" assignTo="{!currentSubView}" />
+            <apex:param name="currentSubViewTab" value="Properties" assignTo="{!currentSubViewTab}" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!openInput}" name="openInput" reRender="pnlMainContainer,pnlPrimaryControls" status="ajaxStatusContainer">
+            <apex:param name="inputId" assignTo="{!inputId}" value="" />
+            <apex:param name="currentSubView" value="Input" assignTo="{!currentSubView}" />
+            <apex:param name="currentSubViewTab" value="Properties" assignTo="{!currentSubViewTab}" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!deleteInput}" name="deleteInput" reRender="pnlStepInputs" status="ajaxInputContainer">
+            <apex:param name="inputId" assignTo="{!inputId}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!deleteStep}" name="deleteStep" reRender="pnlWizardSteps" status="ajaxStepContainer">
+            <apex:param name="stepId" assignTo="{!stepId}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!createStep}" name="createStep" reRender="pnlMainContainer,pnlPrimaryControls" status="ajaxStatusContainer">
+            <apex:param name="currentSubView" value="Step" assignTo="{!currentSubView}" />
+        </apex:actionFunction>
+        <apex:actionFunction action="{!onInputPropertyUpdate}" name="onInputPropertyUpdate" reRender="pnlDoNothing" />
+    </apex:form>
+
+    <div class="dialogContainer">
+        <div class="addRuleContent">
+            <apex:form >
+                <apex:outputPanel id="dialogTitle" layout="block" styleClass="custom--titlebar">
+                    <div class="title--text">{!$Label.apttus__ruleforthisstep}</div>
+                    <apex:outputPanel >
+                        <i class="fa fa-times close--btn">
+                            <apex:actionSupport event="onclick" action="{!cancelRuleset}" oncomplete="closeRulesetDialog(false, true);" rerender="addRuleContentPanel"/>
+                        </i>
+                    </apex:outputPanel>
+                </apex:outputPanel>
+
+                <apex:actionFunction status="ajaxStatusContainer" name="onAddRule" action="{!addRule}" reRender="addRuleContentPanel">
+                </apex:actionFunction>
+                <apex:actionFunction status="ajaxStatusContainer" name="onDeleteRule" action="{!deleteRule}" reRender="addRuleContentPanel">
+                    <apex:param name="index" value="" />
+                </apex:actionFunction>
+                <apex:outputPanel id="addRuleContentPanel">
+                    <apex:outputPanel rendered="{!ruleset.Apttus__WizardStepId__c != null}">
+                        <div class="step--title">{!ruleset.WizardStepId__r.Name}</div>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!ruleset.Apttus__WizardInputControlId__c != null}">
+                        <div class="step--title">{!ruleset.WizardInputControlId__r.Name}</div>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="errorMessages" layout="block">
+                        <apex:pageMessages />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!ruleset.Apttus__WizardStepId__c != null}" styleClass="dlg--section">
+                        <fieldset class="dlg--fieldset">
+                            <legend>{!$Label.GoTo}&nbsp;{!$Label.Step}</legend>
+                            <apex:selectList value="{!gotoStepPlaceholder}" size="1" disabled="{!isUIReadonly}">
+                                <apex:selectOptions value="{!wizardWrapper.stepsSelectOption}"></apex:selectOptions>
+                                <apex:actionSupport event="onchange" action="{!onGotoStepChange}" reRender="addRuleContentPanel"></apex:actionSupport>
+                            </apex:selectList>
+                            <apex:outputPanel rendered="{!ruleset.Apttus__RuleType__c != null && ruleset.Apttus__RuleType__c != GOTO_STEP}">
+                                <apex:inputField value="{!ruleset.Apttus__ResultantValue__c}" html-placeholder="{!$Label.apttus__enterrelativeurl}" styleClass="enter--url" html-disabled="disabled" rendered="{!isUIReadonly}"/>
+                                <apex:inputField value="{!ruleset.Apttus__ResultantValue__c}" html-placeholder="{!$Label.apttus__enterrelativeurl}" styleClass="enter--url" rendered="{!not(isUIReadonly)}"/>
+                            </apex:outputPanel>
+                        </fieldset>
+                    </apex:outputPanel>
+
+                    <apex:outputPanel rendered="{!ruleset.Apttus__WizardInputControlId__c != null}" styleClass="dlg--inputs dlg--section">
+                        <fieldset class="dlg--fieldset">
+                            <legend>{!$Label.Rule}</legend>
+                            <apex:selectList value="{!ruleset.Apttus__RuleType__c}" size="1" styleClass="spacer--field" disabled="{!isUIReadonly}">
+                                <apex:selectOptions value="{!inputRuleSelectOptions}"></apex:selectOptions>
+                                <apex:actionSupport event="onchange" reRender="addRuleContentPanel"></apex:actionSupport>
+                            </apex:selectList>
+                        
+                            <apex:outputPanel rendered="{!ruleset.Apttus__RuleType__c == DETERMINE_FOCUS_OBJECT}">
+                                <apex:selectList value="{!ruleset.Apttus__ContextObject__c}" size="1" styleClass="fixed--width spacer--field" disabled="{!isUIReadonly}">
+                                    <apex:selectOptions value="{!lstObjectNames1}" />
+                                    <apex:selectOptions value="{!lstObjectNames2}" rendered="{!lstObjectNames2.size > 0}"/>
+                                    <apex:selectOptions value="{!lstObjectNames3}" rendered="{!lstObjectNames3.size > 0}"/>
+                                    <apex:actionSupport event="onchange" rerender="stepRulesetButtons, inputRulesetButtons" />
+                                </apex:selectList>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!ruleset.Apttus__RuleType__c == DETERMINE_RECORD_TYPE}">
+                                <apex:selectList styleClass="fixed--width spacer--field" value="{!ruleset.Apttus__ContextObject__c}" size="1" disabled="{!isUIReadonly}">
+                                    <apex:selectOptions value="{!objectsWithRecordTypes}" />
+                                    <apex:actionSupport event="onchange" rerender="addRuleContentPanel"></apex:actionSupport>
+                                </apex:selectList>
+                                <apex:selectList styleClass="fixed--width spacer--field" value="{!ruleset.Apttus__RecordTypeId__c}" size="1" rendered="{!ruleset.Apttus__ContextObject__c != null}" disabled="{!isUIReadonly}">
+                                    <apex:selectOptions value="{!objectRecordTypes[ruleSet.Apttus__ContextObject__c]}" />
+                                    <apex:actionSupport event="onchange" rerender="addRuleContentPanel" />
+                                </apex:selectList>
+                            </apex:outputPanel>
+                            
+                            <apex:outputPanel rendered="{!ruleset.Apttus__RuleType__c == SET_THIS_CONTROL_VALUE}">
+                                <apex:inputText value="{!ruleset.Apttus__ResultantValue__c}" disabled="{!isUIReadonly}"></apex:inputText>
+                            </apex:outputPanel>
+                        </fieldset>
+                        <apex:outputPanel rendered="{!ruleset.Apttus__RuleType__c == SET_CUSTOM_VALUE}">
+                            <fieldset class="dlg--fieldset">
+                                <legend>{!$Label.Field}</legend>                            
+                                <apex:selectList styleClass="fixed--width spacer--field" value="{!ruleset.Apttus__MetaPropertyFieldName__c}" size="1" disabled="{!isUIReadonly}">
+                                    <apex:selectOptions value="{!metaPropertyFieldsOptions}" />
+                                    <apex:actionSupport event="onchange" action="{!onMetaPropertyFieldSelectionChange}" rerender="addRuleContentPanel">                                    
+                                    </apex:actionSupport>
+                                </apex:selectList>
+                            </fieldset>                         
+                            <fieldset class="dlg--fieldset">
+                                <legend>{!$Label.Value}</legend>  
+                                <apex:outputPanel rendered="{!selectedMetaPropertyFieldType == 'picklist' || selectedMetaPropertyFieldType == 'multipicklist'}">                                            
+                                    <apex:selectList styleClass="fixed--width" size="1" value="{!ruleset.Apttus__ResultantValue__c}" disabled="{!isUIReadonly}">
+                                        <apex:selectOptions value="{!selectedMetaPropertyFieldOptionValues}"></apex:selectOptions>
+                                        <apex:actionSupport event="onchange" rerender="addRuleContentPanel, stepRulesetButtons, inputRulesetButtons" />
+                                    </apex:selectList>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!selectedMetaPropertyFieldType != 'picklist' && selectedMetaPropertyFieldType != 'multipicklist'}">
+                                    <apex:inputText value="{!ruleset.Apttus__ResultantValue__c}" disabled="{!isUIReadonly}">
+                                        <apex:actionSupport event="onchange" action="{!onMetaPropertyFieldValueChange}" rerender="addRuleContentPanel, stepRulesetButtons, inputRulesetButtons" />
+                                    </apex:inputText>
+                                </apex:outputPanel>  
+                            </fieldset>                            
+                        </apex:outputPanel>                        
+                    </apex:outputPanel>
+
+                    <div>
+                        <table class="dlg--table">
+                            <apex:variable var="ruleIndexModal" value="{!0}"></apex:variable>
+                            <apex:repeat value="{!rules}" var="rw">
+                                <tr class="rule--row">
+                                    <td>
+                                        <apex:outputText value="{!ruleIndexModal+1}."></apex:outputText>
+                                    </td>
+                                    <td>
+                                        <apex:selectList size="1" value="{!rw.rule.Apttus__FromInputControlId__c}" disabled="{!isUIReadonly}">
+                                            <apex:selectOptions value="{!stepWrapper.inputControlSelectOptions}"></apex:selectOptions>
+                                            <apex:actionSupport event="onchange" action="{!onRuleInputChange}" reRender="addRuleContentPanel">
+                                                <apex:param name="index" value="{!ruleIndexModal}"/>
+                                            </apex:actionSupport>
+                                        </apex:selectList>
+                                    </td>
+                                    <td>
+                                        <apex:selectList styleClass="fixed--width" size="1" value="{!rw.rule.Apttus__ComparisonOperator__c}" disabled="{!isUIReadonly}">
+                                            <apex:selectOptions value="{!rw.inputOperators}"></apex:selectOptions>
+                                        </apex:selectList>
+                                    </td>
+                                    <td>
+                                        <apex:outputPanel rendered="{!rw.inputValueOptions.size > 0}">
+                                            <apex:selectList styleClass="fixed--width" style="height:auto;width:100%;" size="3" value="{!rw.multiValues}" disabled="{!isUIReadonly}" multiselect="true" rendered="{!stepWrapper.inputControlNameTypeMap[rw.rule.Apttus__FromInputControlId__c] == 'MultiPicklist'}">
+                                                <apex:selectOptions value="{!rw.inputValueOptions}"></apex:selectOptions>
+                                                <apex:actionSupport event="onchange" rerender="stepRulesetButtons, inputRulesetButtons" />                                                
+                                            </apex:selectList>
+                                            <apex:selectList styleClass="fixed--width" size="1" value="{!rw.rule.Apttus__Value__c}" disabled="{!isUIReadonly}" rendered="{!stepWrapper.inputControlNameTypeMap[rw.rule.Apttus__FromInputControlId__c] != 'MultiPicklist'}">
+                                                <apex:selectOptions value="{!rw.inputValueOptions}"></apex:selectOptions>
+                                                <apex:actionSupport event="onchange" rerender="stepRulesetButtons, inputRulesetButtons" />
+                                            </apex:selectList>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!rw.inputValueOptions.size == 0}">
+                                            <apex:inputText value="{!rw.rule.Apttus__Value__c}" disabled="{!isUIReadonly}" rendered="{!NOT(isWizardUseLongQuestion)}" maxlength="255">
+                                                <apex:actionSupport event="onchange" rerender="stepRulesetButtons, inputRulesetButtons" />
+                                            </apex:inputText>
+                                            <apex:inputTextArea value="{!rw.rule.Apttus__LongValue__c}" disabled="{!isUIReadonly}" rendered="{!isWizardUseLongQuestion}" >
+                                                <apex:actionSupport event="onchange" rerender="stepRulesetButtons, inputRulesetButtons" />
+                                            </apex:inputTextArea>
+                                            
+                                        </apex:outputPanel>
+                                    </td>
+                                    <td>
+                                        <apex:outputPanel rendered="{!wizardWrapper.wizardDesign.Status__c != 'Activated' }">
+                                        <i class="fa fa-trash-o del--rule--row" title="Delete" onclick="onDeleteRule('{!ruleIndexModal}')"></i>
+                                        </apex:outputPanel>
+                                    </td>
+                                </tr>
+                                <apex:variable var="ruleIndexModal" value="{!ruleIndexModal+1}"></apex:variable>
+                            </apex:repeat>
+                        </table>
+                        <table class="dlg--table" style="margin-top:10px;">
+                            <apex:outputPanel layout="none">
+                                <tr>
+                                    <td colspan="1">
+                                        <apex:outputLabel style="color:#999; font-weight:bold" rendered="{!rules.size != 0}">{!$ObjectType.Apttus__WizardRuleset2__c.fields.Apttus__AdvancedExpression__c.Label}</apex:outputLabel>
+                                        <apex:inputText value="{!ruleset.Apttus__AdvancedExpression__c}" rendered="{!rules.size != 0}" disabled="{!isUIReadonly}" style="margin-left:10px;">
+                                            <apex:actionSupport event="onchange" rerender="stepRulesetButtons, inputRulesetButtons" />
+                                        </apex:inputText>
+                                        
+                                    </td>
+                                </tr>
+                            </apex:outputPanel>
+                        </table>
+                        <table class="dlg--table">
+                            <apex:outputPanel layout="none">                                     
+                                <tr>
+                                    <td colspan="1">
+                                        <apex:outputPanel rendered="{!wizardWrapper.wizardDesign.Apttus__Status__c != 'Activated'}" layout="none">                                         
+                                            <a onclick="onAddRule()" class="tertiary--btn add--another--btn">{!$Label.AddAnotherRule}</a>
+                                        </apex:outputPanel>
+                                    </td>
+                                </tr>                         
+                            </apex:outputPanel>
+                        </table>
+                    </div>
+                    <div class="saveAndCancelWrapper">
+                        <div class="saveAndCancel">
+                            <apex:outputPanel rendered="{!ruleset.Apttus__WizardStepId__c != null}" id="stepRulesetButtons">
+                                <apex:commandButton action="{!saveStepRuleset}" value="{!$Label.apttus__save}" styleClass="secondary-ctrl default {!IF(canSaveRuleset, ' ', ' disabled ')}action--btn save" oncomplete="closeRulesetDialog({!errorSavingRuleset}, false, true, '{!JSENCODE(wizardWrapper.wizardJson)}');" disabled="{!NOT(canSaveRuleset)}" rerender="addRuleContentPanel"></apex:commandButton>
+                                <apex:commandButton action="{!cancelRuleset}" value="{!$Label.apttus__cancel}" styleClass="secondary-ctrl action--btn cancel" oncomplete="closeRulesetDialog(false, true);" rerender="addRuleContentPanel"></apex:commandButton>
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!ruleset.Apttus__WizardInputControlId__c != null}" id="inputRulesetButtons">
+                                <apex:commandButton action="{!saveInputRuleset}" value="{!$Label.apttus__save}" styleClass="secondary-ctrl default {!IF(canSaveRuleset, ' ', ' disabled ')}action--btn save" oncomplete="closeRulesetDialog({!errorSavingRuleset}, false, false, '{!JSENCODE(stepWrapper.stepJson)}');" disabled="{!NOT(canSaveRuleset)}" rerender="addRuleContentPanel"></apex:commandButton>
+                                <apex:commandButton action="{!cancelRuleset}" value="{!$Label.apttus__cancel}" styleClass="secondary-ctrl action--btn save" oncomplete="closeRulesetDialog(false, true);" rerender="addRuleContentPanel"></apex:commandButton>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </apex:outputPanel>
+            </apex:form>
+        </div>
+    </div>
+</apex:page>

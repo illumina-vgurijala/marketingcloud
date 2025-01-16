@@ -1,0 +1,880 @@
+<!-- 
+    Apttus Contract Management
+    DocumentFinder
+     
+    @2009-2020 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus__APTS_Agreement__c" 
+	  	   extensions="Apttus.DocumentFinderController" 
+           showHeader="false" 
+           sidebar="false" 
+           cache="false"
+           title="{!$Label.apttus__documentfinder}"
+           standardStylesheets="true"
+           tabStyle="Apttus__APTS_Agreement__c">
+		   
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" />  
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__JQueryUILibrary19, 'js/jquery-ui-1.12.1.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__DocumentFinderUI, '/js/BrowseAgreements.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus__TagIt, '/Tag-it/js/tag-it.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__DocumentFinderUI, 'js/jquery.blockUI.min.js')}"/>
+    
+	<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.TagIt,'Tag-it/css/jquery.tagit.css')}"/>
+	<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.DocumentFinderUI,'jquery-ui-1.11.4/jquery-ui.theme.css')}"/>
+	<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.DocumentFinderUI,'css/style.css')}"/>
+    
+	<apex:variable var="isLightning" value="{!$User.UIThemeDisplayed == 'Theme4d'}"  />
+  	<apex:variable var="isSalesforce1" value="{!$User.UIThemeDisplayed == 'Theme4t'}" />
+ 	<apex:outputPanel rendered="{!(isLightning || isSalesforce1)}">
+      <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+      <apex:slds />
+  	</apex:outputPanel>
+    
+    	<!-- SPINNER -->
+        <apex:actionStatus id="spinnerLightning">
+            <apex:facet name="start">
+                <div class="slds-spinner_container" style="position: fixed;" >
+                    <div role="status" class="slds-spinner slds-spinner--large slds-spinner--brand">
+                        <div class="slds-spinner__dot-a"></div>
+                        <div class="slds-spinner__dot-b"></div>
+                    </div>
+                </div>
+            </apex:facet>
+        </apex:actionStatus>
+        <!-- / SPINNER -->
+    
+	<script type="text/javascript">
+		$( document ).ready(function() {
+			 addPlaceHolder();
+			 enableMajorVersionFinishButton();
+	    });
+
+ 	    function onAjaxStart() {
+          $.blockUI({ message: '<img src="{!URLFOR($Resource.Image_LoadingPage)}"/><div>{!$Label.LoadingPage}</div>' });
+        }
+      
+        function onAjaxStop() {
+          $.unblockUI();
+            $(".tagit-autocomplete").hide();
+        }
+    	
+    	function ownerChange() {
+    		searchAgreements();
+    	}
+
+    	function addPlaceHolder() {
+    		addHtmlPlaceHolder('{!$Label.Agreement}' + ' ' + '{!$Label.apttus__owner}');
+		}
+		
+		var selectedMajorDocumentId = "";
+		var isCreateNewMajorVersionSelected = false;
+
+		function onMajorVersionSelected(documentId) {
+			selectedMajorDocumentId = documentId;
+			enableMajorVersionFinishButton();
+		}
+
+		function onMajorVersionFinishClicked() {
+			onAjaxStart();
+			getDocumentVersionDetailResponse(selectedMajorDocumentId, isCreateNewMajorVersionSelected);
+		}
+
+		function onIsCreateNewMajorVersion(cb) {
+			isCreateNewMajorVersionSelected = cb.checked;
+			if (cb.checked) {
+				selectedMajorDocumentId = '';
+				$(".majorVersions").prop('checked', false);
+				$(".majorVersions").attr('disabled', true);
+			}
+			else {
+				$(".majorVersions").attr('disabled', false);
+			}
+			enableMajorVersionFinishButton();
+		}
+
+		function enableMajorVersionFinishButton() {
+			var isDisabled = true;
+			if (selectedMajorDocumentId !== '' || isCreateNewMajorVersionSelected == true) {
+				isDisabled = false;
+			}
+			$("#major-version-finish").attr("disabled", isDisabled);
+		}
+
+	</script>
+       
+ 	<apex:form id="idBrowseSObjects" style="min-width:1000px;">
+	 <apex:outputPanel id="tempPanel">
+
+ 		
+ 		<apex:pageBlock title="{!IF(source == 'XAuthor', IF(IsCheckInMode, $Label.apttus__checkin, $Label.apttus__checkout), '')}">
+			
+			<apex:actionFunction name="getDocumentVersionDetailResponse" 
+									oncomplete="onAjaxStop();"
+									action="{!getDocumentVersionDetailResponse}" 
+				 					reRender="nullPanel, idResponsePanel">
+					<apex:param name="firstParam" assignTo="{!documentSelected}" value="" />
+					<apex:param name="secondParam" assignTo="{!isCreateNewMajorVersionSelected}" value="" />
+			</apex:actionFunction>
+
+	 		<apex:actionFunction name="searchAgreements" 
+	 								action="{!searchAgreements}" 
+	 								status="idSearchStatus" 
+	 								reRender="agreementTable, agreementPaginations, errorPanel"/>
+	 		<apex:actionFunction name="searchAgreementsNoError" 
+	 								action="{!searchAgreementsForAgreementOwner}" 
+	 								status="idSearchStatus" 
+	 								reRender="agreementTable, agreementPaginations, errorPanel"/>
+
+	 		<apex:actionFunction name="getSelectedAgreement" 
+	 								action="{!getSelectedAgreement}" 
+	 								status="idSearchStatus" 
+	 								reRender="attachmentTable, paginations"/>
+
+	 		<apex:actionFunction name="getInputTag" 
+	 								action="{!getSelectedAgreement}" 
+	 								status="idSearchStatus" 
+	 								reRender="attachmentTable, paginations">
+	         	<apex:param name="firstParam" assignTo="{!documentSearchString}" value="" />
+	   		</apex:actionFunction>
+	   		
+	   		<apex:actionStatus id="idSearchStatus" onstart="onAjaxStart()" onstop="afterPageUpdate()" />
+	   		<apex:outputPanel id="documentFinderWrapper"/>
+	   		<apex:outputPanel Id="errorPanel">
+	   			<apex:pageMessages />
+	   		</apex:outputPanel>
+	 		<apex:outputPanel id="documentFinder" rendered="{!showPage}">
+	 			<script>
+	 				function makeTag() {
+	 					makeTagHelper('{!tags}', '{!$Label.SearchDocumentPlaceHolder}', '{!$Label.EnterMoreThanTwoChar}');
+	 				}
+			    </script>
+		 		<apex:outputPanel id="idSObjectSearchBlock" rendered="{!viewMode == 'agreement'}">
+		 			 <apex:outputText style="display:block; margin-bottom: -10px;" value="{!$Label.apttus__documentfinderbeginsearch}"/>
+                    <br/><br/> 
+                    <div style="display:inline-block;">
+                         
+                         <apex:outputLabel value="{!$Label.apttus__enternameornumber}" style="height:25px;"> </apex:outputLabel>
+                         <br/>
+			 			<apex:inputText value="{!agreementSearchString}" 
+			 							style="width:250px;padding:1px 0px;" 
+			 							html-placeholder="{!$Label.apttus__enternameornumber}"
+			 							onkeypress="return noenterAgreement(event);"/>
+			 		
+			 			<apex:commandButton id="searchAgreement" 
+			 								value="{!$Label.apttus__search}" 
+			 								status="idSearchStatus" action="{!searchAgreements}" 
+			 								reRender="agreementTable, agreementPaginations, errorPanel"
+				    						style="line-height:0;font-size:0;text-indent:-999px;color: transparent;background-color:#4d90fe;background-image:url({!URLFOR($Resource.Apttus__GraphicsLib, 'small/search.png')});width:30px;border-width:0px;background-repeat:no-repeat;background-position:center;border: 1px solid #3079ED;cursor:pointer;padding:14px 3px 5px 3px"/>
+			 			</div>
+			 			
+			 			 <div id="agreementOwner" style="display:inline-block; padding-left:3px;" class="userSection">
+                            <apex:outputLabel value="{!$Label.apttus__agreement} {!$Label.apttus__owner}" style="padding-left:5px;"> </apex:outputLabel>
+                            <br/>
+				 			<apex:inputField styleclass="inputStyle" 
+				 								required="false"
+				 								html-placeholder="{!$Label.apttus__agreement} {!$Label.apttus__owner}" 
+				 								value="{!lookupAgmt.OwnerId}"
+				 								style="display: inline !important;">
+				 			</apex:inputField>
+			 			</div>
+			 			<div style="display:inline-block;">
+                            <apex:outputText value="{!$Label.apttus__agreement} {!$ObjectType.Apttus__APTS_Agreement__c.fields.Apttus__Primary_Contact__c.Label}"  style="padding-left:3px;" > </apex:outputText> 
+                            <br/>
+				 			<apex:inputField html-placeholder="{!$Label.apttus__agreement} {!$ObjectType.Apttus__APTS_Agreement__c.fields.Apttus__Primary_Contact__c.Label}" 
+				 								value="{!lookupAgmt.Apttus__Primary_Contact__c}"
+				 								style="width:200px;">
+				 				<apex:actionSupport event="onchange" 
+				 									action="{!searchAgreements}" 
+				 									status="idSearchStatus" 
+				 									reRender="agreementTable, agreementPaginations, errorPanel"/>
+				 			</apex:inputField>
+			 			</div>
+
+		 			<apex:outputPanel Id="agreementTable">
+		 				<apex:outputPanel id="agreementPaginations" layout="block" rendered="{!showAgreementPaginator}">
+
+			          	  <apex:outputText styleclass="inputStyle" value="{!$Label.apttus__page} {!agreementsPaginator.PageNumber} {!$Label.apttus__of} {!agreementsPaginator.totalPages}" />
+
+				          <apex:outputPanel styleclass="inputStyle" style="margin-left:calc(50% - 150px)">
+				              <apex:commandLink value="{!$Label.apttus__previouspagination}" status="idSearchStatus" rendered="{!agreementsPaginator.HasPrevious}" action="{!agreementsPaginator.previousPage}" reRender="agreementTable, agreementPaginations"/>              
+				              <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(agreementsPaginator.HasPrevious)}" style="color: #ccc;"/>
+				              <apex:outputText value="  "/>
+				              <apex:commandLink value="{!$Label.apttus__nextpagination}" status="idSearchStatus" rendered="{!agreementsPaginator.HasNext}" action="{!agreementsPaginator.nextPage}" reRender="agreementTable, agreementPaginations"/>                    
+				              <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(agreementsPaginator.HasNext)}" style="color: #ccc;"/>
+				          </apex:outputPanel>
+
+				          <apex:outputPanel style="float:right; margin-bottom:5px;">
+				            <apex:outputText value="{!$Label.apttus__recordsperpage} " />
+				            <apex:selectList value="{!pageSize}" size="1" >
+				                <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+				                <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+				                  <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+				                  <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+				                    <apex:actionSupport event="onchange" action="{!searchAgreements}" status="idSearchStatus" reRender="agreementTable, agreementPaginations, errorPanel"/>
+				            </apex:selectList>
+				          </apex:outputPanel>
+			          </apex:outputPanel>
+		 				<div style="min-height:250px;">
+				 			<apex:pageBlockTable value="{!agreementsPaginator.Records}" var="agreement" rendered="{!showAgreementPaginator}">
+
+				 				<apex:column headerValue="{!$Label.apttus__action}">
+				 					<apex:commandButton value="{!$Label.apttus__select}" 
+				 										action="{!getSelectedAgreement}"
+				 										status="idSearchStatus" 
+				 										oncomplete="makeTag(), documentOwnerOnchange();"
+				 										reRender="documentFinder, agreementPaginations, idResponsePanel">
+				 							<apex:param name="selectAgreement" value="{!agreement.Id}" assignTo="{!agreementSelected}"/>
+				 					</apex:commandButton>
+				 				</apex:column>
+
+				 				 <apex:repeat value="{!AgreementResultFields}" var="field">
+				 				 	<apex:column >
+				 				 		<apex:facet name="header">
+											<apex:outputPanel > 
+								        		<apex:commandLink value="{!IF(field.member.Label == 'Owner ID', $Label.Owner, 
+						        												IF(field.member.Label == 'Last Modified By ID', $Label.LastModifiedBy,
+						        													IF(field.member.Label == 'Created By ID', $Label.CreatedBy, field.member.label)
+						        												)
+							        										)
+								        								}"  
+								        						  action="{!searchAgreements}" 
+								        						  rendered="{!field.isSortable}"
+								        						  reRender="agreementTable"
+								        						  status="idSearchStatus">        
+				                        			<apex:param name="sortFieldName" value="{!field.member.FieldPath}" assignTo="{!agreementSortFieldName}"/>	
+				                        			<apex:param name="sortOrder" value="{!IF(agreementSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!agreementSortOrder}"/>
+
+				                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+				                        						title="{!$Label.apttus__sortedascending}" 
+				                        						alt="{!$Label.apttus__sortedascending}" 
+				                        						rendered="{!agreementSortFieldName == field.member.FieldPath && agreementSortOrder != 'DESC'}" />                     						
+				                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+				                        						title="{!$Label.apttus__sorteddescending}" 
+				                        						alt="{!$Label.apttus__sorteddescending}" 
+				                        						rendered="{!agreementSortFieldName == field.member.FieldPath && agreementSortOrder == 'DESC'}" />
+				                        		</apex:commandLink>
+				                        		<apex:outputText value="{!field.member.Label}" 
+				                        						 rendered="{!NOT(field.isSortable)}" />			 
+			                        		</apex:outputPanel>
+					        			</apex:facet>
+					        			<apex:outputPanel layout="block" 
+					        								title="{!agreement[field.member.FieldPath]}" 
+					        								rendered="{!agreement[field.member.FieldPath]!=null}">
+					        				<apex:outputField value="{!agreement[field.member.FieldPath]}"/>
+					        			</apex:outputPanel>
+	       							</apex:column>
+	    						</apex:repeat>
+				 			</apex:pageBlockTable>
+				 		</div>
+		          </apex:outputPanel>
+		 		</apex:outputPanel>
+		 		<apex:outputPanel id="documentSearchBlock" rendered="{! NOT(isLightning || isSalesforce1) && (viewMode == 'versionAware' || viewMode == 'noneVersionAware' || viewMode == 'majorSearchBlock' )}">
+		 			<apex:outputPanel rendered="{!viewMode == 'versionAware' || viewMode == 'majorSearchBlock'}">
+			 			<input type="text" id="documentSearch" value=""/>
+		 			</apex:outputPanel>
+			
+					<div style="display:inline-block;">
+	                <apex:inputText value="{!documentSearchString}" 
+	                				styleClass="inputStyle"
+		 							style="width:200px;margin:0px" 
+		 							rendered="{!viewMode == 'noneVersionAware'}" 
+		 							html-placeholder="{!$Label.apttus__filtername}"
+		 							onkeypress="return noenterDocument(event);"/>
+
+		 			<apex:commandButton value="{!$Label.apttus__search}" 
+							 			action="{!getSelectedAgreement}" 
+							 			rendered="{!viewMode == 'noneVersionAware'}" 
+							 			status="idSearchStatus" 
+							 			reRender="attachmentTable, paginations"
+							 			styleClass="inputStyle styleForIE"
+							 			style="line-height:0;font-size:0;text-indent:-999px;padding-top:14px;color: transparent;background-color:#4d90fe;background-image:url({!URLFOR($Resource.Apttus__GraphicsLib, 'small/search.png')});width:30px;border-width:0px;background-repeat:no-repeat;background-position:center;border: 1px solid #3079ED;cursor:pointer;"/>
+					</div>
+		 			<apex:selectList value="{!documentVersion}" styleclass="inputStyle" style="margin-top:16px;vertical-align:top;" rendered="{!viewMode == 'versionAware'}" multiselect="false" size="1">
+		 				<apex:selectOptions value="{!VersionOptions}"/>
+		 				<apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="idSearchStatus" reRender="attachmentTable, paginations"/>
+		 			</apex:selectList>
+
+		 			<apex:selectList value="{!documentState}" 
+		 							styleclass="inputStyle" style="margin-top:16px;vertical-align:top;"
+		 							multiselect="false" size="1" 
+		 							rendered="{!viewMode == 'versionAware'}">
+		 				<apex:selectOptions value="{!StateOptions}"/>
+		 				<apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="idSearchStatus" reRender="attachmentTable, paginations"/>
+		 			</apex:selectList>
+
+		 			
+		 			<div id="documentOwner" style="display:inline-block; vertical-align: top;margin-top: 16px;">
+			 			<apex:inputField value="{!lookupDocumentVersion.OwnerId}" 
+			 								html-placeHolder="{!$Label.apttus__document} {!$Label.apttus__owner}" 
+			 								styleclass="inputStyle" 
+			 								style="margin-top:0px;"
+			 								rendered="{!viewMode == 'versionAware'}"
+			 								required="false">
+			 			</apex:inputField>
+		 			</div>
+		 			<apex:inputField value="{!lookupDocumentVersion.OwnerId}" 
+			 								html-placeHolder="{!$Label.apttus__document} {!$Label.apttus__owner}" 
+			 								styleclass="inputStyle" 
+			 								rendered="{!viewMode == 'noneVersionAware'}"
+			 								required="false">
+
+		 				<apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="idSearchStatus" reRender="attachmentTable, paginations"/>
+		 			</apex:inputField>
+
+
+		 			<apex:outputPanel id="attachmentTable" style="display:block; clear:both; {!IF(viewMode == 'versionAware' || viewMode == 'majorSearchBlock', 'margin-top:30px', '')}">
+					 	<div style="{!IF(viewMode == 'majorSearchBlock', 'display:inline-block; margin:20px 0 15px 0;', 'display:none')};">
+							<span style="font-size:13px; font-weight:bold;">
+								{!$Label.SelectAnAncestor}
+							</span>
+						</div>
+		 				<apex:outputPanel id="paginations">
+			 				<apex:outputPanel id="documentDetailPagination" layout="block" rendered="{!viewMode == 'versionAware' || viewMode == 'majorSearchBlock'}">
+
+					          <apex:outputText styleclass="inputStyle" 
+					          					value="{!$Label.apttus__page} {!documentVersionDetailPaginator.PageNumber} {!$Label.apttus__of} {!documentVersionDetailPaginator.totalPages}" />
+
+					          <apex:outputPanel styleclass="inputStyle" 
+					          					style="margin-left:calc(50% - 150px)">
+					              <apex:commandLink value="{!$Label.apttus__previouspagination}" status="idSearchStatus" rendered="{!documentVersionDetailPaginator.HasPrevious}" action="{!documentVersionDetailPaginator.previousPage}" reRender="versionAwareDisplay, paginations"/>              
+					              <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(documentVersionDetailPaginator.HasPrevious)}" style="color: #ccc;"/>
+					              <apex:outputText value="  "/>
+					              <apex:commandLink value="{!$Label.apttus__nextpagination}" status="idSearchStatus" rendered="{!documentVersionDetailPaginator.HasNext}" action="{!documentVersionDetailPaginator.nextPage}" reRender="versionAwareDisplay, paginations"/>                    
+					              <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(documentVersionDetailPaginator.HasNext)}" style="color: #ccc;"/>
+					          </apex:outputPanel>
+					          <span style="min-width:100px;">
+					          <apex:outputPanel style="float:right; margin-bottom:5px;">
+					            <apex:outputText value="{!$Label.apttus__recordsperpage} " />
+					            <apex:selectList value="{!pageSize}" size="1" >
+					                <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+					                <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+					                  <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+					                  <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+					                    <apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="idSearchStatus" reRender="attachmentTable, paginations"/>
+					            </apex:selectList>
+					          </apex:outputPanel>
+					          </span>
+					    	</apex:outputPanel>
+
+						    <apex:outputPanel id="attachmentPagination" layout="block" rendered="{!viewMode == 'noneVersionAware'}">
+					          <apex:outputText styleclass="inputStyle" value="{!$Label.apttus__page} {!attachmentsPaginator.PageNumber} {!$Label.apttus__of} {!attachmentsPaginator.totalPages}" />
+
+					          <apex:outputPanel styleclass="inputStyle" style="margin-left:calc(50% - 150px)">
+					              <apex:commandLink value="{!$Label.apttus__previouspagination}" status="idSearchStatus" rendered="{!attachmentsPaginator.HasPrevious}" action="{!attachmentsPaginator.previousPage}" reRender="attachmentTable, paginations"/>              
+					              <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(attachmentsPaginator.HasPrevious)}" style="color: #ccc;"/>
+					              <apex:outputText value="  "/>
+					              <apex:commandLink value="{!$Label.apttus__nextpagination}" status="idSearchStatus" rendered="{!attachmentsPaginator.HasNext}" action="{!attachmentsPaginator.nextPage}" reRender="attachmentTable, paginations"/>                    
+					              <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(attachmentsPaginator.HasNext)}" style="color: #ccc;"/>
+					          </apex:outputPanel>
+
+					          <apex:outputPanel style="float:right; margin-bottom:5px;">
+					            	<apex:outputText value="{!$Label.apttus__recordsperpage} " />
+						            <apex:selectList value="{!pageSize}" size="1" >
+						                <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+						                <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+						                  <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+						                  <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+						                    <apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="idSearchStatus" reRender="attachmentTable, paginations"/>
+						            </apex:selectList>
+						  		</apex:outputPanel>
+						    </apex:outputPanel>
+						</apex:outputPanel>
+		 				<apex:outputPanel id="versionAwareDisplay" rendered="{!viewMode == 'versionAware' || viewMode == 'majorSearchBlock'}">
+
+		 					<div style="overflow-y:scroll;min-height:250px;height:250px;width:100%;">
+					 			<apex:pageBlockTable value="{!documentVersionDetailPaginator.Records}" var="attachment">
+
+					 				<apex:column headerValue="{!$Label.apttus__action}">
+					 					<apex:commandLink value="{!$Label.apttus__view}" reRender="nullPanel" status="idSearchStatus" style="color: #006295;" rendered="{!source != 'XAuthor'}">
+					 						<apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="openDocument();" reRender="nullPanel, idResponsePanel">
+					 							<apex:param name="assignDocumentId" value="{!attachment[CONTENT_ID]}" assignTo="{!documentSelected}"/>
+					 						</apex:actionSupport>
+					 					</apex:commandLink>
+
+					 					<apex:commandButton value="{!$Label.apttus__open}" reRender="nullPanel" status="idSearchStatus" rendered="{!source == 'XAuthor' && viewMode != 'majorSearchBlock'}">
+					 						<apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="openDocument();" reRender="nullPanel, idResponsePanel">
+					 							<apex:param name="assignDocumentId" value="{!attachment[CONTENT_ID]}" assignTo="{!documentSelected}"/>
+					 						</apex:actionSupport>
+					 					</apex:commandButton>
+					 			
+								 		<input type="radio" name="majorVersions" class="majorVersions" onclick="onMajorVersionSelected('{!attachment[CONTENT_ID]}')"
+											value="{!attachment[CONTENT_ID]}" style="{!IF(source == 'XAuthor' && viewMode == 'majorSearchBlock' , 'display:block;', 'display:none')};">
+										</input>
+								 	</apex:column>
+
+					 				<apex:repeat value="{!DocumentResultFields}" var="field">
+				 				 		<apex:column >
+					 				 		<apex:facet name="header">
+												<apex:outputPanel > 
+									        		<apex:commandLink value="{!IF(field.member.Label == 'Title', $Label.DocumentName,
+									        									IF(field.member.Label == 'Name', $Label.DocumentVersion, 
+									        										IF(field.member.Label == 'Owner ID', $Label.Owner, 
+									        											IF(field.member.Label == 'Document Info', $Label.DocumentState, 
+									        												IF(field.member.Label == 'Last Modified By ID', $Label.LastModifiedBy,
+									        													IF(field.member.Label == 'Created By ID', $Label.CreatedBy, field.member.label)
+									        												)
+									        											)
+									        										)
+									        									)
+									        								)}" 
+									        						  action="{!getSelectedAgreement}" 
+									        						  rendered="{!field.isSortable}"
+									        						  reRender="attachmentTable"
+									        						  status="idSearchStatus">        
+					                        			<apex:param name="sortFieldName" value="{!field.member.FieldPath}" assignTo="{!documentSortFieldName}"/>	
+					                        			<apex:param name="sortOrder" value="{!IF(documentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!documentSortOrder}"/>
+
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+					                        						title="{!$Label.apttus__sortedascending}" 
+					                        						alt="{!$Label.apttus__sortedascending}" 
+					                        						rendered="{!documentSortFieldName == field.member.FieldPath && documentSortOrder != 'DESC'}" />                     						
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+					                        						title="{!$Label.apttus__sorteddescending}" 
+					                        						alt="{!$Label.apttus__sorteddescending}" 
+					                        						rendered="{!documentSortFieldName == field.member.FieldPath && documentSortOrder == 'DESC'}" />
+					                        		</apex:commandLink>
+					                        		<apex:outputText value="{!field.member.Label}" 
+					                        						 rendered="{!NOT(field.isSortable)}" />			 
+				                        		</apex:outputPanel>
+						        			</apex:facet>
+
+						        			<apex:outputPanel layout="block" 
+						        								title="{!attachment[field.member.FieldPath]}" 
+						        								rendered="{!attachment[field.member.FieldPath]!=null}">
+						        				<span id="versionAwareLinks">
+				                            		<apex:outputField value="{!attachment[field.member.FieldPath]}" 
+				                            						style="word-wrap: break-word;"/>
+				                            	</span>
+				                          	</apex:outputPanel>
+
+		       							</apex:column>
+		    						</apex:repeat>
+					 			</apex:pageBlockTable>
+				 			</div>
+			          	</apex:outputPanel>
+
+			          	<apex:outputPanel id="attachmentDisplay" rendered="{!viewMode == 'noneVersionAware'}">
+			          		<div style="overflow-y:scroll;min-height:250px;height:250px;width:100%;">
+					 			<apex:pageBlockTable value="{!attachmentsPaginator.Records}" var="attachment">
+					 				<apex:column headerValue="{!$Label.apttus__action}">
+					 					<apex:commandLink value="{!$Label.apttus__view}" rendered="{!source != 'XAuthor'}" status="idSearchStatus" reRender="nullPanel" style="color: #006295;">
+					 						<apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="openDocument();" reRender="nullPanel">
+					 							<apex:param name="assignDocumentId" value="{!attachment.Id}" assignTo="{!documentSelected}"/>
+					 						</apex:actionSupport>
+					 					</apex:commandLink>
+
+					 					<apex:commandButton value="{!$Label.apttus__open}" rendered="{!source == 'XAuthor'}" status="idSearchStatus" reRender="nullPanel">
+					 						<apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="openDocument();" reRender="nullPanel, idResponsePanel">
+					 							<apex:param name="assignDocumentId" value="{!attachment.Id}" assignTo="{!documentSelected}"/>
+					 						</apex:actionSupport>
+					 					</apex:commandButton>
+					 				</apex:column>
+
+					 				<apex:column >
+					 					<apex:facet name="header">
+												<apex:outputPanel > 
+									        		<apex:commandLink value="{!$Label.apttus__document} {!$Label.apttus__name}" 
+									        						  action="{!getSelectedAgreement}" 
+									        						  reRender="attachmentTable"
+									        						  status="idSearchStatus">        
+					                        			<apex:param name="sortFieldName" value="Name" assignTo="{!attachmentSortFieldName}"/>	
+					                        			<apex:param name="sortOrder" value="{!IF(attachmentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!attachmentSortOrder}"/>
+
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+					                        						title="{!$Label.apttus__sortedascending}" 
+					                        						alt="{!$Label.apttus__sortedascending}" 
+					                        						rendered="{!attachmentSortFieldName == 'Name' && attachmentSortOrder != 'DESC'}" />                     						
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+					                        						title="{!$Label.apttus__sorteddescending}" 
+					                        						alt="{!$Label.apttus__sorteddescending}" 
+					                        						rendered="{!attachmentSortFieldName == 'Name' && attachmentSortOrder == 'DESC'}" />
+					                        		</apex:commandLink>
+				                        		</apex:outputPanel>
+						        			</apex:facet>
+							        		<div title="{!attachment['Name']}">
+						 						<apex:outputText value="{!attachment['Name']}"/>
+						 					</div>
+					 				</apex:column>
+
+					 				<apex:column >
+					 					<apex:facet name="header">
+												<apex:outputPanel > 
+									        		<apex:commandLink value="{!$Label.apttus__owner}" 
+									        						  action="{!getSelectedAgreement}" 
+									        						  reRender="attachmentTable"
+									        						  status="idSearchStatus">        
+					                        			<apex:param name="sortFieldName" value="OwnerId" assignTo="{!attachmentSortFieldName}"/>	
+					                        			<apex:param name="sortOrder" value="{!IF(attachmentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!attachmentSortOrder}"/>
+
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+					                        						title="{!$Label.apttus__sortedascending}" 
+					                        						alt="{!$Label.apttus__sortedascending}" 
+					                        						rendered="{!attachmentSortFieldName == 'OwnerId' && attachmentSortOrder != 'DESC'}" />                     						
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+					                        						title="{!$Label.apttus__sorteddescending}" 
+					                        						alt="{!$Label.apttus__sorteddescending}" 
+					                        						rendered="{!attachmentSortFieldName == 'OwnerId' && attachmentSortOrder == 'DESC'}" />
+					                        		</apex:commandLink>
+				                        		</apex:outputPanel>
+						        			</apex:facet>
+                                            <div title="{!attachment['OwnerName']}">
+							        			<span id="noneVersionAwareLinks">
+                                                    <apex:outputText value="{!attachment['OwnerName']}"/>
+						 						</span>
+						 					</div>
+					 				</apex:column>
+
+					 				<apex:column >
+					 					<apex:facet name="header">
+												<apex:outputPanel > 
+									        		<apex:commandLink value="{!$ObjectType.Attachment.fields.LastModifiedDate.Label}" 
+									        						  action="{!getSelectedAgreement}" 
+									        						  reRender="attachmentTable"
+									        						  status="idSearchStatus">        
+					                        			<apex:param name="sortFieldName" value="LastModifiedDate" assignTo="{!attachmentSortFieldName}"/>	
+					                        			<apex:param name="sortOrder" value="{!IF(attachmentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!attachmentSortOrder}"/>
+
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+					                        						title="{!$Label.apttus__sortedascending}" 
+					                        						alt="{!$Label.apttus__sortedascending}" 
+					                        						rendered="{!attachmentSortFieldName == 'LastModifiedDate' && attachmentSortOrder != 'DESC'}" />                     						
+					                        			<apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+					                        						title="{!$Label.apttus__sorteddescending}" 
+					                        						alt="{!$Label.apttus__sorteddescending}" 
+					                        						rendered="{!attachmentSortFieldName == 'LastModifiedDate' && attachmentSortOrder == 'DESC'}" />
+					                        		</apex:commandLink>
+				                        		</apex:outputPanel>
+						        			</apex:facet>
+						        			<div title="{!attachment['LastModifiedDate']}">
+					 							<apex:outputText value="{!attachment['LastModifiedDate']}"/>
+					 						</div>
+					 				</apex:column>
+					 			</apex:pageBlockTable>
+					 		</div>
+			 			</apex:outputPanel>
+			 		</apex:outputPanel>
+					<br/>
+					<br/>
+					<div style="display:block;">
+						<div style="{!IF(viewMode == 'majorSearchBlock', 'display:inline-block;', 'display:none;')};">
+							<div style="display:inline-block; vertical-align: text-top;font-weight:bold;">{!$Label.CreateNewMajorVersion}</div>
+							<div style="display:inline-block; vertical-align: text-top; ">
+								<input style="margin-top: 1px;" type="checkbox" name="nameOfChoice" value="0" onclick="onIsCreateNewMajorVersion(this)"></input>
+							</div>
+						</div>
+						<input type="button" id="major-version-finish" value="{!$Label.Finish}" style="{!IF(source == 'XAuthor' && viewMode == 'majorSearchBlock', 'display:block;', 'display:none')}; float:right;"
+							disabled="true" onclick="onMajorVersionFinishClicked()" status="idSearchStatus">
+						</input>
+					</div>
+					<div style="display:block; margin-top:50px;">
+						<apex:outputPanel Id="nullPanel"/>
+						<apex:outputPanel style="padding-top:2px;">
+							<apex:commandLink value="{!$Label.apttus__back}"
+											action="{!back}" 
+											oncomplete="refreshQueue(), 
+												documentOwnerOnchange(),
+												addPlaceHolder();"
+											status="idSearchStatus" 
+											rendered="{!showBack}"
+											reRender="documentFinder, agreementPaginations" 
+											style="color: #006295;"/>
+						</apex:outputPanel>
+					</div>
+		 		</apex:outputPanel>
+
+                            
+                <apex:outputPanel id="documentSearchBlockLightning" rendered="{!(source == 'Salesforce') && (isLightning || isSalesforce1) && (viewMode == 'versionAware' || viewMode == 'noneVersionAware')}">
+                    <div class="slds slds-box slds-theme--default">            
+                        <div style="display:inline-block;">
+                            <apex:inputText value="{!documentSearchString}" 
+                                            styleClass="inputStyle"
+                                            style="width:200px;margin:5px" 
+                                            rendered="{!viewMode == 'noneVersionAware'}" 
+                                            html-placeholder="{!$Label.apttus__filtername}"
+                                            onkeypress="return noenterDocument(event);"/>
+            
+                            <apex:commandButton value="{!$Label.apttus__search}" 
+                                                action="{!getSelectedAgreement}" 
+                                                rendered="{!viewMode == 'noneVersionAware'}" 
+                                                status="spinnerLightning" 
+                                                reRender="attachmentTableLightning, paginationsLightning"
+                                                styleClass="slds-button slds-button--brand"/>
+                        </div>
+                        <apex:selectList value="{!documentVersion}" styleclass="inputStyle" style="margin-top:16px;vertical-align:top;" rendered="{!viewMode == 'versionAware'}" multiselect="false" size="1">
+                            <apex:selectOptions value="{!VersionOptions}"/>
+                            <apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="spinnerLightning" reRender="attachmentTableLightning, paginationsLightning"/>
+                        </apex:selectList>
+            
+                        <apex:selectList value="{!documentState}" 
+                                        styleclass="inputStyle" style="margin-top:16px;vertical-align:top;"
+                                        multiselect="false" size="1" 
+                                        rendered="{!viewMode == 'versionAware'}">
+                            <apex:selectOptions value="{!StateOptions}"/>
+                            <apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="spinnerLightning" reRender="attachmentTableLightning, paginationsLightning"/>
+                        </apex:selectList>
+                    
+            
+                    <apex:outputPanel id="attachmentTableLightning" style="display:block; {!IF(viewMode == 'versionAware', 'margin-top:30px', '')}">
+                        <apex:outputPanel id="paginationsLightning">
+                            <apex:outputPanel id="documentDetailPaginationLightning" layout="block" rendered="{!viewMode == 'versionAware'}">
+            
+                                <apex:outputText styleclass="inputStyle" 
+                                                value="{!$Label.apttus__page} {!documentVersionDetailPaginator.PageNumber} {!$Label.apttus__of} {!documentVersionDetailPaginator.totalPages}" />
+            
+                                <apex:outputPanel styleclass="inputStyle" 
+                                                style="margin-left:calc(50% - 150px)">
+                                      <apex:commandLink value="{!$Label.apttus__previouspagination}" status="spinnerLightning" rendered="{!documentVersionDetailPaginator.HasPrevious}" action="{!documentVersionDetailPaginator.previousPage}" reRender="versionAwareDisplayLightning, paginationsLightning"/>              
+                                      <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(documentVersionDetailPaginator.HasPrevious)}" style="color: #ccc;"/>
+                                      <apex:outputText value="  "/>
+                                      <apex:commandLink value="{!$Label.apttus__nextpagination}" status="spinnerLightning" rendered="{!documentVersionDetailPaginator.HasNext}" action="{!documentVersionDetailPaginator.nextPage}" reRender="versionAwareDisplayLightning, paginationsLightning"/>                    
+                                      <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(documentVersionDetailPaginator.HasNext)}" style="color: #ccc;"/>
+                                </apex:outputPanel>
+                                  <span style="min-width:100px;">
+                                  <apex:outputPanel style="float:right; margin-bottom:5px;">
+                                    <apex:outputText value="{!$Label.apttus__recordsperpage} " />
+                                    <apex:selectList value="{!pageSize}" size="1" >
+                                        <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                                        <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                                          <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                                          <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                                            <apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="spinnerLightning" reRender="attachmentTableLightning, paginationsLightning"/>
+                                    </apex:selectList>
+                                  </apex:outputPanel>
+                                  </span>
+                            </apex:outputPanel>
+            
+                            <apex:outputPanel id="attachmentPaginationLightning" layout="block" rendered="{!viewMode == 'noneVersionAware'}">
+                              <apex:outputText styleclass="inputStyle" value="{!$Label.apttus__page} {!attachmentsPaginator.PageNumber} {!$Label.apttus__of} {!attachmentsPaginator.totalPages}" />
+            
+                              <apex:outputPanel styleclass="inputStyle" style="margin-left:calc(50% - 150px)">
+                                  <apex:commandLink value="{!$Label.apttus__previouspagination}" status="spinnerLightning" rendered="{!attachmentsPaginator.HasPrevious}" action="{!attachmentsPaginator.previousPage}" reRender="attachmentTableLightning, paginationsLightning"/>              
+                                  <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(attachmentsPaginator.HasPrevious)}" style="color: #ccc;"/>
+                                  <apex:outputText value="  "/>
+                                  <apex:commandLink value="{!$Label.apttus__nextpagination}" status="spinnerLightning" rendered="{!attachmentsPaginator.HasNext}" action="{!attachmentsPaginator.nextPage}" reRender="attachmentTableLightning, paginationsLightning"/>                    
+                                  <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(attachmentsPaginator.HasNext)}" style="color: #ccc;"/>
+                              </apex:outputPanel>
+            
+                              <apex:outputPanel style="float:right; margin-bottom:5px;">
+                                    <apex:outputText value="{!$Label.apttus__recordsperpage} " />
+                                    <apex:selectList value="{!pageSize}" size="1" >
+                                        <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                                        <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                                          <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                                          <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                                            <apex:actionSupport event="onchange" action="{!getSelectedAgreement}" status="spinnerLightning" reRender="attachmentTableLightning, paginationsLightning"/>
+                                    </apex:selectList>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:outputPanel>
+                        <apex:outputPanel id="versionAwareDisplayLightning" rendered="{!viewMode == 'versionAware'}">
+            
+                            <div style="overflow-y:scroll;min-height:250px;height:250px;width:100%;">
+                                <apex:pageBlockTable value="{!documentVersionDetailPaginator.Records}" var="attachment">
+            
+                                    <apex:column headerValue="{!$Label.apttus__action}">
+                                        <apex:commandLink value="{!$Label.apttus__view}" reRender="nullPanelLightning" status="spinnerLightning" style="color: #006295;" rendered="{!source != 'XAuthor'}">
+                                            <apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="window.open('{!documentDownloadURL}','_blank');" reRender="nullPanelLightning, idResponsePanel">
+                                                <apex:param name="assignDocumentId" value="{!attachment[CONTENT_ID]}" assignTo="{!documentSelected}"/>
+                                            </apex:actionSupport>
+                                        </apex:commandLink>
+            
+                                        <apex:commandButton value="{!$Label.apttus__open}" reRender="nullPanelLightning" status="spinnerLightning" rendered="{!source == 'XAuthor'}">
+                                            <apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="openDocument();" reRender="nullPanelLightning, idResponsePanel">
+                                                <apex:param name="assignDocumentId" value="{!attachment[CONTENT_ID]}" assignTo="{!documentSelected}"/>
+                                            </apex:actionSupport>
+                                        </apex:commandButton>
+                                    </apex:column>
+            
+                                    <apex:repeat value="{!DocumentResultFields}" var="field">
+                                        <apex:column >
+                                            <apex:facet name="header">
+                                                <apex:outputPanel > 
+                                                    <apex:commandLink value="{!IF(field.member.Label == 'Title', $Label.DocumentName,
+                                                                                IF(field.member.Label == 'Name', $Label.DocumentVersion, 
+                                                                                    IF(field.member.Label == 'Owner ID', $Label.Owner, 
+                                                                                        IF(field.member.Label == 'Document Info', $Label.DocumentState, 
+                                                                                            IF(field.member.Label == 'Last Modified By ID', $Label.LastModifiedBy,
+                                                                                                IF(field.member.Label == 'Created By ID', $Label.CreatedBy, field.member.label)
+                                                                                            )
+                                                                                        )
+                                                                                    )
+                                                                                )
+                                                                            )}" 
+                                                                      action="{!getSelectedAgreement}" 
+                                                                      rendered="{!field.isSortable}"
+                                                                      reRender="attachmentTableLightning"
+                                                                      status="spinnerLightning">        
+                                                        <apex:param name="sortFieldName" value="{!field.member.FieldPath}" assignTo="{!documentSortFieldName}"/>    
+                                                        <apex:param name="sortOrder" value="{!IF(documentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!documentSortOrder}"/>
+            
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+                                                                    title="{!$Label.apttus__sortedascending}" 
+                                                                    alt="{!$Label.apttus__sortedascending}" 
+                                                                    rendered="{!documentSortFieldName == field.member.FieldPath && documentSortOrder != 'DESC'}" />                                             
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+                                                                    title="{!$Label.apttus__sorteddescending}" 
+                                                                    alt="{!$Label.apttus__sorteddescending}" 
+                                                                    rendered="{!documentSortFieldName == field.member.FieldPath && documentSortOrder == 'DESC'}" />
+                                                    </apex:commandLink>
+                                                    <apex:outputText value="{!field.member.Label}" 
+                                                                     rendered="{!NOT(field.isSortable)}" />          
+                                                </apex:outputPanel>
+                                            </apex:facet>
+            
+                                            <apex:outputPanel layout="block" 
+                                                                title="{!attachment[field.member.FieldPath]}" 
+                                                                rendered="{!attachment[field.member.FieldPath]!=null}">
+                                                <span id="versionAwareLinks">
+                                                    <apex:outputField value="{!attachment[field.member.FieldPath]}" 
+                                                                    style="word-wrap: break-word;"/>
+                                                </span>
+                                            </apex:outputPanel>
+            
+                                        </apex:column>
+                                    </apex:repeat>
+                                </apex:pageBlockTable>
+                            </div>
+                        </apex:outputPanel>
+            
+                        <apex:outputPanel id="attachmentDisplayLightning" rendered="{!viewMode == 'noneVersionAware'}">
+                            <div style="overflow-y:scroll;min-height:250px;height:250px;width:100%;">
+                                <apex:pageBlockTable value="{!attachmentsPaginator.Records}" var="attachment" >
+                                    <apex:column headerValue="{!$Label.apttus__action}">
+                                        <apex:commandLink value="{!$Label.apttus__view}" rendered="{!source != 'XAuthor'}" status="spinnerLightning" reRender="nullPanelLightning" style="color: #006295;">
+                                            <apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="window.open('{!documentDownloadURL}','_blank');" reRender="nullPanelLightning">
+                                                <apex:param name="assignDocumentId" value="{!attachment.Id}" assignTo="{!documentSelected}"/>
+                                            </apex:actionSupport>
+                                        </apex:commandLink>
+            
+                                        <apex:commandButton value="{!$Label.apttus__open}" rendered="{!source == 'XAuthor'}" status="spinnerLightning" reRender="nullPanelLightning">
+                                            <apex:actionSupport event="onclick" action="{!getSelectedAgreementDoc}" oncomplete="openDocument();" reRender="nullPanelLightning, idResponsePanel">
+                                                <apex:param name="assignDocumentId" value="{!attachment.Id}" assignTo="{!documentSelected}"/>
+                                            </apex:actionSupport>
+                                        </apex:commandButton>
+                                    </apex:column>
+            
+                                    <apex:column >
+                                        <apex:facet name="header">
+                                                <apex:outputPanel > 
+                                                    <apex:commandLink value="{!$Label.apttus__document} {!$Label.apttus__name}" 
+                                                                      action="{!getSelectedAgreement}" 
+                                                                      reRender="attachmentTableLightning"
+                                                                      status="spinnerLightning">        
+                                                        <apex:param name="sortFieldName" value="Name" assignTo="{!attachmentSortFieldName}"/>   
+                                                        <apex:param name="sortOrder" value="{!IF(attachmentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!attachmentSortOrder}"/>
+            
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+                                                                    title="{!$Label.apttus__sortedascending}" 
+                                                                    alt="{!$Label.apttus__sortedascending}" 
+                                                                    rendered="{!attachmentSortFieldName == 'Name' && attachmentSortOrder != 'DESC'}" />                                             
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+                                                                    title="{!$Label.apttus__sorteddescending}" 
+                                                                    alt="{!$Label.apttus__sorteddescending}" 
+                                                                    rendered="{!attachmentSortFieldName == 'Name' && attachmentSortOrder == 'DESC'}" />
+                                                    </apex:commandLink>
+                                                </apex:outputPanel>
+                                            </apex:facet>
+                                            <div title="{!attachment['Name']}">
+                                                <apex:outputText value="{!attachment['Name']}"/>
+                                            </div>
+                                    </apex:column>
+            
+                                    <apex:column >
+                                        <apex:facet name="header">
+                                                <apex:outputPanel > 
+                                                    <apex:commandLink value="{!$Label.apttus__owner}" 
+                                                                      action="{!getSelectedAgreement}" 
+                                                                      reRender="attachmentTableLightning"
+                                                                      status="spinnerLightning">        
+                                                        <apex:param name="sortFieldName" value="OwnerId" assignTo="{!attachmentSortFieldName}"/>    
+                                                        <apex:param name="sortOrder" value="{!IF(attachmentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!attachmentSortOrder}"/>
+            
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+                                                                    title="{!$Label.apttus__sortedascending}" 
+                                                                    alt="{!$Label.apttus__sortedascending}" 
+                                                                    rendered="{!attachmentSortFieldName == 'OwnerId' && attachmentSortOrder != 'DESC'}" />                                          
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+                                                                    title="{!$Label.apttus__sorteddescending}" 
+                                                                    alt="{!$Label.apttus__sorteddescending}" 
+                                                                    rendered="{!attachmentSortFieldName == 'OwnerId' && attachmentSortOrder == 'DESC'}" />
+                                                    </apex:commandLink>
+                                                </apex:outputPanel>
+                                            </apex:facet>
+                                            <div title="{!attachment['OwnerName']}">
+                                                <span id="noneVersionAwareLinks">
+                                                    <apex:outputText value="{!attachment['OwnerName']}"/>
+                                                </span>
+                                            </div>
+                                    </apex:column>
+            
+                                    <apex:column >
+                                        <apex:facet name="header">
+                                                <apex:outputPanel > 
+                                                    <apex:commandLink value="{!$ObjectType.Attachment.fields.LastModifiedDate.Label}" 
+                                                                      action="{!getSelectedAgreement}" 
+                                                                      reRender="attachmentTableLightning"
+                                                                      status="spinnerLightning">        
+                                                        <apex:param name="sortFieldName" value="LastModifiedDate" assignTo="{!attachmentSortFieldName}"/>   
+                                                        <apex:param name="sortOrder" value="{!IF(attachmentSortOrder == 'DESC', 'ASC', 'DESC')}" assignTo="{!attachmentSortOrder}"/>
+            
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_asc_arrow.gif')}" 
+                                                                    title="{!$Label.apttus__sortedascending}" 
+                                                                    alt="{!$Label.apttus__sortedascending}" 
+                                                                    rendered="{!attachmentSortFieldName == 'LastModifiedDate' && attachmentSortOrder != 'DESC'}" />                                             
+                                                        <apex:image url="{!URLFOR($Resource.Apttus__GraphicsLib, 'small/sort_desc_arrow.gif')}"  
+                                                                    title="{!$Label.apttus__sorteddescending}" 
+                                                                    alt="{!$Label.apttus__sorteddescending}" 
+                                                                    rendered="{!attachmentSortFieldName == 'LastModifiedDate' && attachmentSortOrder == 'DESC'}" />
+                                                    </apex:commandLink>
+                                                </apex:outputPanel>
+                                            </apex:facet>
+                                            <div title="{!attachment['LastModifiedDate']}">
+                                                <apex:outputText value="{!attachment['LastModifiedDate']}"/>
+                                            </div>
+                                    </apex:column>
+                                </apex:pageBlockTable>
+                            </div>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    
+                    <apex:outputPanel Id="nullPanelLightning"/>
+                    <apex:outputPanel style="padding-top:2px;">
+                        <apex:commandLink value="{!$Label.apttus__back}"
+                                          action="{!back}" 
+                                          oncomplete="refreshQueue(), 
+                                              documentOwnerOnchange(),
+                                              addPlaceHolder();"
+                                          status="spinnerLightning" 
+                                          rendered="{!showBack}"
+                                          reRender="documentFinder, agreementPaginations" 
+                                          style="color: #006295;"/>
+                    </apex:outputPanel>
+                    </div>
+                </apex:outputPanel>
+                
+                            
+		 	</apex:outputPanel>
+
+		 	<apex:outputPanel id="idResponsePanel">
+					<script>
+						try {
+							// get the response xml
+							var responseXml = "{!JSENCODE(responseXml)}";
+							if ("{!isTest}" == "{!JSENCODE('true')}")
+								alert(responseXml);
+							
+							// set the response xml
+							window.external.SetResponse(responseXml);
+							
+						} catch(ex) {
+							// object not available
+						} 
+					</script>
+
+			</apex:outputPanel>
+	 	</apex:pageBlock>
+	 </apex:outputPanel>
+ 	</apex:form>
+	
+</apex:page>

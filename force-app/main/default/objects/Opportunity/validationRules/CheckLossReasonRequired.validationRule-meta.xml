@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckLossReasonRequired</fullName>
+    <active>false</active>
+    <description>Validation rule to check if loss reason is provided once the stage in closed lost.</description>
+    <errorConditionFormula>AND (
+    NOT (
+        OR (
+            ISPICKVAL ( PRIORVALUE( StageName ) ,&apos;Closed Won&apos; ),
+            ISPICKVAL ( PRIORVALUE( StageName ) ,&apos;Closed Abandoned&apos; )
+        )
+    ),
+    ISPICKVAL ( StageName , &apos;Closed Lost&apos; ), 
+    ISBLANK ( TEXT ( Loss_Reason__c ) ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Loss_Reason__c</errorDisplayField>
+    <errorMessage>Please provide a &quot;Loss Reason&quot; (Abandon/Loss Reasons section).</errorMessage>
+</ValidationRule>

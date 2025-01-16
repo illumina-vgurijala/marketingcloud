@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Restrict_Edit_on_Closed_Status</fullName>
+    <active>true</active>
+    <description>User should not be allowed to edit when feedback status is closed</description>
+    <errorConditionFormula>AND(
+OR(
+AND(
+NOT(ISCHANGED(Feedback_Status__c)),
+ISPICKVAL(Feedback_Status__c, &apos;Closed&apos;),
+NOT(ISCHANGED(Reopen_Reason__c)),
+NOT(ISCHANGED(Feedback_Close_Date__c))
+),
+AND(
+ISCHANGED(Feedback_Status__c),
+ISPICKVAL(PRIORVALUE(Feedback_Status__c),&quot;Closed&quot;),
+NOT(ISPICKVAL(Feedback_Disposition__c , &apos;Reopened&apos;))
+)
+),
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c)
+)</errorConditionFormula>
+    <errorMessage>Feedback cannot be updated on closed status</errorMessage>
+</ValidationRule>

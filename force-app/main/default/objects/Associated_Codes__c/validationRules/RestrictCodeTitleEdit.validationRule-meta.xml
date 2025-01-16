@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RestrictCodeTitleEdit</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+				NOT($Profile.Name ==$Label.Integration_SAP_Service),
+				NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+				NOT($User.FirstName ==$Label.Automated_Process_User),
+				NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+
+				ISCHANGED (Code_Title__c ),
+				$Profile.Name = $Label.ProfileQualityAssurance,
+				OR (
+								AND(
+												NOT($Permission.SS_Quality_Assurance_Super_User),
+												NOT(ISPICKVAL(PRIORVALUE(Code_Type__c) ,&quot;Hazard&quot;))
+								),
+								AND(
+												$Permission.SS_Quality_Assurance_Super_User,
+												TEXT(Case__r.Status) = $Label.CaseStatusPendingQAReview,
+												NOT(ISPICKVAL(PRIORVALUE(Code_Type__c) ,&quot;Analysis&quot;)),
+												NOT(ISPICKVAL(PRIORVALUE(Code_Type__c) ,&quot;Subject&quot;)),
+												NOT(ISPICKVAL(PRIORVALUE(Code_Type__c) ,&quot;Hazard&quot;))
+								)
+				)
+
+)</errorConditionFormula>
+    <errorMessage>Only Subject or Analysis code can be edited by QA superuser. If this code needs to be updated reopen the case.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCaseTypeSRCOIN</fullName>
+    <active>true</active>
+    <description>(CheckCaseTypeServiceRequest, CheckCodeOnComplaintToCompleteCase, CheckCaseTypeInquiry) Combine this 3 vlaidation</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name == $Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName == $Label.Automated_Process_User),
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    OR(
+        AND(
+            RecordType.Name = $Label.CaseRecordTypeServiceRequest,
+            TEXT(Status) == $Label.Completed,
+            NOT(Has_SR_Case_Subject_Code__c)
+        ),
+        
+        AND(
+            RecordType.Name = $Label.CaseRecordTypeBusinessIssue,
+            OR(
+                TEXT(Status) = $Label.CaseStatusCompleted,
+                AND(TEXT(Status) = $Label.CaseStatusPendingQAReview, Has_Closed_Duplicate_WO__c &lt;&gt; TRUE),
+                TEXT(Status) = $Label.PendingLogisticsReview
+            ),
+            NOT(Has_BI_Case_Subject_Code__c)
+        ),
+        
+        AND(
+            RecordType.Name = $Label.CaseRecordTypeInquiry,
+            TEXT(Status) == $Label.Completed,
+            NOT(Has_Inquiry_Case_Subject_Code__c),
+            TEXT(Sub_Type__c) &lt;&gt; &apos;Order&apos;,
+            TEXT(Sub_Type__c) &lt;&gt; &apos;General&apos;
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>The Case requires Associated Codes to be added before completion. Add the required highlighted codes in the Associated Codes Section.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,220 @@
+<apex:page controller="seismic.SeismicRequesterController" action="{!Init}" showHeader="true" sidebar="false">
+    <style type="text/css">
+        html, body { height: 100%; margin: 0; padding: 0; }
+        /* to fix inline=1 (in SF touch)*/
+        body.sfdcBody { padding: 0 !important; }
+        body.sfdcBody.apexPageInline { margin: 0; }
+        body #contentWrapper .bodyDiv .outerNoSidebar .noSidebarCell { padding: 0; }
+        body #contentWrapper #bodyTable { padding: 0; }
+        body #contentWrapper #bodyTable #requesterIFrame { height: 760px !important; }
+        body #canvasContainer { height: 100%; }
+        body #canvasContainer #requesterIFrame { background: transparent; }
+        body #canvasContainer #requesterIFrame div.waitingSearchDiv { background: transparent; }
+    </style>
+
+    <apex:includeScript value="{!URLFOR($Resource.seismic__jquery_1_11_3_min_js)}" />
+    <apex:includeScript value="{!URLFOR($Resource.seismic__jquery_cookie_js)}" />
+
+    <div id="canvasContainer">
+        <iframe src="{!SeismicRequesterUrl}" id="requesterIFrame" width="100%" height="100%" frameborder="no" marginwidth="0" marginheight="0" scrolling="no" allow="autoplay; fullscreen">
+        </iframe>
+    </div>
+
+    <script type="text/javascript">
+        var isMobile = {
+            Android: function () {
+                return navigator.userAgent.match(/Android/i) ? true : false;
+            },
+            BlackBerry: function () {
+                return navigator.userAgent.match(/BlackBerry/i) ? true : false;
+            },
+            iOS: function () {
+                return navigator.userAgent.match(/iPhone|iPad|iPod/i) ? true : false;
+            },
+            Windows: function () {
+                return navigator.userAgent.match(/IEMobile/i) ? true : false;
+            },
+            any: function () {
+                //alert(navigator.userAgent);
+                return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Windows());
+            }
+        };
+
+        var docViewerUrl = '{!UniversalDetailPageRelativeUrl}';
+        var isClassic = '{!isClassic}' == 'true' ? true : false;
+        var isSalesforce1 = '{!isSalesforce1}' == 'true' ? true : false;
+        var isLightning = '{!isLightning}' == 'true' ? true : false;
+        var packageBaseUrl = '{!PackageBaseUrl}';
+        var iframeHost = '{!IFrameHost}';
+        var searches = (window.location.search || "").replace(/^\?/, "").split("&");
+        var isInline = false;
+        var isInApp = false;
+        for (var i = 0; i < searches.length; i++) {
+            if ((/^inline\=/.test(searches[i]) && "1" == searches[i].match(/^inline\=(.*)/)[1])
+               || /^isdtp\=/.test(searches[i])) {
+                isInline = true;
+            }
+
+            if (/^isdtp\=/.test(searches[i])) {
+                isInApp = true;
+            }
+        }
+
+        var $window = $(window);
+        function onWindowResize () {
+            if (window.isMobile.iOS()) {
+                var contentWrapper = $("#contentWrapper");
+                var width = contentWrapper.length > 0 ? contentWrapper.width() : $window.width();
+                var height = contentWrapper.length > 0 ? contentWrapper.height() : $window.height();
+                $("#requesterIFrame").attr({ "width": width, "height": height });
+            } else {
+                $("#requesterIFrame").css({ "width": "100% !important", "height": "100% !important" });
+            }
+        }
+        onWindowResize();
+
+        window.onresize = function () {
+            onWindowResize();
+        };
+
+        window.onload = function () {
+
+            if (this.bodyOnLoad) {
+                bodyOnLoad();
+            }
+
+            if (isInline && isMobile.any()) {
+                $("html,body").css("overflow", "hidden");
+            }
+
+            //if (window.isMobile.any() && isInApp) {
+            //    Sfdc.canvas.controller.subscribe({
+            //        name: 'seismic.openSObject', onData: function (e) {
+            //            if (e && e.id) {
+            //                sforce.one.navigateToSObject(e.id);
+            //            } else if (typeof e == 'string') {
+            //                window.open(e, '_system');
+            //            }
+            //        }
+            //    });
+            //}
+        }
+
+        var MessageHandlers = {
+            openDocumentDetail: function (data) {
+                var url = null;
+                if (data.url) {
+                    url = data.url;
+                } else if (data.params) {
+                    url = docViewerUrl + data.params;
+
+                    if (window.location.search && window.location.search.length > 1) {
+                        var queryString = window.location.search.substring(1);
+                        var querySections = queryString.split('&');
+                        for (var index in querySections) {
+                            var querySection = querySections[index];
+                            if (querySection && typeof querySection == 'string') {
+                                var equalIndex = querySection.indexOf('=');
+                                if (equalIndex > 0) {
+                                    var name = querySection.substr(0, equalIndex);
+                                    var value = querySection.substring(equalIndex + 1);
+                                    switch (name.toLowerCase()) {
+                                        case "isdtp":
+                                            url += "&isdtp=" + value;
+                                            break;
+                                        case "sfdcIFrameOrigin".toLowerCase():
+                                            url += "&sfdcIFrameOrigin=" + value;
+                                            break;
+                                        case "sfdcIFrameHost".toLowerCase():
+                                            url += "&sfdcIFrameHost=" + value;
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    url += '&fromUrl=' + encodeURIComponent(window.location.href);
+                }
+
+                if (isLightning) {
+                    var detailUrl = packageBaseUrl;
+                    detailUrl += docViewerUrl;
+                    detailUrl += data.params;
+                    detailUrl += '&fromUrl=' + encodeURIComponent(window.location.href);
+                    detailUrl += '&ILE=' + isLightning;
+                    window.location.href = detailUrl;
+                } else {
+                    var detailUrl = url + '&ILE=' + isLightning;
+                    if (iframeHost == "web") {
+                        window.location.href = detailUrl;
+                    } else {
+                        window.top.location.href = detailUrl;
+                    }
+                }
+            },
+
+            pushState: function (data) {
+                var url = data.url;
+                if (/^&/.test(data.url)) {
+                    var params = window.location.search.replace(/^\?/, '').split('&').map(function (v) {
+                        return v.split("=")
+                    });
+
+                    var result = window.location.search;
+                    data.url.replace(/^&/, '').split('&').forEach(function (v) {
+                        var key = v.split('=')[0],
+                          value = v.split('=')[1];
+
+                        if (result.indexOf('&' + key + '=') > -1 || result.indexOf('?' + key + '=') > -1) {
+                            result = result.replace(new RegExp('(&|\\?)' + key + '=[^&]*'), '$1' + key + '=' + value)
+                        } else {
+                            result += (window.location.search.indexOf('?') == 0 ? '&' : '?') + key + '=' + value;
+                        }
+                    });
+
+                    url = result;
+                }
+
+                window.history.pushState("", "", url);
+            }
+        }
+
+        window.addEventListener("message", function (e) {
+            if (e && e.data) {
+                switch (e.data) {
+                    case "error":
+                        {
+                            window.removeEventListener("message", messageHandler);
+                        } break;
+                    case "seismic.getIsFirstTimeLaunchSeismicInCurrentSessionCircle":
+                        {
+                            function getIsFirstTimeLaunchSeismicInCurrentSessionCircle() {
+                                var seismicStoreSId = $.cookie("seismic_store_sid");
+                                var sid = $.cookie("sid");
+                                if (sid != seismicStoreSId) {
+                                    $.cookie("seismic_store_sid", sid);
+                                    return true;
+                                }
+                                return false;
+                            }
+                            e.source.postMessage("seismic.getIsFirstTimeLaunchSeismicInCurrentSessionCircleResult:" + getIsFirstTimeLaunchSeismicInCurrentSessionCircle(), e.origin);
+                        } break;
+                    default:
+                        {
+                            try {
+                                var data = JSON.parse(e.data);
+                                if (data && data.isFromSeismic) {
+                                    var method = data.method;
+                                    if (MessageHandlers[method]) {
+                                        MessageHandlers[method](data);
+                                    }
+                                }
+                            } catch (ex) {
+                            }
+                        } break;
+                }
+            }
+        });
+    </script>
+</apex:page>

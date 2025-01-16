@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Add_Triggering_Records_to_List</name>
+        <label>Add Triggering Records to List</label>
+        <locationX>314</locationX>
+        <locationY>815</locationY>
+        <assignmentItems>
+            <assignToReference>ListUpdateQualtricsSurvey</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>List_Null_Check</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Assign_Current_Error_Element</name>
+        <label>Assign Current Error Element</label>
+        <locationX>314</locationX>
+        <locationY>1139</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Remove reason to re-open</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Assign_Remove_reopen_reason</name>
+        <label>Assign Remove reopen reason</label>
+        <locationX>380</locationX>
+        <locationY>539</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Reason_for_Reopen__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue></stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Add_Triggering_Records_to_List</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Assignment_3</name>
+        <label>Assign Reopened By</label>
+        <locationX>116</locationX>
+        <locationY>431</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Reopened_By__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>reOpenedBy</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Add_Triggering_Records_to_List</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Blank_out_reason_to_re_open</name>
+        <label>Blank out reason to re-open</label>
+        <locationX>512</locationX>
+        <locationY>431</locationY>
+        <defaultConnectorLabel>FALSE_Blank out reason to re-open</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_Blankoutreasontore_open</name>
+            <conditionLogic>(1 OR 3) AND 2</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Status__c</leftValueReference>
+                <operator>StartsWith</operator>
+                <rightValue>
+                    <elementReference>recordStatusStartsWith</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Reason_for_Reopen__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Review Not Required</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assign_Remove_reopen_reason</targetReference>
+            </connector>
+            <label>TRUE_Blank out reason to re-open</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>List_Null_Check</name>
+        <label>List Null Check</label>
+        <locationX>314</locationX>
+        <locationY>923</locationY>
+        <defaultConnectorLabel>Null</defaultConnectorLabel>
+        <rules>
+            <name>Not_Null</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>ListUpdateQualtricsSurvey</leftValueReference>
+                <operator>IsEmpty</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>DML_Qualtrics_Records</targetReference>
+            </connector>
+            <label>Not Null</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Update_ReOpened_By</name>
+        <label>Update ReOpened By</label>
+        <locationX>314</locationX>
+        <locationY>323</locationY>
+        <defaultConnector>
+            <targetReference>Blank_out_reason_to_re_open</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>FALSE_Update ReOpened By</defaultConnectorLabel>
+        <rules>
+            <name>TRUE_UpdateReOpenedBy</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>surveyResponseReOpened</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assignment_3</targetReference>
+            </connector>
+            <label>TRUE_Update ReOpened By</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <formulas>
+        <name>FlowandFaultElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Qualtrics_Survey_Response__c: After Update&apos;+{!currentElement}</expression>
+    </formulas>
+    <formulas>
+        <name>recordStatusStartsWith</name>
+        <dataType>String</dataType>
+        <expression>&apos;Closed&apos;</expression>
+    </formulas>
+    <formulas>
+        <name>reOpenedBy</name>
+        <dataType>String</dataType>
+        <expression>{!$User.Id}</expression>
+    </formulas>
+    <formulas>
+        <name>surveyResponseReOpened</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+NOT(ISNEW()),
+BEGINS(TEXT(PRIORVALUE({!$Record.Status__c} )), &apos;Closed&apos;),
+ISPICKVAL({!$Record.Status__c} ,&apos;In Progress&apos;)  
+)</expression>
+    </formulas>
+    <interviewLabel>Qualtrics_Survey_Response__c: After Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Qualtrics_Survey_Response__c: After Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>DML_Qualtrics_Records</name>
+        <label>DML Qualtrics Records</label>
+        <locationX>50</locationX>
+        <locationY>1031</locationY>
+        <faultConnector>
+            <targetReference>Assign_Current_Error_Element</targetReference>
+        </faultConnector>
+        <inputReference>ListUpdateQualtricsSurvey</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>188</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Update_ReOpened_By</targetReference>
+        </connector>
+        <object>Qualtrics_Survey_Response__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>314</locationX>
+        <locationY>1247</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFaultElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Service</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <variables>
+        <name>currentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>ListUpdateQualtricsSurvey</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Qualtrics_Survey_Response__c</objectType>
+    </variables>
+</Flow>

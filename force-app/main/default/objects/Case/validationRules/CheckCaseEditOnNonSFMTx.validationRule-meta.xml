@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCaseEditOnNonSFMTx</fullName>
+    <active>false</active>
+    <description>Validation to check Manual Edit(Non-SFM) on Case for Statuses  Closed, Pending QA Review, Pending Logistics Review, Complete or Reopen Requested, Closed - Successful, Closed - Unsuccessful, Closed-Duplicate.</description>
+    <errorConditionFormula>AND( 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c) ,
+NOT($Profile.Name ==$Label.Integration_SAP_Service), 
+NOT($Profile.Name == $Label.ProfileSystemAdmin),
+NOT($Profile.Name ==$Label.ProfileQualityAssurance),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),	
+NOT(ISNEW()) ,
+NOT(ISCHANGED(Status)) ,
+AND(NOT(ISCHANGED(Unread_Emails__c)),NOT(ISCHANGED(Record_Updated_from_SFM__c))), 
+OR( 
+TEXT(Status) = $Label.CaseStatusCompleted, 
+TEXT(Status) = $Label.CaseStatusClosed, 
+TEXT(Status) = $Label.CaseStatusClosedDuplicate, 
+TEXT(Status) = $Label.CaseStatusPendingLogisticsReview, 
+TEXT(Status) = $Label.CaseStatusPendingQAReview, 
+TEXT(Status) = $Label.CaseStatusReopenRequested, 
+TEXT(Status) = $Label.CaseStatusReopened
+),
+NOT(ISCHANGED( Work_Order_Status__c )),
+NOT(ISCHANGED(Date_Time_Completed__c)),
+NOT( AND(ISCHANGED(Closed_with_Associated_Codes__c ), 
+NOT(Closed_with_Associated_Codes__c ))),
+NOT(ISCHANGED( Has_Analysis_Code__c )), 
+NOT(ISCHANGED( Has_Resolution_Code__c )), 
+NOT(ISCHANGED( Has_Verification_Code__c )), 
+NOT(ISCHANGED( Has_BI_Case_Subject_Code__c )), 
+NOT(ISCHANGED( Has_Inquiry_Case_Subject_Code__c )), 
+NOT(ISCHANGED( Has_SR_Case_Subject_Code__c ))
+ )</errorConditionFormula>
+    <errorMessage>You cannot edit Cases in a Post-Completion status. Please use the &quot;Request Case Reopen&quot; SFM to reopen the Case if you need to make updates to the contents of this Case or use the &quot;Toggle Unread Emails&quot; button to uncheck the Unread Emails checkbox.</errorMessage>
+</ValidationRule>

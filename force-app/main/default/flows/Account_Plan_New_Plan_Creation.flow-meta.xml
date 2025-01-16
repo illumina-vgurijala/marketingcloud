@@ -1,0 +1,862 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <apiVersion>49.0</apiVersion>
+    <assignments>
+        <name>Customer_Profile_Screen</name>
+        <label>Customer Profile Screen</label>
+        <locationX>852</locationX>
+        <locationY>281</locationY>
+        <assignmentItems>
+            <assignToReference>$Flow.CurrentStage</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Customer_Profile</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>CustomerProfileScn</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Error_screen_stage</name>
+        <label>Error screen stage</label>
+        <locationX>1163</locationX>
+        <locationY>66</locationY>
+        <assignmentItems>
+            <assignToReference>$Flow.CurrentStage</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Account_Plan_Creation_Failed</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Flow.ActiveStages</assignToReference>
+            <operator>RemoveAll</operator>
+            <value>
+                <elementReference>$Flow.ActiveStages</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>ErrorMessage</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>ErrorTriming</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Flow.ActiveStages</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Account_Plan_Creation_Failed</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Error_Screen</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Customer_Insights_Stage</name>
+        <label>Set Customer Insights Stage</label>
+        <locationX>698</locationX>
+        <locationY>236</locationY>
+        <assignmentItems>
+            <assignToReference>$Flow.CurrentStage</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Customer_Insights_Stage</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>RequiredFieldError</assignToReference>
+            <operator>Assign</operator>
+        </assignmentItems>
+        <connector>
+            <targetReference>Customer_Insights</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Plan_Detail</name>
+        <label>Set Plan Detail</label>
+        <locationX>538</locationX>
+        <locationY>125</locationY>
+        <assignmentItems>
+            <assignToReference>$Flow.CurrentStage</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Plan_Detail</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Flow.ActiveStages</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Customer_Insights_Stage</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>$Flow.ActiveStages</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>Customer_Profile</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Plan_details</targetReference>
+        </connector>
+    </assignments>
+    <choices>
+        <name>None</name>
+        <choiceText>{!BlankString}</choiceText>
+        <dataType>String</dataType>
+        <value>
+            <elementReference>BlankString</elementReference>
+        </value>
+    </choices>
+    <constants>
+        <name>BlankString</name>
+        <dataType>String</dataType>
+        <value>
+            <stringValue></stringValue>
+        </value>
+    </constants>
+    <constants>
+        <name>ErrorConstantStringLast</name>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>. You can look up ExceptionCode values in the &lt;a href=&apos;https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_calls_concepts_core_data_objects.htm#&apos;&gt;SOAP API Developer Guide&lt;/a&gt;.</stringValue>
+        </value>
+    </constants>
+    <constants>
+        <name>ErrorConstantText</name>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>This error occurred when the flow tried to create records:</stringValue>
+        </value>
+    </constants>
+    <constants>
+        <name>PlanCreationNotSelected</name>
+        <dataType>Boolean</dataType>
+        <value>
+            <booleanValue>false</booleanValue>
+        </value>
+    </constants>
+    <constants>
+        <name>SemiColon</name>
+        <dataType>String</dataType>
+        <value>
+            <stringValue>% ;</stringValue>
+        </value>
+    </constants>
+    <decisions>
+        <name>CheckPlanStatus</name>
+        <label>CheckPlanStatus</label>
+        <locationX>924</locationX>
+        <locationY>137</locationY>
+        <defaultConnector>
+            <targetReference>Finish</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Complete</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>PlanStatus</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Complete</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Finish</targetReference>
+            </connector>
+            <label>Complete</label>
+        </rules>
+    </decisions>
+    <description>Removed illumina strategy section from flow.</description>
+    <dynamicChoiceSets>
+        <name>OverallRelationshipStrength</name>
+        <dataType>Picklist</dataType>
+        <displayField xsi:nil="true"/>
+        <object xsi:nil="true"/>
+        <picklistField>Overall_Stage_of_Relationship__c</picklistField>
+        <picklistObject>Account_Plan__c</picklistObject>
+    </dynamicChoiceSets>
+    <dynamicChoiceSets>
+        <name>PlanStatus</name>
+        <dataType>Picklist</dataType>
+        <displayField xsi:nil="true"/>
+        <object xsi:nil="true"/>
+        <picklistField>Plan_Status__c</picklistField>
+        <picklistObject>Account_Plan__c</picklistObject>
+    </dynamicChoiceSets>
+    <environments>Default</environments>
+    <formulas>
+        <name>ErrorTriming</name>
+        <dataType>String</dataType>
+        <expression>SUBSTITUTE(SUBSTITUTE({!$Flow.FaultMessage},{!ErrorConstantText},{!BlankString}),{!ErrorConstantStringLast},{!BlankString})</expression>
+    </formulas>
+    <interviewLabel>Account Plan: New Plan Creation {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Account Plan: New Plan Creation</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Flow</processType>
+    <recordCreates>
+        <name>Finish</name>
+        <label>Finish</label>
+        <locationX>1162</locationX>
+        <locationY>286</locationY>
+        <assignRecordIdToReference>AccountPlanRecordId</assignRecordIdToReference>
+        <connector>
+            <targetReference>Final_Screen</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Error_screen_stage</targetReference>
+        </faultConnector>
+        <inputAssignments>
+            <field>Account_Name__c</field>
+            <value>
+                <elementReference>AccountRecordId</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Account_Region__c</field>
+            <value>
+                <elementReference>TerritoryRegion</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Company_s_Annual_Revenue_Funding__c</field>
+            <value>
+                <elementReference>Customer_s_Annual_Revenue_Funding</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Customer_Overview__c</field>
+            <value>
+                <elementReference>Customer_s_Area_of_Focus</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Customer_s_Challenges__c</field>
+            <value>
+                <elementReference>Customer_s_Challenges</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Customer_s_Mission_Vision__c</field>
+            <value>
+                <elementReference>Customer_s_Mission_Vision</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Customer_s_Previous_Year_s_Growth__c</field>
+            <value>
+                <elementReference>Previous_Year_s_Growth</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Customer_s_Priorities__c</field>
+            <value>
+                <elementReference>Customer_s_Priorities</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Customer_s_Strategic_Imperatives__c</field>
+            <value>
+                <elementReference>Customer_s_Strategic_Imperatives</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Customer_s_Top_Competitors__c</field>
+            <value>
+                <elementReference>Customer_s_Top_Competitors</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>End_Date__c</field>
+            <value>
+                <elementReference>End_Date</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Fiscal_Year_End__c</field>
+            <value>
+                <elementReference>Fiscal_Year_End</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Geographic_Coverage__c</field>
+            <value>
+                <elementReference>Geographic_Coverage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Industry_Organization_Highlights__c</field>
+            <value>
+                <elementReference>Industry_Organization_Highlights</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Key_Customers__c</field>
+            <value>
+                <elementReference>Key_Customers</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Key_Partners_Affiliates__c</field>
+            <value>
+                <elementReference>Key_Partners_Affiliates</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Name</field>
+            <value>
+                <elementReference>Account_Plan_Name</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Number_of_Employees__c</field>
+            <value>
+                <elementReference>Number_of_Employees</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Overall_Stage_of_Relationship__c</field>
+            <value>
+                <elementReference>OverallRelationshipStrength</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Plan_Status__c</field>
+            <value>
+                <elementReference>PlanStatus</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Plan_Target__c</field>
+            <value>
+                <elementReference>Plan_Target</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Start_Date__c</field>
+            <value>
+                <elementReference>Start_Date</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Territory_Plan__c</field>
+            <value>
+                <elementReference>ActiveTerritoryPlanId</elementReference>
+            </value>
+        </inputAssignments>
+        <object>Account_Plan__c</object>
+    </recordCreates>
+    <screens>
+        <name>Customer_Insights</name>
+        <label>Customer Insights</label>
+        <locationX>748</locationX>
+        <locationY>386</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>Customer_Profile_Screen</targetReference>
+        </connector>
+        <fields>
+            <name>DisplayText3</name>
+            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;b style=&quot;background-color: rgb(255, 255, 255); font-size: 16px; color: rgb(51, 51, 51);&quot;&gt;Customer Insights&lt;/b&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Overall_Relationship_Strength</name>
+            <choiceReferences>None</choiceReferences>
+            <choiceReferences>OverallRelationshipStrength</choiceReferences>
+            <dataType>String</dataType>
+            <fieldText>Overall Stage of Relationship</fieldText>
+            <fieldType>DropdownBox</fieldType>
+            <helpText>&lt;p&gt;The 3 stages of evolution of relationship with your customer&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+        </fields>
+        <fields>
+            <name>Customer_s_Priorities</name>
+            <fieldText>Customer&apos;s Priorities</fieldText>
+            <fieldType>LargeTextArea</fieldType>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 1000.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Customer_s_Priorities}) &lt; 1000</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Customer_s_Challenges</name>
+            <fieldText>Customer&apos;s Challenges</fieldText>
+            <fieldType>LargeTextArea</fieldType>
+            <helpText>&lt;p&gt;Customer Challenges can be defined as the potential challenges that a customer is currently confronted with. Examples may include, inability to compete, meet their customer&apos;s demands or provide the necessary level of training for their employees&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 1000.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Customer_s_Challenges}) &lt; 1000</formulaExpression>
+            </validationRule>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>CustomerProfileScn</name>
+        <label>CustomerProfileScn</label>
+        <locationX>908</locationX>
+        <locationY>406</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>CheckPlanStatus</targetReference>
+        </connector>
+        <fields>
+            <name>CustomerProfileDisplay</name>
+            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;b style=&quot;background-color: rgb(255, 255, 255); font-size: 16px; color: rgb(51, 51, 51);&quot;&gt;Customer Profile&lt;/b&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Customer_s_Area_of_Focus</name>
+            <fieldText>Customer Overview</fieldText>
+            <fieldType>LargeTextArea</fieldType>
+            <helpText>&lt;p&gt;A customer&apos;s area of focus can be defined as an application, area of research or market where the customer is investing more time and resources&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 1000.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Customer_s_Area_of_Focus}) &lt; 1000</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Customer_s_Mission_Vision</name>
+            <dataType>String</dataType>
+            <fieldText>Customer&apos;s Mission / Vision</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;A customer&apos;s mission statement describes what a company wants to do now. A company&apos;s vision statement outlines what a company wants to be in the future&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 255.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Customer_s_Mission_Vision}) &lt; 255</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Customer_s_Annual_Revenue_Funding</name>
+            <dataType>Number</dataType>
+            <fieldText>Customer&apos;s  Annual Revenue / Funding</fieldText>
+            <fieldType>InputField</fieldType>
+            <isRequired>false</isRequired>
+            <scale>0</scale>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Length of the field cannot exceed 16 digits.&lt;/p&gt;</errorMessage>
+                <formulaExpression>IF(LEN(text({!Customer_s_Annual_Revenue_Funding})  ) &lt;= 16, true, false)</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Previous_Year_s_Growth</name>
+            <dataType>Number</dataType>
+            <fieldText>Customer&apos;s Previous Year&apos;s Growth</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;The customers Full year Prior Year growth over Current year percentage&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <scale>1</scale>
+            <validationRule>
+                <errorMessage>&lt;p&gt;&lt;span style=&quot;font-size: 8.5pt; font-family: Arial, sans-serif;&quot;&gt;The customers Full year Prior Year growth over Current year percentage field cannot exceed 3 digits&lt;/span&gt;&lt;/p&gt;</errorMessage>
+                <formulaExpression>IF(LEN(text({!Previous_Year_s_Growth})) &lt;=3, true, false)</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Number_of_Employees</name>
+            <dataType>Number</dataType>
+            <fieldText>Number of Employees</fieldText>
+            <fieldType>InputField</fieldType>
+            <isRequired>false</isRequired>
+            <scale>0</scale>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Number of Employees field cannot exceed 8 digits&lt;/p&gt;</errorMessage>
+                <formulaExpression>IF(LEN(text({!Number_of_Employees})  ) &lt;=8, true, false)</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Fiscal_Year_End</name>
+            <dataType>String</dataType>
+            <fieldText>Fiscal Year End</fieldText>
+            <fieldType>InputField</fieldType>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 100.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Fiscal_Year_End}) &lt; 100</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Geographic_Coverage</name>
+            <dataType>String</dataType>
+            <fieldText>Geographic Coverage</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;Area(s) that the account has a business presence in&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 100.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Geographic_Coverage}) &lt; 100</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Customer_s_Top_Competitors</name>
+            <dataType>String</dataType>
+            <fieldText>Customer&apos;s Top Competitors</fieldText>
+            <fieldType>InputField</fieldType>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 100.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Customer_s_Top_Competitors}) &lt; 100</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Key_Partners_Affiliates</name>
+            <dataType>String</dataType>
+            <fieldText>Key Partners / Affiliates</fieldText>
+            <fieldType>InputField</fieldType>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 100.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Key_Partners_Affiliates}) &lt; 100</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Key_Customers</name>
+            <dataType>String</dataType>
+            <fieldText>Key Customers</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;The top customers that our customers sells to&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 100.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Key_Customers}) &lt; 100</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Industry_Organization_Highlights</name>
+            <fieldText>Industry/Organization Highlights</fieldText>
+            <fieldType>LargeTextArea</fieldType>
+            <helpText>&lt;p&gt;Industry or Organizational highlights are key events or milestones that may impact the account plan&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 1000.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Industry_Organization_Highlights}) &lt; 1000</formulaExpression>
+            </validationRule>
+        </fields>
+        <fields>
+            <name>Customer_s_Strategic_Imperatives</name>
+            <fieldText>Customer&apos;s Strategic Imperatives</fieldText>
+            <fieldType>LargeTextArea</fieldType>
+            <helpText>&lt;p&gt;Strategic Imperatives or key business initiatives that are critical to customer success. Ex. Anything enabling the organization to compete more effectively or secure more funding&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <validationRule>
+                <errorMessage>&lt;p&gt;Maximum Field Length allowed is 1000.&lt;/p&gt;</errorMessage>
+                <formulaExpression>LEN({!Customer_s_Strategic_Imperatives}) &lt; 1000</formulaExpression>
+            </validationRule>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Error_Screen</name>
+        <label>Error Screen</label>
+        <locationX>1330</locationX>
+        <locationY>134</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <name>Error_Text</name>
+            <fieldText>&lt;p&gt;&lt;b style=&quot;font-size: 14px;&quot;&gt;&lt;i&gt;Error :&lt;/i&gt;&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;i style=&quot;font-size: 14px; color: rgb(255, 0, 0);&quot;&gt;{!ErrorMessage}&lt;/i&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Final_Screen</name>
+        <label>Final Screen</label>
+        <locationX>1342</locationX>
+        <locationY>326</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <name>FinalScreen</name>
+            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;b style=&quot;font-size: 18px;&quot;&gt;{!Account_Plan_Name} is created.&lt;/b&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Plan_details</name>
+        <label>Plan details</label>
+        <locationX>374</locationX>
+        <locationY>273</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>Set_Customer_Insights_Stage</targetReference>
+        </connector>
+        <fields>
+            <name>PlanDetail</name>
+            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;b style=&quot;font-size: 16px;&quot;&gt;Plan Detail&lt;/b&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Account_Plan_Name</name>
+            <dataType>String</dataType>
+            <defaultValue>
+                <elementReference>Account_Plan_Name</elementReference>
+            </defaultValue>
+            <fieldText>Account Plan Name</fieldText>
+            <fieldType>InputField</fieldType>
+            <isRequired>true</isRequired>
+        </fields>
+        <fields>
+            <name>AccountNames</name>
+            <fieldText>&lt;p&gt;Account Name&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>AccountNameDetail</name>
+            <fieldText>&lt;p&gt;{!AccountName}&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Plan_Status</name>
+            <choiceReferences>PlanStatus</choiceReferences>
+            <dataType>String</dataType>
+            <fieldText>Plan Status</fieldText>
+            <fieldType>DropdownBox</fieldType>
+            <helpText>&lt;p&gt;The Plan Status indicates the current status of the account plan. The status can be defined as draft, active, closed&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+        </fields>
+        <fields>
+            <name>Start_Date</name>
+            <dataType>Date</dataType>
+            <defaultValue>
+                <elementReference>Start_Date</elementReference>
+            </defaultValue>
+            <fieldText>Start Date</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;The Start Date indicates when the execution of an account plan begins&lt;/p&gt;</helpText>
+            <isRequired>true</isRequired>
+        </fields>
+        <fields>
+            <name>End_Date</name>
+            <dataType>Date</dataType>
+            <defaultValue>
+                <elementReference>End_Date</elementReference>
+            </defaultValue>
+            <fieldText>End Date</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;The End Date indicates when the planned execution of the account plan will be complete or finished&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+        </fields>
+        <fields>
+            <name>Plan_Target</name>
+            <dataType>Number</dataType>
+            <defaultValue>
+                <elementReference>Plan_Target</elementReference>
+            </defaultValue>
+            <fieldText>Plan Target ($)</fieldText>
+            <fieldType>InputField</fieldType>
+            <helpText>&lt;p&gt;The Plan Target indicates a financial goal that Illumina has established for the customer over the plan timeline&lt;/p&gt;</helpText>
+            <isRequired>false</isRequired>
+            <scale>0</scale>
+            <validationRule>
+                <errorMessage>&lt;p&gt;&lt;span style=&quot;background-color: white; color: rgb(62, 62, 60); font-family: Arial, sans-serif; font-size: 10pt;&quot;&gt;Maximum length of the field cannot exceed 16 digits.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;</errorMessage>
+                <formulaExpression>IF(LEN(text({!Plan_Target})  ) &lt;= 16, true, false)</formulaExpression>
+            </validationRule>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <stages>
+        <name>Account_Plan_Creation_Failed</name>
+        <isActive>false</isActive>
+        <label>Account Plan Creation Failed</label>
+        <stageOrder>4</stageOrder>
+    </stages>
+    <stages>
+        <name>Customer_Insights_Stage</name>
+        <isActive>false</isActive>
+        <label>Customer Insights</label>
+        <stageOrder>3</stageOrder>
+    </stages>
+    <stages>
+        <name>Customer_Profile</name>
+        <isActive>false</isActive>
+        <label>Customer Profile</label>
+        <stageOrder>5</stageOrder>
+    </stages>
+    <stages>
+        <name>illumina_Strategic_Account_Plan_Stage</name>
+        <isActive>false</isActive>
+        <label>illumina Strategic Account Plan</label>
+        <stageOrder>2</stageOrder>
+    </stages>
+    <stages>
+        <name>Plan_Detail</name>
+        <isActive>true</isActive>
+        <label>Plan Detail</label>
+        <stageOrder>1</stageOrder>
+    </stages>
+    <start>
+        <locationX>23</locationX>
+        <locationY>125</locationY>
+        <connector>
+            <targetReference>Set_Territory_Plan</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Set_Territory_Plan</name>
+        <label>Set Territory Plan</label>
+        <locationX>332</locationX>
+        <locationY>50</locationY>
+        <connector>
+            <targetReference>Set_Plan_Detail</targetReference>
+        </connector>
+        <flowName>Account_Plan_Update_Plan</flowName>
+        <inputAssignments>
+            <name>AccountRecordId</name>
+            <value>
+                <elementReference>AccountRecordId</elementReference>
+            </value>
+        </inputAssignments>
+        <outputAssignments>
+            <assignToReference>ActiveTerritoryPlanId</assignToReference>
+            <name>ActivePlanId</name>
+        </outputAssignments>
+    </subflows>
+    <variables>
+        <name>AccountName</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>AccountPlanRecordId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <description>Input variable for account id</description>
+        <name>AccountRecordId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>activeAccountPlan</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Account_Plan__c</objectType>
+    </variables>
+    <variables>
+        <name>ActiveTerritoryPlanId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>ErrorMessage</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>loopvariable</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Market_Segment__c</objectType>
+    </variables>
+    <variables>
+        <name>lstMarketSegment</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Market_Segment__c</objectType>
+    </variables>
+    <variables>
+        <name>MarketSegFinal</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>MarketSegment</name>
+        <dataType>String</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>objAccount</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>Account</objectType>
+    </variables>
+    <variables>
+        <name>RequiredFieldError</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>TerritoryRegion</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+    <variables>
+        <name>Test</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+        <value>
+            <numberValue>0.0</numberValue>
+        </value>
+    </variables>
+</Flow>

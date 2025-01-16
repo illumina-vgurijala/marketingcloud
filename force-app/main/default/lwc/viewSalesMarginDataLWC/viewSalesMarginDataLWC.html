@@ -1,0 +1,141 @@
+<template>
+        <template lwc:if={hasPermission}>
+            <div class="container">
+                <template lwc:if={boolShowTargetMarginError}>
+                    <div style="color: red;">
+                        <lightning-card title="Error">
+                            <p class="slds-p-horizontal_small"><b>{UI_Text_Error_TargetMarginFailed}</b></p>
+                        </lightning-card>
+                    </div>
+                </template>
+                <template lwc:if={boolShowCoGsError}>
+                    <div style="color: red;">
+                        <lightning-card title="Error">
+                            <p class="slds-p-horizontal_small"><b>{UI_Text_Error_CoGsFailed}</b></p>
+                        </lightning-card>
+                    </div>
+                </template>
+                <div class="header">
+                    <div class="slds-grid slds-gutters" style="width: 103%;">
+                        <div class="slds-col">
+                            <h1>Margin Analysis ({quoteAndLineDetails.quoteType})</h1>
+                        </div>
+                        <div class="slds-col slds-text-align_right">
+                            <h1>Sold To: {quoteAndLineDetails.soldToAccount}</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="quote-info">
+                    <p>Quote ID: <a href={quoteLink} target="_blank">{quoteAndLineDetails.quoteNumber}</a></p>
+                        <template if:true={approvalRequestId}>
+                    <span class="approve-reject"><a href={approvalRejectLink} target="_blank">Approve/Reject</a></span>
+                        </template>      
+                </div>
+
+                <div class="analysis-section">
+
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col slds-size_1-of-3">
+                            <!-- Quote Level Analysis -->
+                            <div class="box" style="border: 1px solid #ccc;">
+                                <h2>Quote Level Analysis</h2>
+                                <table style="font-size: small;">
+                                    <tr style="display: none;">
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                    <tr style="border-bottom: 0.01pt solid #e8e8e8;">
+                                        <td>{UI_Text_BudgetFX_Rate_USD_to_Local}</td>
+                                        <td style="text-align: right;"><strong>
+                                                <lightning-formatted-number value={quoteAndLineDetails.budgetFXRate}
+                                                    format-style="currency"
+                                                    currency-code={quoteAndLineDetails.currencyIsoCode}>
+                                                </lightning-formatted-number>
+                                            </strong></td>
+                                    </tr>
+                                    <tr style="border-bottom: 0.01pt solid #e8e8e8;">
+                                        <td>{UI_Text_StandardProfit}</td>
+                                        <td style="text-align: right;"><strong>
+                                                <lightning-formatted-number value={quoteAndLineDetails.netMargin}
+                                                format-style="currency"
+                                                currency-code={quoteAndLineDetails.currencyIsoCode}></lightning-formatted-number>
+                                            </strong></td>
+                                    </tr>
+                                    <tr style="border-bottom: 0.01pt solid #e8e8e8;">
+                                        <template lwc:if={isDirectQuote}><td>{UI_Text_StandardMarginAtListPrice}</td></template>
+                                        <template lwc:elseif={isDirectToUCQuote}><td>{UI_Text_StandardMarginAtListPrice}</td></template>
+                                        <template lwc:elseif={isIndirectQuote}><td>{UI_Text_StandardMarginAtChannelPartnerPrice}</td></template>
+                                        
+                                        <td style="text-align: right;"><strong>
+                                                <lightning-formatted-number maximum-fraction-digits="2"
+                                                    value={quoteAndLineDetails.standardMarginListPrice}
+                                                    format-style="percent"></lightning-formatted-number>
+                                            </strong></td>
+                                    </tr>
+                                    <tr style="border-bottom: 0.01pt solid #e8e8e8;">
+                                        <td>{UI_Text_StandardMarginAtQuoteProposedPrice}</td>
+                                        <td style="text-align: right;"><strong>
+                                                <lightning-formatted-number maximum-fraction-digits="2"
+                                                    value={quoteAndLineDetails.standardMarginProposedPrice}
+                                                    format-style="percent"></lightning-formatted-number>
+                                            </strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="slds-col slds-size_2-of-3">
+                            <!-- Product Family Level Analysis -->
+                            <div class="box" style="border: 1px solid #ccc;">
+                                <h2>{UI_Text_ProductLineLevelAnalysis}</h2>
+                                <lightning-datatable data={quoteAndLineDetails.productLines} columns={lineLevelColumns}
+                                    key-field="id" hide-checkbox-column class="wrapped-header-datatable datatable-full-size"
+                                    style="font-size: x-small;">
+                                </lightning-datatable>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Line-item Level Analysis -->
+
+                    <h2 class="style-1">{UI_Text_LineItemLevelAnalysis}</h2>
+                    <div class="slds">
+                        <template if:true={isDirectQuote}>
+                           <lightning-datatable data={quoteAndLineDetails.lineItems} columns={directColumns} key-field="id"
+                                hide-checkbox-column class="ltngtable wrapped-header-datatable datatable-padding slds-table_bordered slds-table_col-bordered slds-table_striped" style="font-size: x-small;">
+                            </lightning-datatable>
+                        </template>
+                        <template if:true={isIndirectQuote}>
+                            <lightning-datatable data={quoteAndLineDetails.lineItems} columns={indirectColumns} key-field="id"
+                                hide-checkbox-column class="ltngtable wrapped-header-datatable datatable-padding slds-table_bordered slds-table_col-bordered slds-table_striped" style="font-size: x-small;">
+                            </lightning-datatable>
+                        </template>
+                        <template if:true={isDirectToUCQuote}>
+                            <lightning-datatable data={quoteAndLineDetails.lineItems} columns={directToUCcolumns} key-field="id"
+                                hide-checkbox-column class="ltngtable wrapped-header-datatable datatable-padding slds-table_bordered slds-table_col-bordered slds-table_striped" style="font-size: x-small;">
+                            </lightning-datatable>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>       
+        <template lwc:if={permissionErrorInSandbox}>
+            <div style="color: red;">
+                <lightning-card title="Error">
+                    <p class="slds-p-horizontal_small"><b>{errorSandboxMsg}</b></p>
+                </lightning-card>
+            </div>
+        </template>
+        <template lwc:if={noPermissionOrAccess}>
+            <div style="color: red;">
+                <lightning-card title="Error">
+                    <p class="slds-p-horizontal_small"><b>{errorMsg}</b></p>
+                </lightning-card>
+            </div>
+        </template>
+    <template lwc:if={loading}>
+        <div>
+            <lightning-spinner alternative-text="Loading" size="large"></lightning-spinner>
+        </div>
+    </template>
+</template>

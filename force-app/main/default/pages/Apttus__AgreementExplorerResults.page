@@ -1,0 +1,764 @@
+<!-- 
+    Apttus Contract Management
+    AgreementExplorerResults
+     
+
+    @2017-2018 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page docType="html-5.0" 
+           standardController="Apttus__AgreementExplorer__c" 
+           extensions="Apttus.AgreementExplorerResultsController" 
+           action="{!agreementPageLoad}"
+           sidebar="false">
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/js/plugins.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/js/jquery.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/js/agreementExplorer.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI, 'js/jquery.blockUI.min.js')}"/>
+<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.AgreementExplorerUI,'css/font-awesome.min.css')}" />
+<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.AgreementExplorerUI,'/css/main.css')}" />
+<script>
+    j$ = jQuery.noConflict();
+
+    function onAjaxStart() {
+        j$.blockUI({ message: '<img src="{!URLFOR($Resource.AgreementExplorerUI, '/images/load-icon.gif')}"/><div>{!$Label.LoadingPage}</div>' });
+    }
+    
+    function onAjaxStop() {
+        j$.unblockUI();
+    }
+
+    
+</script>
+
+<apex:sectionHeader title="{!$Label.apttus__agreementexplorer}" subtitle="{!$Label.apttus__agreementsearch}"/>
+<apex:form styleClass="agreement-explorer-container">
+  <apex:actionfunction name="selectAccountCheckbox" action="{!selectAccount}" rerender="nullPanel">
+    <apex:param name="SelectedId" assignTo="{!accountSelected}" value="" />
+  </apex:actionfunction>
+  <apex:outputPanel Id="queryErrorMsg">
+    <apex:pageMessages />
+  </apex:outputPanel>
+  <apex:outputPanel Id="backToRootLink">
+    <apex:commandLink value="{!$Label.apttus__backtoroot}" style="color: #006295;font-size:0.8em" status="loading" rendered="{!display != 'Hierarchy'}" action="{!backToHierarchy}" reRender="hierarchyResult, backToRootLink"/>
+  </apex:outputPanel>
+  <apex:pageBlock rendered="{!permission}">
+          <apex:outputPanel id="idHeaderPanel" layout="block" style="border-bottom:1px solid #CCC;">
+              <apex:outputLabel styleClass="search-setting-label">{!$Label.apttus__search} {!$Label.apttus__settings}</apex:outputLabel>          
+              <input type="button" value="{!$Label.HideSettings}" onclick="toggleFilter();" id="showSetting" style="font-size: 11px" class="btn buttonStyle"/>
+              <apex:commandButton value="{!$Label.apttus__edit} {!$Label.apttus__field}s" action="{!showEditFieldPopup}" status="loading" rerender="popup" styleClass="header-buttons"/>
+              <apex:commandButton value="{!$Label.apttus__saveas}"  action="{!showSaveAsPopUp}" reRender="savepopup, queryErrorMsg" status="loading" styleClass="header-buttons"/>          
+              <apex:commandButton value="{!$Label.apttus__save}"  status="loading" disabled="{!saveAllowed == false}" action="{!save}" reRender="SearchConfiguration, queryErrorMsg" styleClass="header-buttons"/>
+              <apex:outputPanel style="float:right;">
+                <apex:commandButton id="refreshButton" value="{!$Label.apttus__refresh}" action="{!refresh}" status="loading" reRender="hierarchyResult,queryErrorMsg, idHeaderPanel" style="alight"/>
+              </apex:outputPanel>
+          </apex:outputPanel>
+          
+          <div class="SettingsPanel">
+            <apex:outputPanel id="idSettingsPanel" layout="block" styleClass="filter-section">              
+                <apex:outputLabel value="{!$Label.apttus__querytype}"/>
+                <apex:inputHidden value="{!newHierarchyProp.Apttus__Context__c}" id="theContext1"/>
+                <apex:selectList value="{!newHierarchyProp.Apttus__Context__c}" multiselect="false" size="1" style="width:50px;">
+                        <apex:selectOptions value="{!AgreementObjFilter}"/>
+                        <apex:actionSupport event="onchange" status="loading" reRender="SearchConfiguration, ListFilterTable, saveButton2, ExpressionValidator, buttonSet1">
+                          <apex:param name="reset" value="" assignTo="{!savedQuerySelected}"/>
+                        </apex:actionSupport>
+                </apex:selectList>
+                
+                <apex:outputPanel id="SearchConfiguration">
+                      <apex:outputLabel value="{!$Label.apttus__savedqueries}"/>
+                        <apex:selectList value="{!savedQuerySelected}" multiselect="false" size="1" >
+                          <apex:selectOptions value="{!savedQueryOptions}"/>
+                          <apex:actionSupport event="onchange" action="{!swapFilters}" status="loading" reRender="ListFilterTable, saveButton2, idHeaderPanel, addFilterLinks1, buttonSet1"/>
+                        </apex:selectList>
+                               
+                        <apex:outputLabel value="{!$Label.apttus__agreement} {!$Label.apttus__lookup}" rendered="{!newHierarchyProp.Apttus__Context__c =='Agreement'}"/>
+                        <apex:outputLabel value="{!$Label.apttus__account} {!$Label.apttus__lookup}" rendered="{!newHierarchyProp.Apttus__Context__c == 'Agreement By Account(s)'}"/>
+                               
+                        <apex:inputField value="{!newHierarchyProp.Apttus__AgreementId__c}" html-placeholder="Select Agreement Record" Id="agreementLookup" rendered="{!newHierarchyProp.Apttus__Context__c =='Agreement'}"/>
+                        <apex:inputText value="{!accountsSelectedString}" disabled="true" html-placeholder="Select Account Record(s)" Id="accLookup" rendered="{!newHierarchyProp.Apttus__Context__c =='Agreement By Account(s)'}" />
+                        <apex:commandLink id="lookup" status="loading" action="{!showAccountPopup}" rerender="accountLookup" rendered="{!newHierarchyProp.Apttus__Context__c =='Agreement By Account(s)'}" style="padding-top: 1px;position: absolute;">
+                                <apex:image value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/images/u180.png')}"/>
+                        </apex:commandLink>
+                </apex:outputPanel>              
+            </apex:outputPanel>
+            
+            <apex:outputPanel id="ListFilterTable" layout="block" styleClass="fields-section">                                
+                    <apex:pageBlockTable value="{!listFilterWraps}" var="listFilter" id="filterRepeat">
+                        <apex:column headerValue="{!$Label.apttus__col}">                        
+                            <div class="filterSequence">
+                                <apex:outputText value="{!listFilter.sequence}" style="font-weight: bold;"/>         
+                            </div>               
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus__field}">
+                            <apex:outputPanel Id="FilterObject">
+                                <apex:selectList value="{!listFilter.input}" size="1" style="width: 190px;" Id="inputList3">  
+                                    <apex:selectOptions value="{!FilterInputOptions}"/>
+                                    <apex:actionSupport event="onchange" action="{!listFilter.setValueType}" status="loading" reRender="valueInputField, ComparisonField"/>
+                                </apex:selectList> 
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus__operator}">
+                          <apex:outputPanel Id="ComparisonField">
+                              <apex:inputHidden value="{!listFilter.comparison}" id="theHiddenComparison"/>
+                                  <apex:selectList value="{!listFilter.comparison}" size="1"
+                                      rendered="{!(listFilter.dataType == 'REFERENCE') || (listFilter.dataType == 'PICKLIST') || (listFilter.dataType == 'BOOLEAN')
+                                      || (listFilter.dataType == 'ID')}" style="width: 80px;">
+                                  <apex:selectOptions value="{!comparisonOptions1}"/>
+                              </apex:selectList> 
+                              <apex:selectList value="{!listFilter.comparison}" size="1" rendered="{!(listFilter.dataType == 'MULTIPICKLIST')}" style="width:80px;">
+                                  <apex:selectOptions value="{!comparisonOptions4}"/>
+                              </apex:selectList> 
+                              <apex:selectList value="{!listFilter.comparison}" size="1"
+                                      rendered="{!(listFilter.dataType == 'DATE') || (listFilter.dataType == 'DATETIME') || (listFilter.dataType == 'DOUBLE') 
+                                      || (listFilter.dataType == 'INTEGER')  || (listFilter.dataType == 'CURRENCY') || (listFilter.dataType == 'PERCENT')}" style="width: 80px;">  
+                                  <apex:selectOptions value="{!comparisonOptions2}"/>
+                              </apex:selectList> 
+                              <apex:selectList value="{!listFilter.comparison}" size="1"
+                                  rendered="{!(listFilter.dataType == 'STRING') || (listFilter.dataType == 'ADDRESS') || (listFilter.dataType == 'TEXTAREA')
+                                  || (listFilter.dataType == 'PHONE') || (listFilter.dataType == 'URL')}" style="width: 80px;">  
+                                  <apex:selectOptions value="{!comparisonOptions3}"/>
+                              </apex:selectList>
+                          </apex:outputPanel>
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus__value}">
+                            <apex:outputPanel Id="valueInputField">
+                                  <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'STRING') || (listFilter.dataType == 'ADDRESS') || (listFilter.dataType == 'URL')}" style="width: 180px;" maxlength="80">
+                                  </apex:inputText>
+
+                                  <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'ID')}" style="width: 180px;">
+                                  </apex:inputText>
+
+                                  <apex:input value="{!listFilter.dateField}" type="date" rendered="{!(listFilter.dataType == 'DATE') || (listFilter.dataType == 'DATETIME')}"  onfocus="DatePicker.pickDate(false, 'myPage:myForm:demo', false);" style="width: 180px;">
+                                  </apex:input>
+
+                                  <apex:input value="{!listFilter.value}" type="text" rendered="{!(listFilter.dataType == 'TEXTAREA')}" style="width: 180px;"> 
+                                  </apex:input>
+
+                                  <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'CURRENCY') || (listFilter.dataType == 'PERCENT')}" style="width: 180px;">
+                                  </apex:inputText>
+
+                                  <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'DOUBLE') || (listFilter.dataType == 'INTEGER') }" style="width: 180px;">
+                                  </apex:inputText>
+
+                                  <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'PHONE')}" style="width: 180px;">
+                                  </apex:inputText>
+
+                                  <apex:outputPanel rendered="{!(listFilter.dataType == 'PICKLIST')}">                                
+                                      <apex:selectList value="{!listFilter.value}" size="1" rendered="{!(listFilter.dataType == 'PICKLIST')}">  
+                                          <apex:selectOptions value="{!listFilter.ValueOptions}"/>
+                                      </apex:selectList>
+                                  </apex:outputPanel>
+                                
+                               <apex:outputPanel rendered="{!(listFilter.dataType == 'MULTIPICKLIST')}">
+                                  <apex:selectList value="{!listFilter.multiPickListValue}" size="2" multiselect="true" rendered="{!(listFilter.dataType == 'MULTIPICKLIST')}" style="width:301px !important;border-radius:5px; height:50px;">  
+                                      <apex:selectOptions value="{!listFilter.ValueOptions}"/>
+                                  </apex:selectList>
+                              </apex:outputPanel>
+                              
+                              <apex:outputPanel rendered="{!(listFilter.dataType == 'BOOLEAN')}">
+                                  <apex:selectList value="{!listFilter.value}" size="1" rendered="{!(listFilter.dataType == 'BOOLEAN')}">  
+                                      <apex:selectOptions value="{!listFilter.TrueFalseOptions}"/>
+                                  </apex:selectList>
+                              </apex:outputPanel>
+
+                              <apex:inputField value="{!listFilter.listFilterAgreement[listFilter.lookUpField]}"  id="valueAccountLookUp" style="width: 80px;" rendered="{!(listFilter.dataType == 'REFERENCE')}" required="false">
+                              </apex:inputField>
+                            </apex:outputPanel>
+                        </apex:column>
+                        <apex:column >
+                              <apex:commandLink status="loading" action="{!deleteRow}" oncomplete="updateExprString(event)" rerender="FieldAndFilterDisplay, ListFilterTable, ListFieldTable">
+                                  <apex:image value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/images/u142.png')}"/>
+                                  <apex:param name="deletedRecord" value="{!listFilter.sequence}" assignTo="{!DelRec}"/>
+                              </apex:commandLink>
+                        </apex:column>
+                    </apex:pageBlockTable>                  
+            </apex:outputPanel>
+            
+            <apex:outputPanel layout="block" id="addFilterLinks" styleClass="filter-links-section">
+                  <apex:commandLink value="{!$Label.apttus__add} {!$Label.apttus__filter}" oncomplete="updateExprString(event)" id="addFilter1" action="{!addRow}" style="color: #006295;" status="loading" reRender="ListFilterTable"/>
+            </apex:outputPanel>
+            
+            <apex:outputPanel layout="block" id="addFilterLinks1" styleClass="filter-validator-section">
+                  <apex:outputLabel value="{!$Label.apttus__advancedfilter} "></apex:outputLabel>    
+                  <div class="validator">      
+                  <apex:inputText styleClass="validator--expr" value="{!condExpr}" html-placeholder="Expression Validator"/>
+                  </div>
+            </apex:outputPanel>          
+            
+            <apex:outputPanel style="border-top:1px solid #CCC; width:100%; margin-top:15px;" layout="block" Id="buttonSet1">
+              <apex:commandButton styleClass="goButton" value="{!$Label.apttus__go}" action="{!goForAgreement}" rendered="{!newHierarchyProp.Apttus__Context__c != 'Agreement By Account(s)'}" Id="saveButton2" status="loading" oncomplete="closeSettings();" reRender="hierarchyResult, queryErrorMsg, idHeaderPanel" disabled="{!savedQuerySelected == ''}"/>
+              <apex:commandButton styleClass="goButton" value="{!$Label.apttus__go}" action="{!goForAccount}" rendered="{!newHierarchyProp.Apttus__Context__c == 'Agreement By Account(s)'}" Id="saveButton3" status="loading" oncomplete="closeSettings();" reRender="hierarchyResult, queryErrorMsg, idHeaderPanel" disabled="{!savedQuerySelected == ''}"/>
+            </apex:outputPanel> 
+        </div>                    
+    </apex:pageBlock>
+    
+    <apex:actionFunction name="downloadExcel" id="downloadExcel" action="{!openExcel}"/>
+    <apex:actionFunction name="rerenderSaveButton" rerender="saveButton2"/>
+    <apex:actionStatus id="loading" onstart="onAjaxStart();" onstop="onAjaxStop();">
+    </apex:actionStatus>
+    <div class="query--report--content clm--Body--content">
+       <!-- Fieldset Section Start -->
+      <apex:outputPanel id="popup">
+        <apex:outputPanel rendered="{!displayPopUp}" style="background-color:black;opacity:0.5;position:absolute;top:0px;bottom:0px;left:0px;right:0px;z-index:9999">
+        </apex:outputPanel>
+        <apex:outputPanel styleClass="customPopup saveDialog" layout="block" rendered="{!displayPopUp}">
+          <apex:pageBlock >
+              <div class="set--additions" style="border-bottom:1px solid #c9c9c9; background-color:#c9c9c9; padding:15px 0px 15px 20px;margin:0px;">
+                  <apex:outputLabel value="{!$Label.apttus__edit} {!$Label.apttus__field}s" style="font-weight: bold;"/>
+              </div>
+              <div style="border-top:1px solid #c9c9c9;"/>
+              <div class="section--title" style="margin:0px 0px 5px 0px;">
+                <apex:outputLabel styleClass="alignLeft" value="{!$Label.apttus__fieldcriteria}" style="font-weight: bold;"/>
+              </div>
+              <apex:outputPanel id="ListFieldTable" style="background-color: #f8f8f8;">
+                <div style="width:80%">
+                  <apex:pageBlockTable value="{!listFieldWraps}" var="listField" id="fieldRepeat">
+                    <apex:column headerValue="{!$Label.apttus__col}">
+                        <apex:outputText value="{!listField.Sequence}" style="font-weight: bold;"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!$Label.apttus__field}">
+                        <div>
+                            <apex:selectList value="{!listField.input}" styleClass="selectListStyle" size="1" Id="fieldList" disabled="{!listField.sequence == 1}" >  
+                                <apex:selectOptions value="{!FieldInputOptions}"/>
+                            </apex:selectList>
+                        </div>
+                   </apex:column>
+
+                   <apex:column >
+                        <apex:inputHidden value="{!DelFieldRec}" id="theHiddenDelRec"/>
+                        <apex:commandLink status="loading" action="{!deleteFieldRow}" rendered="{!listField.Sequence != 1}" rerender="FieldAndFilterDisplay, ListFilterTable, ListFieldTable">
+                          <apex:image value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/images/u142.png')}"/>
+                          <apex:param name="deletedRecord" value="{!listField.sequence}" assignTo="{!DelFieldRec}"/>
+                        </apex:commandLink>
+                    </apex:column>
+                  </apex:pageBlockTable>
+                </div>
+              </apex:outputPanel>
+              <!-- /Fieldset Section End -->
+            <div class="set--additions">
+              <span class="add--expr">
+                <apex:commandLink styleClass="add--expr--link" value="{!$Label.apttus__add} {!$Label.apttus__field}" id="addField" action="{!addFieldRow}" style="color: #009DD9;" status="loading" reRender="ListFieldTable"/>
+              </span>
+            </div>
+            <!-- Buttons -->
+            <div style="border-top:1px solid #c9c9c9; margin-top: 15px;padding: 10px 0px;background-color: #c9c9c9;height:41px;">
+              <apex:outputPanel Id="buttonSet1" StyleClass="buttonPannel">
+                <apex:commandButton value="{!$Label.apttus__apply}" action="{!closeEditFieldPopup}" status="loading" rerender="popup"/>
+                <apex:commandButton value="{!$Label.apttus__cancel}" action="{!cancelFieldSet}" status="loading" rerender="popup, ListFieldTable"/>
+              </apex:outputPanel>
+            </div>
+            </apex:pageBLock>
+        </apex:outputPanel>
+      </apex:outputPanel>
+  <apex:outputPanel id="savepopup">
+    <apex:outputPanel rendered="{!displayPopUp2}" style="background-color:black;opacity:0.5;position:absolute;top:0px;bottom:0px;left:0px;right:0px;z-index:9999">
+      </apex:outputPanel>
+        <apex:outputPanel styleClass="customPopup saveDialog" layout="block" rendered="{!displayPopUp2}" >
+          <!-- 3 Column Layout -->
+            <apex:pageBlock >
+                <div class="set--additions" style="border-bottom:1px solid #c9c9c9; background-color:#c9c9c9;  padding: 15px 0px 15px 20px;margin:0px;">
+                    <apex:outputLabel value="{!$Label.apttus__save} {!$Label.apttus__report}" style="font-weight: bold;font-size:16px;"/>
+                </div>
+                <!--div style="border-top:1px solid #c9c9c9;padding: 5px 0px;"/-->
+                 <div class="section--fields--row clearfix" style="background-color: #f8f8f8;padding-top: 0px;">
+                      <div class="section--title" style="margin-top:0pc;">
+                         <span class='alignLeft'>{!$Label.Configure}</span>
+                         <apex:Messages style="color:red;"/>
+                         <span style="float:right;margin-right:20px;"><apex:outputPanel styleClass="requiredInput" layout="block">
+                         <apex:outputPanel styleClass="requiredBlock" layout="block"/> {!$Label.apttus__equalssign} {!$Label.apttus__requiredfield} </apex:outputPanel></span>
+                      </div>
+                      <!-- 3 Column Layout -->
+                          <div class="input--div">
+                              <label>{!$Label.Name}</label>
+                              <apex:outputPanel styleClass="requiredInput">
+                                <apex:outputPanel styleClass="requiredBlock"/>
+                                    <apex:inputField value="{!newHierarchyProp.Name}"/>
+                                </apex:outputPanel>
+                          </div>
+                           <div class="input--div">
+                              <label>{!$Label.apttus__label}</label>
+                              <apex:inputField value="{!newHierarchyProp.Apttus__Label__c}"/>
+                          </div>
+                          <div class="input--div">
+                              <label style="text-align:top;">{!$Label.apttus__description}</label>
+                              <apex:inputTextarea value="{!newHierarchyProp.Apttus__Description__c}" id="newDesc"/>
+                          </div>
+                          <div class="input--div">
+                            <label>{!$Label.apttus__public}</label>
+                            <apex:inputField value="{!newHierarchyProp.Apttus__Public__c}" />
+                        </div>
+                        <div class="input--div">
+                            <label>{!$Label.apttus__setdefault}</label>
+                            <apex:inputField value="{!newHierarchyProp.Apttus__Default__c}" />
+                        </div> 
+                  </div>
+                  <div style="border-top:1px solid #c9c9c9;background-color: #c9c9c9;height:41px;">
+                    <apex:outputPanel Id="buttonSet1" StyleClass="buttonPannel" style="float:right;margin-right:10px">
+                      <apex:commandButton value="{!$Label.apttus__save}" action="{!saveAs}" status="loading" rerender="savepopup, queryErrorMsg"/>
+                      <apex:commandButton value="{!$Label.apttus__cancel}" action="{!closeSaveAsPopup}" rerender="savepopup"/>
+                    </apex:outputPanel>
+                  </div>
+            </apex:pageBlock>
+        </apex:outputPanel>
+      </apex:outputPanel>
+    
+      <!-- End 3 Column Layout -->
+
+      <apex:outputPanel id="accountLookup">
+        <apex:outputPanel id="nullPanel"/>
+        <apex:outputPanel rendered="{!accountPopup}" style="background-color:black;opacity:0.5;position:absolute;top:0px;bottom:0px;left:0px;right:0px;z-index:9999">
+        </apex:outputPanel>
+        <apex:outputPanel styleClass="customPopup2 saveDialog" style="height:350px;min-width:750px;" layout="block" rendered="{!accountPopup}">
+          <!-- 3 Column Layout -->
+          <apex:pageBlock >
+            <div class="set--additions" style="border-bottom:1px solid #c9c9c9; background-color:#c9c9c9;  padding: 15px 0px 15px 20px;margin:0px;">
+              <apex:outputLabel value="{!$Label.apttus__account} {!$Label.apttus__hierarchy}" style="font-weight: bold;"/>
+            </div>
+              <apex:outputPanel style="background-color: #f8f8f8;padding-top: 0px;">
+
+                <apex:outputPanel layout="block" id="accountSortingOrder" styleClass="filter-links-section" rendered="{!Not(isAccountSearchAvailable)}">
+                    <apex:outputLabel value="{!$Label.apttus__searchforaccount}" style="font-weight:bold;"/>
+                    <apex:inputText value="{!accountSearchString}">
+                      <apex:actionSupport event="onkeyup" action="{!changeAccountsOrder}" reRender="accountTable,accountSortingOrder"/>
+                    </apex:inputText>
+                    <apex:commandButton value="{!$Label.apttus__sortbyname}" action="{!changeAccountSort}" rendered="{!Not(isAlphabetical)}" />
+                    <apex:commandButton value="{!$Label.apttus__sorthierarchical}" action="{!changeAccountSort}" rendered="{!isAlphabetical && IF(accountSearchString == '',true,false)}"/>
+                </apex:outputPanel>
+
+                <apex:outputPanel Id="accountTable">
+                  <apex:Messages style="color:red;"/>
+                  <div style="overflow:hidden;overflow-y:scroll;height: 350px;">
+                        <apex:pageBlockTable value="{!accountHierarchyPaginator.partialData}" var="account" id="fieldRepeat">
+                      <apex:column Id="checkBoxColumn">
+                          <apex:inputCheckbox Id="accountChecked" styleClass="selected-checkbox" onclick="er('{!account['accountId']}'); incrementCounter(this)" value="{!account['selected']}">
+                          </apex:inputCheckbox>
+                      </apex:column>
+                      <apex:column headerValue="{!$ObjectType.Account.fields.Name.Label}" style="max-width:415px;" styleClass="padding{!account['level']}">
+                          <div title="{!account['accountName']}">
+                            <apex:outputLabel value="{!LEFT(account['accountName'],30)}" style="word-wrap: break-word;"/>
+                          </div>
+                      </apex:column>
+                      <apex:column headerValue="{!$ObjectType.Account.fields.Type.Label}" style="max-width:125px;">
+                          <div title="{!account['accountName']}">
+                            <apex:outputLabel value="{!LEFT(account['type'],30)}" style="word-wrap: break-word;"/>
+                          </div>
+                      </apex:column>
+                      <apex:column headerValue="{!$ObjectType.Account.fields.Industry.Label}" style="max-width:100px;">
+                          <div title="{!account['accountName']}">
+                            <apex:outputLabel value="{!LEFT(account['industry'],30)}" style="word-wrap: break-word;"/>
+                          </div>
+                      </apex:column>
+                      <apex:column headerValue="{!$Label.apttus__owner}" style="max-width:125;">
+                          <div title="{!account['accountName']}">
+                            <apex:outputLabel value="{!LEFT(account['creator'],30)}" style="word-wrap: break-word;"/>
+                          </div>
+                      </apex:column>
+                    </apex:pageBlockTable>
+                  </div>
+                  <div style="margin:10px;">  
+                    <apex:outputText style="float:left;" value="{!$Label.apttus__page} {!accountHierarchyPaginator.pageNumber} {!$Label.apttus__of} {!accountHierarchyPaginator.totalPages}" />
+                    <apex:outputPanel style="margin-left:35%;">
+                        <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!accountHierarchyPaginator.HasPrevious}" status="loading" action="{!accountHierarchyPaginator.Previous}" reRender="accountTable"/>              
+                        <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(accountHierarchyPaginator.HasPrevious)}" style="color: #ccc;"/>
+                        <apex:outputText value="  "/>
+                        <apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!accountHierarchyPaginator.HasNext}" action="{!accountHierarchyPaginator.Next}" status="loading" reRender="accountTable"/>                    
+                        <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(accountHierarchyPaginator.HasNext)}" style="color: #ccc;"/>
+                    </apex:outputPanel>
+                    <apex:outputPanel style="float:right;">
+                        <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                        <apex:selectList value="{!accountHierarchyPaginator.pageSize}" size="1" >
+                            <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                            <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                              <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                              <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                                <apex:actionSupport event="onchange" action="{!accountHierarchyPaginator.resetPage}" status="loading" reRender="accountTable">
+                                  <apex:param value="1" assignTo="{!accountHierarchyPaginator.pageNumber }"/>
+                                </apex:actionSupport>
+                        </apex:selectList>
+                      </apex:outputPanel>
+                  </div>
+
+                </apex:outputPanel>
+            
+              </apex:outputPanel>
+              <div style="border-top:1px solid #c9c9c9;background-color: #c9c9c9;height:41px;">
+                <apex:outputPanel Id="buttonSet1" StyleClass="buttonPannel">
+                  <apex:commandButton value="{!$Label.apttus__addaccountcontexts}" action="{!addAccountContext}" status="loading" rerender="accountLookup, SearchConfiguration"/>
+                  <apex:commandButton value="{!$Label.apttus__cancel}" action="{!closeAccountPopup}" onclick="resetCounter();" rerender="accountLookup"/>
+                </apex:outputPanel>
+            </div>
+            </apex:pageBLock>
+        </apex:outputPanel>
+      </apex:outputPanel>
+
+
+      <apex:outputPanel id="hierarchyResult">    
+      <!--agreement hierarchy table-->
+      <apex:pageBlock Id="agreementTable" rendered="{!display == 'Hierarchy' && newHierarchyProp.Apttus__Context__c == 'Agreement' && newHierarchyProp.Apttus__AgreementId__c != null}">       
+            <apex:outputLabel value="{!$Label.apttus__agreements}"  rendered="{!newHierarchyProp.Apttus__AgreementId__c == null}" styleClass="agreement-label"/>        
+            <apex:outputLabel value="{!$Label.apttus__agreementhierarchyfor}: {!AgreementExplorerAgreementName}" rendered="{!newHierarchyProp.Apttus__AgreementId__c != null}" styleClass="agreement-label" style="word-wrap: break-word; max-width:400px;"/> 
+            <apex:outputLabel value=" {!$Label.apttus__toomanyresults}" rendered="{!agreementHierarchyPaginator.exceededLimit}" style="color:red;"/>   
+            <span style="display:table;margin:auto;">
+              <apex:commandButton id="exportButton" value="{!$Label.apttus__export}" action="{!openExcel}" styleClass="agreement-buttons"/>
+            </span>        
+            <div style="margin:0px 15px 15px 15px">
+            <div style="width:100%;overflow-x:scroll;">
+              <apex:pageBlockTable value="{!agreementHierarchyPaginator.partialData}" var="singleRow" style="overflow-x: auto; margin:0px;" width="100%">
+                    <apex:repeat value="{!fieldNameLabelTuple}" var="singleKey" rows="12">
+                          
+                          <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Name'}" styleClass="padding{!singleRow['level']}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')}">
+                            <a href="/{!singleRow['displayObject'].AgreementLeafId__c}" style="{!IF(!singleRow['highlighted'],'color:#A9A9A9;','')}" target="_blank">
+                                {!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}
+                            </a>
+                          </apex:column>
+      
+                          <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel != 'Agreement Name' && singleKey.fieldLabel != 'Related To Agreement' && singleKey.fieldLabel != 'Related From Agreement' && singleKey.fieldLabel != 'Agreement Hierarchies'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                            <apex:outputPanel styleClass="{!IF(singleRow['highlighted'] == false, 'filteredOut','')}">
+                              <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                            </apex:outputPanel>
+                          </apex:column>
+      
+                         <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related To Agreement'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                            <apex:commandLink value="{!$Label.apttus__viewtoagreements}" style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedTo'] == true}">
+                                <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                                <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                                <apex:param name="getLinkType" value="Agreements Related TO" assignTo="{!linkType}"/>
+                                <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+                            </apex:commandLink>
+                            <apex:outputLabel style="{!IF(!singleRow['highlighted'],'color:#A9A9A9;','')}" value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedTo'] == false}"/>
+                          </apex:column>
+      
+                          <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related From Agreement'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                            <apex:commandLink value="{!$Label.apttus__viewfromagreements}" style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedFrom'] == true}">
+                                <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                                <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                                <apex:param name="getLinkType" value="Agreements Related FROM" assignTo="{!linkType}"/>
+                                <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+                            </apex:commandLink>
+                            <apex:outputLabel style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedFrom'] == false}"/>
+                          </apex:column>
+      
+                          <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Hierarchies'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                            <apex:commandLink value="{!$Label.apttus__viewhierarchy}" style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" action="{!viewHierarchy}" status="loading" reRender="hierarchyResult, backToRootLink">
+                                <apex:param name="getHierarchyId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!agreementHierarchySelected}"/>
+                                <apex:param name="switchDisplay" value="Agreement Hierarchies" assignTo="{!display}"/>
+                            </apex:commandLink>
+                          </apex:column>
+                    </apex:repeat>
+                </apex:pageBlockTable>
+              </div>
+            <div style="margin:10px;">  
+              <apex:outputText style="float:left;" value="{!$Label.apttus__page} {!agreementHierarchyPaginator.pageNumber} {!$Label.apttus__of} {!agreementHierarchyPaginator.totalPages}" />
+              <apex:outputPanel style="margin-left:35%;">
+                  <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!agreementHierarchyPaginator.HasPrevious}" status="loading" action="{!agreementHierarchyPaginator.Previous}" reRender="agreementTable"/>              
+                  <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(agreementHierarchyPaginator.HasPrevious)}" style="color: #ccc;"/>
+                  <apex:outputText value="  "/>
+                  <apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!agreementHierarchyPaginator.HasNext}" action="{!agreementHierarchyPaginator.Next}" status="loading" reRender="agreementTable"/>                    
+                  <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(agreementHierarchyPaginator.HasNext)}" style="color: #ccc;"/>
+              </apex:outputPanel>
+              <apex:outputPanel style="float:right;">
+                  <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                  <apex:selectList value="{!agreementHierarchyPaginator.pageSize}" size="1" >
+                      <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                      <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                        <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                        <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                          <apex:actionSupport event="onchange" action="{!agreementHierarchyPaginator.resetPage}" status="loading" reRender="agreementTable">
+                            <apex:param value="1" assignTo="{!agreementHierarchyPaginator.pageNumber }"/>
+                          </apex:actionSupport>
+                  </apex:selectList>
+                </apex:outputPanel>
+            </div>
+            </div>
+            
+      </apex:pageBlock>
+
+      <!--agreement table-->
+     <apex:pageBlock Id="AgreementSearchTable" rendered="{!display == 'Hierarchy' && newHierarchyProp.Apttus__Context__c == 'Agreement Search'}">          
+        <apex:outputLabel value="{!$Label.apttus__agreements}" styleClass="agreement-label"/>
+        <span style="display:table;margin:auto;">
+          <apex:commandButton id="exportButton" value="{!$Label.apttus__export}" action="{!openExcel}" styleClass="agreement-buttons"/>
+        </span>                           
+        <div style="margin:0px 15px 15px 15px;">
+          <div style="width:100%;overflow-x:scroll;">
+           <apex:pageBlockTable value="{!exportToExcel}" var="singleRow" style="overflow-x: auto; margin:0px;" width="100%">
+                  <apex:repeat value="{!fieldNameLabelTuple}" var="singleKey" rows="12">
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Name' && singleKey.fieldLabel != 'Related To Agreement' && singleKey.fieldLabel != 'Related From Agreement' && singleKey.fieldLabel != 'Agreement Hierarchies'}">
+                        <a href="/{!singleRow['displayObject'].AgreementLeafId__c}" target="_blank">
+                            <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                        </a>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Account'}" style="min-width:175px;">
+                        <a href="/{!singleRow['displayObject'].AgreementLeafAccountId__c}" target="_blank">
+                        <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                        </a>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!((singleKey.fieldLabel != 'Agreement Name' && singleKey.fieldLabel != 'Account')) && singleKey.fieldLabel != 'Related To Agreement' && singleKey.fieldLabel != 'Related From Agreement' && singleKey.fieldLabel != 'Agreement Hierarchies'}" style="min-width:175px;">
+                        <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                    </apex:column>
+
+                   <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related To Agreement'}" style="min-width:175px">
+                      <apex:commandLink value="{!$Label.apttus__viewtoagreements}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedTo'] == true}">
+                          <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                          <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                          <apex:param name="getLinkType" value="Agreements Related TO" assignTo="{!linkType}"/>
+                          <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+                      </apex:commandLink>
+                      <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedTo'] == false}"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related From Agreement'}" style="min-width:175px">
+                      <apex:commandLink value="{!$Label.apttus__viewfromagreements}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedFrom'] == true}">
+                          <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                          <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                          <apex:param name="getLinkType" value="Agreements Related FROM" assignTo="{!linkType}"/>
+                          <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+                      </apex:commandLink>
+                      <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedFrom'] == false}"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Hierarchies'}" style="min-width:175px">
+                      <apex:commandLink value="{!$Label.apttus__viewhierarchy}" action="{!viewHierarchy}" status="loading" reRender="hierarchyResult, backToRootLink">
+                          <apex:param name="getHierarchyId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!agreementHierarchySelected}"/>
+                          <apex:param name="switchDisplay" value="Agreement Hierarchies" assignTo="{!display}"/>
+                      </apex:commandLink>
+                    </apex:column>
+                  </apex:repeat>
+                </apex:pageBlockTable>
+              </div>
+        <div style="margin:10px;">
+              <apex:outputText style="float:left;" value="{!$Label.apttus__page} {!pageNumber} {!$Label.apttus__of} {!totalPages}" />
+              <apex:outputPanel style="margin-left:35%;">
+                <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!HasPreviousForAgreementSearch}" status="loading" action="{!PreviousForAgreementSearch}" reRender="AgreementSearchTable"/>              
+                <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(HasPreviousForAgreementSearch)}" style="color: #ccc;"/>
+                <apex:outputText value="  "/>
+                <apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!HasNextForAgreementSearch}" action="{!NextForAgreementSearch}" status="loading" reRender="AgreementSearchTable"/>                    
+                <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(HasNextForAgreementSearch)}" style="color: #ccc;"/>
+              </apex:outputPanel>
+              <apex:outputPanel style="float:right;">
+                <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                <apex:selectList value="{!pageSize}" size="1" >
+                    <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                    <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                      <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                      <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                        <apex:actionSupport event="onchange" action="{!resetPageForAgreementSearch}" status="loading" reRender="AgreementSearchTable">
+                          <apex:param value="1" assignTo="{!pageNumber }"/>
+                        </apex:actionSupport>
+                </apex:selectList>
+              </apex:outputPanel>
+          </div>
+        </div>
+        
+      </apex:pageBlock>
+
+      <!--Agreement Hierarchies Link table-->
+      <apex:pageBlock Id="agreementHierarchiesTable" rendered="{!display == 'Agreement Hierarchies'}">
+          <div style="padding:10px 0px">
+          <apex:outputPanel layout="block" style="padding:10px 0px">
+            <apex:outputLabel value="{!$Label.apttus__agreementhierarchyfor}: {!AgreementHierarchyName}" style="font-weight:bold;margin-left:20px"/>
+            <apex:outputLabel value=" {!$Label.apttus__toomanyresults}" rendered="{!agreementHierarchies.exceededLimit}" style="color:red;"/>
+            <span style="display:table;margin:auto;">
+              <apex:commandButton id="exportButton" value="{!$Label.apttus__export}" action="{!openExcel}" styleClass="agreement-buttons"/>
+            </span> 
+           </apex:outputPanel>   
+            </div>
+            <div style="margin:0px 15px 15px 15px;">
+            <div style = "width:100%;overflow-x:scroll">
+              <apex:pageBlockTable value="{!agreementHierarchies.partialData}" var="singleRow">
+                  <apex:repeat value="{!fieldNameLabelTuple}" var="singleKey" rows="12">
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Name' && singleKey.fieldLabel != 'Related To Agreement' && singleKey.fieldLabel != 'Related From Agreement' && singleKey.fieldLabel != 'Agreement Hierarchies'}" styleClass="padding{!singleRow['level']}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')}">
+                        <a href="/{!singleRow['displayObject'].AgreementLeafId__c}" target="_blank">
+                          {!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}
+                        </a>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel != 'Agreement Name' && singleKey.fieldLabel != 'Related To Agreement' && singleKey.fieldLabel != 'Related From Agreement' && singleKey.fieldLabel != 'Agreement Hierarchies'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                        <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                    </apex:column>
+
+                   <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related To Agreement'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                      <apex:commandLink value="{!$Label.apttus__viewtoagreements}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedTo'] == true}">
+                          <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                          <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                          <apex:param name="getLinkType" value="Agreements Related TO" assignTo="{!linkType}"/>
+                          <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+                      </apex:commandLink>
+                      <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedTo'] == false}"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related From Agreement'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                      <apex:commandLink value="{!$Label.apttus__viewfromagreements}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedFrom'] == true}">
+                          <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                          <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                          <apex:param name="getLinkType" value="Agreements Related FROM" assignTo="{!linkType}"/>
+                          <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+                      </apex:commandLink>
+                      <apex:outputLabel value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedFrom'] == false}"/>
+                    </apex:column>
+
+                    <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Hierarchies'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                      <apex:commandLink value="{!$Label.apttus__viewhierarchy}" action="{!viewHierarchy}" status="loading" reRender="hierarchyResult, backToRootLink">
+                          <apex:param name="getHierarchyId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!agreementHierarchySelected}"/>
+                          <apex:param name="switchDisplay" value="Agreement Hierarchies" assignTo="{!display}"/>
+                      </apex:commandLink>
+                    </apex:column>
+                </apex:repeat>
+            </apex:pageBlockTable>
+            </div>
+          </div>
+          <div style="margin:10px;">
+              <apex:outputText style="float:left" value="{!$Label.apttus__page} {!agreementHierarchies.pageNumber} {!$Label.apttus__of} {!agreementHierarchies.totalPages}" />
+              <apex:outputPanel style="margin-left:35%px;">
+                  <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!agreementHierarchies.HasPrevious}" status="loading" action="{!agreementHierarchies.Previous}" reRender="agreementHierarchiesTable"/>              
+                  <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(agreementHierarchies.HasPrevious)}" style="color: #ccc;"/>
+                  <apex:outputText value="  "/>
+                  <apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!agreementHierarchies.HasNext}" action="{!agreementHierarchies.Next}" status="loading" reRender="agreementHierarchiesTable"/>                    
+                  <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(agreementHierarchies.HasNext)}" style="color: #ccc;"/>
+              </apex:outputPanel>
+              <apex:outputPanel style="float:right;">
+                <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                <apex:selectList value="{!agreementHierarchies.pageSize}" size="1" >
+                    <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                    <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                      <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                      <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                        <apex:actionSupport event="onchange" action="{!agreementHierarchies.resetPage}" status="loading" reRender="agreementHierarchiesTable">
+                          <apex:param value="1" assignTo="{!agreementHierarchies.pageNumber }"/>
+                        </apex:actionSupport>
+                </apex:selectList>
+              </apex:outputPanel>
+          </div>
+        </apex:pageBlock>
+
+        <!--related TO/FROM table-->
+        <apex:pageBlock rendered="{!display == 'Related'}">
+          <div style="padding:10px 0px">
+            <apex:outputLabel value="{!linkType}: {!linkName}" style="font-weight:bold;margin-left:20px"/>
+          </div>
+          <span class="buttonSection">
+              <apex:commandButton id="exportButton" value="{!$Label.apttus__export}" action="{!openExcel}"/>
+          </span>
+          <div style="margin:15px;">
+            <div style="width:100%;overflow-x:scroll;">
+
+              <apex:pageBlockTable value="{!RelatedAgreementData}" var="singleRow" style="overflow-x: auto; margin:0px;" width="100%">
+
+                <apex:repeat value="{!relatedAgreementResultFields}" var="field">
+                    <apex:column headerValue="{!field.member.Label}" value="{!singleRow[field.member.FieldPath]}"/>
+                </apex:repeat>
+
+                 <apex:column headerValue="{!$Label.apttus__viewhierarchy}">
+                    <apex:commandLink value="{!$Label.apttus__viewhierarchy}" action="{!viewHierarchy}" status="loading" reRender="hierarchyResult, backToRootLink">
+                        <apex:param name="getHierarchyId" value="{!IF(linkType == 'Agreements Related TO', singleRow.Apttus__APTS_Contract_From__c, singleRow.Apttus__APTS_Contract_To__c)}" assignTo="{!agreementHierarchySelected}"/>
+                        <apex:param name="switchDisplay" value="Agreement Hierarchies" assignTo="{!display}"/>
+                    </apex:commandLink>
+                  </apex:column>
+              </apex:pageBlockTable>
+            </div>
+          </div>
+        </apex:pageBlock>
+
+        <!--acc agg table-->
+       <apex:pageBlock rendered="{!display = 'Hierarchy' && newHierarchyProp.Apttus__Context__c = 'Agreement By Account(s)'}">
+         <div style="padding:10px 0px">
+           <apex:outputLabel value="{!$Label.apttus__agreementhierarchybyaccounts}" style="font-weight:bold;margin-left:20px"/>
+          </div>
+          <apex:repeat value="{!accountDisplayList}" var="accHr">
+            <div class="accordionItem" style="padding:15px;">
+              <apex:pageBlock Id="agreementForAccountTables">
+                <div style="padding:10px 5px 0px 0px;">
+                    <apex:outputLabel value="{!LEFT(accHr.accountName,80)}" style="font-weight:bold;margin-left:5px;"/>
+                    <apex:outputLabel value=" {!$Label.apttus__toomanyresults}" rendered="{!accHr.accounts.exceededLimit}" style="color:red;"/>
+                </div>
+                <div style="display:table;margin:auto; margin-top:10px; margin-bottom:10px;">
+                  <apex:commandLink id="exportButton" value="Export" action="{!openExcel}" styleClass="btn" style="text-decoration:none; padding:4px 10px; width:30px;">
+                    <apex:param name="assignToExport" value="{!accHr.sequence}"/>
+                  </apex:commandLink>
+                </div>
+                <div style="width:100%;overflow-x:scroll;">
+                 <apex:pageBlockTable value="{!accHr.accounts.partialData}" var="singleRow">
+                   <apex:repeat value="{!fieldNameLabelTuple}" var="singleKey" rows="12">
+                       
+                       <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Name'}" styleClass="padding{!singleRow['level']}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')}">
+                         <a href="/{!singleRow['displayObject'].AgreementLeafId__c}" style="{!IF(!singleRow['highlighted'],'color:#A9A9A9;','')}" target="_blank">
+                             {!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}
+                         </a>
+                       </apex:column>
+   
+                       <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!
+                                     singleKey.fieldLabel != 'Agreement Name' && 
+                                     singleKey.fieldLabel != 'Related To Agreement' && 
+                                     singleKey.fieldLabel != 'Related From Agreement' && 
+                                     singleKey.fieldLabel != 'Agreement Hierarchies'}"
+                                     style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                         <apex:outputPanel styleClass="{!IF(singleRow['highlighted'] == false, 'filteredOut','')}">
+                           <apex:outputField value="{!singleRow['displayObject'].AgreementLeafId__r[singleKey.fieldName]}"/>
+                         </apex:outputPanel>
+                       </apex:column>
+   
+                      <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related To Agreement'}"
+                      style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                         <apex:commandLink value="{!$Label.apttus__viewtoagreements}" style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedTo'] == true}">
+                             <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                             <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                             <apex:param name="getLinkType" value="Agreements Related TO" assignTo="{!linkType}"/>
+                             <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+
+                         </apex:commandLink>
+                         <apex:outputLabel style="{!IF(!singleRow['highlighted'],'color:#A9A9A9;','')}" value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedTo'] == false}"/>
+                       </apex:column>
+   
+                       <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Related From Agreement'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                         <apex:commandLink value="{!$Label.apttus__viewfromagreements}" style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" status="loading" reRender="hierarchyResult, backToRootLink" rendered="{!singleRow['hasRelatedFrom'] == true}">
+                             <apex:param name="getLinkId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!linkId}"/>
+                             <apex:param name="getLinkName" value="{!singleRow['displayObject'].AgreementLeafId__r.Name}" assignTo="{!linkName}"/>
+                             <apex:param name="getLinkType" value="Agreements Related FROM" assignTo="{!linkType}"/>
+                             <apex:param name="switchDisplay" value="Related" assignTo="{!display}"/>
+                         </apex:commandLink>
+                         <apex:outputLabel style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" value="{!$Label.apttus__hyphen}" rendered="{!singleRow['hasRelatedFrom'] == false}"/>
+                       </apex:column>
+   
+                       <apex:column headerValue="{!singleKey.fieldLabel}" rendered="{!singleKey.fieldLabel == 'Agreement Hierarchies'}" style="{!If(singleRow['selected'], 'background-color:#E2F4FF !important','')};min-width:175px">
+                         <apex:commandLink value="{!$Label.apttus__viewhierarchy}" style="{!IF(singleRow['highlighted'] == false,'color:#A9A9A9;','')}" action="{!viewHierarchy}" status="loading" reRender="hierarchyResult, backToRootLink">
+                             <apex:param name="getHierarchyId" value="{!singleRow['displayObject'].AgreementLeafId__c}" assignTo="{!agreementHierarchySelected}"/>
+                             <apex:param name="switchDisplay" value="Agreement Hierarchies" assignTo="{!display}"/>
+                         </apex:commandLink>
+                       </apex:column>
+                   </apex:repeat>
+                 </apex:pageBlockTable>
+                 </div>  
+                 <div style="margin:15px">
+                    <apex:outputText style="float:left;" value="{!$Label.apttus__page} {!accHr.accounts.pageNumber} {!$Label.apttus__of} {!accHr.accounts.totalPages}" />
+                    <apex:outputPanel style="margin-left:35%;">
+                      <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!accHr.accounts.HasPrevious}" status="loading" action="{!accHr.accounts.Previous}" reRender="agreementForAccountTables"/>              
+                      <apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(accHr.accounts.HasPrevious)}" style="color: #ccc;"/>
+                      <apex:outputText value="  "/>
+                      <apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!accHr.accounts.HasNext}" action="{!accHr.accounts.Next}" status="loading" reRender="agreementForAccountTables"/>           
+                      <apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(accHr.accounts.HasNext)}" style="color: #ccc;"/>
+                      <apex:outputPanel style="float:right;">
+                      <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                      <apex:selectList value="{!accHr.accounts.pageSize}" size="1" >
+                          <apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                          <apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                            <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                            <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                              <apex:actionSupport event="onchange" action="{!accHr.accounts.resetPage}" status="loading" reRender="agreementForAccountTables">
+                                <apex:param value="1" assignTo="{!accHr.accounts.pageNumber }"/>
+                              </apex:actionSupport>
+                      </apex:selectList>
+                    </apex:outputPanel>
+                    </apex:outputPanel>
+                </div>
+                </apex:pageBlock>
+            </div>
+          </apex:repeat>
+        </apex:pageBlock>
+      </apex:outputPanel>
+    </div>
+  </apex:form>
+</apex:page>

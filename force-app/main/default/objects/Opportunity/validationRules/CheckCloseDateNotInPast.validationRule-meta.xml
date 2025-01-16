@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCloseDateNotInPast</fullName>
+    <active>true</active>
+    <description>If opportunity is not closed and closed date is in the past, prohibit updates to certain fields.</description>
+    <errorConditionFormula>AND (
+    NOT (
+        OR (
+	    ISPICKVAL ( StageName , &apos;Closed Lost&apos; ),
+	    ISPICKVAL ( StageName , &apos;Closed Won&apos; ),
+	    ISPICKVAL ( StageName , &apos;Closed Abandoned&apos; )
+	)
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    NOT (
+	ISPICKVAL ( PRIORVALUE( StageName ),&apos;Closed Won&apos; )
+    ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+			$Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward,
+			$Profile.Name =  $Label.ProfileIntegrationSalesSnapLogic,
+            CONTAINS($Label.Bypassed_Sales_Integration_Profiles_Id,$Profile.Id),
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+	    ISCHANGED(Is_Updated_From_Contact_Role__c)
+        )
+    ),
+    NOT (
+	OR (
+            /* Start :: changes prohibited when close date in past */
+            ISCHANGED ( Loss_Reason__c ),
+	    ISCHANGED ( Abandon_Reason__c ),
+	    AND (
+	        ISCHANGED ( Proposal_Sent_On__c ),
+		NOT ( ISCHANGED ( Manual_Quote_Number__c  ) )
+            ),
+	    ISCHANGED ( Is_Customer_Readiness_Section_1_Complete__c ),
+            ISCHANGED ( Is_Customer_Readiness_Section_2_Complete__c ),
+	    ISCHANGED ( Is_Customer_Readiness_Section_3_Complete__c ),
+	    AND (
+		ISBLANK( PRIORVALUE ( CRF_ID__c ) ),
+		NOT( 
+                    ISBLANK ( CRF_ID__c ) 
+                    )
+		),
+		AND (
+		    ISNULL(PRIORVALUE ( CRF_Creation_Date__c ) ),
+		    NOT( ISNULL ( CRF_Creation_Date__c ) 
+                    )
+		),
+		ISCHANGED ( Product_Type__c ),
+	        ISCHANGED ( ByPass_Change_Record_Type_To_Standard__c ),
+		ISCHANGED ( ByPass_LockSentProposalDate__c ),
+		ISCHANGED ( First_Proposal_Id__c ),
+		ISCHANGED ( Desired_Shipment_Install_Timelines_CRF__c ),
+		ISCHANGED ( Quote_Generated_Qualify_or_Develop__c ),
+		ISCHANGED ( Are_Products_Added__c  ),
+		ISCHANGED ( Are_Products_Added_by_Channel_Partner__c ),
+                ISCHANGED ( Is_Quote_Stage_In_Review__c ),
+                AND (
+                    OR (
+                        RecordType.DeveloperName = $Label.IndirectFieldServices, 
+                        RecordType.DeveloperName = $Label.IndirectReOrder,
+                        RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard
+                    ),
+                ISCHANGED ( Number_Of_Opportunity_Line_Items__c )
+                ),
+                AND (
+                    OR (
+                        NOT( ISBLANK ( First_Proposal_Id__c )), 
+                        Are_Products_Added_by_Channel_Partner__c = true
+                    ),
+                ISCHANGED ( Amount )
+                )
+                /* End :: changes prohibited when close date in past */
+		)
+	),
+	CloseDate &lt; TODAY()
+)</errorConditionFormula>
+    <errorDisplayField>CloseDate</errorDisplayField>
+    <errorMessage>Opportunity &quot;Close Date&quot; cannot be in the past. Please update Close Date before taking any further action.</errorMessage>
+</ValidationRule>

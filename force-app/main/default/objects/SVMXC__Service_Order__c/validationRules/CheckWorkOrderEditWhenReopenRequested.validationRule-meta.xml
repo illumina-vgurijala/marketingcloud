@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckWorkOrderEditWhenReopenRequested</fullName>
+    <active>true</active>
+    <description>Work Order cannot be edited when in status Reopen Requested.</description>
+    <errorConditionFormula>AND(    
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    NOT(ISCHANGED(Is_Reopen_Approved__c)),
+TEXT(PRIORVALUE(SVMXC__Order_Status__c)) == $Label.WorkOrderStatusReopenRequested, 
+    OR(
+        /*Allow changning it to QA queue or reopen request queue by process builder*/
+	AND(
+	    TEXT(SVMXC__Order_Status__c) == $Label.WorkOrderStatusReopenRequested,
+	    NOT(ISCHANGED(OwnerId)),
+		NOT(ISCHANGED(Previous_Owner__c)),
+        NOT(ISCHANGED(Order_Previous_Status__c)),
+		NOT(ISCHANGED(Reopen_Request_Initiated_From_WO__c)) ,
+        NOT(ISCHANGED( Last_Service_Report_Sent__c )) ,
+		NOT(ISCHANGED(Reopen_Requester__c))
+	),
+	/*By pass logic for chanign status to reopened - in progress or closed*/
+	AND(
+	    NOT(TEXT(SVMXC__Order_Status__c) == $Label.WorkOrderStatusAssigned),
+        NOT(TEXT(SVMXC__Order_Status__c) == $Label.WorkOrderStatusClosed),
+		NOT(TEXT(SVMXC__Order_Status__c) == $Label.WorkOrderStatusCompleted), 
+	    NOT(TEXT(SVMXC__Order_Status__c) == $Label.WorkOrderStatusInProgress),
+        NOT(TEXT(SVMXC__Order_Status__c) == $Label.WorkOrderStatusTechnicianOnsite),
+        ISCHANGED(SVMXC__Order_Status__c)
+	)
+    )
+)</errorConditionFormula>
+    <errorMessage>Work Order cannot be edited when in status Reopen Requested.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <assignments>
+        <name>Assign_Current_Error_Element</name>
+        <label>Assign Current Error Element</label>
+        <locationX>314</locationX>
+        <locationY>647</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Update illumina Services Project</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Project_comment_assignment</name>
+        <label>Project comment assignment</label>
+        <locationX>50</locationX>
+        <locationY>431</locationY>
+        <assignmentItems>
+            <assignToReference>projectCommentsVar</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>projectcommentfieldupdate</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Update_illumina_Services_Project_Record</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Is_Entry_Criteria_True</name>
+        <label>Is Entry Criteria True</label>
+        <locationX>314</locationX>
+        <locationY>323</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>True_Is_entry_criteria_true</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>entryCriteria</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Project_comment_assignment</targetReference>
+            </connector>
+            <label>True: Is entry criteria true</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <formulas>
+        <name>entryCriteria</name>
+        <dataType>Boolean</dataType>
+        <expression>AND( OR ( ISNEW(), ISCHANGED({!$Record.Comments__c}) ), OR( {!$Record.RecordType.DeveloperName} =&apos;Infinium_Design_Services&apos;, {!$Record.RecordType.DeveloperName} =&apos;Sequencing_Design_Services&apos;) )</expression>
+    </formulas>
+    <formulas>
+        <name>flowandFaultElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Illumina_Services_Project__c: After Insert and Update&apos;+{!currentElement}</expression>
+    </formulas>
+    <formulas>
+        <name>projectcommentfieldupdate</name>
+        <dataType>String</dataType>
+        <expression>IF(NOT(ISBLANK({!$Record.Comments__c})),
+PRIORVALUE({!$Record.Project_Comments__c}) + BR()+
+{!$Record.LastModifiedBy.Username}+ BR() +
+TEXT({!$Record.LastModifiedDate})+ BR() + {!$Record.Comments__c},
+PRIORVALUE({!$Record.Project_Comments__c}))</expression>
+    </formulas>
+    <interviewLabel>Illumina_Services_Project__c: After Insert and Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Illumina_Services_Project__c: After Insert and Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Update_illumina_Services_Project_Record</name>
+        <label>Update illumina Services Project Record</label>
+        <locationX>50</locationX>
+        <locationY>539</locationY>
+        <faultConnector>
+            <targetReference>Assign_Current_Error_Element</targetReference>
+        </faultConnector>
+        <inputAssignments>
+            <field>Comments__c</field>
+            <value>
+                <stringValue></stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Project_Comments__c</field>
+            <value>
+                <elementReference>projectCommentsVar</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>188</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Is_Entry_Criteria_True</targetReference>
+        </connector>
+        <object>Illumina_Services_Project__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>314</locationX>
+        <locationY>755</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>flowandFaultElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Service</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <variables>
+        <name>currentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>projectCommentsVar</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

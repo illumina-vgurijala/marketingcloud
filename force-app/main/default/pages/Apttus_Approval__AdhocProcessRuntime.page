@@ -1,0 +1,785 @@
+<!-- 
+    Apttus Approvals Management
+    AdhocProcessRuntime
+     
+    @2019-2020 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus_Approval.AdhocProcessRuntimeController" 
+           showHeader="true" 
+           sidebar="true"
+           tabStyle="Apttus_Approval__AdhocApprovalProcess__c" 
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                   $User.UIThemeDisplayed == 'Theme4u' ||
+                                   $User.UIThemeDisplayed == 'Theme4t'}">
+
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__JQuery22, 'jquery-2.2.2.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.css')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__JQueryUI112, 'jquery-ui-1.12.1.js')}" />
+
+    <script type="text/javascript" src="/soap/ajax/50.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/50.0/apex.js"></script>
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+	<style>
+        /* hide the close box on the dialog */
+        .no-close .ui-dialog-titlebar-close {
+            display: none !important;
+        }
+        .bPageBlock th.vfLabelColTextWrap {
+            white-space: nowrap !important;
+            position: relative !important;
+        }
+    </style>
+
+    <script type="text/javascript">
+
+        // make sure jQuery doesn't conflict with any other JS libraries
+        var j$ = jQuery.noConflict();
+        
+        // setup namespace
+        j$.APTTUS = {};
+        
+        // define dialog objects
+        var addCommentDialog;
+        var addAttachmentsDialog;
+
+        j$(document).ready(function() {
+
+            // build the wait dialog
+            buildWaitDialog();
+           
+            // initialize the add comment dialog
+            addCommentDialog = j$("#idAddCommentDialog").dialog({
+                dialogClass: "no-close",
+                autoOpen: false,
+                height: 'auto',
+                width: 640,
+                draggable: true,
+                modal: true,
+                resizable: false,
+                title: "{!$Label.apttus_approval__addcomment}"
+                
+            });
+
+            // initialize the add attachments dialog
+            addAttachmentsDialog = j$("#idAddAttachmentsDialog").dialog({
+                dialogClass: "no-close",
+                autoOpen: false,
+                height: 'auto',
+                width: 'auto',
+                draggable: true,
+                modal: true,
+                resizable: false,
+                title: "{!$Label.apttus_approval__addattachments}"
+                
+            });
+
+        });
+       
+        /**
+         * Show wait dialog
+         */
+        function showWaitDialog(msgText) {
+            
+            j$("#idWaitPanel").html('<center><img src="{!URLFOR($Resource.Apttus_Approval__Image_LoadingPage)}" /></center>');
+            j$("#idWaitPanel").dialog("open");
+            j$("#idWaitPanel").dialog("option" , "title" , msgText);
+            j$("#idWaitPanel").dialog("option", "position", "center");
+            
+            return false;
+            
+        }
+   
+        /**
+         * Hide the wait dialog
+         */
+        function hideWaitDialog() {
+        
+            // close the wait dialog
+            j$("#idWaitPanel").dialog("close");
+            return true;
+            
+        }
+        
+        // setup the wait panel and set autoOpen to false
+        function buildWaitDialog() {
+        
+            j$("#idWaitPanel").dialog({
+                dialogClass: "no-close",
+                autoOpen: false,
+                closeOnEscape: false,
+                draggable: false,
+                width: 300,
+                minHeight: 50,
+                modal: true,
+                buttons: {},
+                resizable: false,
+                open: function() {
+                    // scrollbar fix for IE
+                    j$('body').css('overflow','hidden');
+                },
+                close: function() {
+                    // reset overflow
+                    j$('body').css('overflow','auto');
+                }
+            });
+            
+        };
+
+        /**
+         * Callback when the action button is clicked
+         */
+        function onActionClick() {
+        
+            // show the modal panel
+            showWaitDialog("{!$Label.apttus_approval__pleasewait}");
+            
+            // return false to allow the action to proceed
+            return false;
+
+        }
+        
+        /**
+         * Callback when the action is completed
+         */
+        function onActionComplete() {
+        
+            // hide the modal panel
+            hideWaitDialog();
+            
+            return true;
+
+        }
+        
+        /**
+         * Show addComment dialog
+         */
+        function showAddComment() {
+            
+            // show the dialog
+            j$("#idAddCommentDialog").dialog("open");
+            j$("#idAddCommentDialog").dialog("option", "title", "{!$Label.apttus_approval__addcomment}");
+            j$("#idAddCommentDialog").dialog("option", "position", "center");
+            
+            // set form fields
+            var commentsVal = "{!JSENCODE(approvalComments)}";
+            j$("[id*=idAddCommentTextVal]").val(commentsVal);
+
+            return false;
+            
+        }
+        
+        /**
+         * Hide addComment dialog
+         */
+        function hideAddComment() {
+
+            // clear form fields
+            j$("[id*=idAddCommentTextVal]").val('');
+
+            // close the dialog
+            j$("#idAddCommentDialog").dialog("close");
+
+        }
+
+        /**
+         * Callback when the addComment button is clicked
+         */
+        function onActionClickAddComment() {
+            
+            // get form comments
+            j$.APTTUS.Comments = j$("[id*=idAddCommentTextVal]").val();
+
+            // hide the dialog
+            hideAddComment();
+            
+            // add comment
+            invokeDoAddComment(j$.APTTUS.Comments);
+            
+            // return false to allow the action to proceed
+            return false;
+
+        }
+        
+        /**
+         * Show addAttachments dialog
+         */
+        function showAddAttachments() {
+            
+            // show the dialog
+            j$("#idAddAttachmentsDialog").dialog("open");
+            j$("#idAddAttachmentsDialog").dialog("option", "title", "{!$Label.apttus_approval__addattachments}");
+            j$("#idAddAttachmentsDialog").dialog("option", "position", "center");
+            
+            return false;
+            
+        }
+        
+        /**
+         * Hide addAttachments dialog
+         */
+        function hideAddAttachments() {
+
+            // close the dialog
+            j$("#idAddAttachmentsDialog").dialog("close");
+
+        }
+
+    </script>
+ 
+    <apex:sectionHeader title="{!$ObjectType.Apttus_Approval__AdhocApprovalProcess__c.Label & ' ' & $Label.apttus_approval__edit}" />
+
+    <apex:form id="idAdhocApprovalProcessForm">
+                
+        <apex:pageBlock id="idAdhocApprovalProcessBlock" rendered="{!NOT(inSearchMode)}">
+            <apex:pageMessages rendered="{!hasErrors}" />
+            
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__cancel}" 
+                					action="{!doCancel}" 
+                					immediate="true" />
+                <apex:commandButton value="{!$Label.apttus_approval__save}" 
+                					action="{!doSave}"
+                					rerender="idAdhocApprovalProcessForm" />
+                <apex:commandButton value="{!$Label.apttus_approval__addcomment}"
+                					onclick="return showAddComment();"
+                					rerender="idAdhocApprovalProcessForm" />
+                <apex:commandButton value="{!$Label.apttus_approval__addattachments}"
+                					onclick="return showAddAttachments();"
+                					rerender="idAdhocApprovalProcessForm" />
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockSection id="idApprovalGroupDetailSection" 
+                                   title="{!$Label.apttus_approval__adhocprocess}"  
+                                   columns="2" 
+                                   collapsible="false" >
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__businessobject & ' ' & $Label.apttus_approval__type}" for="idBusinessObjTypeName" />
+                    <apex:outputpanel >
+                        <apex:outputText id="idBusinessObjTypeName" value="{!businessObjTypeName}" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__AdhocApprovalProcess__c.Fields.Apttus_Approval__DisplayHeaderFields__c.Label}" />
+                    <apex:outputpanel >
+                        <apex:outputText value="{!displayFieldHeaderLabel}" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__businessobject & ' ' & $Label.apttus_approval__name}" for="idBusinessObjInstanceName" />
+                    <apex:outputpanel >
+                        <apex:outputText id="idBusinessObjInstanceName" value="{!businessObjInstanceName}" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__AdhocApprovalProcess__c.Fields.Apttus_Approval__DisplayFields__c.Label}" />
+                    <apex:outputpanel >
+                        <apex:outputText value="{!displayFieldNamesLabel}" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem />
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.Apttus_Approval__AdhocApprovalProcess__c.Fields.Apttus_Approval__ProcessComments__c.Label}" />
+                    <apex:outputpanel >
+                        <apex:outputText value="{!adhocProcessSO.Apttus_Approval__ProcessComments__c}" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem />
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__attachments}" />
+                    <apex:outputpanel >
+                        <apex:outputText value="{!attachmentNamesStr}" />
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+
+            </apex:pageBlockSection>
+            
+            <!--<apex:pageBlockSection id="idCommentsSection" 
+                                   title="{!$Label.Comments}"  
+                                   columns="1" 
+                                   collapsible="true"
+                                   rendered="{!showComment}">
+
+                <apex:inputField value="{!adhocProcessSO.Apttus_Approval__ProcessComments__c}" style="width:75%; height:80px;" />
+            </apex:pageBlockSection>-->
+
+            <!--<apex:pageBlockSection id="idAttachmentsSection" 
+                                   title="{!$Label.apttus_approval__attachments}"  
+                                   columns="1" 
+                                   collapsible="true"
+                                   rendered="{!showAttachments}">
+
+                <apex:outputPanel id="idAttachmentsPanel">
+                	<apex:pageBlock >
+	                    <apex:pageBlockSection title="{!$Label.apttus_approval__selectattachments}"
+	                    					   columns="1"
+	                                           collapsible="false" 
+	                                           rendered="{!hasAttachments && usingFileTypeAttachments}">
+	                        <apex:pageBlockTable value="{!attachments}" var="attachInfo" >
+	                            <apex:column >
+	                                <apex:facet name="header">{!$Label.apttus_approval__select}</apex:facet>
+	                                <apex:inputCheckbox selected="{!attachInfo.selected}"
+	                                                    value="{!attachInfo.selected}" />
+	                            </apex:column>
+	                            <apex:column rendered="{!isUploadAttachmentEnabled}">
+	                                <apex:facet name="header">{!$Label.apttus_approval__addtofiles}</apex:facet>
+	                                <apex:inputCheckbox selected="{!attachInfo.permanent}"
+	                                                    value="{!attachInfo.permanent}" />
+	                            </apex:column>
+	                            <apex:column value="{!attachInfo.fileSO.PathOnClient}" />
+	                            <apex:column value="{!attachInfo.fileSO.ContentSize}" />
+	                            <apex:column value="{!attachInfo.fileSO.SystemModstamp}" />
+	                        </apex:pageBlockTable>
+	                    </apex:pageBlockSection>
+	                    <apex:pageBlockSection title="{!$Label.apttus_approval__selectattachments}"
+	                    					   columns="1"
+	                                           collapsible="false" 
+	                                           rendered="{!hasAttachments && NOT(usingFileTypeAttachments)}">
+	                        <apex:pageBlockTable value="{!attachments}" var="attachInfo" >
+	                            <apex:column >
+	                                <apex:facet name="header">{!$Label.apttus_approval__select}</apex:facet>
+	                                <apex:inputCheckbox selected="{!attachInfo.selected}"
+	                                                    value="{!attachInfo.selected}" />
+	                            </apex:column>
+	                            <apex:column rendered="{!isUploadAttachmentEnabled}">
+	                                <apex:facet name="header">{!$Label.apttus_approval__addtonotesandattachments}</apex:facet>
+	                                <apex:inputCheckbox selected="{!attachInfo.permanent}"
+	                                                    value="{!attachInfo.permanent}" />
+	                            </apex:column>
+	                            <apex:column value="{!attachInfo.attachmentSO.Name}" />
+	                            <apex:column value="{!attachInfo.attachmentSO.BodyLength}" />
+	                            <apex:column value="{!attachInfo.attachmentSO.SystemModstamp}" />
+	                        </apex:pageBlockTable>
+	                    </apex:pageBlockSection>-->
+	                    
+	                    <!--<apex:pageBlockSection title="{!$Label.SelectAttachmentsToUpload}"
+	                    					   columns="1" 
+	                    					   collapsible="false"
+	                                           rendered="{!isUploadAttachmentEnabled}">
+		                    <apex:pageBlockSectionItem>
+                                <apex:outputPanel layout="block"
+                                				  style="width:100%;"
+                                				  rendered="{!usingFileTypeAttachments}">
+									<apex:actionRegion >
+										<label for="idMyInputFile">{!$Label.SelectFileToUpload}</label>
+										<apex:inputFile id="idMyInputFile"
+														value="{!uploadedCV.versionData}"
+														fileName="{!uploadedCV.pathOnClient}" />
+										<apex:commandbutton value="{!$Label.UploadFile}"
+															action="{!doUploadAttachmentApex}" />
+									</apex:actionRegion>
+                                </apex:outputPanel>
+                                <apex:outputPanel layout="block"
+                                				  style="width:100%;"
+                                				  rendered="{!NOT(usingFileTypeAttachments)}">
+									<apex:actionRegion >
+										<label for="idMyInputAtt">{!$Label.SelectFileToUpload}</label>
+										<apex:inputFile id="idMyInputAtt"
+														value="{!uploadedAtt.body}"
+														filename="{!uploadedAtt.name}" />
+										<apex:commandButton value="{!$Label.UploadFile}"
+															action="{!doUploadAttachmentApex}" />
+									</apex:actionRegion>
+                                </apex:outputPanel>
+							</apex:pageBlockSectionItem>
+						</apex:pageBlockSection>-->
+                    <!--</apex:pageBlock>
+                </apex:outputPanel>
+            </apex:pageBlockSection>-->
+
+            <apex:pageBlockSection id="idAdhocApprovalGroupEntriesSection" 
+                                   title="{!$Label.apttus_approval__adhocapprovalgroup}"  
+                                   columns="2" 
+                                   collapsible="false" >
+                                   
+                <apex:pageBlockTable id="idAdhocApprovalGroupEntriesTable" 
+                                     value="{!adhocApprovalGroups}" 
+                                     var="groupInfo" 
+                                     rowClasses="oddRow,evenRow" >
+                    
+                    <apex:column headerValue="{!$ObjectType.Apttus_Approval__AdhocApprovalGroup__c.Fields.Apttus_Approval__GroupSequence__c.Label}">
+                        <apex:outputField value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}" />
+                    </apex:column>
+                    <apex:column headerValue="{!$ObjectType.Apttus_Approval__AdhocApprovalGroup__c.Fields.Apttus_Approval__GroupName__c.Label}" >
+                        <apex:inputField value="{!groupInfo.groupSO.Apttus_Approval__GroupName__c}" />
+                    </apex:column>
+                    <apex:column headerValue="{!$ObjectType.Apttus_Approval__AdhocApprovalGroup__c.Fields.Apttus_Approval__DependsOn__c.Label}">
+                        <apex:inputText value="{!groupInfo.groupSO.Apttus_Approval__DependsOn__c}" 
+                                        style="width:60px" 
+                                        rendered="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c > 1}" />
+                        <apex:outputText value="{!$Label.apttus_approval__notapplicable}" 
+                                         style="width:60px" 
+                                         rendered="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c <= 1}" />
+                    </apex:column>
+                    <apex:column headerValue="{!$Label.apttus_approval__assignees}" width="20%" >
+                        <apex:pageBlockTable id="idApprovalGroupAssigneesTable" 
+                                             value="{!groupInfo.approvers}" 
+                                             var="assigneeInfo" >
+                            
+                            <apex:column >
+                                <apex:commandLink action="{!doAddAssigneeRow}" 
+                                                  reRender="idApprovalGroupAssigneesTable" >
+                                    <apex:param name="entryrowNum" value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}" />
+                                    <apex:param name="rowNum" value="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c}" />
+                                    <apex:image url="{!$Resource.Apttus_Approval__Image_Plus}" 
+                                                title="{!$Label.apttus_approval__add}" 
+                                                alt="{!$Label.apttus_approval__add}" />
+                                </apex:commandLink>
+                                <apex:commandLink action="{!doDeleteAssigneeRow}" 
+                                                  reRender="idApprovalGroupAssigneesTable" 
+                                                  rendered="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c > 1}" >
+                                    <apex:param name="entryrowNum" value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}" />
+                                    <apex:param name="rowNum" value="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c}" />
+                                    <apex:image url="{!$Resource.Apttus_Approval__Image_Minus}" 
+                                                title="{!$Label.apttus_approval__remove}" 
+                                                alt="{!$Label.apttus_approval__remove}" />
+                                </apex:commandLink>
+                            </apex:column>
+                            <apex:column headerValue="{!$Label.apttus_approval__sequence}" >
+                                <apex:outputField value="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c}" />
+                            </apex:column>
+                            <apex:column headerValue="{!$ObjectType.Apttus_Approval__AdhocApprover__c.Fields.Apttus_Approval__AssigneeType__c.Label}" >
+                                <apex:inputField value="{!assigneeInfo.approverSO.Apttus_Approval__AssigneeType__c}" >
+                                    <apex:actionSupport event="onchange" 
+                                                        action="{!doAssigneeTypeChanged}"
+                                                        reRender="idApprovalGroupAssigneesTable"
+                                                        status="idPleaseWaitStatusType2"> 
+                                        <apex:param name="pGroupSeq"
+                                                    assignTo="{!selectedAdhocApprovalGroupSeq}"
+                                                    value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}"/>
+                                        <apex:param name="pGroupAssigneeSeq"
+                                                    assignTo="{!selectedAdhocApprovalGroupApproverSeq}"
+                                                    value="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c}"/>
+                                    </apex:actionSupport>
+                                    <apex:actionStatus id="idPleaseWaitStatusType2">
+                                        <apex:facet name="start">
+                                            {!$Label.StatusPleaseWait}...
+                                            <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                        </apex:facet>
+                                        <apex:facet name="stop" />
+                                    </apex:actionStatus>
+                                </apex:inputField>
+                            </apex:column>
+                            <apex:column headerValue="{!$Label.apttus_approval__assignee}">
+                                <apex:actionRegion >
+                                <apex:panelGrid columns="3">
+                                    <apex:inputField value="{!assigneeInfo.approverSO.Apttus_Approval__AssigneeValue__c}" />  
+                                    <apex:panelGroup >
+                                        <apex:commandLink action="{!doSelectGroupAssignee}"
+                                                          reRender="idAdhocApprovalProcessForm"
+                                                          status="idPleaseWaitStatusValue2">
+                                            <apex:image rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                            <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                                            <apex:param name="pGroupSeq"
+                                                        assignTo="{!selectedAdhocApprovalGroupSeq}"
+                                                        value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}"/>
+                                            <apex:param name="pGroupAssigneeSeq"
+                                                        assignTo="{!selectedAdhocApprovalGroupApproverSeq}"
+                                                        value="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c}"/>
+                                        </apex:commandLink>
+                                        <apex:actionStatus id="idPleaseWaitStatusValue2">
+                                            <apex:facet name="start">
+                                                {!$Label.StatusPleaseWait}...
+                                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                                            </apex:facet>
+                                            <apex:facet name="stop" />
+                                        </apex:actionStatus>
+                                    </apex:panelGroup>
+                                    <!--<apex:inputField value="{!assigneeInfo.approverSO.Apttus_Approval__AssigneeId__c}" />-->
+                                    <apex:inputField value="{!assigneeInfo.approverSO.Apttus_Approval__AssigneeId__c}" rendered="false" style="visibility:hidden;" />
+                                </apex:panelGrid>
+
+                                </apex:actionRegion>
+                            </apex:column>
+                            <apex:column headerValue="{!$Label.apttus_approval__dependson}" >
+                                <apex:inputText value="{!assigneeInfo.approverSO.Apttus_Approval__DependsOn__c}" 
+                                                style="width:60px" 
+                                                rendered="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c > 1}" />
+                                <apex:outputText value="{!$Label.apttus_approval__notapplicable}"  
+                                                 style="width:60px" 
+                                                 rendered="{!assigneeInfo.approverSO.Apttus_Approval__ApproverSequence__c <= 1}" />
+                            </apex:column>
+                            <apex:column >
+                            	<apex:facet name="header">
+                            		<apex:outputText >{!$Label.apttus_approval__send}<br/>{!$Label.apttus_approval__email}</apex:outputText>
+                            	</apex:facet>
+                                <apex:inputField value="{!assigneeInfo.approverSO.Apttus_Approval__SendEmail__c}" />
+                            </apex:column>
+                            <apex:column >
+                            	<apex:facet name="header">
+                            		<apex:outputText >{!$Label.apttus_approval__notify}<br/>{!$Label.apttus_approval__only}</apex:outputText>
+                            	</apex:facet>
+                                <apex:inputCheckbox value="{!assigneeInfo.approverSO.Apttus_Approval__IsReviewer__c}" />
+                            </apex:column>
+                            <apex:column >
+                            	<apex:facet name="header">
+                            		<apex:outputText >{!$Label.apttus_approval__autoreapproval}<br/>{!$Label.apttus_approval__enabled}</apex:outputText>
+                            	</apex:facet>
+                                <apex:inputField value="{!assigneeInfo.approverSO.Apttus_Approval__AutoReapprovalEnabled__c}" />
+                            </apex:column>
+                        </apex:pageBlockTable>
+                    </apex:column>
+                    <apex:column >
+                        <apex:commandLink action="{!doAddRow}" 
+                                          reRender="idAdhocApprovalGroupEntriesTable" >
+                            <apex:param name="rowNum" value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Approval__Image_Plus2}" 
+                                        title="{!$Label.apttus_approval__add}" 
+                                        alt="{!$Label.apttus_approval__add}" />                
+                        </apex:commandLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:commandLink action="{!doDeleteRow}" 
+                                          reRender="idAdhocApprovalGroupEntriesTable" 
+                                          rendered="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c > 1}" >
+                            <apex:param name="rowNum" value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Approval__Image_Minus2}" 
+                                        title="{!$Label.apttus_approval__remove}" 
+                                        alt="{!$Label.apttus_approval__remove}" />         
+                        </apex:commandLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:commandLink action="{!doMoveUpRow}" 
+                                          reRender="idAdhocApprovalGroupEntriesTable" 
+                                          rendered="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c > 1}" >
+                            <apex:param name="rowNum" value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Approval__Image_MoveUp}" 
+                                        title="{!$Label.apttus_approval__moveup}" 
+                                        alt="{!$Label.apttus_approval__moveup}" />
+                        </apex:commandLink>
+                        <apex:commandLink action="{!doMoveDownRow}" 
+                                          reRender="idAdhocApprovalGroupEntriesTable" 
+                                          rendered="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c < lastRowSequence}" >
+                            <apex:param name="rowNum" value="{!groupInfo.groupSO.Apttus_Approval__GroupSequence__c}" />
+                            <apex:image url="{!$Resource.Apttus_Approval__Image_MoveDown}" 
+                                        title="{!$Label.apttus_approval__movedown}" 
+                                        alt="{!$Label.apttus_approval__movedown}" />
+                        </apex:commandLink>
+                    </apex:column>
+                    <apex:column >
+                        <apex:outputText value="{!groupInfo.ErrorMsg}" style="color:red;" />
+                    </apex:column>
+                   
+                </apex:pageBlockTable>
+                
+            </apex:pageBlockSection>
+            
+        </apex:pageBlock>
+                                        
+        <!-- Group Assignee Search Components -->
+        <apex:pageBlock id="idPageBlockSearch" rendered="{!inSearchMode}">
+            <c:UISearchQueue id="idQueueSearch"
+                             rendered="{!selectedAdhocApprovalGroupApproverSO.Apttus_Approval__AssigneeType__c == 'Queue'}" 
+                             pageControllerAttr="{!this}"
+                             contextSOAttr="{!selectedAdhocApprovalGroupApproverSO}"
+                             contextSOFieldAttr="AssigneeValue__c"
+                             contextSOFieldIdAttr="AssigneeId__c"
+                             parentReRenderIdAttr="idAdhocApprovalProcessForm" />
+    
+            <c:UISearchRole id="idRoleSearch" 
+                            rendered="{!selectedAdhocApprovalGroupApproverSO.Apttus_Approval__AssigneeType__c == 'Role'}"
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!selectedAdhocApprovalGroupApproverSO}"
+                            contextSOFieldAttr="AssigneeValue__c" 
+                            contextSOFieldIdAttr="AssigneeId__c"
+                            parentReRenderIdAttr="idAdhocApprovalProcessForm" />
+    
+            <c:UISearchUser id="idUserSearch"
+                            rendered="{!selectedAdhocApprovalGroupApproverSO.Apttus_Approval__AssigneeType__c == 'User'}"
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!selectedAdhocApprovalGroupApproverSO}"
+                            contextSOFieldAttr="AssigneeValue__c"
+                            contextSOFieldIdAttr="AssigneeId__c"
+                            parentReRenderIdAttr="idAdhocApprovalProcessForm" />
+        </apex:pageBlock>
+
+        <apex:actionFunction name="invokeDoAddComment"
+                             action="{!doAddComment}"
+                             reRender="idAdhocApprovalProcessForm">
+            <apex:param name="comment" value="" />
+        </apex:actionFunction>
+
+        <apex:actionFunction name="invokeDoAddAttachments"
+                             action="{!doAddAttachments}"
+                             reRender="idAdhocApprovalProcessForm"
+                             oncomplete="onActionCompleteAddAttachments()" >
+        </apex:actionFunction>
+
+        <!-- action status -->
+        <apex:actionStatus id="idPleaseWaitStatus"
+                           onstart="onActionClick();"
+                           onstop="onActionComplete();" />
+
+    </apex:form>
+    
+    <!-- This panel represents the waiting dialog that will pop up -->
+    <div id="idWaitPanel"></div>
+    
+    <!-- Add Comment dialog -->
+    <div id="idAddCommentDialog" style="display:none">
+        <apex:form id="idAddCommentForm">
+            <apex:inputTextArea id="idAddCommentTextVal"
+                                value="{!approvalComments}"
+                                style="display:block; width:95%; padding:.4em;" rows="3"
+                                styleClass="text ui-widget-content ui-corner-all" />    
+            <p/>
+            <div style="text-align:right; padding-left:4px;">
+                <apex:actionRegion >
+                    <apex:commandButton value="{!$Label.apttus_approval__ok}"
+                                        onclick="onActionClickAddComment(); return false;"
+                                        styleClass="btn btn-primary2"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme3'}" />
+                    <apex:commandButton value="{!$Label.apttus_approval__cancel}" 
+                                        onclick="hideAddComment(); return false;"
+                                        styleClass="btn btn-default2"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme3'}" />
+                                        
+                    <apex:commandButton value="{!$Label.apttus_approval__ok}"
+                                        onclick="onActionClickAddComment(); return false;"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" />
+                    <apex:commandButton value="{!$Label.apttus_approval__cancel}" 
+                                        onclick="hideAddComment(); return false;"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" />
+                </apex:actionRegion>
+            </div>
+        </apex:form>
+    </div>
+    
+    <!-- Add Attachments dialog -->
+	<div id="idAddAttachmentsDialog" style="display:none">
+		<apex:form id="idAddAttachmentsForm">
+			<apex:pageBlock >
+				<apex:pageMessages />
+				<apex:pageBlockSection title="{!$Label.apttus_approval__selectattachments}"
+									   columns="1"
+				                       collapsible="false" 
+				                       rendered="{!hasAttachments && usingFileTypeAttachments}">
+					<apex:pageBlockTable value="{!attachments}" var="attachInfo" >
+					    <apex:column value="{!attachInfo.fileSO.Id}" rendered="false" />
+					    <apex:column >
+					        <apex:facet name="header">{!$Label.apttus_approval__select}</apex:facet>
+					        <apex:inputCheckbox selected="{!attachInfo.selected}"
+					                            value="{!attachInfo.selected}" />
+					    </apex:column>
+					    <apex:column rendered="{!isUploadAttachmentEnabled}">
+					        <apex:facet name="header">{!$Label.apttus_approval__addtofiles}</apex:facet>
+					        <apex:inputCheckbox selected="{!attachInfo.permanent}"
+					                            value="{!attachInfo.permanent}" />
+					    </apex:column>
+					    <apex:column headerValue="{!$Label.apttus_approval__name}" value="{!attachInfo.fileSO.PathOnClient}" />
+                        <apex:column headerValue="{!$Label.apttus_approval__documentversion}" value="{!attachInfo.documentVersion}" rendered="{!hasDocumentVersions}" />
+                        <apex:column headerValue="{!$Label.apttus_approval__size}" value="{!attachInfo.fileSO.ContentSize}" />
+					    <apex:column headerValue="{!$Label.apttus_approval__date}" value="{!attachInfo.fileSO.SystemModstamp}" />
+					</apex:pageBlockTable>
+				</apex:pageBlockSection>
+				<apex:pageBlockSection title="{!$Label.apttus_approval__selectattachments}"
+									   columns="1"
+				                       collapsible="false" 
+				                       rendered="{!hasAttachments && NOT(usingFileTypeAttachments)}">
+					<apex:pageBlockTable value="{!attachments}" var="attachInfo" >
+						<apex:column value="{!attachInfo.attachmentSO.Id}" rendered="false" />
+					    <apex:column >
+					        <apex:facet name="header">{!$Label.apttus_approval__select}</apex:facet>
+					        <apex:inputCheckbox selected="{!attachInfo.selected}"
+					                            value="{!attachInfo.selected}" />
+					    </apex:column>
+					    <apex:column rendered="{!isUploadAttachmentEnabled}">
+					        <apex:facet name="header">{!$Label.apttus_approval__addtonotesandattachments}</apex:facet>
+					        <apex:inputCheckbox selected="{!attachInfo.permanent}"
+					                            value="{!attachInfo.permanent}" />
+					    </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_approval__name}</apex:facet>
+                            <apex:outputField value="{!attachInfo.attachmentSO.Name}" rendered="{!NOT(attachInfo.isDocumentVersion)}" />
+                            <apex:outputField value="{!attachInfo.fileSO.PathOnClient}" rendered="{!attachInfo.isDocumentVersion}" />
+                        </apex:column>
+                        <apex:column headerValue="{!$Label.apttus_approval__documentversion}" value="{!attachInfo.documentVersion}" rendered="{!hasDocumentVersions}" />
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_approval__size}</apex:facet>
+                            <apex:outputField value="{!attachInfo.attachmentSO.BodyLength}" rendered="{!NOT(attachInfo.isDocumentVersion)}" />
+                            <apex:outputField value="{!attachInfo.fileSO.ContentSize}" rendered="{!attachInfo.isDocumentVersion}" />
+                        </apex:column>
+                        <apex:column >
+                            <apex:facet name="header">{!$Label.apttus_approval__date}</apex:facet>
+                            <apex:outputField value="{!attachInfo.attachmentSO.SystemModstamp}" rendered="{!NOT(attachInfo.isDocumentVersion)}" />
+                            <apex:outputField value="{!attachInfo.fileSO.SystemModstamp}" rendered="{!attachInfo.isDocumentVersion}" />
+                        </apex:column>
+
+                    </apex:pageBlockTable>
+				</apex:pageBlockSection>
+				
+				<!--<apex:pageBlockSection title="{!$Label.SelectAttachmentsToUpload}"
+									   columns="1" 
+									   collapsible="false"
+				                       rendered="{!isUploadAttachmentEnabled}">
+					<apex:pageBlockSectionItem>
+						<apex:outputPanel layout="block"
+										  style="width:100%;"
+										  rendered="{!usingFileTypeAttachments}">
+							<apex:actionRegion >
+								<label for="idMyInputFile">{!$Label.SelectFileToUpload}</label>
+								<apex:inputFile id="idMyInputFile"
+												value="{!uploadedCV.versionData}"
+												fileName="{!uploadedCV.pathOnClient}" />
+								<apex:commandbutton value="{!$Label.UploadFile}"
+													action="{!doUploadAttachmentApex}"
+													reRender="idAddAttachmentsForm" />
+							</apex:actionRegion>
+						</apex:outputPanel>
+						<apex:outputPanel layout="block"
+										  style="width:100%;"
+										  rendered="{!NOT(usingFileTypeAttachments)}">
+							<apex:actionRegion >
+								<label for="idMyInputAtt">{!$Label.SelectFileToUpload}</label>
+								<apex:inputFile id="idMyInputAtt"
+												value="{!uploadedAtt.body}"
+												filename="{!uploadedAtt.name}" />
+								<apex:commandButton value="{!$Label.UploadFile}"
+													action="{!doUploadAttachmentApex}"
+													reRender="idAddAttachmentsForm" />
+							</apex:actionRegion>
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+				</apex:pageBlockSection>-->
+			</apex:pageBlock>
+
+            <div style="text-align:right; padding-left:4px;">
+                <apex:actionRegion >
+                    <apex:commandButton value="{!$Label.apttus_approval__ok}"
+                                        action="{!doAddAttachments}"
+                                        styleClass="btn btn-primary2"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme3'}" />
+                    <apex:commandButton value="{!$Label.apttus_approval__cancel}" 
+                                        onclick="hideAddAttachments(); return false;"
+                                        styleClass="btn btn-default2"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme3'}" />
+                                        
+                    <apex:commandButton value="{!$Label.apttus_approval__ok}"
+                                        action="{!doAddAttachments}"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" />
+                    <apex:commandButton value="{!$Label.apttus_approval__cancel}" 
+                                        onclick="hideAddAttachments(); return false;"
+                                        rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" />
+                </apex:actionRegion>
+            </div>
+        </apex:form>
+    </div>
+
+</apex:page>

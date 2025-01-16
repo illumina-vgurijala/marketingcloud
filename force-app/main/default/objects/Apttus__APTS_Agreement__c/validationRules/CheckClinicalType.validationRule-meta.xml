@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckClinicalType</fullName>
+    <active>false</active>
+    <description>The value &apos;Healthcare Prime&apos; of picklist Clinical Type can be used only by AMR users.</description>
+    <errorConditionFormula>AND(
+/*Check if clinical type is valid*/
+OR(
+AND(ISPICKVAL(Clinical_Type__c,&quot;Healthcare Prime&quot;),TEXT($User.Region__c)!=$Label.TerritoryRegionAMR),
+AND(OR(ISPICKVAL(Clinical_Type__c,&quot;IVD Partner&quot;),ISPICKVAL(Clinical_Type__c,&quot;Platform Distributor&quot;)),TEXT($User.Region__c)!=$Label.TerritoryRegionChina)
+),
+/*Fire validation rule on record creation and update*/
+OR(ISCHANGED(Clinical_Type__c),ISNEW()),
+/*Bypass criteria*/
+NOT(
+OR(
+$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+$Profile.Name = $Label.ProfileSystemAdmin,
+$Profile.Name = $Label.ProfileDataSteward,
+OR(ISCHANGED(Is_Updated_By_System__c),Is_Updated_By_System__c = true)
+)
+)
+)</errorConditionFormula>
+    <errorDisplayField>Clinical_Type__c</errorDisplayField>
+    <errorMessage>The Clinical value you selected is not available in your region.  Terms and regional use:  &quot;Clinical&quot; or “Non Clinical&quot; (All); &quot;Healthcare Prime&quot; (AMR); &quot;IVD Partner&quot; or &quot;Platform Distributor&quot; (GC).  Reach out to regional Sales Ops with questions.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,541 @@
+<apex:page standardController="openq__Event_Speaker__c" extensions="openq.EventSpeakerEditController" sidebar="false" standardStylesheets="false" tabStyle="openq__Event_Speaker__c">
+		
+	<script>
+		
+		var $dialog;
+		var cancelPressed = false;
+		var isSaveAndNew = false;
+				
+		jQuery(document).ready(function(){
+			
+			if({!!isEdit}){
+						
+				$dialog = jQuery(".cfgdialog").dialog({
+		       		title: 'Add Speaker',
+		       		autoOpen: false,
+					height: "auto",
+					minWidth: 750,
+					modal: true,
+					resizable: false,
+					draggable: false,
+					show: {
+						effect: "drop",
+						duration: 500
+					},
+					hide: {
+			        	effect: "drop",
+			        	duration: 500
+			      	},
+					buttons: {
+						"Save": function() {
+							validateInputs();
+							cancelPressed = true;
+					  		resetDialogApex();
+							$dialog.dialog("close");
+							cancelPressed = false;
+					    },
+						Cancel: function() {
+					  		cancelPressed = true;
+					  		resetDialogApex();
+							$dialog.dialog( "close" );
+							cancelPressed = false;
+						}
+					},
+					
+					//prevent closing when switching browser tabs
+					beforeClose: function(event, ui) { 
+						
+						if(event.originalEvent == undefined && !cancelPressed) return false;
+					}
+				});
+				
+				addWatermark();
+				
+				jQuery('.cfgdialog').css('display', 'block');
+			}
+		});
+	  	
+	  	function populateHiddenEventField(){
+	  	
+	  		jQuery('[id^=Event__c_id]').val('{!eventId}');
+	  	}
+	  	
+	  	function validateInputs(){
+	  	
+	  		var speakerSelected = jQuery('input[name=speakerSelect]:checked');
+	  		
+	  		if(speakerSelected != null && speakerSelected != undefined && speakerSelected.length > 0){
+	  			
+	  			var contactId = jQuery(speakerSelected).next().val();
+	  			saveSpeakerApex(contactId);
+	  		
+	  		}else{
+	  		
+	  			alert('You must select a speaker');
+	  		}
+	  	}
+	  	
+	  	function addWatermark(){
+	  	
+	  		jQuery('[id$=searchTerm]').watermark('Search by Name');		  		
+	  	}
+	  	
+	  	function popup(){
+	  		
+	  		if({!!isEdit}){  		
+	  			$dialog.dialog("open");
+	  		}
+		}
+		
+		function closePopup(){
+	  		
+	  		if({!!isEdit}){
+	  			$dialog.dialog("close");
+	  		}
+		}
+		
+		// add busy cursor
+	    function loadStart() {
+	    	jQuery('input').css('cursor', 'wait');
+	    	jQuery('select').css('cursor', 'wait');
+	    	jQuery('body').addClass('waiting');
+	    }
+	    
+	    // remove busy cursor
+	    function loadComplete() {
+	       	jQuery('input').css('cursor', 'auto');
+	       	jQuery('select').css('cursor', 'auto');	    
+	    	jQuery('body').removeClass('waiting');
+	    }
+		
+		function next(){
+		
+			var pagination = jQuery('[id$=paginationOffset]').val();
+			nextApex(pagination);
+		}
+		
+		function previous(){
+		
+			var pagination = jQuery('[id$=paginationOffset]').val();
+			previousApex(pagination);
+		}
+		
+		function first(){
+		
+			var pagination = jQuery('[id$=paginationOffset]').val();
+			firstApex(pagination);
+		}
+		
+		function last(){
+		
+			var pagination = jQuery('[id$=paginationOffset]').val();
+			lastApex(pagination);
+		}				
+		
+		function toggleUnrestricted(){
+					
+			var pagination = jQuery('[id$=paginationOffset]').val();
+			var searchTerm = jQuery('[id$=searchTerm]').val();
+			
+			toggleUnrestrictedApex(pagination, searchTerm, true);
+		}
+		
+		function findEligibleSpeakers(){
+			
+			var searchBtn = jQuery('#eventSpeakerSearchBtn');
+			jQuery(searchBtn).val('Searching...');
+			jQuery(searchBtn).css('width', '100px');
+			
+			var pagination = jQuery('[id$=paginationOffset]').val();
+			var searchTerm = jQuery('[id$=searchTerm]').val();
+			
+			findEligibleSpeakersApex(pagination, searchTerm, true);		
+		}
+		
+		function searchFinished(){
+		
+			var searchBtn = jQuery('#eventSpeakerSearchBtn');
+			jQuery(searchBtn).val('Search');
+			jQuery(searchBtn).css('width', '70px');
+		}
+			
+		function callBackRemoteActionSave(){
+			
+			redirectApex(isSaveAndNew);	
+		}
+		
+		function startComponent(){
+			
+			waitOn();
+			
+			attrComp=new  AttributesComponent(jQuery('[id$="attributesSection"]'));
+			attrComp.setCallBack(callBackRemoteActionSave);
+			
+			if({!!isEdit}){
+				
+				fields{!JSENCODE(plaController.objectName)}.push('Event__c');
+			}
+			
+			attrComp.setFields(fields{!JSENCODE(plaController.objectName)},fieldsTP{!JSENCODE(plaController.objectName)});
+			//hidden hardcoded field that is not in the layout
+			attrComp.init();
+			populateHiddenEventField();
+			populateNameInAttributesSection();
+			
+			if({!!isEdit}){
+				jQuery('#eventContactNameLookup').css('visibility', 'visible');
+			}
+			 
+			waitOff();
+		}
+		
+	</script>
+	
+	<apex:outputPanel id="populateNameField">	
+		<script>
+		
+		function populateNameInAttributesSection(){
+		
+			jQuery('[id$=speakerContactName]').text('{!JSENCODE(speakerContactNameSelected)}');
+			jQuery('[id^=Speaker_Contact__c_id]').val('{!JSENCODE(speakerContactSelected)}');
+		}
+		
+		</script>		
+	</apex:outputPanel>
+	
+	<style>
+		
+    	.ui-widget-combobox + .ui-button .ui-icon {
+		
+			background: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/main-nav-sprite.png')}) no-repeat 0 -368px;
+		}
+		
+		.lookupIcon {
+			
+			position: absolute;
+			cursor: pointer;			
+		}
+    	
+    	.ui-datepicker-prev span {
+			width: 20px;
+			height: 20px;
+			background-position: 0 -20px;
+			cursor: pointer;
+			background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/datepicker-arrows.png')});
+		}
+		
+		.ui-widget-combobox + .ui-button .ui-icon {
+		
+			background: url({!URLFOR($Resource.openq__StylesScriptsImages,'img/main-nav-sprite.png')}) no-repeat 0 -368px;
+		}
+		
+		.lookupIcon {
+			
+			position: absolute;
+			cursor: pointer;			
+		}
+		
+		.waiting {
+	    	cursor: wait !important;
+	    }
+		
+		.lookupIcon:hover {
+			background-position: top right;
+		}
+		.ui-multiselect-header {
+            background-color: #b2ca45;
+		}
+		
+		.ui-multiselect-header a  {
+            color: #FFFFFF;		  
+		}
+		
+		.ui-multiselect-header a:hover {
+            color: #FFFFFF;     
+            text-decoration: underline !important;  
+        }
+        
+        .multiSelectPL_OP {
+            display: none;
+        }
+        
+        #usersdiv .lookupIcon {
+        
+            position: relative !important;
+        }
+        
+        .assignToTr [id$=assignedUser] {
+            left : -30px;
+            width : 0;
+            position : fixed;
+        } 
+        
+        .assignToTr [id$=assignedUser_mlktp] {
+            
+            display : none;
+        }  
+        /* css for timepicker */
+		.ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
+		.ui-timepicker-div dl { text-align: left; }
+		.ui-timepicker-div dl dt { height: 25px; margin-bottom: -25px; }
+		.ui-timepicker-div dl dd { margin: 0 10px 10px 65px; }
+		.ui-timepicker-div td { font-size: 90%; }
+		.ui-tpicker-grid-label { background: none; border: none; margin: 0; padding: 0; }
+		
+		.ui-timepicker-rtl{ direction: rtl; }
+		.ui-timepicker-rtl dl { text-align: right; }
+		.ui-timepicker-rtl dl dd { margin: 0 65px 10px 10px; }   
+		
+		*:focus { 
+			outline: none; 
+		}
+		
+		/* 	tabs styles */
+		
+		.ui-tabs-nav.ui-helper-reset.ui-helper-clearfix.ui-widget-header.ui-corner-all {
+		
+			position: absolute;
+			margin-top: -52px !important;
+			background: none;
+			border: none;
+		}
+		
+		.ui-state-default.ui-corner-top {
+			background-color: #fafafa;
+		}
+		
+		#tabs {
+			border: none;
+			display: none;
+			font-size: 12px;
+			  margin-top: 9px;
+		}
+		
+		.ui-tabs-active.ui-state-active {
+			background-color: #b2ca45;			
+		}
+		
+		.ui-tabs-active.ui-state-active a {
+			color: white;
+		}
+		
+		.ui-widget-content a {
+			text-decoration: none;
+		}
+		
+		.ui-datepicker-next{
+		    background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'/img/datepicker-arrows.png')});
+		    background-position: 0 0;
+		    cursor: pointer;
+		    height: 20px;
+		    width: 20px;
+		}
+		
+		.ui-datepicker-prev{
+		 	background-image: url({!URLFOR($Resource.openq__StylesScriptsImages,'/img/datepicker-arrows.png')});
+		    background-position: 0 -16px;
+		    cursor: pointer;
+		    height: 20px;
+		    width: 20px;
+		}
+		
+		.ui-state-active:hover{
+			color:#555555 !important;
+		}
+		
+		.ui-state-hover {
+			color:#555555 !important;
+		}
+		
+		.ui-dialog-titlebar {
+			background-color: #B2CA45;
+			border: none;
+			color: #FFF;
+		}
+		.ui-tabs .ui-tabs-nav li {
+		    height: 26px;
+		    padding: 0;
+		}
+		
+		.odd { 
+        	background-color: #E5E2FF;
+      	}
+    	
+    	.even {
+        	background-color: white;
+    	}
+		
+		.center{
+		
+			text-align: center;
+		}
+		
+		.btnOverride, .btnOverride:hover{
+        
+             font-style: Verdana, sans-serif !important; 
+             color: #FFFFFF !important; 
+             text-decoration: none !important;
+             background-position: 0 0 !important;
+        }
+        
+        .btnCustom {
+        	cursor: pointer;
+        }
+        
+        .btnCancelCustom{
+	        border-color: #933834 !important;
+			text-shadow: 1px 1px #933834 !important;
+			background-image: -webkit-gradient( linear, left top, left bottom, from( #D35654 ), to( #BC3633 ) ) !important;
+			background-image: -webkit-linear-gradient( top, #D35654, #BC3633 ) !important;
+			background-image: -moz-linear-gradient( top, #D35654, #BC3633 ) !important;
+			background-image: -ms-linear-gradient( top, #D35654, #BC3633 ) !important;
+			background-image: -o-linear-gradient( top, #D35654, #BC3633 ) !important;
+			background-image: linear-gradient( top, #D35654, #BC3633 ) !important;
+			filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#D35654', endColorstr='#BC3633' ) !important;
+		}
+		
+	</style>
+	
+	<apex:sectionHeader title="{!objectLabel} Edit" subtitle="{!IF(isEdit, eventSpeakerToFill.Name, 'New '+objectLabel)}"/>
+	<apex:form >
+		<div style="text-align: right; margin-top: -45px; margin-right: 20px;">
+			<input id="eventSpeakerCancelBtn" value="Cancel" class="btnCustom default narrow t2 gr btnOverride btnCancelCustom" style="width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="cancelApex();" />		 	
+			<input id="eventSpeakerSaveBtn" value="Save" class="btnCustom default narrow t2 gr btnOverride" style="width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="attrComp.save();" />
+			<input id="eventSpeakerSaveNewBtn" value="Save & New" class="btnCustom default narrow t2 gr btnOverride" style="width: 90px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="isSaveAndNew = true; attrComp.save();" />
+		</div>
+		<div class="cfix wi-gen">
+			<apex:outputPanel id="attributesSection">
+				<c:PageLayoutsAttributesComponent pgController="{!plaController}" readOnly="false" initFunctionName="startComponent" importStaticResource="true" showOnLoad="true" />				
+			</apex:outputPanel>			
+			<apex:outputPanel id="cfgdialog" styleClass="cfgdialog" style="display: none;">
+				<apex:outputPanel styleClass="mainSection" id="dialogMainSection">
+					<div id="displayOpts" style="float:right;">
+						<apex:inputCheckbox selected="true" onclick="waitOn(); toggleUnrestricted();" style="margin-right: 5px;"/>						
+						<apex:outputText value="Display only available speakers"/>
+					</div>
+					<div id="search" style="padding: 10px;">						
+						<apex:inputText id="searchTerm" onkeydown="if(event.keyCode == 13) findEligibleSpeakers();" value="{!searchTerm}" styleClass="ui-corner-all" style="vertical-align: middle;"/>
+						<input id="eventSpeakerSearchBtn" value="Search" class="btnCustom default gr btnOverride" style="cursor: pointer; width: 70px; padding-right: 0; padding-left: 0; text-align: center;" type="button" onclick="findEligibleSpeakers();" />
+					</div>
+					<br/>
+					<div>
+						Show: 
+						<apex:SelectList size="1" id="paginationOffset" value="{!rowsPerPage}" onchange="findEligibleSpeakers();"> 
+							<apex:selectOptions value="{!paginationOptions}"/>
+						</apex:SelectList> 
+					</div>
+					<apex:outputPanel id="speakerDatatable">
+						<apex:datatable var="es" id="theSpeakerResults" value="{!eventSpeakerResults}" width="100%" cellpadding="4" border="1" rowClasses="odd,even">
+		            		<apex:column width="5%" style="text-align: center;">
+		            			<apex:outputPanel rendered="{!es.restrictions.size > 0}">
+		            				<input type="radio" disabled="disabled" name="speakerSelect"></input>
+		            			</apex:outputPanel>
+		            			<apex:outputPanel rendered="{!es.restrictions.size == 0}">
+		            				<input type="radio" name="speakerSelect"></input>
+		            				<apex:inputHidden value="{!es.con.id}"/>		            				
+		            			</apex:outputPanel>
+		            		</apex:column>
+		            		<apex:column headerValue="Name" value="{!es.con.Name}"/>
+		            		<apex:repeat value="{!speakerContactColumns}" var="esc">
+		            			<apex:column headerValue="{!esc.label}">
+		            				<apex:outputText value="{!es.con[esc.apiName]}"/>
+		            			</apex:column>
+		            		</apex:repeat>
+		            		<apex:column style="text-align: center; vertical-align: middle;" headerClass="center" headerValue="Restrictions" rendered="{!evSetting.openq__Enable_Speaker_Approval_Validation__c}">
+		            			<apex:repeat value="{!es.restrictions}" var="res">
+		            				<apex:image height="16px" width="16px" style="margin-right: 8px;" title="{!res.hoverText}" value="/servlet/servlet.FileDownload?file={!res.imageId}"/>
+		            			</apex:repeat> 
+		            		</apex:column>
+		            	</apex:datatable>
+		            </apex:outputPanel>
+	            	<apex:outputPanel id="noResultsPanel" layout="block" styleClass="center">
+	            		<apex:outputText value="No results found." rendered="{!OR(eventSpeakerResults == null, eventSpeakerResults.size == 0)}"/>
+	            	</apex:outputPanel>
+	            	<apex:outputPanel id="btns" layout="none">
+		            	<div id="btnsPanel" style="position:relative; white-space: nowrap; text-align:center; margin-top:20px;">
+		            		<span style="position:absolute; left:0;">
+		            			<apex:outputPanel id="recordInfo">
+		            				<apex:outputText value="{!recordInfo}" rendered="{!AND(eventSpeakerResults != null, eventSpeakerResults.size > 0)}"/>
+		            			</apex:outputPanel>
+		            		</span>           			
+	            			<span style="position:relative;">                							
+		            			<span class="restrictedTableSpan">                    
+									<apex:outputPanel rendered="{!firstOff}">                        
+										<img src="/s.gif" onclick="first();return false;" style="cursor:pointer; cursor:hand; background-image: url('/img/paginationArrows.gif');background-position: 0 1px;background-repeat: no-repeat; height: 10px;width: 9px;"/>                    
+									</apex:outputPanel>                    
+									<apex:outputPanel rendered="{!(!firstOff)}">                        
+										<img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: 0 -10px;background-repeat: no-repeat; height: 10px;width: 9px;"/>                    
+									</apex:outputPanel>                
+								</span>                
+								<span class="restrictedTableSpan">                    
+									<apex:outputPanel rendered="{!firstOff}">                       
+										<img class="prev" src="/s.gif" onclick="previous();return false;" style="cursor:pointer; cursor:hand;background-image: url('/img/paginationArrows.gif'); background-position: -10px 1px;background-repeat: no-repeat;height: 10px;margin: 0; padding: 0;width: 9px;"/>
+										<span style="cursor:pointer; cursor:hand;" onclick="previous();return false;">Previous</span>                    
+									</apex:outputPanel>                   
+									<apex:outputPanel rendered="{!(!firstOff)}">                        
+										<img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: -10px -10px;background-repeat: no-repeat;height: 10px;margin: 0;padding: 0;width: 9px;"/>                        
+										<span style="cursor:text; color: #A8A8A8">Previous</span>                    
+									</apex:outputPanel>                
+								</span>                
+								<span class="restrictedTableSpan">                    
+									<apex:outputPanel rendered="{!lastOff}">                       
+										<span style="cursor:pointer; cursor:hand;" onclick="next();return false;">Next</span>                        
+										<img src="/s.gif" onclick="next();return false;" style="cursor:pointer; cursor:hand; background-image: url('/img/paginationArrows.gif');background-position: -17px 1px; background-repeat: no-repeat;height: 10px; width: 9px;"/>                    
+									</apex:outputPanel>                    
+									<apex:outputPanel rendered="{!(!lastOff)}">                        
+										<span style="cursor:text; color: #A8A8A8">Next</span>                        
+										<img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: -17px -10px;background-repeat: no-repeat;height: 10px;width: 9px;"/>                    
+									</apex:outputPanel>                
+								</span>                
+								<span class="restrictedTableSpan">                    
+									<apex:outputPanel rendered="{!lastOff}">                        
+										<img src="/s.gif" onclick="last();return false;" style="cursor:pointer; cursor:hand; background-image: url('/img/paginationArrows.gif'); background-position: -27px 1px;background-repeat: no-repeat;height: 10px;width: 9px;"/>                    
+									</apex:outputPanel>                    
+									<apex:outputPanel rendered="{!(!lastOff)}">                        
+										<img src="/s.gif" style="cursor:text; background-image: url('/img/paginationArrows.gif');background-position: -27px -10px;background-repeat: no-repeat;height: 10px;width: 9px; "/>                    
+									</apex:outputPanel>                
+								</span>
+	 							<span style="float:right; padding-right: 15px;">                
+	 								<apex:outputPanel id="pageInfo">
+	 									<apex:outputText value="Page {!pageNumber} of {!totalPages}"></apex:outputText>          
+	 								</apex:outputPanel>          
+								</span> 
+							</span>
+		            	</div>
+		            </apex:outputPanel>	            	
+				</apex:outputPanel>
+				<apex:actionFunction name="findEligibleSpeakersApex" action="{!findEligibleSpeakers}" rerender="speakerDatatable, btns, noResultsPanel" oncomplete="addWatermark(); searchFinished();">
+					<apex:param name="rows" assignTo="{!rowsPerPage}" value=""/>
+					<apex:param name="searchTerm" assignTo="{!searchTerm}" value=""/>
+					<apex:param name="resetPagination" assignTo="{!resetPagination}" value=""/>
+				</apex:actionFunction>
+				<apex:actionFunction name="toggleUnrestrictedApex" action="{!toggleUnrestricted}" rerender="speakerDatatable, btns, noResultsPanel, recordInfo" oncomplete="addWatermark(); waitOff();">
+					<apex:param name="rows" assignTo="{!rowsPerPage}" value=""/>
+					<apex:param name="searchTerm" assignTo="{!searchTerm}" value=""/>
+					<apex:param name="resetPagination" assignTo="{!resetPagination}" value=""/>
+				</apex:actionFunction>
+				<apex:actionFunction name="firstApex" action="{!first}" reRender="speakerDatatable, btns">        
+					<apex:param name="rows" assignTo="{!rowsPerPage}" value=""/>
+				</apex:actionFunction>
+				<apex:actionFunction name="lastApex" action="{!last}" reRender="speakerDatatable, btns">        
+					<apex:param name="rows" assignTo="{!rowsPerPage}" value=""/>
+				</apex:actionFunction>
+				<apex:actionFunction name="nextApex" action="{!next}" reRender="speakerDatatable, btns">
+					<apex:param name="rows" assignTo="{!rowsPerPage}" value=""/>
+				</apex:actionFunction>         
+				<apex:actionFunction name="previousApex" action="{!previous}" reRender="speakerDatatable, btns">
+					<apex:param name="rows" assignTo="{!rowsPerPage}" value=""/>
+				</apex:actionFunction>
+				<apex:actionFunction name="saveSpeakerApex" action="{!saveSpeaker}" rerender="populateNameField" oncomplete="populateNameInAttributesSection();">
+					<apex:param name="speakerSelected" value="" assignTo="{!speakerContactSelected}"/>
+				</apex:actionFunction>
+				<apex:actionFunction name="redirectApex" action="{!redirect}" rerender="">
+					<apex:param name="isSaveAndNew" value="" assignTo="{!isSaveAndNew}"/>
+				</apex:actionFunction>
+				<apex:actionFunction name="cancelApex" action="{!cancel}" rerender=""/>
+				<apex:actionFunction name="resetDialogApex" action="{!resetDialog}" rerender="dialogMainSection"/>
+			</apex:outputPanel>
+		</div>
+	</apex:form>
+	<c:WaitComponent />
+</apex:page>

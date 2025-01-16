@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckAllPrimaryContactRole</fullName>
+    <active>true</active>
+    <description>Checks Primary Contact Role Not blank.</description>
+    <errorConditionFormula>AND (    
+    NOT (
+        OR (
+            TEXT ( StageName ) = $Label.OpportunityStageClosedLost,
+            TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedLost,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned,
+            TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedAbandoned,
+            TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedWon,
+            TEXT ( StageName ) = $Label.OpportunityStageProve,
+            TEXT ( StageName ) = $Label.OpportunityStageDevelop,
+            TEXT ( StageName ) = $Label.OpportunityStageCreate,
+            TEXT ( StageName ) = $Label.OpportunityStageQualify,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            /* Bypassing update of below fields since they are updated systematically*/
+            ISCHANGED ( Is_Customer_Readiness_Section_1_Complete__c ),
+            ISCHANGED ( Is_Customer_Readiness_Section_2_Complete__c ), 
+            ISCHANGED ( Is_Customer_Readiness_Section_3_Complete__c ),
+            ISCHANGED ( Proposal_Sent_On__c ),
+            RecordType.DeveloperName == $Label.OpportunityRTStandingQuote
+        )     
+    ),
+    AND ( 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+    ), 
+    ISBLANK(Primary_Contact__c),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+             $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>Please assign one Contact associated with this Opportunity as Primary. Primary designation identifies contact receiving the Quote(s) tied to this Opportunity.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckNextStepFollowUpNeededonCaseClosure</fullName>
+    <active>true</active>
+    <description>To check whether Next Steps, Follow Up Needed and Unread email are blank before completing a case.</description>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($Profile.Name ==$Label.Profile_Service_Logistics),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+OR(
+    NOT(ISBLANK(Next_Steps__c)),
+    Follow_up_Needed__c,
+    AND(
+	Unread_Emails__c,
+	NOT(AND(
+	$Profile.Name == $Label.ProfileQualityAssurance,
+	RecordType.Name = $Label.CaseRecordTypeBusinessIssue))
+	)
+),
+    OR(
+        TEXT(Status)=$Label.CaseStatusCompleted,
+        TEXT(Status)=$Label.CaseStatusPendingQAReview,
+        TEXT(Status)=$Label.CaseStatusPendingLogisticsReview,
+        TEXT(Status)=$Label.CaseStatusClosedDuplicate,
+	TEXT(Status)=$Label.CaseStatusClosed
+        ),
+   ISCHANGED(Status)
+)</errorConditionFormula>
+    <errorMessage>This case has pending actions. Clear Next Steps AND Follow Up Needed AND Unread Email before completing this case.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

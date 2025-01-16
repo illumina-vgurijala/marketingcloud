@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDROAndDFSECForAreProductsAdded</fullName>
+    <active>true</active>
+    <description>Prevents user from progressing past Develop if no products have been added to a quote. Reorder Direct and Field Services Direct Opportunity only.</description>
+    <errorConditionFormula>AND (
+    OR (
+        $RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+        $RecordType.DeveloperName = $Label.FieldServices
+    ),
+    NOT (
+        OR (
+            ISPICKVAL ( StageName, &apos;Closed Lost&apos; ),
+    	    ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Lost&apos; ),
+	    ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Won&apos; ),
+	    ISPICKVAL ( StageName, &apos;Closed Abandoned&apos; ),
+    	    ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Abandoned&apos; ),
+            ISPICKVAL ( StageName, &apos;Develop&apos; ),
+            ISPICKVAL ( StageName, &apos;Create&apos; ),
+            ISPICKVAL ( StageName, &apos;Qualify&apos; ),
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon
+	    )
+        ), 
+    AND ( 
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+    ), 
+    Are_Products_Added__c = false,
+    !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+			 $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward 
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Are_Products_Added__c</errorDisplayField>
+    <errorMessage>Please add Products to opportunity by configuring Apttus cart ( click &quot;Create Quote/Proposal&quot; button).</errorMessage>
+</ValidationRule>

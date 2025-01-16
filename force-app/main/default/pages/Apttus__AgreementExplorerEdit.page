@@ -1,0 +1,299 @@
+<!-- 
+    Apttus Contract Management
+    AgreementExplorerEdit
+     
+    @2009-2015 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page docType="html-5.0" standardController="Apttus__AgreementExplorer__c" sidebar="false" extensions="Apttus.AgreementExplorerEditController" action="{!queryPageLoad}">
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/js/plugins.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/js/jquery.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/js/agreementExplorer.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus__AgreementExplorerUI, '/js/jquery.blockUI.min.js')}"/>
+<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.AgreementExplorerUI,'/css/main.css')}" />
+<link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.AgreementExplorerUI,'css/font-awesome.min.css')}" />   
+    <script>
+        j$ = jQuery.noConflict();
+        
+        j$( document ).ready(function() {
+        });
+        
+        function onAjaxStart() {
+            j$.blockUI({ message: '<img src="{!URLFOR($Resource.AgreementExplorerUI, '/images/load-icon.gif')}"/><div>{!$Label.LoadingPage}</div>' });
+        }
+        
+        function onAjaxStop() {
+            j$.unblockUI();
+        }
+    </script>
+    <apex:form styleClass="agreement-explorer-container">
+        <apex:sectionHeader title="{!$Label.apttus__agreementexplorer}" subtitle="{!$Label.apttus__reportedit}"/>
+        <apex:actionFunction name="passStringToController" rerender="ExpressionValidator"> 
+            <apex:param name="assign" value="" assignTo="{!condExpr}" /> 
+        </apex:actionFunction>
+        <apex:actionFunction name="doDelete" id="theDelete" action="{!deleteFieldRow}" rerender="FieldAndFilterDisplay, ListFilterTable, ListFieldTable"/>
+        <apex:actionFunction name="redirectPage" id="theRedirect" action="{!redirectToPreviousPage}"/>
+        <apex:actionFunction name="doSave" id="theSave"  action="{!save}"/>
+        <apex:actionFunction name="doCancel" id="theCancel"  action="{!redirectToPreviousPage}" reRender="FieldAndFilterDisplay, ListFilterTable, ListFieldTable"/>
+        <apex:actionFunction name="rerenderSaveButton" rerender="saveButton1, saveButton2"/>
+        <apex:actionStatus id="loading" onstart="onAjaxStart();" onstop="onAjaxStop();">
+        </apex:actionStatus>
+        <apex:outputPanel Id="queryErrorMessage">
+          <apex:pageMessages />
+        </apex:outputPanel>
+        <!-- Clm-Query-Content Start -->    
+        <apex:pageBlock rendered="{!permission}">
+
+            <!-- QueryDetails start -->
+            <div class="form--section">
+                <div>
+                   <apex:outputText style="float:left;margin-left:20px;margin-top: 12px;" value="{!$Label.apttus__edit} {!$Label.apttus__search}"></apex:outputText>
+                   <div class="new--query--action" style="float:left;    margin-left: 245px;">
+                      <apex:commandButton value="{!$Label.apttus__save}" id="saveButton1" disabled="{!saveAllowed == false}" action="{!save}"/>
+                      <apex:commandButton value="{!$Label.apttus__saveas}" id="saveAsButton1" action="{!saveAs}"/>
+                      <apex:commandButton value="{!$Label.apttus__cancel}" id="cancelButton1" action="{!redirectToPreviousPage}"/>
+                    </div>
+                   
+                </div>
+                  
+                <div class="section--fields--row clearfix" style="clear:left;border-top:1px solid #c9c9c9">
+                    <div class="section--title">
+                       <span class='alignLeft'>{!$Label.Configure}</span>
+                       <span style="float:right;margin-right:20px;"><apex:outputPanel styleClass="requiredInput" layout="block">
+                       <apex:outputPanel styleClass="requiredBlock" layout="block"/> {!$Label.apttus__equalssign} {!$Label.apttus__requiredfield} </apex:outputPanel></span>
+                    </div>
+                    <!-- 3 Column Layout -->
+                    <div class="col" style="margin-top:0px;">
+                        <div class="input--div" style="margin-bottom:0px;">
+                            <apex:outputLabel styleClass="alignRight">{!$Label.apttus__name}</apex:outputLabel>
+                            <apex:outputPanel styleClass="requiredInput">
+                                <apex:outputPanel styleClass="requiredBlock"/>
+                                    <apex:inputField value="{!newHierarchyProp.Name}"/>
+                                </apex:outputPanel>
+                        </div>
+                       <!--  <div class="input--div" style="margin-bottom:0px;">
+                            <apex:outputLabel styleClass="alignRight">{!$Label.Owner}</apex:outputLabel>
+                            <apex:inputField value="{!newHierarchyProp.OwnerId}" required="false"/>
+                        </div>  -->         
+                         <div class="input--div" style="margin-bottom:0px;">
+                             <apex:outputLabel styleClass="alignRight">{!$Label.apttus__label}</apex:outputLabel>
+                            <apex:inputField value="{!newHierarchyProp.Apttus__Label__c}"/>
+                        </div>
+                        <div class="select--div--wrapper input--div">
+                            <apex:outputLabel styleClass="alignRight">{!$Label.apttus__type}</apex:outputLabel>
+                            <div class="select--div" style="margin-bottom:0px;">
+                                <apex:inputHidden value="{!newHierarchyProp.Apttus__Context__c}" id="theContext"/>
+                                <apex:outputPanel styleClass="requiredInput" layout="block">
+                                <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                                <apex:selectList value="{!newHierarchyProp.Apttus__Context__c}" multiselect="false" size="1" required="true">
+                                      <apex:selectOptions value="{!AgreementObjFilter}" />
+                                </apex:selectList>
+                                </apex:outputPanel>
+                            </div>
+                        </div>                             
+                    </div>
+                    <div class="col" style="margin:0px 15px 0px ">                       
+                        <div class="input--div" style="margin-bottom:0px;">
+                            <apex:outputLabel styleClass="alignRight">{!$Label.apttus__description}</apex:outputLabel>
+                            <apex:inputTextarea value="{!newHierarchyProp.Apttus__Description__c}" id="newDesc"/>
+                        </div>
+                       <div class="input--div" style="margin-bottom:0px;">
+                            <div class="input--div">
+                                <apex:outputLabel styleClass="alignRight">{!$Label.apttus__public}</apex:outputLabel>
+                                <apex:inputField value="{!newHierarchyProp.Apttus__Public__c}" />
+                                <apex:outputLabel value="{!$Label.apttus__publicdescription}" styleClass="staticString2" style="margin-top:4px;float:right"/>
+                            </div>
+                            <div class="input--div">
+                                <apex:outputLabel styleClass="alignRight">{!$Label.apttus__setdefault}</apex:outputLabel>
+                                <apex:inputField value="{!newHierarchyProp.Apttus__Default__c}" />
+                                <apex:outputLabel value="{!$Label.apttus__defaultdescription}" styleClass="staticString2" style="float:right"/>
+                            </div> 
+                            
+                        </div> 
+                    </div>          
+                </div>
+            </div>
+            <!-- /QueryDetails end -->
+
+            <!-- Field and Filter Display Start -->
+            <apex:outputPanel Id="FieldAndFilterDisplay" layout="block">
+                <!-- Fieldset Section Start -->
+                <div class="form--section field--set">
+                    <div class="section--title">
+                        <apex:outputLabel styleClass="alignLeft" value="{!$Label.apttus__fieldset}"></apex:outputLabel>  
+                    </div>
+                    <div class="section--fields--row filterSection">
+                    <div style="width:50%">
+                      <apex:outputPanel id="ListFieldTable">
+                          <apex:pageBlockTable value="{!listFieldWraps}" width="50%" var="listField" id="fieldRepeat">
+                            <apex:column headerValue="Col">
+                                <apex:outputText value="{!listField.Sequence}" style="font-weight: bold;"/>
+                            </apex:column>
+
+                            <apex:column headerValue="Field">
+                                <apex:selectList value="{!listField.input}" size="1" Id="fieldList" disabled="{!listField.sequence == 1}" > 
+                                    <apex:selectOptions value="{!FieldInputOptions}"/>
+                                </apex:selectList>
+                           </apex:column>
+
+                           <apex:column >
+                                <apex:commandLink status="loading" action="{!deleteFieldRow}" rendered="{!listField.Sequence != 1}" rerender="FieldAndFilterDisplay, ListFieldTable">
+                                    <apex:image value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/images/u142.png')}"/>
+                                    <apex:param name="deletedRecord" value="{!listField.sequence}" assignTo="{!DelFieldRec}"/>
+                                </apex:commandLink>
+                            </apex:column>
+                          </apex:pageBlockTable>
+                        </apex:outputPanel>
+                      </div>
+                    </div>
+                    <div class="filter-links-section">
+                        <span class="add--expr">
+                            <apex:commandLink value="{!$Label.apttus__add} {!$Label.apttus__field}" id="addField" action="{!addFieldRow}" style="color: #006295;" reRender="ListFieldTable, SavedIcon" />
+                        </span>
+                    </div>
+                </div>
+                <!-- Fieldset Section End -->
+
+                <!-- Filterset Section Start -->
+                <div class="form--section filter--set">
+                    <div class="section--title">
+                      <apex:outputLabel styleClass="alignLeft" value="{!$Label.apttus__filtersets}"></apex:outputLabel> 
+                    </div>
+                    <div class="section--fields--row filterSection">
+                      <div style="width:80%">
+                        <apex:outputPanel id="ListFilterTable" styleClass="">
+                            <apex:pageblockTable value="{!listFilterWraps}" var="listFilter" id="filterRepeat">
+                              <apex:column headerValue="{!$Label.apttus__col}">
+                                  <div class="filterSequence">
+                                    <apex:outputText value="{!listFilter.sequence}" style="font-weight: bold;"/>
+                                  </div>
+                              </apex:column>
+                          
+                              <apex:column headerValue="{!$Label.apttus__field}">
+                                  <apex:outputPanel Id="FilterObject">
+                                      <apex:selectList value="{!listFilter.input}" size="1" style="width: 190px;" Id="inputList3">  
+                                          <apex:selectOptions value="{!FilterInputOptions}"/>
+                                          <apex:actionSupport event="onchange" action="{!listFilter.setValueType}" reRender="valueInputField, ComparisonField">
+                                            <apex:param: name="resetValue" value="" assignTo="{!listFilter.value}"/>
+                                          </apex:actionSupport>
+                                      </apex:selectList> 
+                                  </apex:outputPanel>
+                              </apex:column>
+
+                              <apex:column headerValue="{!$Label.apttus__operator}">
+                                <apex:outputPanel Id="ComparisonField">
+                                    <apex:inputHidden value="{!listFilter.comparison}" id="theHiddenComparison"/>
+                                    <apex:selectList value="{!listFilter.comparison}" size="1"
+                                    rendered="{!(listFilter.dataType == 'REFERENCE') || (listFilter.dataType == 'PICKLIST') || (listFilter.dataType == 'BOOLEAN')
+                                    || (listFilter.dataType == 'ID')}" style="width: 80px;">
+                                        <apex:selectOptions value="{!comparisonOptions1}"/>
+                                    </apex:selectList> 
+
+                                    <apex:selectList value="{!listFilter.comparison}" size="1" rendered="{!(listFilter.dataType == 'MULTIPICKLIST')}" style="width: 80px;">
+                                    <apex:selectOptions value="{!comparisonOptions4}"/>
+                                    </apex:selectList> 
+
+                                    <apex:selectList value="{!listFilter.comparison}" size="1"
+                                            rendered="{!(listFilter.dataType == 'DATE') || (listFilter.dataType == 'DATETIME') || (listFilter.dataType == 'DOUBLE') 
+                                            || (listFilter.dataType == 'INTEGER')  || (listFilter.dataType == 'CURRENCY') || (listFilter.dataType == 'PERCENT')}" style="width: 80px;">  
+                                        <apex:selectOptions value="{!comparisonOptions2}"/>
+                                    </apex:selectList> 
+                                    <apex:selectList value="{!listFilter.comparison}" size="1"
+                                    rendered="{!(listFilter.dataType == 'STRING') || (listFilter.dataType == 'ADDRESS') || (listFilter.dataType == 'TEXTAREA')
+                                    || (listFilter.dataType == 'PHONE') || (listFilter.dataType == 'URL')}" style="width: 80px;">  
+                                        <apex:selectOptions value="{!comparisonOptions3}"/>
+                                    </apex:selectList>
+                                </apex:outputPanel>
+                              </apex:column>
+
+                              <apex:column headerValue="{!$Label.apttus__value}">
+                                  <apex:outputPanel Id="valueInputField">
+                                    <apex:inputHidden value="{!listFilter.dataType}" id="theHiddenInput"/>
+                                    <apex:inputHidden value="{!listFilter.lookUpField}" id="theHiddenInputLookUp"/>
+                                    <apex:inputHidden value="{!listFilter.value}" id="theHiddenInputValue"/>
+
+                                    <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'STRING') || (listFilter.dataType == 'ADDRESS') || (listFilter.dataType == 'URL')}" style="width: 180px;" maxlength="80">
+                                    </apex:inputText>
+
+                                    <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'ID')}" style="width: 180px;">
+                                    </apex:inputText>
+
+                                    <apex:input value="{!listFilter.dateField}" type="date" rendered="{!(listFilter.dataType == 'DATE') || (listFilter.dataType == 'DATETIME')}"  onfocus="DatePicker.pickDate(false, 'myPage:myForm:demo', false);" style="width: 180px;">
+                                    </apex:input>
+
+                                    <apex:input value="{!listFilter.value}" type="text" rendered="{!(listFilter.dataType == 'TEXTAREA')}" style="width: 180px;"> 
+                                    </apex:input>
+
+                                    <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'CURRENCY') || (listFilter.dataType == 'PERCENT')}" style="width: 180px;">
+                                    </apex:inputText>
+
+                                    <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'DOUBLE') || (listFilter.dataType == 'INTEGER') }" style="width: 180px;">
+                                    </apex:inputText>
+
+                                    <apex:inputText value="{!listFilter.value}" rendered="{!(listFilter.dataType == 'PHONE')}" style="width: 180px;">
+                                    </apex:inputText>
+
+                                     <apex:outputPanel rendered="{!(listFilter.dataType == 'PICKLIST')}">
+                                        <div class="select--div">
+                                            <apex:selectList value="{!listFilter.value}" size="1" rendered="{!(listFilter.dataType == 'PICKLIST')}">  
+                                                <apex:selectOptions value="{!listFilter.ValueOptions}"/>
+                                            </apex:selectList>
+                                        </div>
+                                    </apex:outputPanel>
+                                      
+                                     <apex:outputPanel rendered="{!(listFilter.dataType == 'MULTIPICKLIST')}">
+                                        <apex:selectList value="{!listFilter.multiPickListValue}" size="2" multiselect="true" rendered="{!(listFilter.dataType == 'MULTIPICKLIST')}" style="border-radius:5px;width:301px !important;height:50px">  
+                                            <apex:selectOptions value="{!listFilter.ValueOptions}"/>
+                                        </apex:selectList>
+                                    </apex:outputPanel>
+                                    
+                                    <apex:outputPanel rendered="{!(listFilter.dataType == 'BOOLEAN')}">
+                                        <apex:selectList value="{!listFilter.value}" size="1" rendered="{!(listFilter.dataType == 'BOOLEAN')}">  
+                                            <apex:selectOptions value="{!listFilter.TrueFalseOptions}"/>
+                                        </apex:selectList>
+                                    </apex:outputPanel>
+
+                                    <apex:inputField value="{!listFilter.listFilterAgreement[listFilter.lookUpField]}"  id="valueAccountLookUp" style="width: 80px;" rendered="{!(listFilter.dataType == 'REFERENCE')}" required="false">
+                                    </apex:inputField>
+                                  </apex:outputPanel>
+                              </apex:column>
+
+                              <apex:column >
+                                <apex:commandLink status="loading" action="{!deleteRow}" oncomplete="updateExprString(event)" rerender="FieldAndFilterDisplay, ListFilterTable, ListFieldTable">
+                                    <apex:image value="{!URLFOR($Resource.Apttus__AgreementExplorerUI,'/images/u142.png')}"/>
+                                    <apex:param name="deletedRecord" value="{!listFilter.sequence}" assignTo="{!DelRec}"/>
+                                  </apex:commandLink>
+                              </apex:column>
+                            </apex:pageBlockTable>
+                        </apex:outputPanel>
+                    </div>
+                    <div class="filter-links-section">
+                      <span class="add--expr">
+                        <apex:commandLink styleClass="add--expr--link" value="{!$Label.apttus__add} {!$Label.apttus__filter}" oncomplete="updateExprString(event)" id="addFilter" action="{!addRow}" style="color: #006295;;" reRender="ListFilterTable, ExpressionValidator"/>
+                       </span>
+                     </div>
+                    <div class="filter-validator-section">
+                      <apex:outputLabel value="{!$Label.apttus__advancedfilter} "></apex:outputLabel>
+                        <div class="validator">
+                        <apex:outputPanel id="ExpressionValidator">
+                          <apex:inputText styleClass="validator--expr" value="{!condExpr}" html-placeholder="Expression Validator"/>
+                        </apex:outputPanel>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- /Filterset Section End -->
+                <div class="content--action--buttons" style="margin-top:20px;padding:0px;">
+                    <div class="new--query--action" style="margin-left:333px">
+                        <apex:commandButton value="{!$Label.apttus__save}" id="saveButton2" disabled="{!saveAllowed == false}" action="{!save}"/>
+                        <apex:commandButton value="{!$Label.apttus__saveas}" id="saveAsButton2" action="{!saveAs}"/>
+                        <apex:commandButton value="{!$Label.apttus__cancel}" id="cancelButton2" action="{!redirectToPreviousPage}"/>
+                    </div>
+                </div>
+            </apex:outputPanel>
+            <!-- /Field and Filter Display End -->
+        
+        </apex:pageBlock>
+        <!-- /Clm-Query-Content End -->
+    </apex:form>
+</apex:page>

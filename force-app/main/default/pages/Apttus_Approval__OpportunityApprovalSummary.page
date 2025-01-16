@@ -1,0 +1,77 @@
+<!-- 
+    Apttus Approvals Management
+    OpportunityApprovalSummary
+     
+    @2010-2021 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Approval_Request__c"
+        extensions="Apttus_Approval.OpportunityApprovalSummaryController"
+        showHeader="true" 
+        sidebar="true"
+        cache="false" 
+        tabstyle="Apttus_Approval__Approval_Request__c"
+		lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+								$User.UIThemeDisplayed == 'Theme4u'}">
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+    <apex:sectionHeader title="{!$Label.apttus_approval__approvalrequest}" 
+            subtitle="{!$ObjectType.Opportunity.Label} {!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.Name}"/>
+    
+    <style type="text/css">
+        .boldRedText {
+            font-weight:bold;
+            color:#FF0000;
+        }
+    </style>        
+    
+    <apex:pageBlock title="{!$ObjectType.Opportunity.Label} {!$Label.apttus_approval__information}">
+        
+        <apex:pageBlockSection columns="1">
+            <apex:outputField value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.Name}"/>
+            <apex:outputField value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.AccountId}"/>
+            <apex:outputField value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.OwnerId}"/>
+            <!-- Does not work in Org with ACM enabled (Currency fields on entities with effective dated currency are not supported) -->
+            <!-- <apex:outputField value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.Amount}" rendered="{!NOT(hasCurrencyCode)}" /> -->
+            <apex:pageBlockSectionItem rendered="{!NOT(hasCurrencyCode)}">
+                <apex:outputLabel value="{!$ObjectType.Opportunity.fields.Amount.Label}" />
+                <apex:outputText value="{0, Number, ###,##0.00}">
+                   <apex:param value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.Amount}"/>
+                </apex:outputText>
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem rendered="{!hasCurrencyCode}">
+                <apex:outputLabel value="{!$ObjectType.Opportunity.fields.Amount.Label}" />
+                <apex:outputText value="{0} {1, Number, ###,##0.00}">
+                   <apex:param value="{!currencyCode}"/>
+                   <apex:param value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.Amount}"/>
+                </apex:outputText>
+            </apex:pageBlockSectionItem>
+            <apex:outputField value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.TotalOpportunityQuantity}"/>
+            <p/>&nbsp;  
+            <apex:outputField value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.Apttus_Approval__Approval_Status__c}"/>
+            <apex:outputField value="{!Apttus_Approval__Approval_Request__c.Related_Opportunity__r.Description}"/>
+        </apex:pageBlockSection>
+        
+        <apex:include pageName="Apttus_Approval__ApprovalAction" />
+        
+    </apex:pageBlock>
+    
+    <apex:include pageName="Apttus_Approval__ApprovalRequestsList"/>
+    
+    <apex:include pageName="Apttus_Approval__OpportunityProductsList"/>
+    
+    <apex:include pageName="Apttus_Approval__OpportunityPartnersList"/>
+        
+</apex:page>

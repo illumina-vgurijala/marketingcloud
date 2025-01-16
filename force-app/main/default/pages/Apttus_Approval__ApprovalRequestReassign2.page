@@ -1,0 +1,115 @@
+<!-- 
+    Apttus Approvals Management
+    ApprovalRequestReassign2
+     
+    @2010-2019 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Approval_Request__c"
+           extensions="Apttus_Approval.ApprovalRequestReassignController2"
+           standardStylesheets="{!$User.UIThemeDisplayed == 'Theme3'}"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                   $User.UIThemeDisplayed == 'Theme4u' ||
+                                   $User.UIThemeDisplayed == 'Theme4t'}">
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+    <apex:sectionHeader title="{!$Label.apttus_approval__approvalrequestreassign}" />
+        
+    <apex:form id="idApprovalRequestReassignForm">
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Object_Type__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Approval_Status__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Assigned_To_Name__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Assigned_To_Type__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Assigned_To_Id__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Assigned_To__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Assigned_To__r.Name}" rendered="false"/>
+        <apex:outputText value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Approver_Comments__c}" rendered="false"/>
+    
+        <apex:pageBlock title="{!$Label.apttus_approval__approvalrequestdetail}" mode="edit">
+
+            <apex:pageMessages />
+
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!doReassign}" value="{!$Label.apttus_approval__reassign}" disabled="{!isRequestComplete}"/>
+                <apex:commandButton action="{!doCancel}" value="{!$Label.apttus_approval__cancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection title="{!$Label.apttus_approval__details}" columns="2" id="idApproverSection">
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__relatedto}" for="idRelatedTo" />
+                    <apex:outputLink id="idRelatedTo" value="/{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Object_Id__c}">{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Object_Name__c}</apex:outputLink>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__createdby}" for="idCreatedBy" />
+                    <apex:outputField id="idCreatedBy" value="{!Apttus_Approval__Approval_Request__c.CreatedById}"/>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem id="idApprover">
+                    <apex:outputLabel value="{!$Label.apttus_approval__approver}" for="idReassignName" />
+                    <apex:outputpanel >
+                        <apex:selectList id="idReassignType" size="1" value="{!reassignedToType}" >
+                            <apex:selectOptions value="{!assigneeTypeItems}"></apex:selectOptions>
+                            <apex:actionSupport event="onchange" 
+                                                action="{!doChangeAssigneeType}" 
+                                                reRender="idApproverSection" />
+                                                <!--status="idPleaseWaitField" />-->
+                        </apex:selectList>
+                        <apex:actionStatus id="idPleaseWaitField">
+                            <apex:facet name="start">
+                                {!$Label.StatusPleaseWait}...
+                                <img src="/apexpages/devmode/img/saveStatus.gif" />
+                            </apex:facet>
+                            <apex:facet name="stop" />
+                        </apex:actionStatus>
+
+                        <apex:inputText id="idReassignName" value="{!reassignedToName}" disabled="{!isRequestComplete}"/>
+                        <apex:commandLink action="{!doLaunchUserSearch}" rendered="{!NOT(isRequestComplete)}" >
+                            <apex:outputPanel >
+                                <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme3'}" styleClass="lookupIcon" value="/img/s.gif" />
+                                <apex:image rendered="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                                        $User.UIThemeDisplayed == 'Theme4u' ||
+                                                        $User.UIThemeDisplayed == 'Theme4t' }"
+                                            url="{!$Resource.Apttus_Approval__Image_Search}" title="{!$Label.apttus_approval__search}" alt="{!$Label.apttus_approval__search}" height="20px" width="20px" />
+                            </apex:outputPanel>
+                        </apex:commandLink>
+                    </apex:outputpanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.apttus_approval__assignedapprover}" for="idAssignedApprover" />
+                    <apex:outputLink id="idAssignedApprover" value="/{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Assigned_To_Id__c}">{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Assigned_To_Name__c}</apex:outputLink>
+                </apex:pageBlockSectionItem>
+                    
+                <apex:pageBlockSectionItem rendered="{!isRequestComplete}">
+                    <apex:outputLabel value="Comments" for="idCommentsOutput" />
+                    <apex:outputField id="idCommentsOutput" value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Approver_Comments__c}" 
+                                style="height:100px; width:300px;"/>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem rendered="{!NOT(isRequestComplete)}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__comments}" for="idComments" />
+                    <apex:inputField id="idComments" value="{!Apttus_Approval__Approval_Request__c.Apttus_Approval__Approver_Comments__c}" 
+                                style="height:100px; width:300px;"/>
+                </apex:pageBlockSectionItem>
+                
+            </apex:pageBlockSection>
+            
+        </apex:pageBlock>
+        
+    </apex:form>
+
+</apex:page>

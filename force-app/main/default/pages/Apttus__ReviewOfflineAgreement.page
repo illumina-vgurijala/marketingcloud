@@ -1,0 +1,79 @@
+<!--
+    Apttus Contract Management
+    ReviewOfflineAgreement
+        
+    @2018-2020 Apttus Inc. All rights reserved.
+  -->
+<apex:page Controller="Apttus.ReviewOfflineAgreementController" action="{!validateAndRedirect}" lightningStylesheets="true">
+<apex:include pageName="Apttus__ComplyJSLibInclude" />
+<script type="text/javascript" src="/soap/ajax/42.0/connection.js"></script>
+<script type="text/javascript" src="/soap/ajax/42.0/apex.js"></script> 
+<style>
+        #tblstyle {            
+            margin: 0px;
+            padding-top: 20px;
+            border-spacing: 0px;
+        }
+        #tblstyle tr td {
+            padding: 10px;
+            vertical-align: middle;
+            border-bottom: 1px solid #E3F1D5;
+            min-width: 200px;
+        }
+        .alighcenter {
+            text-align: right;
+        }
+        .bordertop {
+            border-top: 1px solid #E3F1D5;
+        }
+</style>
+    <apex:form id="form">
+         <div class="bPageTitle">
+            <div class="ptBody secondaryPalette brandSecondaryBrd">
+                <div class="content">        
+                    <h1 class="pageDescription">{!$Label.apttus__reviewofflineagreement}</h1><br/>
+                    <h2 class="pageType"><apex:outputText value="{!documentName}"/></h2>
+                </div>
+            </div>
+        </div>        
+        <apex:pageBlock >
+            <apex:pageMessages />
+            <apex:outputPanel >         
+                <apex:outputText value="{!message}"/>                                            
+                <table id="tblstyle">                    
+                     <tr>
+                        <td class="bordertop">{!$Label.apttus__extractingdata}</td>
+                        <td class="alighcenter bordertop">
+                            <apex:image url="{!$Resource.Apttus__Image_Completed}" rendered="{!dataExtractionStatus == $Label.apttus__completed}" height="25" width="25"/>
+                            <apex:image url="{!$Resource.Apttus__Image_Spinner}" rendered="{!dataExtractionStatus == $Label.apttus__inprocess}" height="25" width="25"/></td>
+                        <td class="bordertop"><apex:outputText value="{!dataExtractionStatus}"/></td>
+                    </tr>
+                    <tr>
+                        <td>{!$Label.apttus__creatingfileexportjob}</td>
+                        <td class="alighcenter">
+                            <apex:image url="{!$Resource.Apttus__Image_Completed}" rendered="{!fileExportJobStatus == $Label.apttus__completed}" height="25" width="25"/>
+                            <apex:image url="{!$Resource.Apttus__Image_Spinner}" rendered="{!fileExportJobStatus == $Label.apttus__inprocess}" height="25" width="25"/></td>
+                        <td><apex:outputText value="{!fileExportJobStatus}"/></td>
+                    </tr>
+                    <tr>
+                        <td>{!$Label.apttus__exportingfile}</td>
+                        <td class="alighcenter">
+                            <apex:image url="{!$Resource.Apttus__Image_Completed}" rendered="{!fileExportStatus == $Label.apttus__completed}" height="25" width="25"/>
+                            <apex:image url="{!$Resource.Apttus__Image_Spinner}" rendered="{!fileExportStatus == $Label.apttus__inprocess}" height="25" width="25"/></td>
+                        <td><apex:outputText value="{!fileExportStatus}"/></td>
+                    </tr>
+                </table>
+                <br/><br/>
+                <apex:outputText value="{!$Label.apttus__idestatusfootnote}"/>     
+            </apex:outputPanel>         
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton action="{!returnToAgreement}" value="{!$Label.apttus__return}" disabled="{!isDone == false}" />                
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+         <apex:actionFunction name="unzipped" action="{!unzipped}" rerender="form">
+            <apex:param name="state" assignTo="{!unzippedState}" value=""/>
+        </apex:actionFunction>
+        <c:unzipfile name="zipfile" oncomplete="unzipped(state);" state="{!ideJobId}"
+                    onreceive="{!$RemoteAction.ReviewOfflineAgreementController.receiveZipFileEntry}" />
+     </apex:form>
+</apex:page>

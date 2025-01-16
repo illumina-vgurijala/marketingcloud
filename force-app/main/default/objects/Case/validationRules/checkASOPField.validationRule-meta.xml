@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>checkASOPField</fullName>
+    <active>true</active>
+    <description>To make ASOP field mandatory, while closing an Inquiry case for CS users.</description>
+    <errorConditionFormula>AND(
+        NOT($Profile.Name ==$Label.Integration_SAP_Service),
+        NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+        NOT($User.FirstName ==$Label.Automated_Process_User),
+        NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+        $Profile.Name ==$Label.ProfileCustomerService,
+        RecordType.Name == $Label.CaseRecordTypeInquiry,
+        NOT(ISCHANGED(Unread_Emails__c)),
+        NOT(ISCHANGED(Case_Owner_s_Manager_Email__c)),
+        NOT(ISCHANGED(Case_Completed_By__c)),
+        NOT(ISCHANGED(SVMXC__Actual_Resolution__c)),
+        NOT(ISCHANGED(SVMXC__Time_to_Resolve__c)),
+        NOT( AND(ISCHANGED(Closed_with_Associated_Codes__c ),
+        NOT(Closed_with_Associated_Codes__c ))),
+        NOT(ISCHANGED( Regional_Email__c )),
+        NOT(ISCHANGED( Sent_to_Qualtrics__c)),
+        NOT(ISCHANGED( Qualtrics_Survey_Link__c )),
+        NOT(ISCHANGED( Is_Case_Completed__c )),
+        NOT(ISCHANGED( Work_Order_Status__c )),
+        OR(
+        ISPICKVAL(Status,'Completed'),
+        ISPICKVAL(Status,'Closed')
+        ),
+        ISPICKVAL(Sub_Type__c,'Order'),
+        ISPICKVAL(Category__c,'New Order'),
+        ISBLANK( ASOP_Order__c ),
+        DATEVALUE (CreatedDate) > DATE (2020,01,01)
+        )</errorConditionFormula>
+    <errorMessage>Inquiry cases with the Category New Order require the ASOP or Order Number. Fill in the ASOP/Order# field before completing the Case.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

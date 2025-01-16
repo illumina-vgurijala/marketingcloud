@@ -1,0 +1,3 @@
+trigger StandingQuoteOpportunityProductTrigger on Standing_Quote_Opportunity_Product__c (before insert) {
+	ilib_SObjectDomain.triggerHandler(StandingQuoteOpportunityProducts.class);
+}

@@ -1,0 +1,84 @@
+<apex:page controller="openq.KOLUsageController" sidebar="false">
+    <apex:form >
+    
+        <apex:pageBlock >
+            <apex:pageMessages ></apex:pageMessages>
+            <apex:pageBlockSection columns="1" collapsible="false">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel style="font-size:13px">Year</apex:outputLabel>
+                    <apex:selectList value="{!selectedYear}" multiselect="false" size="1">
+                        <apex:selectOptions value="{!years}"></apex:selectOptions>
+                    </apex:selectList>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton value="Submit" action="{!submit}"/>
+            </apex:pageBlockButtons>            
+        </apex:pageBlock> <br/> <br/>
+        
+        <apex:pageBlock rendered="{!contactList.size = 0 && selectedYear != 0}" Title="KOL Usage">
+            <div style="font-weight:bold;padding-left:300px">No Event/Interaction made in the selected year</div>
+        </apex:pageBlock>
+      
+        <apex:pageBlock rendered="{!contactList.size > 0}" id="results" Title="KOL Usage">
+            <div style="text-align:right"> 
+                <apex:commandLink action="{!exportCSV}"> 
+                    <apex:image url="{!URLFOR($Resource.openq__ExcelImages, 'images/Excel_icon.gif')}" width="20" height="20" title="Export to Excel" style="align:right" />
+                </apex:commandLink>
+            </div>
+           
+            <br/>
+            <apex:pageBlockTable value="{!contactList}" var="con" id="results">
+                 <apex:column >
+                      <apex:facet name="header">                              
+                         <apex:commandLink action="{!doSort}" reRender="results"> <span style="margin-right:40px">KOL Name</span>                       
+                             <apex:image url="{!URLFOR($Resource.openq__SortIcons, 'sort_down.jpg')}" width="17" height="17" title="Sort by Name" rendered="{!sortByNameFlag}" /> 
+                             <apex:image url="{!URLFOR($Resource.openq__SortIcons, 'sort_up.jpg')}" width="17" height="17" title="Sort by Name" rendered="{!NOT(sortByNameFlag)}" /> 
+                         </apex:commandLink>
+                      </apex:facet>             
+                      <apex:outputLink value="/{!con.Id}" target="_blank">{!con.Name} </apex:outputLink> 
+                </apex:column>
+                
+                <apex:column headerValue="Country">
+                    <apex:outputPanel rendered="{!NOT(ISNULL(contactIdAndCountry))}">
+                        {!contactIdAndCountry[con.Id]}
+                    </apex:outputPanel>
+                </apex:column> 
+                 <apex:column headerValue="Event Total">
+                    <apex:outputPanel rendered="{!NOT(ISNULL(ContatIdAndEventTotalMap))}">
+                        {!ContatIdAndEventTotalMap[con.Id]}
+                    </apex:outputPanel>
+                </apex:column> 
+                 <apex:column headerValue="Interaction Total">
+                    <apex:outputPanel rendered="{!NOT(ISNULL(ContatIdAndInteractionTotalMap))}">
+                        {!ContatIdAndInteractionTotalMap[con.Id]}
+                    </apex:outputPanel>
+                </apex:column> 
+                             
+             <!-- <apex:column headerValue="Country" value="{!contactIdAndCountry[con.Id]}"/>
+                 <apex:column headerValue="Event Total" value="{!ContatIdAndEventTotalMap[con.Id]}"/>
+                 <apex:column headerValue="Interaction Total" value="{!ContatIdAndInteractionTotalMap[con.Id]}"/> -->
+              
+                <apex:variable value="{!0}" var="i"/>   
+                <apex:variable value="{!0}" var="j"/>                 
+                
+                <apex:repeat value="{!configfields}" var="f">                  
+                    <apex:column >
+                        <apex:facet name="header">
+                            <apex:outputText >{!fieldNameAndLabelMap[configfields[j]]}<apex:variable value="{!j+1}" var="j" />
+                            <apex:variable value="{!0}" var="j" rendered="{!j=configfields.size}"/></apex:outputText>                            
+                        </apex:facet>                        
+                         
+                        <apex:outputText >{!con[configfields[i]]}</apex:outputText>
+                        <apex:variable value="{!i+1}" var="i" />
+                      
+                        <apex:variable value="{!0}" var="i" rendered="{!i=configfields.size}"/>   
+                    </apex:column> 
+                                    
+                 </apex:repeat>     
+            </apex:pageBlockTable>
+            
+        </apex:pageBlock>    
+    </apex:form>
+</apex:page>

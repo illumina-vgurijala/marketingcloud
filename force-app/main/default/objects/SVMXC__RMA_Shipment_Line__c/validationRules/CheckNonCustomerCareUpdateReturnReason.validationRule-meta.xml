@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckNonCustomerCareUpdateReturnReason</fullName>
+    <active>true</active>
+    <description>For Return Reason, if Non CC user update the following picklist value then show an error.</description>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($User.FirstName ==$Label.Automated_Process_User),
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)),
+$Profile.Name != &apos;Customer Service&apos;,
+SVMXC__RMA_Shipment_Order__r.ERP_Submitted__c ='Not Requested',
+OR(
+ISNEW(),
+ISCHANGED(Return_Reason__c )
+),
+OR(
+ISPICKVAL( Return_Reason__c ,&apos;Shipment not Delivered&apos;), 
+ISPICKVAL( Return_Reason__c ,&apos;Shipped to Wrong Country&apos;), 
+ISPICKVAL( Return_Reason__c ,&apos;Virtual - Change Ownership&apos;)
+)
+)</errorConditionFormula>
+    <errorMessage>The selected Return Reason can only be added by Customer Care users. Please select an alternate Return Reason or contact Customer Care.</errorMessage>
+</ValidationRule>

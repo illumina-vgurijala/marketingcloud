@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckForPOAndQuoteAmountMismatch</fullName>
+    <active>true</active>
+    <description>Validation Rule to enforce user to enter PO or Quote Mismatch reason field if PO Currency/Amount have different values than Quotation Currency/Amount</description>
+    <errorConditionFormula>AND (
+    /* Profiles who bypass rule */
+    NOT(CONTAINS($Profile.Name, &apos;Integration&apos;)),
+    $Profile.Name &lt;&gt; $Label.ProfileSystemAdmin,
+
+    /* Currency or value mismatch */
+    OR (
+        TEXT(PO_Currency__c) &lt;&gt; TEXT(Quotation_Currency__c),
+        PO_Amount__c &lt;&gt; Quotation_Amount__c
+    ),
+    /* Reason for mismatch not provided */
+    ISBLANK(PO_Or_Quote_Mismatch_Reason__c),
+
+    /* Either an edit or a new record which is not auto-generated */
+    OR (
+        AND (
+            ISNEW(),
+            NOT(Is_Automatically_Created__c)
+        ),
+        AND (
+            NOT(ISNEW())
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>PO_Or_Quote_Mismatch_Reason__c</errorDisplayField>
+    <errorMessage>PO Currency and PO Amount do not match Quote Currency and Quote Amount. Please correct it or provide a PO Quote mismatch reason.</errorMessage>
+</ValidationRule>

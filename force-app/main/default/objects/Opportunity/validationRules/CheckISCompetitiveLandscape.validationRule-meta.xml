@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckISCompetitiveLandscape</fullName>
+    <active>false</active>
+    <description>Competitive Landscape is required before moving to Prove, Negotiate and Resolve, Finalize, or Closed Won.</description>
+    <errorConditionFormula>IF( 
+    AND( 
+        RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard, 
+        !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+        NOT (
+            OR (     
+                ISCHANGED ( Is_Updated_By_System__c ),
+                Is_Updated_By_System__c = true,
+                $Profile.Name =  $Label.ProfileSystemAdmin,
+                $Profile.Name =  $Label.ProfileDataSteward
+            )
+        ) 
+    ),
+    AND(
+        NOT(
+            OR( 
+                ISPICKVAL ( StageName, &apos;Closed Lost&apos; ), 
+                ISPICKVAL ( PRIORVALUE(StageName) ,&apos;Closed Lost&apos; ), 
+                ISPICKVAL ( PRIORVALUE(StageName) ,&apos;Closed Won&apos; ),
+                ISPICKVAL ( StageName, &apos;Closed Abandoned&apos; ),
+                ISPICKVAL ( PRIORVALUE(StageName) ,&apos;Closed Abandoned&apos; ),  
+                ISPICKVAL ( StageName, &apos;Develop&apos; ),
+                ISPICKVAL ( StageName, &apos;Qualify&apos; ),
+                ISPICKVAL ( StageName, &apos;Create&apos; ),
+                TEXT ( StageName ) = $Label.OpportunityStageClosedWon
+            )
+        ),
+        ISBLANK ( TEXT (Competitive_Landscape__c ) ),
+        AND ( 
+	    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+ 	    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+        )        
+    ),
+    false
+)</errorConditionFormula>
+    <errorDisplayField>Competitive_Landscape__c</errorDisplayField>
+    <errorMessage>Please provide a &quot;Competitive Landscape&quot; (Additional Competitor Information section).</errorMessage>
+</ValidationRule>

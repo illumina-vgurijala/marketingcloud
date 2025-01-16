@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckInquiryParentCaseAssociation</fullName>
+    <active>true</active>
+    <description>Prevent Inquiry Parent Case Association When Work Order or Part Order Exists with Case</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    TEXT(Status) == $Label.CaseStatusClosedDuplicate,
+    Parent.RecordType.DeveloperName == $Label.Inquiry,
+    OR(
+        TEXT(Parts_Order_Status__c) ==
+        $Label.WorkOrderPartOrderStatusInProgress,
+        TEXT(Work_Order_Status__c) ==
+        $Label.WorkOrderPartOrderStatusInProgress
+    )
+)</errorConditionFormula>
+    <errorMessage>Inquiry cases can&apos;t be a parent of Business Issue cases closed as duplicate. Either 1) Select an appropriate Parent Case OR 2) Close this Business Issue Case as an accidental case creation.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

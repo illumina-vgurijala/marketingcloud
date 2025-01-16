@@ -1,0 +1,93 @@
+<!-- 
+    Apttus Contract Management
+    WizardRuntimeView
+    @2014-2015 Apttus Inc. All rights reserved.    
+ -->
+<apex:page standardController="Apttus__Wizard2__c" 
+		   showHeader="true"
+		   sidebar="false" 
+		   tabStyle="Apttus__Wizard2__c"
+           recordSetVar="WizardRuntimes"
+           extensions="Apttus.WizardRuntimeViewController"> 
+    <link rel="stylesheet" href="{!URLFOR($Resource.WizardRuntimeUI,'/css/style.css')}" />
+   <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" />  
+    
+    <script type="text/javascript">
+    	function resetRuntimeFocus(field) { 
+            if(document.getElementById(field) != null) {
+                var length = document.getElementById(field).value.length;            
+            	document.getElementById(field).focus();
+    			document.getElementById(field).setSelectionRange(length, length);
+            }                       
+        };
+    	var wait = (function() {
+  			var timer = 0;
+  			return function(callback, ms){
+    			clearTimeout (timer);
+    			timer = setTimeout(callback, ms);
+ 			};
+		})();    
+    	$(document).on("keyup", ".searchTextWizardRuntime", function() {
+   			wait(function(){                
+      			invokeSearchRuntimes();
+    		}, 1000 );
+		});
+    </script>
+    
+    <!-- TODO : Help section URL -->
+    <apex:sectionHeader title="{!$Label.apttus__wizards}" subtitle="{!$Label.apttus__home}" help="HelpText URL"/>
+    <apex:form styleClass="wizard-container"> 
+        <apex:pageblock title="{!$Label.apttus__createnewwizardfromdesign}">        
+        		<apex:outputLabel styleClass="wizard-selection">{!$Label.apttus__wizarddesign}</apex:outputLabel>  
+            	<apex:selectList size="1" value="{!selectedWizardDesign}" styleClass="wizard-dropdown">                              				
+					<apex:selectOptions value="{!WizardDesignOptions}"/>
+				</apex:selectList>            
+            <apex:commandButton styleClass="wizard-btn-go" action="{!navigateToWizard}" oncomplete="window.open('{!goButtonUrl}');" value="{!$Label.apttus__go}"/>            
+    	</apex:pageblock>   
+    	<apex:pageblock id="idWizardRuntimePageBlock"> 
+            <apex:inputText value="{!searchText}" id="idRuntimeSearchText" styleClass="searchTextWizardRuntime" html-placeholder="{!$Label.apttus__searchplaceholder}"/>
+            <apex:actionFunction name="invokeSearchRuntimes" action="{!search}" reRender="idWizardRuntimePageBlock" oncomplete="resetRuntimeFocus('{!$Component.idRuntimeSearchText}')"/>
+            
+			<apex:pageblockTable styleClass="wizard-listview" value="{!WizardRuntimes}" var="wizardRuntime" rendered="{!displayRecords}">
+                <apex:column headerValue="{!$Label.apttus__action}">
+                    <apex:commandLink value="{!$Label.apttus__continue}" rendered="{!wizardRuntime.Apttus__Status__c == 'In Progress'}" action="{!navigateToWizardRuntimeInstance}" oncomplete="window.open('{!actionUrl}');">
+                        <apex:param name="id" value="{!wizardRuntime.id}"></apex:param>
+                    </apex:commandLink>
+                    <apex:commandLink value="{!$Label.apttus__review}" rendered="{!wizardRuntime.Apttus__Status__c != 'In Progress'}" action="{!navigateToWizardRuntimeInstance}" oncomplete="window.open('{!actionUrl}');">
+                        <apex:param name="id" value="{!wizardRuntime.id}"></apex:param>
+                    </apex:commandLink>
+                </apex:column>
+            	<apex:repeat value="{!$ObjectType.Apttus__Wizard2__c.FieldSets.Apttus__WizardRuntimeViewFieldset}" var="WizardRuntimeFields" >            	
+                    <apex:column value="{!wizardRuntime[WizardRuntimeFields.fieldPath]}"/>            		
+            	</apex:repeat>          
+			</apex:pageblockTable>
+            <apex:panelGrid columns="3" styleClass="wizard-runtime-pagination" rendered="{!displayRecords}">
+                <apex:outputPanel >
+                    <apex:outputText value="{!$Label.apttus__page} {!PageNumber} {!$Label.apttus__of} {!CEILING(ResultSize/PageSize)}" />
+                </apex:outputPanel>
+                <apex:outputPanel style="margin-left:145px;">
+                    <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!HasPrevious}" action="{!Previous}" reRender="idWizardRuntimePageBlock"/>
+                	<apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(HasPrevious)}" style="color: #ccc;"/>
+                	<apex:outputText value="  "/>
+                	<apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!HasNext}" action="{!Next}" reRender="idWizardRuntimePageBlock"/>                    
+                	<apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(HasNext)}" style="color: #ccc;"/>
+                </apex:outputPanel>
+                <apex:outputPanel style="float:right;">
+                    <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                	<apex:selectList value="{!PageSize}" size="1" >
+                    	<apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                    	<apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                        <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                        <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                    	<apex:actionSupport event="onchange" reRender="idWizardRuntimePageBlock"/>
+                	</apex:selectList>
+                </apex:outputPanel>                 
+            </apex:panelGrid>
+            <apex:outputPanel >
+                <apex:pageblockSection rendered="{!!displayRecords}">
+	            	<apex:outputLabel style="font-weight:bold;margin-left:0px;">{!$Label.apttus__norecordstodisplay}</apex:outputLabel>
+            	</apex:pageblockSection>
+            </apex:outputPanel> 
+		</apex:pageblock>		        
+    </apex:form>    
+</apex:page>

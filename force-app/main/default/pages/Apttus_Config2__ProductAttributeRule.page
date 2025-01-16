@@ -1,0 +1,640 @@
+<!-- 
+    Apttus Config & Pricing
+    ProductAttributeRule
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Config2__ProductAttributeRule__c"
+		   extensions="Apttus_Config2.ProductAttributeRuleController"
+		   showHeader="false" 
+		   sidebar="{!showAdminSidebar}">
+
+	<link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources, 'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources, 'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources, 'css/jQueryUIStyle.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.AttributeRuleAdmin, 'css/style.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources, 'css/jQueryDatePicker.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources, 'css/jquery-ui.multipickSearch-1.0.css')}" rel="stylesheet" />
+
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/apttusUtils-1.0.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/jQueryDateTimePicker.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/navigation.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/optionController.js')}" />    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/autoCompleteWidget.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/jquery-ui.multipickSearch-1.0.js')}" />
+    
+	<script>
+
+	    var j$ = jQuery.noConflict();
+
+	    j$('body').on('click', '.save.incentive-save', function(){
+            bindCondExpr();
+	        doSaveProductAttributeRule();
+	        return false;
+	    });
+
+        function bindSingleSelectToFieldItems() {
+            j$(".fieldSingleSelect").each(function(){
+                var $hiddenInput = j$(this).next();
+                var attributeSelectPicklist = j$(this).multipickSearch({
+                    lblResultsItemsTitle: "{!$Label.AvailableItems}",
+                    lblSelectedItemsTitle: "{!$Label.SelectedItems}",
+                    lblClose: "{!$Label.Close}",
+                    lblNoResults: "{!$Label.NoResultsAvailable}",
+                    multipick: false,
+                    showMenu: true,
+                    dataSourceFunction: function (request, response) {
+                        fieldItemsSearch(request, response,$hiddenInput.val(),$hiddenInput.attr('index'));
+                    },
+                    defaultAvailableView: true,
+                    defaultResults: function (request, response) {
+                        request.term = "";
+                        fieldItemsSearch(request, response,$hiddenInput.val(),$hiddenInput.attr('index'));
+                    },
+                    onItemSelected: function (settings, item) {
+                        onAddSingleSelectedItem($hiddenInput, item);
+                    },
+                    onDelete: function (settings, item) { // remove item from selected list
+                        $hiddenInput.val("");
+                        $hiddenInput.next().val("");
+
+                    }
+                });
+                attributeSelectPicklist.multipickSearch("setSelectedItems", [{label: $hiddenInput.next().val(), value: $hiddenInput.val()}]);
+                attributeSelectPicklist.val($hiddenInput.attr('label'));
+
+                if($hiddenInput.attr('label') != ''){
+                    j$(this).parent().find(".cancel-btn").show();
+                }
+            });  
+        }
+
+        var onAddSingleSelectedItem = function ($hiddenInput, item) {
+            $hiddenInput.val(item.value );
+            $hiddenInput.next().val(item.label);
+        }
+        var fieldItemsSearch = function(request, response,selectedValue, selectedIndex) {
+            var selectedAttributesList = [];
+            j$(".attributeSelect").each(function() {
+                var currIndex = j$(this).attr("index");
+                if(currIndex != selectedIndex && j$(this).val() != '') {
+                    selectedAttributesList.push(j$(this).val());
+                }
+            })
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.ProductAttributeRuleController.getSimilarFields}', request.term,'',
+                   function(result, event){
+                      if(event.type == 'exception') {
+                            console.log(event.message);
+                      } else {
+                           response(result);
+                      }
+            });
+        }
+
+	    function closeMe(selector) {
+	        j$(selector).dialog('close');
+	    }
+
+	    function closeDialog(dialog) {
+	        j$("#" + dialog).dialog('close');
+	    }
+
+	    j$(document).ready(function(){
+
+	        var $nav = j$('.nav-container');
+	        $nav.data("collapsibleNavIsCollapsed", false);
+
+	        j$(".nav-toggle").bind("click", function(){
+	            toggleNav($nav.outerWidth(true), $nav, j$('.main'));
+	        });
+
+			
+			j$('.header .collapsible').click(function() {
+	            var $head = j$(this);
+	            j$(j$($head.parent()[0]).next('.innerContent')).toggle(500, function() {
+	                var isVisible = j$(this).is(':visible');
+	                // animation complete
+	                if(isVisible) {
+	                    // if visible, on animation completion change font awesome arrow icon to facing down
+	                    $head.find(".fa").attr('class', 'fa fa-caret-down');
+	                } else {
+	                    // if not visible, on animation completion change font awesome arrow icon to facing right
+	                    $head.find(".fa").attr('class', 'fa fa-caret-right');
+	                }
+	            });
+	            return false;
+	        });
+            bindSingleSelectToFieldItems();
+	    });
+
+	    var currentIncentiveComponent = "";
+
+	    function displaySpinner(){
+	        j$('.overlay').show();
+	        disableScroll();
+	    }
+
+	    function hideSpinner(){
+	        j$('.overlay').hide();
+	        enableScroll();
+	    }
+	    var keys = {37: 1, 38: 1, 39: 1, 40: 1};
+
+	    function preventDefault(e) {
+	      e = e || window.event;
+	      if (e.preventDefault)
+	          e.preventDefault();
+	      e.returnValue = false;  
+	    }
+
+	    function preventDefaultForScrollKeys(e) {
+	        if (keys[e.keyCode]) {
+	            preventDefault(e);
+	            return false;
+	        }
+	    }
+
+	    function disableScroll() {
+	      if (window.addEventListener) // older FF
+	          window.addEventListener('DOMMouseScroll', preventDefault, false);
+	      window.onwheel = preventDefault; // modern standard
+	      window.onmousewheel = document.onmousewheel = preventDefault; // older browsers, IE
+	      window.ontouchmove  = preventDefault; // mobile
+	      document.onkeydown  = preventDefaultForScrollKeys;
+	    }
+
+	    function enableScroll() {
+	        if (window.removeEventListener)
+	            window.removeEventListener('DOMMouseScroll', preventDefault, false);
+	        window.onmousewheel = document.onmousewheel = null; 
+	        window.onwheel = null; 
+	        window.ontouchmove = null;  
+	        document.onkeydown = null;  
+	    }
+
+        function clearCriteriaField(e) {
+            if (e.value == '--None--') {
+                    e.value = '';
+                }
+        }
+    </script>
+
+	<style>
+		div.hideCurrDate span.dateInput span.dateFormat {
+            display: none;
+        }
+        .ui-autocomplete-loading { 
+            background: white url(/img/loading32.gif) right center no-repeat;
+            background-size:15px 15px; 
+        }
+        div.multi-select-widget {
+            width: 250px;
+            float: none;
+            margin-top: 5px;
+            margin-left: 0px;
+            margin-bottom:0;
+        }
+        .checkbox-override {
+            margin-top: 10px;
+            margin-bottom: 39px;
+        }
+        input[type="text"], select {
+            width: 250px!important;
+        }
+        h3.subHeading.collapsible {
+            margin-top: 24px;
+            margin-left: 0px;
+            display: inline-block;
+            margin-bottom: 0px;
+        }
+        .content .field {
+            margin-top: 20px;
+        }
+        .formbg a {
+            color: #015ba7;
+        }
+        .ui-autocomplete-loading {
+            background: white url(/img/loading32.gif) right center no-repeat;
+            background-size: 15px 15px;
+        }
+        .benefit-dimensions .field {
+            position: relative;
+            margin-top: 5px;
+        }
+        .field .spy-glass {
+            position: absolute;
+            bottom: 10px;
+            right: 13px;
+            color: #079CCE;
+            font-size: 20px;
+        }
+        .var-fields .field .spy-glass {
+            top: 25px !important;
+        }
+        .add-remove-btns {
+            top: 10px;
+        }
+        .row-1 {
+            top: 27px;
+        }
+        .var-fields div.multi-select-widget {
+            width: 300px;
+        }
+        .multi-select-widget input[type="text"] {
+            width: 210px!important;
+            margin-top: 0;
+            display: inline-block;
+        }
+        .ui-autocomplete-loading {
+            background: white url(/img/loading32.gif) right center no-repeat;
+            background-size: 15px 15px;
+        }
+        input[type="text"], select {
+            width: 120px;
+        }
+        .criteria-expression {
+            margin-top: 20px;
+        }
+        .criteria-expression h3 {
+            font-size: 16px;
+            color: #555555;
+        }
+        .criteria-expression input {
+            width: 500px;
+        }
+        input[type="text"].hidden-text {
+            display: none;
+        }
+        div.field-value-cell {
+            position: relative;
+            margin-top: 5px;
+        }
+        div.field-value-cell .spy-glass {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            color: #079CCE;
+            font-size: 20px;
+        }
+        select.field-value-multi {
+            width: 100%;
+            height: 55px;
+        }
+        .field-value-cell input, .field-value-cell select {
+            width: 240px;
+        }
+        .multi-select-widget {
+            width: 240px;
+            height: 37px;
+        }
+        .paddingLR20 {
+            padding: 0px 20px 0px 40px;
+        }
+        .circle-btn i, .criteria .circle-btn i {
+            margin-top: 4px;
+        }
+        .remove-criteria-row i.fa-times {
+            margin-top: 6px;
+        }
+       .remove-criteria-row i.fa-plus {
+            margin-top: 5px;
+        }
+        a.remove-action-row i {
+            color: #fff;
+        }
+        .tabs {
+            width:100%;
+            display:inline-block;
+        }
+         
+        /*----- Tab Links -----*/
+        /* Clearfix */
+        .tab-links:after {
+            display:block;
+            clear:both;
+            content:'';
+        }
+     
+        .tab-links li {
+            margin:0px 5px;
+            float:left;
+            list-style:none;
+        }
+     
+        .tab-links a {
+            padding:9px 15px;
+            display:inline-block;
+            border-radius:3px 3px 0px 0px;
+            background:#7FB5DA;
+            font-size:16px;
+            font-weight:600;
+            color:#4c4c4c;
+            transition:all linear 0.15s;
+        }
+ 
+        .tab-links a:hover {
+            background:#a7cce5;
+            text-decoration:none;
+        }
+     
+        li.active a, li.active a:hover {
+            background:#fff;
+            color:#4c4c4c;
+        }
+     
+        /*----- Content of Tabs -----*/
+        .tab-content {
+            padding:15px;
+            border-radius:3px;
+            box-shadow:-1px 1px 1px rgba(0,0,0,0.15);
+            background:#fff;
+        }
+     
+        .tab {
+            display:none;
+        }
+ 
+        .tab.active {
+            display:block;
+        }
+        .expressioncriteria{
+            height:100%;
+            display: inline-block;
+            width:100%;
+        }
+
+        .operatorarea {
+        	float:left; 
+        	height: calc( 100% - 200px );
+        }
+       
+        input.btn {
+	        background: #2093DA;
+	        color: #fff;
+	        border: none;
+	        padding: 4px 5px;
+	        height: 26px;
+        }
+        
+        input.btn:hover {
+        	background: #1C78B1;
+        }
+        .ui-widget {
+        	border: none;
+        }
+
+        .actionsection .tab-links a {
+            background: none;
+            border: none;
+            color: #2093DA;
+            font-size: 13px;
+    	}    
+        .title h1 {
+            border-right: 1px #909090 solid;
+            padding-right: 7px;
+        }
+        .sub-title {
+            margin-left: 0px;
+            height: auto;
+            margin-top: 11px;
+        }
+        .sub-title h1 {
+            color: #fff!important;
+        }
+        
+        #idInfoSection h3.subHeading {
+            display: block;
+            padding-top: 19px;
+        }
+        .paddingtop10 {
+            padding-top:10px;
+        }
+        
+        #section-basic-actions .multi-select-widget input[type="text"] {
+            width: 200px !important;
+            margin-top: 0;
+        }
+
+        #section-advanced-actions select {
+            width: 190px !important;
+        }
+        .section-advanced-criteria select, .section-advanced-criteria input[type="text"]{
+            width: 200px !important;
+        }
+        
+        #section-advanced-actions .multi-select-widget input[type="text"] {
+            width: 130px !important;
+            margin-top: 0;
+        }
+            
+        #selectTableRow .multi-select-widget input[type="text"] {
+            width: 205px !important;
+            margin-top: 0;
+        }
+
+        #selectTableRow .multi-select-widget span.circle-btn {
+            margin-top: -13px;    
+        }
+        
+        .functioncategories {
+            padding: 0.5% 0.5% 1%;
+        }
+
+        .multipickSearchInput {
+            width: 98%;
+            height: 90%;
+        }
+        .recent-item {
+            display: inline-block;
+            margin-left: 5px;
+            cursor : pointer;
+        }
+
+        .active-menu-item {
+            color : blue;
+        }
+
+        .content .form1, .content .form2, .innerContent {
+            padding-bottom: 20px;
+        }
+
+	</style>
+
+	<apex:form id="idProductAttributeRuleSO">
+		
+		<div class="header">
+			<apex:outputpanel id="pnlHeader" layout="block" styleClass="primary">
+	            <div class="back-nav">
+	                <a href="{!returnURL}">
+	                    <i class="fa fa-arrow-left"></i>
+	                </a>
+	            </div>
+	            <div class="title">
+	                <h1>{!$ObjectType.ProductAttributeRule__c.labelPlural}</h1>
+	            </div>
+	            <div class="sub-title">
+	            	<h1> {!attributeRuleSO.Name} </h1>
+	            </div>
+	            <div class="title" >
+	                <h4 class="status">{!status}</h4>   
+	            </div>
+	        </apex:outputpanel>
+	    </div>
+
+       	<div class="content">
+       		<apex:outputPanel id="middleContent">
+		        <apex:outputPanel id="attributeRuleInfoPanel">
+		        	<c:AttributeRuleInformation attributeRuleSO="{!attributeRuleSO}" />
+		        </apex:outputPanel>
+
+                <apex:outputPanel >
+                    <div class="formbg">
+                        <div class="section">
+                            <div class="header"> 
+                                <h3 class="collapsible"><i class="fa fa-caret-down"></i>{!$Label.Criteria}</h3>
+                            </div>
+                            <div class="innerContent">
+                                <div style="padding-left: 40px;">
+                                    <p style="float:left"> {!$Label.RunThisRule} &nbsp;</p>
+                                    <apex:selectList id="idCriteriaOption" style="width: auto;" multiselect="false" size="1" onchange="changeCriteriaSection();">
+                                        <!-- TODO: implement criteria are met. Removed selectOption (CPQ-8142) -->
+                                        <!-- <apex:selectOption itemValue="criteria" itemLabel="criteria are met" /> -->
+                                        <apex:selectOption itemValue="formula" itemLabel="{!$Label.apttus_config2__formulaevaluatestotrue}"/>
+                                    </apex:selectList>
+                                    <script type="text/javascript">
+                                        // show formula editor upon load if there is a condition expression and no condition criteria
+                                        if("{!JSENCODE(attributeRuleSO.ConditionCriteria__c)}" == "" && "{!JSENCODE(attributeRuleSO.ConditionCriteriaExpression__c)}" != "") {
+                                            j$('[id$=idCriteriaOption').val('formula');
+                                        }
+                                    </script>
+                                </div>
+                                <apex:pageMessages id="idAttributeRuleCriteriaMsgs" />
+                                <c:AttributeRuleCriteriaExpressionBuilder attributeRuleSO="{!attributeRuleSO}" />
+                                <!-- Attribute Rule Criteria begins -->
+                                <apex:outputPanel id="idAttributeRuleCriteriaPanel" styleClass="inner-container-maximize attributeRuleCriteriaPanel">
+                                    <div class="section-advanced-criteria">
+                                        <apex:outputPanel id="idCriteriaPredicateTable">
+                                            <script type="text/javascript">
+                                                j$(document).ready(function() {
+                                                    j$('.add-criteria-row').on("click", function() {
+                                                        var index = j$(this).closest('tr').index();
+                                                        displaySpinner();
+                                                        addCriteriaRow(index);
+                                                    });
+                                                    j$('.remove-criteria-row').on("click", function() {
+                                                        var index = j$(this).closest('tr').index();
+                                                        displaySpinner();
+                                                        removeCriteriaRow(index);
+                                                    });
+                                                });
+                                            </script>                                            
+                                            <table class="criteria" style="width:70%;">
+                                                <thead>
+                                                    <th></th>
+                                                    <th>{!$Label.Field}</th>
+                                                    <th>{!$Label.Operator}</th>
+                                                    <th>{!$Label.Value}</th>
+                                                    <th></th>
+                                                </thead>
+                                                <tbody>
+                                                    <apex:variable value="{!1}" var="rowNum"/>
+                                                    <apex:repeat value="{!predicates}" var="predicate">
+                                                        <tr class="attribute-criteria-row">
+                                                            <td class="row-number">
+                                                                {!rowNum}.
+                                                            </td>
+                                                            <td>
+                                                                <input type="text" class="fieldSingleSelect" placeholder="{!$Label.apttus_config2__search}" id="fieldContentsId" onclick="clearCriteriaField(this); "></input>
+                                                                
+                                                                <apex:inputHidden html-class="fieldSingleSelectHiddenInput" html-index="{!rowNum}" value="{!predicate.fieldName}" html-label="{!predicate.fieldLabel}" html-val="{!predicate.fieldName}"></apex:inputHidden>
+
+                                                                 <apex:inputHidden html-class="fieldSingleSelectHiddenLabelInput" html-index="{!rowNum}" value="{!predicate.fieldLabel}"></apex:inputHidden>
+                                                                
+                                                            </td>
+                                                            <td>
+                                                                <apex:selectList value="{!predicate.operator}" multiselect="false" size="1">
+                                                                    <apex:selectOptions value="{!predicate.operators}" />
+                                                                </apex:selectList>
+                                                            </td>
+                                                            <td>
+                                                                <apex:inputText value="{!predicate.value}" html-placeholder="Enter Value" />
+                                                            </td>
+                                                            <td>
+                                                                <a href="javascript:void(0);" class="circle-btn cancel-btn remove-criteria-row"><i class="fa fa-times"></i></a>
+                                                            </td>
+                                                            <td>
+                                                                <a href="javascript:void(0);" class="circle-btn add-btn add-criteria-row"><i class="fa fa-plus"></i></a>
+                                                            </td>
+                                                            <apex:variable var="rowNum" value="{!rowNum + 1}"/>
+                                                        </tr>
+                                                    </apex:repeat>
+                                                </tbody>
+                                            </table>
+                                            <div class="criteria-expression">
+                                                <h3>{!$Label.CriteriaExpression}</h3>
+                                                <apex:inputText value="{!condExpr}" />
+                                            </div>
+                                        </apex:outputPanel>
+                                    </div>
+                                </apex:outputPanel>
+                                <!-- Attribute Rule Criteria end -->
+                                <script type="text/javascript">
+                                    function changeCriteriaSection() {
+                                        if (j$('[id$=idCriteriaOption').val() == 'criteria') {
+                                            j$('[id$=idExpressionBuilder]').hide();
+                                            j$('[id$=idAttributeRuleCriteriaPanel]').show();
+                                        } else {
+                                            j$('[id$=idAttributeRuleCriteriaPanel]').hide();
+                                            j$('[id$=idExpressionBuilder]').show();
+                                        }
+                                    }
+                                    changeCriteriaSection();
+                                </script>
+                            </div> 
+                        </div>
+                    </div>
+                </apex:outputPanel>                
+
+		        <apex:outputPanel id="attributeRuleActionPanel">
+		        	<c:AttributeRuleActions attributeRuleActionsSO="{!attributeRuleActions}" />
+		        </apex:outputPanel>
+		        <apex:actionFunction action="{!doSave}" name="doSaveProductAttributeRule" /> <!-- reRender="pnlHeader, attributeRuleInfoPanel" -->
+                <apex:actionFunction name="addCriteriaRow" 
+                                     action="{!addCriteriaRow}" 
+                                     reRender="idCriteriaPredicateTable" 
+                                     oncomplete=" bindSingleSelectToFieldItems();hideSpinner(); "> 
+                    <apex:param name="number" value=""/>
+                </apex:actionFunction>
+
+                <apex:actionFunction name="removeCriteriaRow" 
+                                     action="{!removeCriteriaRow}" 
+                                     status="loadingStatus" 
+                                     reRender="idCriteriaPredicateTable" 
+                                     oncomplete="bindSingleSelectToFieldItems();hideSpinner();"> 
+                    <apex:param name="number" value="" />
+                </apex:actionFunction>
+       		</apex:outputPanel>
+	    </div>
+		
+		<div class="footer">
+            <div class="inner-footer">
+            	<div class="primary-commands incentive-save" style="margin-right: 50px;">                
+                    <a class="save incentive-save">
+                    	{!$Label.Save} <i class="fa fa-save"></i>
+                    </a>
+                </div>
+                <div class="primary-commands" style="margin-right: 10px;">                
+                    <a href="{!returnURL}" class="cancel">
+                        {!$Label.Cancel}
+                    </a>
+                </div>
+            </div>
+        </div>
+	</apex:form>
+	<div class="overlay"> <i class="fa fa-spinner fa-pulse"></i> </div>
+
+</apex:page>

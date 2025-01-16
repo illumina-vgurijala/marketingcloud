@@ -1,0 +1,137 @@
+<!-- 
+    Apttus Config & Pricing
+    FieldSetAdmin
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+ <apex:page lightningStylesheets="true" controller="Apttus_Config2.FieldSetAdminController" 
+           standardStylesheets="true"
+           setup="true"
+           sidebar="{!ShowAdminSidebar}" >	
+    <apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+    <style type="text/css">
+    
+		textarea {
+			width: 40%;
+		}
+		
+	</style>
+	
+	
+	<apex:sectionHeader title="{!$Label.apttus_config2__customsettings}" 
+						subtitle="{!$ObjectType.Apttus_Config2__ConfigFieldSet__c.Label & ' ' & $Label.apttus_config2__edit}" />
+
+	<apex:form id="idFieldSO">
+		<apex:pageBlock id="idFieldBlock" 
+						mode="edit" >
+			<apex:pageMessages />
+			
+			<apex:pageBlockButtons location="top">
+				<apex:actionStatus id="idActionStatus" >
+					<apex:facet name="start"><img src="/img/loading.gif"/></apex:facet>
+					<apex:facet name="stop"> </apex:facet>
+                </apex:actionStatus>
+		        <apex:commandButton value="{!$Label.apttus_config2__save}" 
+									action="{!doSave}"
+									oncomplete="openSaveSettingModal({!HasErrors})" reRender="idFieldSO" />
+		        <apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+		        					action="{!doCancel}" 
+		        					immediate="true" />
+		       
+		    </apex:pageBlockButtons>
+		    
+			<apex:pageBlockSection id="idFieldSection" 
+		    					   title="{!$Label.apttus_config2__fieldsetsettings}" 
+		    					   columns="1" 
+		    					   collapsible="false" >
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ConfigFieldSet__c.Fields.Name.Label}"  
+									  for="idFieldSetName" />
+					<apex:outputPanel styleClass="requiredInput" layout="block">
+   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+  						<apex:selectList id="idFieldSetName" 
+  										 value="{!FieldSetName}" 
+  										 multiselect="false" 
+  										 required="true" 
+  										 size="1" >
+							<apex:selectOptions value="{!FieldSetNameItems}"></apex:selectOptions>
+							<apex:actionSupport event="onchange" action="{!reRenderFields}" status="idActionStatus" reRender="idFieldSection" />
+						</apex:selectList>
+ 					</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+				
+				<apex:pageBlockSectionItem />
+				
+				<apex:pageBlockSectionItem />
+				
+		    	<apex:pageBlockTable value="{!FieldWrapperList}" 
+		    	 					 var="fieldWrapperSO" 
+		    	 					 rowClasses="oddRow,evenRow" >
+		        	
+					
+					<apex:column headerValue="FieldName" >
+	        			<apex:selectList id="idField" size="1" value="{!fieldWrapperSO.fieldName}" >
+				      		<apex:selectOptions value="{!fieldItems}"></apex:selectOptions>
+				      	</apex:selectList>
+						
+					</apex:column>
+					
+				   	<apex:column width="5%" >
+				    	<apex:commandLink action="{!doAddRow}" 
+								  	  	  reRender="idFieldBlock" 
+								  	  	  status="idActionStatus">
+							<apex:param name="rowNum" value="{!fieldWrapperSO.index}" />	
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Plus2}" 
+				                       	title="{!$Label.apttus_config2__add}" 
+				                       	alt="{!$Label.apttus_config2__add}" />   		  	  	  
+						</apex:commandLink>
+				   	</apex:column>
+				   	
+				   	<apex:column width="5%" >
+					   	<apex:commandLink action="{!doDeleteRow}" 
+									  	  reRender="idFieldBlock" 
+									  	  rendered="{!fieldWrapperSO.index > 0}" 
+									  	  status="idActionStatus">
+							<apex:param name="rowNum" value="{!fieldWrapperSO.index}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+			                    		title="{!$Label.apttus_config2__remove}" 
+			                    		alt="{!$Label.apttus_config2__remove}" />  
+						</apex:commandLink>
+					</apex:column>
+				   	<apex:column width="5%" >
+				   		<apex:commandLink action="{!doMoveUpRow}" 
+								  	  	  reRender="idFieldBlock"
+								  	  	  rendered="{!fieldWrapperSO.index > 0}" 
+								  	  	  status="idActionStatus">
+							<apex:param name="rowNum" value="{!fieldWrapperSO.index}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveUp}" 
+                        				title="{!$Label.apttus_config2__moveup}" 
+                        				alt="{!$Label.apttus_config2__moveup}" />
+						</apex:commandLink>
+						<apex:commandLink action="{!doMoveDownRow}" 
+								  	  	  reRender="idFieldBlock" 
+								  	  	  rendered="{!fieldWrapperSO.index < lastRowSequence}" 
+								  	  	  status="idActionStatus">
+							<apex:param name="rowNum" value="{!fieldWrapperSO.index}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_MoveDown}" 
+                        				title="{!$Label.apttus_config2__movedown}" 
+                        				alt="{!$Label.apttus_config2__movedown}" />
+						</apex:commandLink>
+				   	</apex:column>
+				   	
+		        </apex:pageBlockTable>
+			     
+	    			        
+		    </apex:pageBlockSection>
+
+		</apex:pageBlock>
+		
+	
+	</apex:form>
+	<c:SaveSettingsModal />
+
+</apex:page>

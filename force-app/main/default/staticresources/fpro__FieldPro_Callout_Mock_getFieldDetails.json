@@ -1,0 +1,113 @@
+{
+  "size": 1,
+  "totalSize": 1,
+  "done": true,
+  "queryLocator": null,
+  "entityTypeName": "CustomField",
+  "records": [
+    {
+      "attributes": {
+        "type": "CustomField",
+        "url": "/services/data/v48.0/tooling/sobjects/CustomField/00N1I00000LlpA9UAJ"
+      },
+      "Id": "00N1I00000LlpA9UAJ",
+      "DeveloperName": "Run_Status",
+      "Metadata": {
+        "businessOwnerGroup": null,
+        "businessOwnerUser": "fieldpro@force.com",
+        "businessStatus": "DeprecateCandidate",
+        "caseSensitive": null,
+        "complianceGroup": "PII;HIPAA;GDPR",
+        "customDataType": null,
+        "defaultValue": null,
+        "deleteConstraint": null,
+        "deprecated": false,
+        "description": "Keep track of analysis results (used in VF page to check the status of results viewed by user)",
+        "displayFormat": null,
+        "displayLocationInDecimal": null,
+        "encryptionScheme": null,
+        "escapeMarkup": null,
+        "externalDeveloperName": null,
+        "externalId": false,
+        "formula": null,
+        "formulaTreatBlanksAs": null,
+        "inlineHelpText": "Keep track of analysis results (used in VF page to check the status of results viewed by user)",
+        "isAIPredictionField": null,
+        "isConvertLeadDisabled": null,
+        "isFilteringDisabled": null,
+        "isNameField": null,
+        "isSortingDisabled": null,
+        "label": "Run Status",
+        "length": null,
+        "lookupFilter": null,
+        "maskChar": null,
+        "maskType": null,
+        "metadataRelationshipControllingField": null,
+        "populateExistingRows": null,
+        "precision": null,
+        "readOnlyProxy": null,
+        "referenceTargetField": null,
+        "referenceTo": null,
+        "relationshipLabel": null,
+        "relationshipName": null,
+        "relationshipOrder": null,
+        "reparentableMasterDetail": null,
+        "required": false,
+        "restrictedAdminField": null,
+        "scale": null,
+        "securityClassification": "Public",
+        "startingNumber": null,
+        "stripMarkup": null,
+        "summarizedField": null,
+        "summaryFilterItems": null,
+        "summaryForeignKey": null,
+        "summaryOperation": null,
+        "trackFeedHistory": null,
+        "trackHistory": false,
+        "trackTrending": false,
+        "translateData": null,
+        "type": "Picklist",
+        "unique": null,
+        "urls": null,
+        "valueSet": {
+          "controllingField": null,
+          "restricted": true,
+          "valueSetDefinition": {
+            "sorted": false,
+            "value": [
+              {
+                "color": null,
+                "default": false,
+                "description": null,
+                "isActive": null,
+                "label": "Run Started",
+                "urls": null,
+                "valueName": "Run Started"
+              },
+              {
+                "color": null,
+                "default": false,
+                "description": null,
+                "isActive": null,
+                "label": "Results Viewed",
+                "urls": null,
+                "valueName": "Results Viewed"
+              }
+            ]
+          },
+          "valueSetName": null,
+          "valueSettings": null
+        },
+        "visibleLines": null,
+        "writeRequiresMasterRead": null
+      },
+      "FullName": "fpro__FieldPro__c.fpro__Run_Status__c",
+      "CreatedDate": "2018-03-20T04:19:27.000+0000",
+      "CreatedById": "0051I000000qfGdQAI",
+      "LastModifiedDate": "2020-02-27T03:58:32.000+0000",
+      "LastModifiedById": "0051I000000qfGdQAI",
+      "ManageableState": "released",
+      "NamespacePrefix": "fpro"
+    }
+  ]
+}

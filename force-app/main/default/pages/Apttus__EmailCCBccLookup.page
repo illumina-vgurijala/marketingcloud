@@ -1,0 +1,310 @@
+<!--
+   Apttus Contract Management
+   EmailCCBccLookup
+    
+   @2018-2019 Apttus Inc. All rights reserved.
+-->
+
+<apex:page controller="Apttus.EmailCCBccLookupController"  sidebar="false" showHeader="false">    
+<style>
+        .width100 {
+            width: 100%;
+        }
+        .width50 {
+            width: 50%;
+        }
+</style>
+
+<script type='text/javascript'>
+    function noenter(ev, btn)  {
+        if (window.event && window.event.keyCode == 13 || ev.which == 13) {            
+            button = document.getElementById(btn);
+            button.click();             
+            return false;
+         } else {
+              return true;
+         }
+     }
+</script>
+    <apex:form >
+        <apex:pageblock title="{!$Label.apttus__emailaddresslookup}">
+            <apex:outputpanel id="searchPanel" layout="block" styleclass="duelingListBox">
+            {!$Label.apttus__customemailaddresslookupheader}
+               
+            </apex:outputpanel>
+            <apex:outputpanel id="multiselectPanel" layout="block" styleclass="duelingListBox">
+                <table class="layout width100">
+                    <tbody>
+                        <tr>
+                            <td class="selectCell width50">
+                                <apex:outputpanel id="tblp" >
+                                    <table class="layout" id="tbl">
+                                        <apex:actionRegion >  
+                                            <tbody>
+                                                <tr><td>&nbsp;</td><td></td><td></td></tr>
+                                                <tr>
+                                                    <td>
+                                                        <apex:outputLabel value="{!$Label.apttus__search}:" />
+                                                    </td>
+                                                    <td>
+                                                        <apex:inputtext value="{!searchstring}" onkeypress="return noenter(event, '{!$Component.btnSearch}');"></apex:inputtext>
+                                                    </td>
+                                                    <td>                                
+                                                        <!--<apex:commandbutton value="Search" immediate="true" >-->
+                                                        <apex:commandLink id="btnSearch" rerender="tbl" styleClass="btn" style="text-decoration:none;padding:4px;">{!$Label.apttus__search}
+                                                            <apex:actionSupport event="onclick"  action="{!doSearch}" reRender="tblp">
+                                                                <apex:param name="searchstring" value="{!searchstring}"/>
+                                                            </apex:actionSupport>
+                                                        </apex:commandLink>
+                                                        <apex:commandLink rerender="tbl" styleClass="btn" style="text-decoration:none;padding:4px;">{!$Label.apttus__clear}
+                                                            <apex:actionSupport event="onclick"  action="{!doClear}" reRender="tblp">
+                                                                <apex:param name="searchstring" value="{!searchstring}"/>
+                                                            </apex:actionSupport>
+                                                        </apex:commandLink>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3"> 
+                                                            <apex:outputpanel id="leftPanel" layout="block" styleclass="duelingListBox">
+                                                            <apex:outputpanel layout="block" styleclass="selectTitle">
+                                                              <apex:outputlabel for="multiselectPanel:leftList" value="{!IF(isParallelReview, $Label.apttus__users, $Label.apttus__contacts)}:"></apex:outputlabel>
+                                                            </apex:outputpanel>                                 
+                                                            <select id="{!$Component.multiselectPanel}:leftList" class="multilist" multiple="multiple" size="0" style="min-width: 150px;height:270px;">
+                                                              <apex:repeat value="{!allContacts}" var="option">
+                                                                <option value="{!option.value}">{!option.label}</option>
+                                                              </apex:repeat>
+                                                            </select>                            
+                                                        </apex:outputpanel>
+                                                    </td></tr>
+                                            </tbody>
+                                        </apex:actionRegion>
+                                    </table>
+                                   </apex:outputpanel>
+                            </td>
+                            <td>
+                                <table>
+                                  <tr><td style="padding-top: 20px;">&nbsp;</td></tr>
+                                  <tr id="Right1">
+                                      <td class="buttonCell">
+                                        <apex:outputpanel layout="block" styleclass="text">
+                                          <apex:outputlink id="btnRight1" value="javascript:moveSelectedOptions('{!$Component.multiselectPanel}:leftList', 
+                                              '{!$Component.multiselectPanel}:rightList1', '{!$Component.leftHidden}', 
+                                              '{!$Component.rightHidden1}',true);">
+                                            <apex:image alt="{!$Label.apttus__add}" styleclass="rightArrowIcon" title="{!$Label.apttus__add}" value="/s.gif"></apex:image>
+                                          </apex:outputlink>
+                                        </apex:outputpanel>
+                                        <apex:outputpanel layout="block" styleclass="text">
+                                          <apex:outputlink id="btnLeft1" value="javascript:moveSelectedOptions('{!$Component.multiselectPanel}:rightList1', 
+                                              '{!$Component.multiselectPanel}:leftList', '{!$Component.rightHidden1}', 
+                                              '{!$Component.leftHidden}',false);">
+                                            <apex:image alt="{!$Label.apttus__remove}" styleclass="leftArrowIcon" title="{!$Label.apttus__remove}" value="/s.gif"></apex:image>
+                                          </apex:outputlink>
+                                        </apex:outputpanel>                    
+                                      </td>
+                                      <td class="selectCell"><apex:outputpanel layout="block" styleclass="selectTitle">
+                                          <apex:outputlabel for="multiselectPanel:rightList1" value="{!IF(isParallelReview, $Label.apttus__userreviewer, $Label.apttus__additionaltorecipients)}:"></apex:outputlabel>
+                                        </apex:outputpanel>
+                                        <select id="{!$Component.multiselectPanel}:rightList1" class="multilist" multiple="multiple" size="0" style="min-width: 150px;height:{!IF(isParallelReview, '270px','')}">
+                                          <apex:repeat value="{!selectedContacts}" var="option">
+                                            <option value="{!option.value}">{!option.label}</option>
+                                          </apex:repeat>
+                                        </select>
+                                      </td>          
+                                  </tr>
+								  <apex:outputPanel layout="none" rendered="{!NOT(isParallelReview)}">
+									  <tr id="Right2">
+										  <td class="buttonCell">
+											<apex:outputpanel layout="block" styleclass="text">
+											  <apex:outputlink id="btnRight2" value="javascript:moveSelectedOptions('{!$Component.multiselectPanel}:leftList', 
+												  '{!$Component.multiselectPanel}:rightList2', '{!$Component.leftHidden}', 
+												  '{!$Component.rightHidden2}',true);">
+												<apex:image alt="{!$Label.apttus__add}" styleclass="rightArrowIcon" title="{!$Label.apttus__add}" value="/s.gif"></apex:image>
+											  </apex:outputlink>
+											</apex:outputpanel>
+											<apex:outputpanel layout="block" styleclass="text">
+											  <apex:outputlink id="btnLeft2" value="javascript:moveSelectedOptions('{!$Component.multiselectPanel}:rightList2', 
+												  '{!$Component.multiselectPanel}:leftList', '{!$Component.rightHidden2}', 
+												  '{!$Component.leftHidden}',false);">
+												<apex:image alt="{!$Label.apttus__remove}" styleclass="leftArrowIcon" title="{!$Label.apttus__remove}" value="/s.gif"></apex:image>
+											  </apex:outputlink>
+											</apex:outputpanel>                    
+										  </td>
+										  <td class="selectCell"><apex:outputpanel layout="block" styleclass="selectTitle">
+											  <apex:outputlabel for="multiselectPanel:rightList2" value="{!$Label.apttus__ccrecipients}:"></apex:outputlabel>
+											</apex:outputpanel>
+											<select id="{!$Component.multiselectPanel}:rightList2" class="multilist" multiple="multiple" size="0" style="min-width: 150px;">
+											  <apex:repeat value="{!selectedContacts}" var="option">
+												<option value="{!option.value}">{!option.label}</option>
+											  </apex:repeat>
+											</select>
+										  </td>          
+									  </tr>								  
+									  <tr id="Right3" style="{!bccVisible}">
+										  <td class="buttonCell">
+											<apex:outputpanel layout="block" styleclass="text">
+											  <apex:outputlink id="btnRight3" value="javascript:moveSelectedOptions('{!$Component.multiselectPanel}:leftList', 
+												  '{!$Component.multiselectPanel}:rightList3', '{!$Component.leftHidden}', 
+												  '{!$Component.rightHidden3}',true);">
+												<apex:image alt="{!$Label.apttus__add}" styleclass="rightArrowIcon" title="{!$Label.apttus__add}" value="/s.gif"></apex:image>
+											  </apex:outputlink>
+											</apex:outputpanel>
+											<apex:outputpanel layout="block" styleclass="text">
+											  <apex:outputlink id="btnLeft3" value="javascript:moveSelectedOptions('{!$Component.multiselectPanel}:rightList3', 
+												  '{!$Component.multiselectPanel}:leftList', '{!$Component.rightHidden3}', 
+												  '{!$Component.leftHidden}',false);">
+												<apex:image alt="{!$Label.apttus__remove}" styleclass="leftArrowIcon" title="{!$Label.apttus__remove}" value="/s.gif"></apex:image>
+											  </apex:outputlink>
+											</apex:outputpanel>                    
+										  </td>
+										  <td class="selectCell"><apex:outputpanel layout="block" styleclass="selectTitle">
+											  <apex:outputlabel for="multiselectPanel:rightList3" value="{!$Label.apttus__bccrecipients}:"></apex:outputlabel>
+											</apex:outputpanel>
+											<select id="{!$Component.multiselectPanel}:rightList3" class="multilist" multiple="multiple" size="0" style="min-width: 150px;">
+											  <apex:repeat value="{!selectedContacts}" var="option">
+												<option value="{!option.value}">{!option.label}</option>
+											  </apex:repeat>
+											</select>
+										  </td>          
+									    </tr>
+									</apex:outputPanel>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td>
+                                <apex:inputhidden id="leftHidden"></apex:inputhidden>
+                                <apex:inputhidden id="rightHidden1"></apex:inputhidden>
+                                <apex:inputhidden id="rightHidden2"></apex:inputhidden>
+                                <apex:inputhidden id="rightHidden3"></apex:inputhidden>            
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>                
+            </apex:outputpanel>
+            <div align="Center" style="padding-top: 20px;">
+            <apex:outputpanel id="buttonPanel" layout="block" styleclass="width100">
+                <apex:commandbutton action="{!doSave}" value="{!$Label.apttus__save}" immediate="true" oncomplete="javascript:SaveAndClosePopUp('{!$Component.rightHidden1}','{!$Component.rightHidden2}','{!$Component.rightHidden3}');" />
+                <apex:commandbutton style="margin-left: 10px;" action="{!doSave}" value="{!$Label.apttus__cancel}" immediate="true" oncomplete="javascript:ClosePopUp();" />
+            </apex:outputpanel>
+            </div>
+        </apex:pageblock>
+
+        <script type="text/javascript">
+        
+            if (!buildOutputString) {                
+              // Create a string from the content of a listbox
+                var buildOutputString = function(listBox, hiddenInput) {
+                    var str = '';
+                    if(listBox != null) {
+                        for ( var x = 0; x < listBox.options.length; x++) {
+                            //str += encodeURIComponent(listBox.options[x].value) + ','
+                            str += listBox.options[x].value + ';'
+                              //+ encodeURIComponent(listBox.options[x].text) + '&';
+                        }
+                        str.length--;
+                 
+                        hiddenInput.value = str.slice(0, -1);
+                    }
+                }
+            }
+ 
+            if (!moveSelectedOptions) {
+              // Move the selected options in the idFrom listbox to the idTo
+              // listbox, updating the corresponding strings in idHdnFrom and
+              // idHdnTo
+                var moveSelectedOptions = function(idFrom, idTo, idHdnFrom, idHdnTo, isfromleft) {
+                    listFrom = document.getElementById(idFrom);
+                    listTo = document.getElementById(idTo);
+             
+                    //for ( var x = 0; x < listTo.options.length; x++) {
+                      //listTo.options[x].selected = false;
+                    //}
+             
+                    for ( var x = 0; x < listFrom.options.length; x++) {
+                        if (listFrom.options[x].selected == true) {
+                            //listTo.appendChild(listFrom.options[x]);
+                            if(isfromleft == true)//from leftchild
+                            {
+                                var option = document.createElement("option");
+                                option.value = listFrom.options[x].value;            
+                                option.text = listFrom.options[x].text;
+                                listTo.appendChild(option);
+                                listTo.value = listFrom.options[x].value;
+                            }
+                            else
+                            {                                
+                                listFrom.remove(x);
+                            }
+                            //x--;
+                        }
+                    }
+             
+                    listTo.focus();
+             
+                    buildOutputString(listFrom, document.getElementById(idHdnFrom));
+                    buildOutputString(listTo, document.getElementById(idHdnTo));
+                }
+            }   
+
+            if (!ClosePopUp) {
+                var ClosePopUp = function() {
+                    window.close();   
+                }
+            }
+
+            if (!SaveAndClosePopUp) {
+                var SaveAndClosePopUp = function(hiddenInput1, hiddenInput2, hiddenInput3) {
+                    var hdn1 = document.getElementById(hiddenInput1);
+                    var hdn2 = document.getElementById(hiddenInput2);
+                    var hdn3 = document.getElementById(hiddenInput3);
+
+                    if (window.opener != null && !window.opener.closed) {
+                        var txtAdditioanlTo = window.opener.document.getElementsByClassName('p24')[0];
+                        if(txtAdditioanlTo != null && hdn1.value != null && hdn1.value != '') {
+                            if(txtAdditioanlTo.value != null && txtAdditioanlTo.value.trim() != '') {
+                                txtAdditioanlTo.value = txtAdditioanlTo.value.trim() + ';' + hdn1.value;
+                            }
+                            else {
+                                txtAdditioanlTo.value = txtAdditioanlTo.value.trim() + hdn1.value;   
+                            }
+                        }
+
+                        var CC = window.opener.document.getElementsByClassName('p4')[0];
+                        if(CC != null && hdn2.value != null && hdn2.value != '') {
+                            if(CC.value != null && CC.value.trim() != '') {
+                                CC.value = CC.value.trim() + ';' + hdn2.value;
+                            }
+                            else {
+                                CC.value = CC.value.trim() + hdn2.value;   
+                            }
+                        }
+
+                        var BCC = window.opener.document.getElementsByClassName('p5')[0];
+                        if(BCC != null && hdn3.value != null && hdn3.value != '') {
+                            if(BCC.value != null && BCC.value.trim() != '') {
+                                BCC.value = BCC.value.trim() + ';' + hdn3.value;
+                            }
+                            else {
+                                BCC.value = BCC.value.trim() + hdn3.value;   
+                            }
+                        }
+                    }
+                    window.close();                    
+                }
+            }
+     
+            // initialize the string representations
+            buildOutputString(document.getElementById('{!$Component.multiselectPanel}:leftList'), 
+                document.getElementById('{!$Component.leftHidden}'));
+            buildOutputString(document.getElementById('{!$Component.multiselectPanel}:rightList1'), 
+                document.getElementById('{!$Component.rightHidden1}'));
+            buildOutputString(document.getElementById('{!$Component.multiselectPanel}:rightList2'), 
+                document.getElementById('{!$Component.rightHidden2}'));
+            buildOutputString(document.getElementById('{!$Component.multiselectPanel}:rightList3'), 
+                document.getElementById('{!$Component.rightHidden3}'));
+   
+
+        </script>
+    </apex:form>
+</apex:page>

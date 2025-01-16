@@ -1,0 +1,183 @@
+<!--
+	Apttus Echosign Adapter
+	EchoSignSendCustom
+	
+	@2010 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="echosign_dev1__SIGN_Agreement__c"
+	extensions="Apttus_Echosign.EchoSignSendController"
+	showHeader="true"
+	sidebar="true"
+	tabStyle="Apttus__APTS_Agreement__c" >
+
+	<script type="text/javascript" src="/soap/ajax/18.0/connection.js" />
+	<script type="text/javascript" src="/soap/ajax/18.0/apex.js" />
+	<script type="text/javascript" src="{!$Resource.EchoSignJSLib}" />
+	<script type="text/javascript">
+	
+	// page parameters
+	var cPARAM_AGMT_ID = "agmtId";
+	var cPARAM_ATTACH_IDS = "attachmentIds";
+	var cPARAM_VF_PAGENAME = "vfPageName";
+	var cPARAM_VF_SEND_UI_PAGENAME = "esSendUIPage";
+
+	// error messages
+	var cERROR_UPDATE_ES_AGREEMENT = "ERROR: updating the Echosign agreement:\n";
+
+	/**
+	 * Initializes the call
+	 */
+	function initCall() {
+		try {
+			sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+		} catch(e) {
+			erroralert(cERROR_UNKNOWN,e);
+		}
+	}
+	
+	/**
+	 * Callback invoked after the page is loaded
+	 * Clients can optionally write custom javascript to initialize echosign agreement values
+	 */
+	function afterLoad() {
+	
+		// read page parameters
+		var id = "{!echosign_dev1__SIGN_Agreement__c.Id}";
+		var agmtId = "{!agmtId}";
+		var attachIds = "{!attachIds}";
+		var pageName = "{!esSendUIPage}";
+		var pageURL = null;
+
+		try {
+			// STEP I - initialize the call
+			initCall();
+			
+			// STEP II - create the echosign agreement object to update
+			var esAgmt = new sforce.SObject("echosign_dev1__SIGN_Agreement__c");
+			esAgmt.Id = id;
+			
+			// STEP III (optional) - initialize custom echosign agreement field values
+			esAgmt.echosign_dev1__SenderSigns__c = true;
+			esAgmt.echosign_dev1__SignatureOrder__c = "I sign, then the Recipient signs";
+			esAgmt.echosign_dev1__Cc__c = "gsickal@yahoo.com";
+			esAgmt.echosign_dev1__Message__c = "Greg Test";
+
+			// STEP IV - update echosign agreement object
+			var result = sforce.connection.update([esAgmt]);
+		
+			// STEP V - build the page url
+			var paramNames = new Array();
+			var paramValues = new Array();
+
+			// apttus agreement id
+			paramNames[0] = cPARAM_AGMT_ID;
+			paramValues[0] = agmtId;
+			
+			// attachment ids
+			paramNames[1] = cPARAM_ATTACH_IDS;
+			paramValues[1] = attachIds;
+			
+			// custom visualforce page name
+			paramNames[2] = cPARAM_VF_SEND_UI_PAGENAME;
+			paramValues[2] = pageName;
+
+			pageURL = buildEchosignPageURL(id, paramNames, paramValues);
+
+		} catch(ex) {
+			erroralert(cERROR_UPDATE_ES_AGREEMENT, ex);
+			
+			// delete temporary echosign agreements
+			if (id != null) {
+				var result = sforce.connection.deleteIds([id]);
+			}
+		} finally {
+			if (pageURL != null) {
+				// navigate to the echosign send ui visualforce page
+				navigateTo(pageURL);
+			} else {
+				// go back to the apttus agreement
+				navigateTo("/" + agmtId);
+			}
+		}
+	}
+
+	// register to invoke the function after the page load
+	window.onload = function() { 
+	
+		// display progress message
+		showMsgProgress(cPLEASE_WAIT);
+	
+		// delay to allow the progress message to show  
+		setTimeout(function() {
+			try {
+				afterLoad();
+			} catch (ex) {
+				erroralert("afterLoad():", ex);
+				
+				// back to the detail page
+				navigateTo("/{!echosign_dev1__SIGN_Agreement__c.Id}");
+			} 
+		}, 0);
+	}
+	</script>
+
+	<apex:form >
+		<!-- required fields -->
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.Apttus_Agreement__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.Is_Transient__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.Name}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.CreatedById}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.CreatedDate}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.IsDeleted}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.LastModifiedById}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.LastModifiedDate}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.OwnerId}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.SystemModstamp}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__AdditionalOptions__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Authoring__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__AutoUpdate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Cc__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Contract__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSentDate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSent__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSignedDate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateSigned__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateViewedDate__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DateViewed__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DaysUnsigned__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__DaysUntilSigned__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Document__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__EncodedPassword__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__ErrorMessage__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__LastEventId__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Message__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Minutes_Until_Signed__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__More_Recipients__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__NewPassword__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Opportunity__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__PasswordProtectPDF__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__PasswordProtectSign__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Percent_Signed__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__PreferFax__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient2__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient3__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient4__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead2__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead3__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Recipient_Lead4__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__RemindRecipient__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Result__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SenderSigns__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignatureOrder__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignatureType__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__SignedPDF__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__StatusVisible__c}" rendered="false"/>
+		<apex:outputText value="{!echosign_dev1__SIGN_Agreement__c.echosign_dev1__Status__c}" rendered="false"/>
+
+		<div id="divMain" style="height: 25; width: 800px;">
+			<h1>Please wait...</h1>
+		</div>
+	</apex:form>
+</apex:page>

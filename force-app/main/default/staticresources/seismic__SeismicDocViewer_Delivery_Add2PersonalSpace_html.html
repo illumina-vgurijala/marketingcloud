@@ -1,0 +1,9 @@
+<div class="modal-header">
+    <h4 class="modal-title">Add to Personal Space</h4>
+    <img class="modal-header-close-button" ng-src="{{closeIconUrl}}" ng-click="dialogClose()"/>
+</div>
+<div style="height: 500px">
+    <seismic-busy is-busy="!persoanlSpacePageReady">
+        <iframe allow="autoplay; fullscreen" style="height: 500px" class="embed-iframe" ng-src="{{add2persoanlspacePageUrl}}"></iframe>
+    </seismic-busy>
+</div>

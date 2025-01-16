@@ -1,0 +1,544 @@
+<apex:page sidebar="false" controller="openq.PageLayoutCreateController" tabStyle="Custom_Page_Layouts__tab">
+<apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"> </apex:includescript>
+<apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.js"></apex:includescript>
+<apex:includescript value="/soap/ajax/21.0/connection.js"> </apex:includescript>
+<apex:includescript value="/soap/ajax/21.0/apex.js"> </apex:includescript>
+
+<apex:stylesheet value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/themes/cupertino/jquery-ui.css"></apex:stylesheet>
+<style>
+ 
+ #sortable { list-style-type: none; margin: 0; padding: 0; width: 100%; min-height: 50px;}
+ #sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; height: 14px; }
+ #sortable li:hover { -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px; border: 1px solid black; cursor:pointer; font-weight:bold;}
+ #sortable li span { position: absolute; margin-left: -1.3em; }
+ #sortable2 { list-style-type: none; margin: 0; padding: 0; width: 100%; padding-bottom: 250px; min-height: 50px;}
+ #sortable2 li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; }
+ #sortable2 li:hover { -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px; border: 1px solid black; cursor:pointer; font-weight:bold;} 
+ #sortable2 li span { position: absolute; margin-left: -1.3em; } 
+ div [id^=sortable3] { list-style-type: none; margin: 0; padding: 0; width: 100%; min-height: 50px;}
+ div [id^=sortable3] li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; height: 14px; }
+ div [id^=sortable3] li:hover { -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px; border: 1px solid black; cursor:pointer; font-weight:bold;}
+ div [id^=sortable3] li span { position: absolute; margin-left: -1.3em; }
+ #sortable4 { list-style-type: none; margin: 0; padding: 0; width: 100%; padding-bottom: 250px; }
+ #sortable4 li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; }
+ #sortable4 li:hover { -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px; border: 1px solid black; cursor:pointer; font-weight:bold;} 
+ #sortable4 li span { position: absolute; margin-left: -1.3em; }
+ #sortable5 { list-style-type: none; margin: 0; padding: 0; width: 100%; min-height:100px;}
+ #sortable5 li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; height: 14px;}
+ #sortable5 li:hover { -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px; border: 1px solid black; cursor:pointer; font-weight:bold;} 
+ #sortable5 li span { position: absolute; margin-left: 1.3em; }
+ #sortable6 { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+ #sortable6 li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; }
+ #sortable6 li:hover { -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px; border: 1px solid black; cursor:pointer; font-weight:bold;} 
+ #sortable6 li span { position: absolute; margin-left: 1.3em; }
+ 
+    .attributesTitle{
+        
+        font-weight: bold;
+        text-decoration:underline;
+    }
+    
+    #bodyCell {
+    
+        font-family: Verdana, sans-serif;
+    }
+    
+    .popUpBkg {
+        
+            top: 0;
+            left: 0;
+            height: 100%; 
+            width: 100%; 
+            display: none; 
+            background-color: black;            
+            position: absolute;
+            z-index: 1000;
+            
+            opacity: 0.6;
+            filter: alpha(opacity=60); /* For IE8 and earlier */
+        }
+        
+        .popUpDiv {
+        
+            position: absolute;
+            left: 50%; 
+            top: 30%; 
+            width: 200px; 
+            height: 200px;      
+            display: none;      
+            
+            margin-left: -100px;
+            margin-top: -100px;
+            
+            z-index: 1100;  
+        }
+        
+        #groupByDiv {
+        
+            top: 30%;
+            border-radius: 5px;
+            background-color: white;
+            border-width: 2px;
+            border-style: solid;
+            z-index: 9999;
+            left: 50%;
+            padding:10px;
+            position: absolute;
+            width: 300px;
+            margin-left: -150px;
+        }
+        
+        .popUpContainers {
+            
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        
+        .widgetHeader {
+    
+            font-weight: bold;
+            padding-bottom: 10px;
+        }
+        
+         /* Color for the title bar */
+        .bPageBlock .pbHeader
+        {
+            background-color:#FF0000;
+        }
+        .bPageBlock .pbBody
+        {
+            /* Color for the pageblock background */
+            background-color:#FFFFFF;
+        }
+
+</style>
+ <script>
+ 
+ var isClone = false;
+  
+ function makeSortable() {
+ 
+    $( "#sortable, #sortable2").sortable({
+        connectWith: ['.connectedSortable']
+        }); 
+    $( "#sortable, #sortable2" ).disableSelection();
+    
+    $("[id^='sortable3']").sortable({
+        connectWith: ['.connectedSortable2'],
+        update: function(event, ui) {
+            
+            if (this === ui.item.parent()[0]) {
+            
+                var name = ui.item.data('name');
+    
+                addRelatedList(name);
+            }           
+        }
+    });
+    
+    $( "#sortable4").sortable({
+        connectWith: ['.connectedSortable2'],
+        update: function(event, ui) {
+            
+            if (this === ui.item.parent()[0]) {
+            
+                var name = ui.item.data('name');
+                
+                removeRelatedList(name);    
+            }       
+        }
+    });
+     
+    $( "[id^='sortable3'], #sortable4" ).disableSelection();
+    
+    $( "#sortable5, #sortable6").sortable({
+        connectWith: ['.connectedSortable3']
+    }); 
+    
+    $( "#sortable5, #sortable6" ).disableSelection();
+  }
+  
+  
+  function saveAttributeOrder() {
+  
+        if(categoryName != null && categoryName != ''){         
+            
+            var relatedListsSelected = new Array();         
+            var relListRelatedListAttributes = new Array(); 
+                                        
+            init();                             
+            var result = $('#sortable').sortable('toArray');
+            var theLength = result.length;
+            
+            var attributes = new Array();
+                
+            for( var i=0; i < theLength; i++){
+                
+                var attribute = new sforce.SObject("{!namespace}Attribute__c");
+                attribute.Name = result[i];
+                attribute.Display_Order__c = i;         
+                attributes[i] = attribute;  
+            }
+            
+            var catMap = new Object();
+            var index = 0;
+            $(".categoryClass").each( function() {            
+                                
+                var categoryId = $(this).attr('id');
+                
+                if(typeof categoryId === "undefined"){
+                
+                    categoryId = null;
+                }
+                
+                var relList = new Array();            
+                    
+                $(this).children(".connectedSortable2").children().each( function() {             
+                   var relListName = $(this).data('name');
+                   var contactRelationship = $(this).data('contactrelationship');                      
+                   var label = $(this).data('label');                
+                   if(relListName != null && relListName != ''){
+                   
+                        var relatedList = new sforce.SObject("{!namespace}Related_List__c");
+                        relatedList.Name = relListName;
+                        relatedList.Label__c = label;
+                        relatedList.Display_Order__c = index;
+                        relatedList.Category_Group__c = categoryId;
+                        relatedList.Contact_Relationship__c = contactRelationship;          
+                        relatedListsSelected[index] = relatedList;                         
+                       index = index + 1;                          
+                   }
+                });             
+            }); 
+            
+            if(relatedListsSelected.length > 0){
+                                
+                var counterY = 0;
+                
+                $(".relListClass").each( function(){
+                                        
+                    var relListApiName = $(this).attr('id');
+                    
+                    if(relListApiName != null && relListApiName != ''){
+                        
+                        var indexRla = 0;
+                                                
+                        $(this).children(".connectedSortable3").children().each( function() {
+                                                        
+                            var relListAttributeApiName = $(this).data('rla');
+                            
+                            var relListLabel = $(this).data('label');
+                            
+                            var relatedListAttribute = new sforce.SObject("{!namespace}Related_List_Attribute__c");
+                            
+                            relatedListAttribute.Name = relListAttributeApiName;
+                            relatedListAttribute.Label__c = relListLabel;
+                            relatedListAttribute.Display_Order__c = indexRla;
+                            relatedListAttribute.Related_List__c = relListApiName;
+                                                    
+                            relListRelatedListAttributes[counterY] = relatedListAttribute;
+                                                                                    
+                            counterY++;
+                            indexRla++;
+                        });                                             
+                    }
+                });
+            }
+            
+            var v = sforce.apex.execute("{!if(packagePrefix!='',packageprefix+'.','')}PageLayoutCreate_Webservice", "insertPageLayoutNew", {listAttributes:attributes, categoryName:categoryName.value, recordTypeName:recordTypeName.value, relatedLists:relatedListsSelected, relatedListAttributes:relListRelatedListAttributes}); 
+            alert(v);
+        }                              
+    }
+    
+    function init() {
+        
+        sforce.connection.sessionId = '{!$Api.Session_ID}';
+    }
+    
+    function openPageLayoutNamingPopup(cloneFlag){
+        
+        if(cloneFlag){
+        
+            isClone = true;
+        
+        }else{
+            
+            isClone = false;
+        }
+        
+        $('#popUpBkg').css('display', 'block');
+        $('#popUpDiv').css('display', 'block'); 
+    }
+        
+    function closeGroupByPopup() {
+        
+        newPageLayoutName.value = null;
+        $('#popUpBkg').css('display', 'none');
+        $('#popUpDiv').css('display', 'none'); 
+    }
+    
+    function deletePageLayout(){
+                
+        if(confirm('Are you sure you want to delete the '+recordTypeName.value+' page layout?')){
+        
+            deletePageLayoutController(recordTypeName.value);
+            
+        }else{
+        
+            return false;
+        }
+    }
+    
+    function saveNewPageLayoutName(){
+        
+        var a = new Array();
+        var error = false;
+        
+        $('select[id*=selectRecordType]').children().each(function(){
+        
+            a.push($(this).attr('value'));
+        
+        });
+                
+        if(newPageLayoutName.value == null || newPageLayoutName.value === "undefined" || newPageLayoutName.value == ""){
+        
+            alert('You must enter a name');
+            error = true;
+            return false;
+        
+        }
+        
+        for(var j = 0; j < a.length; j++){
+                                    
+            if(newPageLayoutName.value == a[j]){
+            
+                alert('A layout already exists with this name');
+                error = true;
+                return false;
+            }
+        }
+        
+        if(!error){
+                        
+            if(isClone){
+            
+                saveNewPageLayout(newPageLayoutName.value, true, recordTypeName.value);
+            
+            }else{
+            
+                saveNewPageLayout(newPageLayoutName.value, false, recordTypeName.value);
+            }
+        }
+    }   
+ 
+    //Solves "twistSection is not defined" error onCollapse
+    function twistSection(twisty, sectionId) {
+        
+        //twistSection code from salesforce.com
+        var parentDiv = twisty;
+        while (parentDiv.tagName != 'DIV') { parentDiv = parentDiv.parentNode; }
+        var headerId = sectionId || (parentDiv.id.split('_'))[1];
+        var div = parentDiv.nextSibling;
+        var elemWasOn = false;
+        if (div.style.display != 'none')
+        {
+            div.style.display = 'none';
+            twisty.className ='showListButton';
+            twisty.alt = twisty.title = 'Show Section - '+twisty.name;
+            elemWasOn = true;
+        }
+        else
+        {
+            div.style.display = 'block';
+            twisty.className ='showListButton';
+            twisty.alt = twisty.title = 'Show Section - '+twisty.name;
+            elemWasOn = false;
+        }
+    }
+  
+</script>
+      
+    <apex:pageBlock id="pgBlock" title="Customize Page Layouts">
+        <div style="padding-top: 10px; padding-bottom: 10px;">
+            <apex:form >
+                <div id="objectSelection">              
+                    <apex:selectList required="true" id="theObject" value="{!selectedObject}" multiselect="false" size="1" disabled="{!rtSelected}">
+                        <apex:selectOptions value="{!objectsToSelect}"/>
+                    </apex:selectList>    
+                    <script> var categoryName = document.getElementById("{!$Component.theObject}");</script>
+                    <apex:commandButton value="Select" rendered="{!!rtSelected}" action="{!selectObject}" rerender="selectRecordType"/>
+                </div>
+              </apex:form>
+              
+              <apex:form id="selectRecordType">
+                <div style="padding-top: 7px;">
+                    <div id= "pgLayoutSelect" style="float:left;">
+                        <apex:selectList id="theRecordType"  value="{!selectedRecordType}" multiselect="false" size="1" disabled="{!rtSelected}" rendered="{!IF(pageLayoutOptions.size > 0, true, false)}">               
+                            <apex:selectOptions value="{!pageLayoutOptions}"/>
+                        </apex:selectList>
+                        <script> var recordTypeName = document.getElementById("{!$Component.theRecordType}");</script>              
+                    </div>
+                    <div id="rtButtons">                    
+                        <apex:outputPanel rendered="{!IF(AND(pageLayoutOptions.size > 0, !rtSelected), true, false)}">
+                            <apex:commandButton value="Select" action="{!readFields}" rendered="{!!rtSelected}" rerender="pgBlock, attPgBlockSection, relListPgBlock, rlShowBtn, objectSelection, selectRecordType" onComplete="makeSortable()"/>
+                            <apex:commandButton value="Clone" onclick="openPageLayoutNamingPopup(true); return false;" rerender="pgLayoutSelect"/>
+                            <apex:commandButton value="New" onclick="openPageLayoutNamingPopup(false); return false;" rerender=""/>
+                            <apex:commandButton value="Delete" onclick="deletePageLayout(); return false;" rerender=""/>
+                        </apex:outputPanel>
+                    </div>
+                </div>
+                <div style="clear: both;"></div>
+              </apex:form>
+          </div>
+
+          <apex:form >
+                    
+            <apex:outputPanel id="attPgBlockSection">                  
+                <apex:pageBlockSection rendered="{!IF(rtSelected, true, false)}" columns="2" title="Select the attributes to include in the page layout (Click and drag to move)"> 
+                    <apex:outputPanel id="visibleFields">
+                        <apex:outputLabel styleClass="attributesTitle" value="Visible fields"/>                 
+                          <ul id="sortable" class="connectedSortable">
+                                <apex:repeat value="{!attributes}" var="att" id="theList">
+                                <li id="{!att.attributeApiName}">{!att.attributeLabel}</li>                     
+                                </apex:repeat> 
+                          </ul> 
+                    </apex:outputPanel>
+                    <apex:outputPanel id="nonvisibleFields">
+                        <apex:outputText styleClass="attributesTitle" value="Non-visible fields"/>                  
+                          <ul id="sortable2" class="connectedSortable">
+                              <apex:repeat value="{!nonVisibleAttributes}" var="nonVisAtt" id="theList2">
+                                <li id="{!nonVisAtt.attributeApiName}">{!nonVisAtt.attributeLabel}</li>
+                              </apex:repeat>          
+                          </ul>                                
+                    </apex:outputPanel>
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+            <apex:outputPanel id="relListPgBlock" rendered="{!selectedObject != 'Event Speaker'}">
+                <apex:pageBlockSection rendered="{!IF(rtSelected, true, false)}" columns="2" title="Select the related lists to include in the page layout (Click and drag to move)">
+                    <apex:outputPanel id="relatedListSelect">           
+                        <apex:outputText styleClass="attributesTitle" value="Visible related lists"/>                   
+                           <br /><br />
+                           <apex:outputPanel rendered="{!IF(!categoryGroupsExist, true, false)}">
+                                <div class="categoryClass">
+                                    <ul id="sortable3" class="connectedSortable2">
+                                        <apex:repeat value="{!visibleRelatedLists}" var="vrl">
+                                            <li class="relatedListVisible" data-contactrelationship = "{!vrl.contactRelationship}" data-label = "{!vrl.relListName}" data-name = "{!vrl.relListApiName}" id="{!vrl.relListApiName}">{!vrl.relListName}</li>                     
+                                        </apex:repeat>
+                                    </ul>
+                                </div>
+                           </apex:outputPanel>
+                           <apex:outputPanel rendered="{!IF(categoryGroupsExist, true, false)}">
+                           <apex:variable value="{!1}" var="counter"/>
+                           <apex:repeat value="{!categoryGroups}" var="categoryGroup" id="categoryGroup">
+                               <apex:outputPanel rendered="{!IF(relatedLists[categoryGroup.categoryGroupId].relListWrappers.size > 0, true, false)}">
+                                   <div class="categoryClass" id="{!categoryGroup.categoryGroupId}"><B>{!categoryGroup.categoryGroupName}</B>
+                                       <ul id="sortable3-{!counter}" class="connectedSortable2">                            
+                                           <apex:repeat value="{!relatedLists[categoryGroup.categoryGroupId].relListWrappers}" var="rl">
+                                                <li class="relatedListVisible" data-contactrelationship = "{!rl.contactRelationship}" data-label = "{!rl.relListName}" data-name = "{!rl.relListApiName}" id="{!rl.relListApiName}">{!rl.relListName}</li>                      
+                                            </apex:repeat>
+                                       </ul>  
+                                   </div>
+                                   <apex:variable value="{!counter+1}" var="counter"/>
+                                  </apex:outputPanel>   
+                           </apex:repeat>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                    <apex:outputPanel id="relatedListSelectNonVisible" rendered="{!IF(rtSelected, true, false)}">
+                        <apex:outputText styleClass="attributesTitle" value="Non-visible related lists"/>
+                        <br /><br />                    
+                        <ul id="sortable4" class="connectedSortable2">  
+                            <apex:repeat value="{!nonVisibleRelatedListNames}" var="nonVisRelList" id="theRelList2">
+                                <li data-name = "{!nonVisRelList.relListApiName}" data-contactrelationship = "{!nonVisRelList.contactRelationship}" data-label = "{!nonVisRelList.relListName}" id="{!nonVisRelList.relListApiName}">{!nonVisRelList.relListName}</li>
+                            </apex:repeat>              
+                        </ul>
+                    </apex:outputPanel>
+                    <apex:commandButton id="rlShowBtn" value="Show Related List Columns" action="{!getRLAs}" rerender="rlaPageBlock" onComplete="makeSortable()" rendered="{!IF(rtSelected, true, false)}"/>                
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+            <apex:outputPanel id="rlaPageBlock">
+                <apex:pageBlockSection columns="2" rendered="{!rlaBtnClicked}" title="Select the related list attributes to show (Click and drag to move)">
+                        <apex:repeat value="{!visibleRelatedLists}" var="rlaRl" id="rlas">
+                                <apex:outputPanel id="relatedListAttributeSelect">
+                                    <apex:outputText value="{!rlaRl.relListName}:" style="font-weight:bold; text-decoration: underline; font-size: 12px;"/>
+                                    <apex:outputPanel id="rlaVisible">
+                                         <br /> <br />
+                                        <apex:outputText value="Visible Columns" style="font-weight:bold;"/>
+                                        <br />
+                                        <div class="relListClass" id="{!rlaRl.relListApiName}">                                 
+                                            <ul id="sortable5" class="connectedSortable3">                          
+                                                <apex:repeat value="{!visibleRlas[rlaRl.RelListApiName]}" var="rla">
+                                                    <li data-rla = "{!rla.relListAttApiName}"  data-label = "{!rla.rlaName}" id="{!rla.relListAttApiName}">{!rla.rlaName}</li>
+                                                </apex:repeat>
+                                            </ul>
+                                        </div>                      
+                                    </apex:outputPanel>
+                                </apex:outputPanel>
+                            <apex:outputPanel id="nonVisRelatedListAttributeSelect">
+                                <apex:outputPanel id="rlaNonVisible">
+                                     <br /> <br />
+                                    <apex:outputText value="Non-Visible Columns" style="font-weight: bold;"/>
+                                    <br />
+                                    <ul id="sortable6" class="connectedSortable3">                          
+                                        <apex:repeat value="{!nonVisibleRlas[rlaRl.RelListApiName]}" var="rlaNonVis">
+                                            <li data-rla = "{!rlaNonVis.relListAttApiName}" data-label = "{!rlaNonVis.rlaName}" id="{!rlaNonVis.relListAttApiName}">{!rlaNonVis.rlaName}</li>
+                                        </apex:repeat>
+                                    </ul>                       
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </apex:repeat>
+                        
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+            <apex:commandButton id="saveBtn" value="Save" onClick="saveAttributeOrder();" action="{!saveRedirect}"/>
+            
+            <apex:outputPanel id="popUpContainer">  
+                <!-- Transparent background --> 
+                <div id="popUpBkg" class="popUpBkg">
+                    
+                </div>
+                
+                <img id="spinnerPopUp" style="display: none;" src="{!URLFOR($Resource.StylesScriptsImages, 'img/loader.gif')}" height="32" width="32"/>
+                <!-- Actual popup -->
+                <div id="popUpDiv" class="popUpDiv">            
+                    <div id="groupByDiv">
+                        <div>
+                            <apex:outputPanel styleClass="popUpContainers" >                    
+                                <div class="widgetHeader">
+                                    New Page Layout
+                                </div>
+                                <div id="inputPageLayout">
+                                    <apex:outputText value="Enter a name for the new {!IF(selectedObject == $Label.openq__plan_label, 'Plan Type', 'layout')}:"/>
+                                    <apex:inputText id="newName" /> 
+                                    <script> var newPageLayoutName = document.getElementById("{!$Component.newName}"); </script>                                    
+                                </div>
+                            </apex:outputPanel>                 
+                            <div id="periodPrefs" class="popUpContainers">
+                                
+                            </div>                    
+                        </div>
+                        <div>
+                            <div style="float: right;">                     
+                                <apex:commandButton value="Cancel" onclick="closeGroupByPopup(); return false;" rerender="" />
+                                <apex:commandButton value="Save" onclick="saveNewPageLayoutName();" oncomplete="closeGroupByPopup();" rerender="pgBlock" />                                                 
+                            </div>              
+                        </div> 
+                    </div>
+                </div>              
+            </apex:outputPanel>
+            <apex:actionFunction name="addRelatedList" action="{!addRL}" rerender="" >
+                <apex:param value="" assignTo="{!relatedListToAdd}" name="rlToAdd"/>
+            </apex:actionFunction>
+            <apex:actionFunction name="removeRelatedList" action="{!removeRL}" rerender="" >
+                <apex:param value="" assignTo="{!relatedListToRemove}" name="rlToRemove"/>
+            </apex:actionFunction>
+            <apex:actionFunction name="saveNewPageLayout" action="{!saveNewPageLayout}" rerender="pgLayoutSelect, selectRecordType" onComplete="alert('New Layout created successfully.')">
+                <apex:param value="" assignTo="{!newPageLayoutName}" name="newPageLayoutName"/>
+                <apex:param value="" assignTo="{!isClone}" name="isClone"/>
+                <apex:param value="" assignTo="{!selectedRecordType}" name="rtName"/>
+            </apex:actionFunction>
+            <apex:actionFunction name="deletePageLayoutController" action="{!deletePageLayout}" rerender="pgBlock" onComplete="alert('Layout deleted successfully.')">
+                <apex:param value="" assignTo="{!selectedRecordType}" name="rtName"/>
+            </apex:actionFunction>              
+        </apex:form>
+    </apex:pageBlock>
+</apex:page>

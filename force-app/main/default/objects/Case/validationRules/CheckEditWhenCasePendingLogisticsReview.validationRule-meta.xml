@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckEditWhenCasePendingLogisticsReview</fullName>
+    <active>false</active>
+    <description>Prevent any edits on case when case status is Pending Logistics Review</description>
+    <errorConditionFormula>AND( 
+		NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c), 
+        NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+    RecordType.Name = $Label.CaseRecordTypeBusinessIssue,
+    TEXT(PRIORVALUE(Status)) == $Label.CaseStatusPendingLogisticsReview, 
+    $Profile.Name &lt;&gt; $Label.ProfileQualityAssurance,
+    NOT(
+        OR( 
+            TEXT(Status) = $Label.CaseStatusReopenedLogisticsInput, 
+            TEXT(Status) = $Label.CaseStatusPendingQAReview,
+            TEXT(Status) = $Label.CaseStatusCompleted,
+            ISCHANGED(Reason_for_Reopen__c),
+            ISCHANGED(Work_Order_Status__c), 
+            ISCHANGED(Parts_Order_Status__c),
+           /* Added below fields to over come the validation since these are hidden fields*/ 
+              ISCHANGED( Regional_Email__c ), 
+			  ISCHANGED(Record_Updated_from_SFM__c), 
+            /*To allow updating Unread Email Check Box*/
+            ISCHANGED( Unread_Emails__c ),
+            ISCHANGED(Case_Owner_s_Manager_Email__c),
+            /*To allow change of owner upon new incoming email and owner is inactive*/
+            AND(
+                ISCHANGED(OwnerId),
+                NOT(ISBLANK(Owner:Queue.QueueName)),
+                Unread_Emails__c
+                )
+        )
+    )
+        
+)</errorConditionFormula>
+    <errorMessage>To make a change to a case that is Pending Logistics Review, the case must be re-opened. Please request case re-opening with logistics.</errorMessage>
+</ValidationRule>

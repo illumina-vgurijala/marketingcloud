@@ -1,0 +1,477 @@
+<!-- 
+    Apttus XAuthor Apps
+    SearchSelectAction
+     
+    @2010-2013 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus_XApps.SearchSelectActionController" title="Select {!objectName}" sidebar="false" showHeader="false" tabStyle="Apttus_XApps__Application__c">
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_XApps__jquery, 'css/redmond/jquery-ui.min.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_XApps__AppBuilder, 'css/main.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_XApps__jquery, 'js/jquery.min.js')}"  />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_XApps__jquery, 'js/jquery-ui.min.js')}"  />
+
+    <style type="text/css">
+        div#advSearch {
+            display: none;
+        }
+
+        .resultSelect {
+            text-align: center;
+        }
+
+        div#selectAll {
+            text-align: center;
+            display: none;
+        }
+
+        div.ui-dialog-titlebar {
+            display: none;
+        }
+
+        #advSearchTitleBar {
+            position: relative;
+            height: 10px;
+            margin: 5px 0;
+        }
+
+        #advSearchCloseButton {
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+    </style>
+
+    <script type='text/javascript'>
+        $j = jQuery.noConflict();
+
+        // Continue executing scripts after errors in IE
+        window.onerror = function() {
+            return true;
+        }
+
+        var selection = {};
+
+        var hasSelectAll = false;
+
+        $j(document).ready(function() {
+            $j("#advSearch").dialog({
+                autoOpen: false,
+                modal: true,
+                width: 500
+            });
+
+            addSelectAll(); 
+
+            $j("div#combinedSearchInput input").focus();
+        });
+
+        function onSearchKeyPress(ev) {
+            if(ev.keyCode==13) {
+                stopEvent(ev);
+                combinedSearchAction();
+
+                return false;
+            }
+
+            return true;
+        }
+
+        function onAdvSearchKeyPress(ev) {
+            if(ev.keyCode==13) {
+                stopEvent(ev);
+                advSearchAction();
+
+                return false;
+            }
+
+            return true;
+        }
+
+        function stopEvent(ev) {
+            ev.preventDefault ? ev.preventDefault() : ev.returnValue = false;
+        }
+        
+        /**
+        * Callback after a partial page update
+        */
+        function afterPageUpdate() {
+            // delay to allow the page to be rendered   
+            setTimeout(function() {
+                // callback the object
+                try {
+                    window.external.PageRefreshed();
+                } catch(ex) {
+                    // object not available
+                }
+            }, 0);
+        }
+        
+        // register to invoke the function after the page load
+        window.onload = function() {
+            // make the window visible
+            try {
+                window.external.MakeVisible();
+                afterPageUpdate();
+            } catch(ex) {
+                // object not available
+            }
+        }
+
+        function clearInput() 
+        { 
+            var inputs = $j('.searchField');
+
+            for(i=0;i<inputs.length;i++) { 
+                inputs[i].value = ""; 
+            } 
+        }
+
+        function clearCombined() 
+        { 
+            var inputs = $j('div#combinedSearch .searchField');
+
+            for(i=0;i<inputs.length;i++) { 
+                inputs[i].value = ""; 
+            } 
+        }
+
+        function showLoadingOverlay(element) {
+            var position = $j(element).offset();
+            $j('.aptLoadingOverlay').css( { position: 'absolute', left: position.left, top: position.top });
+            $j('.aptLoadingOverlay').width($j(element).width());
+            $j('.aptLoadingOverlay').height($j(element).height());
+            $j('.aptLoadingOverlay').show();
+        }
+
+        function hideLoadingOverlay() {
+            $j('.aptLoadingOverlay').hide();
+        }
+
+        function openAdvSearchDialog() {
+            try {
+                // In case we hid all dialogs before, show them again
+                $j(".ui-dialog").show();
+
+                $j('#advSearch').dialog('open');
+            } catch (error) {}
+            
+        }
+
+        function closeAdvSearchDialog() {
+            try {
+                $j('#advSearch').dialog('close');
+            } catch (error) {}
+
+            // Hide all dialogs, in case dialog could not be closed properly after IE error
+            $j(".ui-dialog").hide();
+        }
+
+        function updateSelection(input) {
+            if (input.checked) {
+                selection[input.value] = true;
+
+                $j("#submitButtonDisabled").hide();
+                $j("#submitButtonEnabled").show();
+            } else {
+                delete selection[input.value];
+
+                if (Object.keys(selection).length == 0) {
+                    $j("#submitButtonEnabled").hide();
+                    $j("#submitButtonDisabled").show();
+                }
+            }
+
+            if (hasSelectAll)
+                updateSelectAll();
+        }
+
+        function selectAll(input) {
+            if (input.checked) {
+                $j('.resultSelect input').each(function(index, el) {
+                        if(!el.checked)
+                            el.click();
+                })
+            } else {
+                $j('.resultSelect input').each(function(index, el) {
+                        if(el.checked)
+                            el.click();
+                })
+            }
+        }
+
+        function setSelection(input) {
+            selection = {};
+            selection[input.value] = true;
+
+            $j("#submitButtonDisabled").hide();
+            $j("#submitButtonEnabled").show();
+        }
+
+        function checkSelection() {
+            $j('.resultSelect input').each( function(index, el) { 
+                if(Object.prototype.hasOwnProperty.call(selection, el.value)) {
+                    el.checked = true;
+                }  
+            });
+        }
+
+        function addSelectAll() {
+            if ($j("div#selectAll")[0] == undefined)
+                return;
+            
+            $j("div#selectAll").width($j("td.resultSelect").outerWidth());
+            $j("div#resultTable th").first().append($j("div#selectAll input"));
+            $j("div#resultTable th").first().css("text-align", "center");
+
+            hasSelectAll = true;
+
+            updateSelectAll();
+        }
+
+        function updateSelectAll() {
+            var total = $j('.resultSelect input').length;
+            var checked = $j('.resultSelect input:checked').length;
+
+            if (checked == total) {
+                $j("div#resultTable th input")[0].checked = true;
+                $j("div#resultTable th input")[0].indeterminate = false;
+            } else if (checked == 0) {
+                $j("div#resultTable th input")[0].checked = false;
+                $j("div#resultTable th input")[0].indeterminate = false;
+            } else {
+                $j("div#resultTable th input")[0].indeterminate = true;
+            }
+        }
+
+        function onPageChange() {
+            checkSelection();
+            addSelectAll();
+        }
+
+        function submitSelection() {
+            var res = new Array();
+
+            for(var prop in selection) {
+               res.push(prop);
+            }
+
+            submitSelectedIds(JSON.stringify(res));
+        }
+
+        function setResponse(response) {
+            window.external.SetResponse(JSON.stringify(response));
+        }
+
+    </script>
+
+    <div class="aptLoadingOverlay">&nbsp;</div>
+
+    <apex:outputpanel id="dummy" />
+
+    <apex:pageMessages />
+
+    <apex:outputpanel id="mainPanel" >
+
+        <!-- Advanced Search -->
+        <div id="advSearch">
+            <div id="advSearchTitleBar">
+                <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" 
+                        id="advSearchCloseButton"
+                        role="button" 
+                        aria-disabled="false" 
+                        title="{!$Label.Close}"
+                        onclick="closeAdvSearchDialog();">
+                    <span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
+                    <span class="ui-button-text">{!$Label.Close}</span>
+                </button>
+            </div>
+            <apex:form >
+                <c:BrowseAdvancedSearchBox stdController="{!searchObjectController}"
+                        browseController="{!controller}"
+                        searchFields="{!searchFields}"
+                        searchObject="{!searchObject}" />
+
+                <apex:actionStatus id="advSearchStatus"
+                        onstart="showLoadingOverlay($j('#searchResults')); closeAdvSearchDialog();"
+                        onstop="hideLoadingOverlay();addSelectAll();" />
+            </apex:form>
+        </div>
+    
+        <!-- Combined search -->
+        <div id="combinedSearch">
+            <apex:outputPanel id="combinedSearchPanel">        
+                <apex:form >
+                    <apex:pageBlock title="{!$Label.apttus_xapps__search}">
+                        <div id="combinedSearchInput" style="display:inline;">
+                            <apex:inputText value="{!combinedSearchString}" 
+                                    styleClass="searchField"
+                                    onkeydown="onSearchKeyPress(event);" />
+                        </div>
+                        
+                        <apex:commandButton value="{!$Label.apttus_xapps__search}" 
+                                styleClass="button_link" 
+                                onclick="combinedSearchAction();"
+                                rerender="dummy" /> 
+
+                        <apex:commandButton value="{!$Label.apttus_xapps__clear}" 
+                                styleClass="button_link"
+                                onclick="clearCombined(); combinedSearchAction();"
+                                rerender="dummy" /> 
+                        <a class="button_link" onclick="openAdvSearchDialog();">{!$Label.apttus_xapps__advancedsearch}</a>
+                    </apex:pageBlock>
+
+                    <apex:actionFunction name="combinedSearchAction" 
+                            action="{!clearAdvSearchInput}"
+                            status="combinedSearchActionStatus"
+                            rerender="advSearchPanel"
+                            oncomplete="combinedSearchActionAfterClear();" />
+
+                    <apex:actionFunction name="combinedSearchActionAfterClear" 
+                            action="{!doCombinedSearch}" 
+                            rerender="resultsSection"
+                            oncomplete="hideLoadingOverlay();addSelectAll();" />
+
+                    <apex:actionStatus id="combinedSearchActionStatus"
+                            onstart="showLoadingOverlay($j('#searchResults'));" />
+
+                </apex:form>
+            </apex:outputPanel>
+        </div>
+
+        <!-- Search results -->
+        <div id="searchResults">
+        <apex:outputPanel id="resultsSection" rendered="{!NOT(showRecentResult)}">
+
+            <apex:form id="idHome">
+                <apex:pageBlock title="{!$Label.apttus_xapps__results}">
+
+                    <apex:outputText value="{!$Label.apttus_xapps__noresultstodisplay}"
+                        rendered="{!NOT(hasResults)}" style="font-style:bold" />
+
+                    <!-- Pagination -->
+                    <apex:pageBlockButtons rendered="{!hasResults}" location="top">
+                        <apex:outputPanel id="paginationButtons">
+                            
+                            <apex:commandlink action="{!firstPage}" 
+                                    title="{!$Label.apttus_xapps__firstpage}"
+                                    rerender="paginationButtons,resultTable,selectAll" 
+                                    status="processstatus4"
+                                    type="image/png"
+                                    rendered="{!hasPreviousPage}"
+                                    oncomplete="onPageChange();">
+                                    <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/GoToBgng14.png')}" 
+                                            styleClass="commandlink_icon"/>
+                            </apex:commandlink>
+                            <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/GoToBgngDimmed14.png')}" 
+                                    rendered="{!NOT(hasPreviousPage)}" styleClass="commandlink_icon"/>
+
+                            <apex:commandlink action="{!previousPage}" 
+                                    title="{!$Label.apttus_xapps__previouspage}" 
+                                    rerender="paginationButtons,resultTable,selectAll" 
+                                    status="processstatus4"
+                                    type="image/png"
+                                    rendered="{!hasPreviousPage}"
+                                    oncomplete="onPageChange();">
+                                <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/Previous14.png')}" 
+                                        styleClass="commandlink_icon"/>
+                            </apex:commandlink>
+                            <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/PreviousDimmed14.png')}" 
+                                    rendered="{!NOT(hasPreviousPage)}" styleClass="commandlink_icon" />
+                            
+                            <div style="margin: 0 10px; display: inline-block;">
+                                <apex:outputText value="{!$Label.apttus_xapps__pageof1} " />
+                                <apex:selectList size="1" multiselect="false"  value="{!currentPageNumber}" >
+                                        <apex:selectOptions value="{!pageList}"/>
+                                        <apex:actionSupport event="onchange" status="processstatus4" action="{!loadCurrentPage}" rerender="resultTable" />
+                                </apex:selectList>
+                                <apex:outputText value="{!$Label.apttus_xapps__pageof2} {!totalPages}" />
+                            </div>
+                                
+                            <apex:commandlink action="{!nextPage}" 
+                                    title="{!$Label.apttus_xapps__nextpage}" 
+                                    reRender="paginationButtons,resultTable,selectAll" 
+                                    status="processstatus4"
+                                    type="image/png"
+                                    rendered="{!hasNextPage}"
+                                    oncomplete="onPageChange();">
+                                <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/Next14.png')}"
+                                        styleClass="commandlink_icon"/>
+                            </apex:commandlink>
+                            <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/NextDimmed14.png')}" 
+                                    rendered="{!NOT(hasNextPage)}" styleClass="commandlink_icon" />
+
+
+                            <apex:commandlink action="{!lastPage}" 
+                                    title="{!$Label.apttus_xapps__lastpage}" 
+                                    reRender="paginationButtons,resultTable,selectAll" 
+                                    status="processstatus4"
+                                    type="image/png"
+                                    rendered="{!hasNextPage}"
+                                    oncomplete="onPageChange();">                                 
+                                <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/GoToEnd14.png')}"
+                                    styleClass="commandlink_icon"/>
+                            </apex:commandlink>
+                            <apex:image url="{!URLFOR($Resource.Apttus_XApps__AppBuilder,'img/GoToEndDimmed14.png')}" 
+                                    rendered="{!NOT(hasNextPage)}" styleClass="commandlink_icon" />
+
+                        </apex:outputPanel>
+                    </apex:pageBlockButtons>
+
+                    <apex:pageBlockButtons location="bottom" >
+                    <apex:outputPanel id="createButton" >
+                    
+                        <apex:actionFunction name="submitSelectedIds" oncomplete="setResponse({!responseJson})" rerender="dummy, test">
+                            <apex:param name="selectedIds" value="" assignTo="{!selectedIds}" />
+                        </apex:actionFunction>                   
+
+                        <div id="submitButtonEnabled" style="display: none;">
+                            <apex:commandButton onclick="submitSelection();" 
+                                value="{!$Label.apttus_xapps__next}" 
+                                disabled="false"
+                                styleClass="pageblockbutton_center"
+                                rerender="dummy" />
+                        </div>
+                        <div id="submitButtonDisabled">
+                            <apex:commandButton value="{!$Label.apttus_xapps__next}" 
+                                disabled="true"
+                                styleClass="pageblockbutton_center"/>
+                        </div>
+                    </apex:outputPanel>
+                    </apex:pageBlockButtons>
+
+                    <!-- Result list -->
+                    <apex:outputPanel id="selectAll" rendered="{! AND(hasResults, NOT(isSingleSelect)) }">
+                        <div id="selectAll">
+                            <apex:outputText >{!$Label.apttus_xapps__selectall}</apex:outputText><br/>
+                            <input type="checkbox" onclick="selectAll(this);"/>
+                        </div>
+                    </apex:outputPanel>
+
+                    <div id="resultTable">
+                        <apex:pageBlockTable value="{!resultList}" var="record" columns="{!totalColumns}" rendered="{!hasResults}" id="resultTable">
+
+                            <apex:column rendered="{!NOT(isSingleSelect)}" width="5%" styleClass="resultSelect">
+                                <input type="checkbox" value="{!record['Id']}" onclick="updateSelection(this);" />
+                            </apex:column>
+
+                            <apex:column rendered="{!isSingleSelect}" width="5%" styleClass="resultSelect">
+                                <input type="radio" name="selectIdSearch" value="{!record['Id']}" onclick="setSelection(this);" />
+                            </apex:column>
+                            
+                            <apex:repeat var="f" value="{!resultFieldNameList}">
+                                <apex:column value="{!record[f]}" />
+                            </apex:repeat>
+                        </apex:pageBlockTable>
+                    </div>
+
+                    
+                </apex:pageBlock>
+                
+            </apex:form>
+        </apex:outputPanel>
+        </div>
+    </apex:outputpanel>
+
+</apex:page>

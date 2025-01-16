@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckRMANonBillablePOnumber</fullName>
+    <active>true</active>
+    <description>Checks whether PO Number is empty if the user manually updates the Parts Order Lines to non-billable.(DCP-823 and DCP-824)</description>
+    <errorConditionFormula>AND
+(
+    ISCHANGED(SVMXC__Line_Status__c),
+	NOT($Profile.Name ==$Label.Integration_SAP_Service), 
+NOT($User.FirstName ==$Label.Automated_Process_User),
+NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+                TEXT(SVMXC__Line_Status__c)==$Label.PartsOrderLineRequested,
+                Is_Billable__c=TRUE,
+                ISBLANK(PO_Number__c)
+)</errorConditionFormula>
+    <errorMessage>This order is not covered by a Contract, Billable Service or a Nonbillable reason.   A contract or billable PO must be added to the Work Order, or a nonbillable reason must be added to each part order line to complete this order.</errorMessage>
+</ValidationRule>

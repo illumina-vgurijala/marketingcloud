@@ -1,0 +1,100 @@
+<!--
+   Apttus Contract Management
+   IDESettingList
+    
+   @2018-2020 Apttus Inc. All rights reserved.
+  -->
+<apex:page controller="Apttus.IDESettingListController" lightningStylesheets="true">
+    <style>
+        .custom-button {
+            text-decoration: none !important;
+            padding: 4px !important;
+        }
+        .line-height {
+            line-height: 1.5 !important;
+        }
+    </style>
+    <apex:tabPanel switchType="client" >
+        <apex:variable value="false" var="displayIDESetupConsole"/>
+        <apex:tab title="{!$Label.apttus__idesetting}" name="{!$Label.apttus__idesetting}" label="{!$Label.apttus__idesetting}">    
+            <apex:form id="form" >
+                <apex:pageMessages />
+                <div class="bPageTitle">
+                    <div class="ptBody secondaryPalette brandSecondaryBrd">
+                        <div class="content">       
+                            <h1 class="pageType">{!$Label.apttus__customsetting}</h1>
+                            <h2 class="pageDescription line-height">{!$Label.apttus__idesetting}</h2>
+                        </div>
+                    </div>
+                </div>
+                <apex:pageBlock >
+                    <apex:pageBlockButtons location="top">
+                        <apex:outputLink title="{!$Label.apttus__new}" styleClass="{!IF($User.UIThemeDisplayed == 'Theme4d','btn','btn custom-button')}" value="/apex/IDESettingEdit">{!$Label.apttus__new}</apex:outputLink>                  
+                    </apex:pageBlockButtons>    
+                    <apex:pageBlockTable value="{!ideSettings}" var="setting" rendered="{! IF(isSettingFound, true, false) }">
+                        <apex:column headervalue="{!$Label.apttus__action}">
+                            <apex:outputLink title="{!$Label.apttus__edit}" value="/apex/IDESettingEdit?setting={!setting.Name}" styleClass="actionLink">{!$Label.apttus__edit}</apex:outputLink>&nbsp;|&nbsp;
+                            <a href="javascript:if (window.confirm('{!$Label.IDEDeleteConfirmMessage}')) deleteSetting('{!setting.Name}');" styleClass="actionLink">{!$Label.Del}</a>
+                            
+                            <!-- set displayIDESetupConsole to true if any active setting found -->
+                            <apex:variable var="displayIDESetupConsole" rendered="{!setting.Apttus__Active__c}" value="true"/>
+                        </apex:column>
+                        <apex:column value="{!setting.Name}" />
+                        <apex:column value="{!setting.Apttus__IDEServiceURL__c}" />
+                        <apex:column value="{!setting.Apttus__QuickStudyURL__c}" />
+                        <apex:column value="{!setting.Apttus__Active__c}" />
+                    </apex:pageBlockTable>        
+                </apex:pageBlock>
+                <apex:pageMessage summary="{!$Label.apttus__norecordfound}" severity="info" rendered="{! IF(isSettingFound, false, true) }" />          
+                <apex:actionFunction action="{!deleteSetting}" name="deleteSetting" reRender="form" >
+                    <apex:param name="settingName" value="" assignTo="{!SelectedSettingName}"/>
+                </apex:actionFunction>
+            </apex:form>
+        </apex:tab>
+        
+        <!-- display the tab only there is one active IDE setting found -->
+        <apex:tab title="{!$Label.apttus__idesetupconsoletabtitle}" label="{!$Label.apttus__idesetupconsoletabtitle}" rendered="{!AND(ideSettings.size > 0, displayIDESetupConsole == 'true')}">
+            <div class="bPageTitle">
+                <div class="ptBody secondaryPalette brandSecondaryBrd">
+                    <div class="content"> 
+                        <h2 class="pageDescription line-height">{!$Label.apttus__idesetupconsoletabtitle}</h2>
+                    </div>
+                </div>
+            </div>
+            <apex:pageBlock >
+            <apex:outputPanel >
+                <apex:outputText value="{!$Label.apttus__notes}" escape="false" style="font-weight: bold;"></apex:outputText><BR></BR>
+                <apex:outputText value="{!$Label.apttus__iddmappinginformationmessage}" escape="false"/>
+            </apex:outputPanel>
+            
+                <apex:pageBlockSection columns="1" collapsible="false">
+                    
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLink target="_blank" value="{!IF(ISNULL($Site.prefix), '' , $Site.prefix)}/{!$ObjectType.Apttus__IDEProvision__c}">{!$Label.apttus__idesetupprovisions}</apex:outputLink>                       
+                        <apex:outputText value="{!$Label.apttus__idesetupprovisionsdescription}"/>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem >
+                        <apex:outputLink target="_blank" value="{!IF(ISNULL($Site.prefix), '' , $Site.prefix)}/{!$ObjectType.Apttus__IDEMapProjectRecordType__c}">{!$Label.apttus__idesetupmapprojectrecordtype}</apex:outputLink>      
+                        <apex:outputText value="{!$Label.apttus__idesetupmapprojectrecordtypedescription}"/>
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem rendered="{!!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t' || $User.UIThemeDisplayed == 'Theme4u')}">
+                        <apex:outputLink target="_blank" value="{!IF(ISNULL($Site.prefix), '', $Site.prefix)}/{!$ObjectType.Apttus__IDEMapProvisionRecordType__c}">{!$Label.apttus__idesetupmapprovisionrecordtype}</apex:outputLink>  
+                        <apex:outputText value="{!$Label.apttus__idesetupmapprovisionrecordtypedescription}"></apex:outputText>            
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem rendered="{!!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t' || $User.UIThemeDisplayed == 'Theme4u')}">
+                        <apex:outputLink target="_blank" value="{!IF(ISNULL($Site.prefix), '', $Site.prefix)}/{!$ObjectType.Apttus__IDEMapClauseProvision__c}">{!$Label.apttus__idesetupmapclauseprovision}</apex:outputLink>
+                        <apex:outputText value="{!$Label.apttus__idesetupmapclauseprovisiondescription}"></apex:outputText>            
+                    </apex:pageBlockSectionItem>
+                    
+                    <apex:pageBlockSectionItem rendered="{!!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t' || $User.UIThemeDisplayed == 'Theme4u')}">
+                        <apex:outputLink target="_blank" value="{!IF(ISNULL($Site.prefix), '', $Site.prefix)}/{!$ObjectType.Apttus__IDEMapFieldProvision__c}">{!$Label.apttus__idesetupmapfieldprovision}</apex:outputLink>  
+                        <apex:outputText value="{!$Label.apttus__idesetupmapfieldprovisiondescription}"></apex:outputText>            
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+        </apex:tab>
+    </apex:tabPanel>
+</apex:page>

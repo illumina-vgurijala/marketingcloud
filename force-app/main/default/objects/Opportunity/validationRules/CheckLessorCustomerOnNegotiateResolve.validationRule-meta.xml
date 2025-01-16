@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckLessorCustomerOnNegotiateResolve</fullName>
+    <active>true</active>
+    <description>Validation rule to check that lessor company is populated when Type = &quot;Lease&quot; and user is trying to move from Negotiate and Resolve to Finalize.</description>
+    <errorConditionFormula>AND (
+    AND (
+        ISPICKVAL ( Type,&apos;Instrument Lease&apos; ),                         
+        ISBLANK ( Lessor_Customer__c )
+    ),
+    OR (
+        $RecordType.DeveloperName = $Label.OpportunityRTDirectStandard,
+        $RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard
+    ),
+    NOT (
+        OR (
+            ISPICKVAL ( StageName, &apos;Closed Lost&apos; ),                      
+            ISPICKVAL ( StageName, &apos;Closed Won&apos; ),
+            ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Lost&apos; ), 
+            ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Won&apos; ),
+            ISPICKVAL ( StageName, &apos;Closed Abandoned&apos; ),
+            ISPICKVAL ( PRIORVALUE ( StageName ), &apos;Closed Abandoned&apos; ), 
+            ISPICKVAL ( StageName, &apos;Negotiate &amp; Resolve&apos; ),
+            ISPICKVAL ( StageName, &apos;Create&apos; ),
+            ISPICKVAL ( StageName, &apos;Qualify&apos; ),
+            ISPICKVAL ( StageName, &apos;Prove&apos; ),
+            ISPICKVAL ( StageName, &apos;Develop&apos; )
+         )
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Lessor_Customer__c</errorDisplayField>
+    <errorMessage>Please enter Lessor Customer.</errorMessage>
+</ValidationRule>

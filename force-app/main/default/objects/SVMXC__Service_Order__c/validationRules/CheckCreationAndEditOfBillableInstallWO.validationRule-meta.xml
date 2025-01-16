@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCreationAndEditOfBillableInstallWO</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    NOT(
+        OR(
+$Profile.Name = $Label.ProfileCustomerService,
+$Profile.Name = $Label.ProfileSystemAdmin,
+$Profile.Name ==$Label.Integration_SAP_Service,
+$Profile.Name == $Label.Integration_Service_SNAP_Profile,
+$User.FirstName == $Label.Automated_Process_User,
+$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+$Profile.Name ==$Label.Integration_Sales_SNAP_Profile
+        )
+    ),
+    OR(
+        /* Condition for only allowing CS and Sys Ad to create Billable Installs */
+        AND(
+            ISNEW(),
+            TEXT(SVMXC__Order_Type__c) = $Label.WorkOrderTypeBillableInstall
+        ),
+        /* Condition for updating the Order Type to or from &apos;Billable Install&apos; */
+        AND(
+            ISCHANGED(SVMXC__Order_Type__c),
+            OR(
+                TEXT(PRIORVALUE(SVMXC__Order_Type__c)) = $Label.WorkOrderTypeBillableInstall,
+                TEXT(SVMXC__Order_Type__c) = $Label.WorkOrderTypeBillableInstall
+            )
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>Only Customer Care users can create Billable Install Work Orders or convert Work Orders to and from Billable Install. Please contact Customer Care for updates.</errorMessage>
+</ValidationRule>

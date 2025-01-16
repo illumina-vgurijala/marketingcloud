@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckAgrStartDateCreatedDate</fullName>
+    <active>true</active>
+    <description>DCP-34092: The Start Date must be greater than or equal to the creation date of this Agreement record</description>
+    <errorConditionFormula>AND(
+!$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+NOT(RecordType.DeveloperName = $Label.AgreementRecordTypeNegotiatedTermsAndConditions),
+    NOT($Permission.Bypass_CLM_Validation_Rule),
+ISBLANK(Legacy_Agreement_Number__c ),
+    OR(
+        AND(
+            ISBLANK(Created_Date__c),
+        NOT(ISBLANK(Apttus__Contract_Start_Date__c)),
+            Apttus__Contract_Start_Date__c &lt; TODAY()
+        ),
+        Apttus__Contract_Start_Date__c &lt; Created_Date__c
+    ),
+AND(RecordType.DeveloperName != $Label.RecordTypePartnershipAgreement,RecordType.DeveloperName != $Label.RecordTypeQualityAgreement),	
+AND(
+NOT(ISPICKVAL(Apttus__Status__c ,&apos;In Amendment&apos;)),
+NOT(ISPICKVAL(Apttus__Status__c ,&apos;In Renewed&apos;)),
+Validation_Status__c != &apos;Cancel Completed&apos;
+)
+)</errorConditionFormula>
+    <errorMessage>The Start Date must be greater than or equal to the creation date of this Agreement record.</errorMessage>
+</ValidationRule>

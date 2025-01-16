@@ -1,0 +1,465 @@
+<!-- 
+    Apttus CPQ
+    CPQSystemOverview 
+    @2012-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page controller="Apttus_Config2.CPQSystemOverviewController" 
+		   lightningStylesheets="true"
+           sidebar="{!showAdminSidebar}"
+           title="{!$Label.apttus_config2__pagesystemoverviewname}">
+    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__CPQSystemOverviewJS)}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+   	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__AdminCSS)}" />
+    
+    <script type="text/javascript">
+        var j$ = jQuery.noConflict();
+        j$.APTTUS = {};
+        j$.APTTUS.More = '{!JSENCODE($Label.More)}';
+        j$.APTTUS.ErrorRetrievingInvalidRecords = '{!JSENCODE($Label.ErrorRetrievingInvalidRecords)}';
+        j$.APTTUS.NoRecordsToDisplay = '{!JSENCODE($Label.NoRecordsToDisplay)}';
+
+
+        j$.APTTUS.RemoteController = {};
+        j$.APTTUS.RemoteController.getCategoryHierarchySectionMap = '{!$RemoteAction.CPQSystemOverviewController.getCategoryHierarchySectionMap}';
+        j$.APTTUS.RemoteController.getRuleSectionMap = '{!$RemoteAction.CPQSystemOverviewController.getRuleSectionMap}';
+        j$.APTTUS.RemoteController.getPriceListSectionMap = '{!$RemoteAction.CPQSystemOverviewController.getPriceListSectionMap}';
+        j$.APTTUS.RemoteController.getProductFilterSectionMap = '{!$RemoteAction.CPQSystemOverviewController.getProductFilterSectionMap}';
+        j$.APTTUS.RemoteController.getAssetLineSectionMap = '{!$RemoteAction.CPQSystemOverviewController.getAssetLineSectionMap}';
+        j$.APTTUS.RemoteController.getCustomSettingsSectionMap = '{!$RemoteAction.CPQSystemOverviewController.getCustomSettingsSectionMap}';
+        j$.APTTUS.RemoteController.getAVMSectionMap = '{!$RemoteAction.CPQSystemOverviewController.getAVMSectionMap}';
+        j$.APTTUS.RemoteController.getProductAttributeSchemaComparisonMap = '{!$RemoteAction.CPQSystemOverviewController.getProductAttributeSchemaComparisonMap}';
+        j$.APTTUS.RemoteController.getMissingConditionCriteriaFieldMap= '{!$RemoteAction.CPQSystemOverviewController.getMissingConditionCriteriaFieldMap}';
+
+    </script>
+    <style>
+        #avmContentDiv ul li {
+            display: inline-block;
+        }
+    </style>
+
+    <apex:form id="idForm">
+            
+        <div>           
+            <div class="console-panel" style="float: left">
+                <div id="ruleDiv" >
+                    <div class="console-top-line">
+                        <table style="width: 100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h2> {!$Label.ConstraintRuleSection} </h2> <!-- Constraint Rule Section -->
+                                    </td>
+                                    <td>
+                                        <div id="ruleContentDivRefresh">
+                                            <input type="button"  onclick="refreshRuleSection();" class="console-refresh-button" />
+                                        </div>
+                                        <div id="ruleContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>   
+                    </div>
+                    <div id="ruleContentDiv" class="console-content">
+                        <div class="console-panel-content">
+                            <div class="panel-content-item">                                    
+                                <div id="conditionlessRulesDiv" class="console-panel-content" style="width:49%; float:left; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.ConstraintRulesWithoutConditions} </h2> <br /> <!-- Constraint Rules without Conditions -->
+                                    <ul style="float:left" id="conditionlessRules" >
+                                    </ul>
+                                </div>
+                                <div id="actionlessRulesDiv" class="console-panel-content" style="width:49%; display: inline-table; margin-left=1%; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.ConstraintRulesWithoutActions} </h2> <br /> <!-- Constraint Rules without Actions -->
+                                    <ul style="float:left" id="actionlessRules">   
+                                    </ul> 
+                                </div>
+                                <div id="invalidCondCritDiv" class="console-panel-content" style="width:49%; display: inline-table; margin-left=1%; height:auto">
+                                	<h2 style="margin-left: 2%"> {!$Label.InvalidRuleConditionCriteria} </h2> <br /> <!-- Invalid Rule Condition Criteria -->
+                                	<ul id="invalidCondCrit">
+                                	</ul>
+                                </div>
+                                <div id="invalidActionCritDiv" class="console-panel-content" style="width:49%; display: inline-table; margin-left=1%; height:auto">
+                                	<h2 style="margin-left: 2%">{!$Label.InvalidRuleActionCriteria} </h2> <br /> <!-- Invalid Rule Action Criteria -->
+                                	<ul id="invalidActionCrit">
+                                	</ul>
+                                </div>                                    
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Asset Line section -->
+                <div id="assetDiv" style="padding-top: 10px;">
+                	<div class="console-top-line">
+                		<table style="width: 100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h2> {!$Label.AssetLineSection} </h2> <!-- Asset Line Section -->
+                                    </td>
+                					<td>
+                                        <div id="assetLineItemsContentDivRefresh">
+                					       <input type="button" onclick="refreshAssetLineSection();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="assetLineItemsContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                					</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="assetContentDiv" class="console-content">
+                		<div class="console-panel-content">
+                            <div id="assetLineItemsContentDiv" class="panel-content-item">                                    
+                                <div id="invalidLineNumbersDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+               						<h2 style="margin-left: 2%"> {!$Label.InvalidLineNumbers} </h2> <br /> <!-- Invalid Line Numbers -->
+               						<ul id="invalidLineNumbers">
+               						</ul>
+                                </div> 
+                                <div id= "invalidBundleAssetLineItemDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                	<h2 style="margin-left: 2%"> {!$Label.InvalidBundleAssetLineItem} </h2> <br /> <!-- Invalid Bundle Asset Line Item -->
+                                	<ul id="invalidBundleAssetLineItem">
+                                	</ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category Hierarchy section -->
+                <div id="categoryHierarchyDiv" style="padding-top: 10px;">
+                	<div class="console-top-line">
+                		<table style="width: 100%;">
+                			<tbody>
+                				<tr>
+                					<td>
+                						<h2> {!$Label.CategoryHierarchySection} </h2> <!-- Category Hierarchy Section -->
+                					</td>
+                					<td>
+                                        <div id="categoryHierarchyContentDivRefresh">
+                					       <input type="button" onclick="refreshCategoryHierarchySection();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="categoryHierarchyContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                					</td>
+                				</tr>
+                			</tbody>
+                		</table>
+                	</div>
+                	<div id="categoryHierarchyContentDiv" class="console-content">
+                		<div class="console-panel-content">
+                			<div id="categoryHierarchyItemsDiv" class="panel-content-item">
+                				<div id="invalidCategoryHierarchyDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.InvalidCategoryHierarchy} </h2> <br /> <!-- Invalid Category Hierarchy -->
+                					<ul id="invalidCategoryHierarchy">
+                					</ul>
+                				</div>
+                				<div id="invalidProdClassificationsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto;">
+                					<h2 style="margin-left: 2%"> {!$Label.InvalidProductClassifications} </h2> <br /> <!-- Invalid Product Classifications -->
+                					<ul id="invalidProdClassifications">
+                					</ul>
+                				</div>
+                				<div id="invalidClassificationHrkDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                            		<h2 style="margin-left: 2%"> {!$Label.InvalidClassificationHierarchies} </h2> <br /> <!-- Invalid Classification Hierarchies -->
+                            		<ul id="invalidClassificationHrk" style="display:inline-table; height:auto">
+                            		</ul>
+                            	</div>
+                			</div>
+                		</div>
+                	</div>
+                </div>
+
+                <!-- Product Attribute Schema Comparison section -->
+                <div id="attributeSyncDiv" style="padding-top: 10px;">
+                    <div class="console-top-line">
+                        <table style="width: 100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h2> {!$Label.ProductAttributeSchemaComparison} </h2> <!-- Attribute Value Field Sync Section -->
+                                    </td>
+                                    <td>
+                                        <div id="attributeComparisonContentDivRefresh">
+                                           <input type="button" onclick="refreshProductAttributeSchemaComparisonSection();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="attributeComparisonContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="attributeComparisonContentDiv" class="console-content" style="display: inline-table; margin-left:1%;">
+                        <div class="console-panel-content">
+                            <div id="attributeComparisonItemsDiv" class="panel-content-item">
+                                <div id="missingProposalAttributesDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto;">
+                                    <h2 style="margin-left: 2%"> {!$Label.MissingProposalAttributes} </h2> <br /> <!-- Missing attribute fields on Proposal Product Attribute Value -->
+                                    <ul id="missingProposalAttributes">
+                                    </ul>
+                                </div>
+                                <div id="missingOrderAttributesDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto;">
+                                    <h2 style="margin-left: 2%"> {!$Label.MissingOrderAttributes} </h2> <br /> <!-- Missing attribute fields on Order Product Attribute Value -->
+                                    <ul id="missingOrderAttributes">
+                                    </ul>
+                                </div>
+                                <div id="missingAssetAttributesDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto;">
+                                    <h2 style="margin-left: 2%"> {!$Label.MissingAssetAttributes} </h2> <br /> <!-- Missing attribute fields on Asset Attribute Value -->
+                                    <ul id="missingAssetAttributes">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Missing condition criteria fields -->
+                <div id="ConditionCriteriaFieldDiv" style="padding-top: 10px;">
+                    <div class="console-top-line">
+                        <table style="width: 100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h2> {!$Label.MissingConditionCriteriaFields} </h2> <!-- Missing Condition Criteria Fields Section -->
+                                    </td>
+                                    <td>
+                                        <div id="missingConditionCriteriaFieldsDivRefresh">
+                                           <input type="button" onclick="refreshMissingConditionCriteriaFields();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="missingConditionCriteriaFieldsDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="missingConditionCriteriaFieldsDiv" class="console-content" style="display: inline-table; margin-left:1%;">
+                        <div class="console-panel-content">
+                            <div id="attributeComparisonItemsDiv" class="panel-content-item">
+                                <div id="missingProposalAttributesDiv" class="console-panel-content" style="width:33%; display:inline-table; height:auto;">
+                                    <h2 style="margin-left: 2%"> {!$Label.MissingLineItems} </h2> <br /> <!-- Missing Condition Criteria Fields on Line Item -->
+                                    <ul id="missingLineItemFields">
+                                    </ul>
+                                </div>
+                                <div id="" class="console-panel-content" style="width:33%; display:inline-table; height:auto;">
+                                    <h2 style="margin-left: 2%"> {!$Label.MissingProducts} </h2> <br /> <!-- Missing Condition Criteria Fields on Product2 -->
+                                    <ul id="missingProductFields">
+                                    </ul>
+                                </div>
+                                <div id="" class="console-panel-content" style="width:33%; display:inline-table; height:auto;">
+                                    <h2 style="margin-left: 2%"> {!$Label.MissingProductAttributeValues} </h2> <br /> <!-- Missing Condition Criteria Fields on Product Attribute Values -->
+                                    <ul id="missingProductAttributeValueFields">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+          
+            <div class="console-panel" style="display: inline-table; margin-left:1%;">
+                <div> <!-- Price List Section -->
+                    <div class="console-top-line">
+                        <table style="width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h2> {!$Label.PriceListSection} </h2> <!-- Price List Section  -->
+                                    </td>
+                                    <td>
+                                        <div id="priceListContentDivRefresh">
+                                            <input type="button"  onclick="refreshPriceListSection();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="priceListContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="priceListContentDiv" class="console-content">
+                        <div class="console-panel-content">
+                            <div class="panel-content-item">
+                                 <div id="noChargeTypePriceListsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.PriceListItemsWithNoChargeType} </h2> <br /> <!-- Price List Items without Charge Type -->
+                                    <ul id="noChargeTypePriceLists">
+                                    </ul>
+                                </div>
+                                <div id="noCategoryPriceListsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.PriceListItemsWithNoCategory} </h2> <br /> <!--  Price List Items without category -->
+                                    <ul id="noCategoryPriceLists" style = "display:inline-table">
+                                    </ul>
+                                </div>                  
+                            	<div id="invalidPriceDimsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                            		<h2 style="margin-left: 2%"> {!$Label.InvalidPriceDimensions} </h2> <br /> <!-- Invalid Price Dimensions -->
+                            		<ul id="invalidPriceDims" style="display:inline-table; height:auto">
+                            		</ul>
+                            	</div>
+                                <div id="invalidOptionComponentsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.InvalidProductOptionComponents} </h2> <br /> <!-- Invalid Product Option Components -->
+                                    <ul id="invalidOptionComponents" style="display:inline-table; height:auto">                                        
+                                    </ul>
+                                </div>
+                                <div id="limitedPriceItemsCriteriaDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.LimitedPriceListItems} </h2> <br /> <!-- Limited Price List Items -->
+                                    <ul id="limitedPriceItemsCriteria" style="display:inline-table; height: auto">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding-top:10px;"> <!-- Product Filter Section -->
+					<div class="console-top-line">
+                        <table style="width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h2> {!$Label.ProductFilterSection} </h2> <!-- Product Filter Section  -->
+                                    </td>
+                                    <td>
+                                        <div id="productFilterContentDivRefresh">
+                                            <input type="button"  onclick="refreshProductFilterSection();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="productFilterContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>                    
+                    <div id="productFilterContentDiv" class="console-content">
+                        <div class="console-panel-content">
+                            <div class="panel-content-item">
+                                 <div id="undefinedFilterFieldsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.UndefinedInSearchFilterPickList} </h2> <br /> <!-- Product Filter Fields that are not in Pick list -->
+                                    <ul id="undefinedFilterFields">
+                                    </ul>
+                                </div>
+                                 <div id="deletedFilterFieldsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.DeletedFields} </h2> <br /> <!-- Product Filer Fields that are deleted from Product Object -->
+                                    <ul id="deletedFilterFields">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="padding-top:10px;"> <!-- Custom Settings Section -->
+                	<div class="console-top-line">
+                		<table style="width:100%;">
+                			<tbody>
+                				<tr>
+                					<td>
+                						<h2> {!$Label.CustomSettingsSection} </h2> <!-- Custom Settings Section -->
+                					</td>
+                					<td>
+                                        <div id="customSettingsContentDivRefresh">
+                                            <input type="button"  onclick="refreshCustomSettingsSection();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="customSettingsContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                                    </td>
+                				</tr>
+                			</tbody>	
+                		</table>
+                	</div>
+                	<div id="customSettingsContentDiv" class="console-content">
+                		<div class="console-panel-content">
+                			<div class="panel-content-item>">
+                				<div id="configSysPropSettingsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.ConfigSystemProperties} </h2> <br /> <!-- Config System Properties -->
+                					<ul id="configSysPropSettings" style="float:left">
+                					</ul>
+                				</div>
+                				<div id="configSelectProdSettingsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.ConfigSelectProductSettings} </h2> <br /> <!-- Config Select Product Settings -->
+                					<ul id="configSelectProdSettings" style="float:left">
+                					</ul>
+                				</div>
+                				<div id="configSelectOptSettingsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.ConfigSelectOptionSettings} </h2> <br /> <!-- Config Select Option Settings -->
+                					<ul id="configSelectOptSettings" style="float:left">
+                					</ul>
+                				</div>
+                				<div id="configLineItemCriteriaFieldsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.ConfigLineItemCriteriaFields} </h2> <br /> <!-- Config LineItem Criteria Fields -->
+                					<ul id="configLineItemCriteriaFields" style="float:left">
+                					</ul>
+                				</div>
+                				<div id="configConstCritFieldsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.ConfigConstraintCriteriaFields} </h2> <br /> <!-- Config Constraint Criteria Fields -->
+                					<ul id="configConstCritFields" style="float:left">
+                					</ul>
+                				</div>
+                				<div id="installedProdSettingsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.InstalledProductSettings} </h2> <br /> <!-- Installed Product Settings -->
+                					<ul id="installedProdSettings" style="float:left">
+                					</ul>
+                				</div>
+                				<div id="configCustomDispColsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                					<h2 style="margin-left: 2%"> {!$Label.ConfigCustomDisplayColumns} </h2> <br /> <!-- Config Custom Display Columns -->
+                					<ul id="configCustomDispCols" style="float:left">
+                					</ul>
+                				</div>
+                                <div id="configAssetCriteriaFieldsDiv" class="console-panel-content" style="width:49%; display:inline-table; height:auto">
+                                    <h2 style="margin-left: 2%"> {!$Label.ConfigAssetPricingCriteriaFields} </h2> <br /> <!-- Config Asset Pricing Criteria Fields -->
+                                    <ul id="configAssetCriteriaFields" style="float:left">
+                                    </ul>
+                                </div>
+                			</div>
+                		</div>
+                	</div>
+                </div>
+                <div> <!-- AVM Section -->
+                    <div class="console-top-line">
+                        <table style="width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <h2> {!$Label.AttributeBasedConfiguration} </h2> <!-- AVM Section  -->
+                                    </td>
+                                    <td>
+                                        <div id="avmContentDivRefresh">
+                                            <input type="button"  onclick="refreshAVMSection();" class="console-refresh-button"  />
+                                        </div>
+                                        <div id="avmContentDivLoading">
+                                            <img src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: 0;" />
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="avmContentDiv" class="console-content">
+                        <div class="console-panel-content">
+                            <div class="panel-content-item">
+                                 <div id="avmNotified" class="console-panel-content" style="width:49%; display:inline-table; height:auto; margin-left: 2%">
+                                    <h2> {!$Label.AttributeValueMatrixSection} </h2> <br /> <!-- AVMs with any scope(Product, Product Family or Product Group) as all -->
+                                    <ul id="notifiedAVM" style="display: inline-block">
+                                    </ul>
+                                </div>
+                                
+                            </div>
+                        </div>        
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+    </apex:form>
+
+</apex:page>

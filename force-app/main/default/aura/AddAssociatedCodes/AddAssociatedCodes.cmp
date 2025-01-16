@@ -1,0 +1,137 @@
+<aura:component implements="force:hasRecordId,force:lightningQuickAction,flexipage:availableForAllPageTypes,forceCommunity:availableForAllPageTypes" controller="AddAssociatedCodesController" access="global" extends="c:BaseSuperComponent">
+    <aura:attribute name="CodeLibraryList" type="List"/>
+    <aura:attribute name="AssociatedCodeList" type="List"/>
+    <aura:attribute name="CodeLibListSize" type="Integer" default="0"/>
+    <aura:attribute name="AscCodeListSize" type="Integer" default="0"/>
+    <aura:attribute name="SearchedCode" type="String"/>
+    <aura:attribute name="SearchRadioOptions" type="List"/>
+    <aura:attribute name="SelectedSearchOption" type="String"/>
+    <aura:attribute name="SortByField" type="String"/>
+    <aura:attribute name="SortByDirection" type="String"/>
+    <aura:attribute name="Spinner" type="boolean" default="false"/>
+    <aura:attribute name="BoolElevationCase" type="boolean" default="false"/>
+	<aura:attribute name="BoolLockCodes" type="boolean" default="true"/>
+	<aura:attribute name="BoolQAUser" type="boolean" default="false"/>
+	<aura:attribute name="BoolLogisticsUser" type="boolean" default="false"/>
+	<!-- By KD -->
+	<aura:attribute type="String" name="strSortField" default="userName" />
+    <aura:attribute type="String" name="strSortDirection" default="asc"/>
+	<aura:attribute name="columns" type="List" default="[]" />
+	<aura:attribute name="Associatedcolumns" type="List" default="[]" />
+	<aura:attribute name="mapLabels" type="Object" />
+	<!--DCP 47684 attr BoolHighlight-->
+	<aura:attribute name="BoolHighlight" type="boolean" default="false"/>
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <div>
+        <aura:if isTrue="{!v.Spinner}">
+            <div aura:id="spinnerId" class="slds-spinner_container">
+                <div class="slds-spinner--brand  slds-spinner slds-spinner--large slds-is-relative" role="alert">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </aura:if>
+        <aura:if isTrue="{! v.BoolElevationCase}">
+           {!mapLabels.UI_Error_Message_No_Code_Addition}
+		<aura:set attribute="else">
+	        <div class="slds-panel slds-size_full slds-panel_docked slds-panel_docked-left slds-is-open" aria-hidden="false">
+	            <div class="slds-panel__header">
+	                <h2 class="slds-panel__header-title slds-text-heading_small slds-truncate" title="Find Codes">Find Codes</h2>
+	            </div>
+	            <div class="slds-panel__body">
+					<!--DCP 47684 added multipleRows attr, layoutItem for label-->
+	                <lightning:layout  multipleRows="true">
+						<aura:if isTrue="{!v.BoolHighlight}">
+							<lightning:layoutItem size="12" padding="around-small" class="slds-p-top_none">
+								<ui:outputRichText  value="{!$Label.c.UI_Text_MandatoryCodeTypes}" />
+							</lightning:layoutItem>
+						</aura:if>
+	                    <aura:iteration items="{!v.SearchRadioOptions}" var="search" >
+	                        <lightning:layoutItem>
+	                            <aura:if isTrue="{!!or(v.BoolQAUser, v.BoolLogisticsUser)}">
+									<aura:if isTrue="{!search == 'All'}">
+										<lightning:input type="radio" label="{!search}" name="searchradio" value="{!v.SelectedSearchOption}" checked="true" onchange="{!c.getCodeType}"/>
+										<aura:set attribute="else">
+											<!--DCP 47684 adding aura:id-->
+											<lightning:input aura:id="codes-radio" type="radio" label="{!search}" name="searchradio" value="{!v.SelectedSearchOption}" checked="false" onchange="{!c.getCodeType}"/>
+										</aura:set>
+									</aura:if>
+									<aura:set attribute="else">
+										<!--DCP 47684 adding aura:id-->
+										<lightning:input aura:id="second-codes-radio" type="radio" label="{!search}" name="searchradio" value="{!v.SelectedSearchOption}" checked="true" onchange="{!c.getCodeType}"/>
+									</aura:set>
+								</aura:if>
+	                        </lightning:layoutItem>
+	                    </aura:iteration>
+	                </lightning:layout>
+	                <lightning:layout>
+	                    <lightning:layoutItem padding="around-small" size="10">
+							<!-- Converted to lightning tags from Ui/Html tags-->
+							<div onkeyup="{!c.checkEnter}">
+								<lightning:input
+									aura:id="code-search-input"
+									name="code-search-input"
+									label= "{!v.mapLabels.UI_Search}"
+									type="search"
+									placeholder="Code Name"
+									value="{!v.SearchedCode}"
+								/>
+							</div>
+	                    </lightning:layoutItem>
+	                    <lightning:layoutItem padding="around-small" size="2">
+	                        <lightning:button variant="brand" label="Search" onclick="{!c.getCodes}" class="search_button" />
+	                    </lightning:layoutItem>
+	                </lightning:layout>
+					<aura:if isTrue="{!not(empty(v.CodeLibraryList))}">
+						<!-- Converted to lightning tags from Ui/Html tags-->
+						<div style="height: 300px;">
+							<lightning:datatable
+								keyField="id"
+								columns="{!v.columns}"
+								data="{!v.CodeLibraryList}"
+								hideCheckboxColumn= "true"
+								sortedDirection="{!v.strSortDirection}"
+								sortedBy="{!v.strSortField}"
+								onsort="{!c.updateColumnSorting}"
+								onrowaction="{!c.handleCodeSearchRowAction}">
+							</lightning:datatable>
+						</div>
+						<aura:set attribute="else">
+							{!v.mapLabels.UI_Error_Message_No_Code_Found}
+						</aura:set>
+					</aura:if>
+					
+	            </div>
+	        </div>
+	        
+	        <div class="slds-panel slds-size_full slds-panel_docked slds-panel_docked-left slds-is-open" aria-hidden="false">
+	            <div class="slds-panel__header">
+	                <h2 class="slds-panel__header-title slds-text-heading_small slds-truncate" title="Associated Codes">Associated Codes</h2>
+	            </div>
+	            <div class="slds-panel__body">
+					<aura:if isTrue="{!not(empty(v.AssociatedCodeList))}">
+						<!-- Converted to lightning tags from Ui/Html tags-->
+						<div style="height: 300px;">
+							<lightning:datatable
+								keyField="id"
+								columns="{!v.Associatedcolumns}"
+								data="{!v.AssociatedCodeList}"
+								hideCheckboxColumn= "true"
+								sortedDirection="{!v.strSortDirection}"
+								sortedBy="{!v.strSortField}"
+								onsort="{!c.updateColumnSortingAssociatedCode}"
+								onrowaction="{!c.handleCodeSearchRowAction}">
+							</lightning:datatable>
+						</div>
+						<aura:set attribute="else">
+							{!v.mapLabels.UI_Error_Message_No_Active_Code}
+						</aura:set>
+	                </aura:if>
+	            </div>
+			</div>
+			</aura:set>
+        </aura:if>
+    </div>
+
+</aura:component>

@@ -1,0 +1,122 @@
+<!-- 
+    Apttus Approvals Management
+    CartApprovalsLaunch
+     
+    @2013-2018 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Proposal__Proposal__c"
+           extensions="Apttus_CQApprov.CartApprovalsLaunchController"
+           showHeader="false"
+           sidebar="false"
+           standardStylesheets="false"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+           						   $User.UIThemeDisplayed == 'Theme4u' ||
+           						   $User.UIThemeDisplayed == 'Theme4t'}">
+           
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__ApprovalsSF1Assets, 'css/fonts.css')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__ApprovalsSF1Assets, 'js/jquery.js')}" />
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__ApprovalsPageResources, 'CPQDelight.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__ApprovalsPageResources, 'ApprovalsPageStyles.css')}" />
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Approval__JQueryUILibrary111, 'jquery-ui.css')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__JQueryUILibrary111, 'jquery-ui.js')}" />
+
+    <apex:include pageName="Apttus_Approval__ApprovalsJSLibInclude" />
+
+    <script type="text/javascript" src="/soap/ajax/42.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/42.0/apex.js"></script>
+
+    <script type="text/javascript">
+        // determine if we are in salesforce1
+        var inSf1Mode = false;
+        try {
+            if (sforce.one) {
+                inSf1Mode = true;
+            }
+        }
+        catch(err) {
+        }
+    </script>
+
+    <apex:form >
+        <apex:outputPanel id="idPageNavigation">
+            <script type="text/javascript">
+                // This to make sure jQuery doesn't conflict with any other JS libraries
+                var j$ = jQuery.noConflict();
+                
+                // include the appropriate component
+                j$(document).ready(function() {
+                          
+                    // call this once the page is ready
+                    var pageLoaded = "{!pageLoaded}";
+                    var pageURL = "{!JSENCODE(pageURL)}";
+
+                    if (pageLoaded == 'false') {
+                        launchCartApprovals(inSf1Mode);
+
+                    } else {
+                        if (pageURL.length > 0) {
+                            // determine if we are in Salesforce1 and set navigation link appropriately
+                            try {
+                                if (sforce.one) {
+                                    sforce.one.navigateToURL(pageURL);
+                                }
+                                else {
+                                    top.location.replace(pageURL);
+                                    return true;
+                                }
+                            }
+                            catch(err) {
+                            }
+                        }
+                    
+                    }
+                    
+                });
+            </script>
+        </apex:outputPanel>
+
+        <!-- header panel -->
+        <apex:outputPanel id="idHeaderPanel" styleClass="apt-page-header cartTable clearfix" layout="block">
+        </apex:outputPanel>
+
+        <!-- body panel -->
+        <apex:outputPanel id="idBodyPanel" layout="block"
+                          styleClass="apt-main-content apt-page-content"
+                          style="position:relative; margin:50px 20px 100px 20px;">
+        
+            <apex:pageMessages id="idPageMessages" rendered="{!hasErrors}" />
+        </apex:outputPanel>
+
+        <!-- footer panel -->
+        <apex:outputPanel id="idFooterPanel">
+            <apex:outputPanel id="idWebFooterPanel" layout="block"
+                              styleClass="idCommands clearfix apt-page-footer footerBtnPanel"
+                              rendered="{!hasErrors && NOT(inSf1Mode)}">
+                              
+                <div class="footerBtn">
+                    <apex:commandButton value="{!$Label.apttus_approval__ok}"
+                                        action="{!doReturn}"
+                                        styleClass="btn btn-default2" />
+                </div>
+            </apex:outputPanel>
+            <apex:outputPanel id="idSF1FooterPanel" layout="block"
+                              style="text-align:center"
+                              rendered="{!hasErrors && inSf1Mode}">
+                              
+                <apex:commandButton action="{!doReturn}"
+                                    value="{!$Label.apttus_approval__ok}"
+                                    styleClass="btn btn-default2" />
+            </apex:outputPanel>
+        </apex:outputPanel>
+
+        <apex:actionFunction name="launchCartApprovals"
+                             action="{!doLaunchCartApprovals}"
+                             reRender="idPageNavigation,idHeaderPanel,idBodyPanel,idFooterPanel">
+            <apex:param name="param1" assignTo="{!inSf1Mode}" value="" />
+        </apex:actionFunction>
+
+    </apex:form>
+</apex:page>

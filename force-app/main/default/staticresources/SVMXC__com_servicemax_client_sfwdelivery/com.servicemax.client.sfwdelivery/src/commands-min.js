@@ -1,0 +1,1 @@
+(function(){var a=SVMX.Package("com.servicemax.client.sfwdelivery.commands");a.init=function(){a.Class("GetWizardInfo",com.servicemax.client.mvc.api.Command,{__constructor:function(){this.__base();},executeAsync:function(c,b){this._executeOperationAsync(c,b,{operationId:"SFWDELIVERY.GET_WIZARD_INFO"});}},{});};})();

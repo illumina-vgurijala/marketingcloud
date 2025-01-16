@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <description>Testing
+Populates the fields on Quotation and Opportunity when Quotation is updated.</description>
+    <environments>Default</environments>
+    <interviewLabel>Quo {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Quotation : After Insert Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>447</locationX>
+        <locationY>15</locationY>
+        <filterFormula>AND(
+OR(
+     ISPICKVAL({!$Record.Apttus_Proposal__Opportunity__r.StageName}, &apos;Qualify&apos;),
+     ISPICKVAL({!$Record.Apttus_Proposal__Opportunity__r.StageName}, &apos;Develop&apos;)
+),
+OR(
+        {!$Record.Apttus_Proposal__Opportunity__r.RecordTypeName__c} = &apos;Standard&apos;,
+        {!$Record.Apttus_Proposal__Opportunity__r.RecordTypeName__c} = &apos;Indirect_Standard&apos;
+),
+       ISPICKVAL({!$Record.Apttus_Proposal__Approval_Stage__c}, &apos;Generated&apos;)
+)</filterFormula>
+        <object>Apttus_Proposal__Proposal__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>Schedule_after_7_days</name>
+            <connector>
+                <targetReference>Opportunity_Update_Quote_Generated_Flag_In_Develop_Or_Qualify_Stage</targetReference>
+            </connector>
+            <label>Schedule after 7 days</label>
+            <offsetNumber>7</offsetNumber>
+            <offsetUnit>Days</offsetUnit>
+            <recordField>Quote_Output_Generated_Valid_From_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Opportunity_Update_Quote_Generated_Flag_In_Develop_Or_Qualify_Stage</name>
+        <label>Opportunity Update Quote Generated Flag In Develop Or Qualify Stage</label>
+        <locationX>821</locationX>
+        <locationY>374</locationY>
+        <flowName>Opportunity_Update_Quote_Generated_Flag_In_Develop_Or_Qualify_Stage</flowName>
+        <inputAssignments>
+            <name>varOpportunityId</name>
+            <value>
+                <elementReference>$Record.Apttus_Proposal__Opportunity__r.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varOpportunityStatus</name>
+            <value>
+                <elementReference>$Record.Apttus_Proposal__Opportunity__r.StageName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>varQuoteStageGenerated</name>
+            <value>
+                <elementReference>$Record.Apttus_Proposal__Approval_Stage__c</elementReference>
+            </value>
+        </inputAssignments>
+    </subflows>
+</Flow>

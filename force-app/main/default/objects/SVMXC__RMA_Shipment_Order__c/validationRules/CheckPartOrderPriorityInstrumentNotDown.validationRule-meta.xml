@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckPartOrderPriorityInstrumentNotDown</fullName>
+    <active>true</active>
+    <description>Priority can not be selected for Part Order when Instrument is not down on a non-install work order.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c), 
+    TEXT(SVMXC__Priority__c) = 
+    $Label.PartOrderPriorityUrgent, 
+    OR( ISNEW(), ISCHANGED(SVMXC__Priority__c) ), 
+    TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c) &lt;&gt;
+    $Label.WorkOrderTypeInstallation,
+    SVMXC__Service_Order__r.SVMXC__Customer_Down__c = false
+)</errorConditionFormula>
+    <errorMessage>Priority = &quot;Urgent&quot; cannot be selected for a part order when the instrument status = &quot;On&quot;.  Either change the Instrument Status to &quot;Off&quot; or change the Parts Order Priority to &quot;Low&quot;.</errorMessage>
+</ValidationRule>

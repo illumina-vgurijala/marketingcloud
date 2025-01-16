@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>61.0</apiVersion>
+    <customErrors>
+        <description>Error message displayed when Open Stage opportunity with &apos;Closed&apos; Forecast Category</description>
+        <name>Validation_Open_Stage_With_Closed_Forecast_Category</name>
+        <label>Validation Open Stage With Closed Forecast Category</label>
+        <locationX>2162</locationX>
+        <locationY>395</locationY>
+        <customErrorMessages>
+            <errorMessage>Forecast Category can only be set to &apos;Closed&apos; by the system. It is set to &apos;Closed&apos; when the order is received / processed and the stage is &apos;Closed Won&apos;.</errorMessage>
+            <fieldSelection>ForecastCategoryName</fieldSelection>
+            <isFieldError>true</isFieldError>
+        </customErrorMessages>
+    </customErrors>
+    <decisions>
+        <description>This step will decide what the probability of the opportunity</description>
+        <name>Probability_Decision</name>
+        <label>Probability Decision</label>
+        <locationX>446</locationX>
+        <locationY>287</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Open_Stage_with_Closed_Forecast_Category</name>
+            <conditionLogic>1 AND (2 OR 3)</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.IsClosed</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.ForecastCategoryName</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Closed</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Opportunity_Forecast_Category__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Closed</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Validation_Open_Stage_With_Closed_Forecast_Category</targetReference>
+            </connector>
+            <label>Open Stage with Closed Forecast Category</label>
+        </rules>
+    </decisions>
+    <interviewLabel>Opportunity: Update Probability Based on Stage and Forecast Category {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Opportunity: Update Probability Based on Stage and Forecast Category</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>320</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Probability_Decision</targetReference>
+        </connector>
+        <filterFormula>
+            OR(
+                ISNEW(),
+                ISCHANGED({!$Record.StageName}),
+                ISCHANGED({!$Record.ForecastCategoryName}),
+                ISCHANGED({!$Record.Opportunity_Forecast_Category__c})
+            )
+        </filterFormula>
+        <object>Opportunity</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Obsolete</status>
+</Flow>

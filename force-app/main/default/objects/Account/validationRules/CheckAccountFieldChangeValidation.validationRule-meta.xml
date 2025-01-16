@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckAccountFieldChangeValidation</fullName>
+    <active>true</active>
+    <description>DCP-37167 : For &quot;Channel Partner Prospect&quot; records, when account status is not &quot;Unverified&quot; if user changes the mentioned fields in the formula throw error.</description>
+    <errorConditionFormula>AND(
+	AND(
+		RecordType.DeveloperName = $Label.AccountRecordTypeDeveloperNameChannelPartnerProspect,
+		TEXT(Account_Status__c ) != $Label.AccountStatusUnverified,
+		OR(
+			ISCHANGED (Name),
+			ISCHANGED (ParentId),
+			ISCHANGED (BillingStreet),
+			ISCHANGED (BillingCity),
+			ISCHANGED (BillingState),
+			ISCHANGED (BillingPostalCode),
+			ISCHANGED (BillingCountry),  
+			ISCHANGED (Clinical_Type__c),
+			ISCHANGED (Phone),
+			ISCHANGED (Fax),
+			ISCHANGED (Preferred_Language__c),
+			ISCHANGED (Channel_Partner_Type__c),
+			ISCHANGED (NameLocal),
+			ISCHANGED (Street_Local__c),
+			ISCHANGED (Street_2_Local__c),
+			ISCHANGED (City_Local__c),
+			ISCHANGED (Zip_Postal_Code_Local__c),
+			ISCHANGED (State_Province_Local__c),
+			ISCHANGED (Country_Local__c),
+			ISCHANGED (Care_Of__c),
+			ISCHANGED (Care_Of_Local__c)
+		)
+	),
+	NOT(ISCHANGED(Is_Updated_By_System__c)),
+	NOT(Is_Updated_By_System__c),
+	NOT($Permission.DS_Edit_Market_Segment),
+	NOT(
+		OR(
+			$Profile.Name = $Label.ProfileSystemAdmin,
+			$Profile.Name = $Label.ProfileDataSteward
+		)
+	),
+	NOT(
+		AND( ISCHANGED ( Phone ),
+		ISPICKVAL ( Is_Converted_From_Lead__c, &apos;Yes&apos; )
+		)
+	)
+)</errorConditionFormula>
+    <errorMessage>Account master data fields are locked. Please contact your regional data steward team for assistance by creating a new Master Data Request.</errorMessage>
+</ValidationRule>

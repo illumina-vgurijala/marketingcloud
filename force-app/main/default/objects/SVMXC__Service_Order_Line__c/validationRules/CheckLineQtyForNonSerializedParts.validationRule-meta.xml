@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckLineQtyForNonSerializedParts</fullName>
+    <active>true</active>
+    <description>To check whether the given Line QTY is greater than available qty on selected product stock if Available Qty and Qty is same on product stock</description>
+    <errorConditionFormula>AND(
+NOT(
+AND(
+NOT(ISBLANK(SVMX_PS_External_ID__c)),
+ISCHANGED(Integration_Status__c),
+Integration_Status__c==&apos;Success&apos;
+)),
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT($Profile.Name =$Label.Integration_SAP_Service),
+NOT($User.FirstName =$Label.Automated_Process_User),
+NOT($Profile.Name = $Label.Integration_Service_SNAP_Profile),
+NOT(TEXT(SVMXC__Line_Status__c)=$Label.Canceled),
+TEXT(SVMX_PS_VS_Consumed_Product_Stock__r.SVMXC__Product__r.Service_Product_Type__c)=&apos;Spare&apos;, 
+SVMX_PS_VS_Consumed_Product_Stock__r.SVMX_PS_VS_Product_Tracking__c  != &apos;Serialized&apos;,
+SVMX_PS_VS_Consumed_Product_Stock__r.SVMXC__Available_Qty__c =  SVMX_PS_VS_Consumed_Product_Stock__r.SVMXC__Quantity2__c ,
+SVMXC__Actual_Quantity2__c &gt;0,SVMXC__Actual_Quantity2__c &gt; SVMX_PS_VS_Consumed_Product_Stock__r.SVMXC__Available_Qty__c,
+OR(ISNEW(),ISCHANGED(SVMX_PS_VS_Consumed_Product_Stock__c), ISCHANGED(SVMXC__Actual_Quantity2__c))
+)</errorConditionFormula>
+    <errorMessage>Line Qty cannot be greater than available qty on selected product stock. Please revise the quantity and save again</errorMessage>
+</ValidationRule>

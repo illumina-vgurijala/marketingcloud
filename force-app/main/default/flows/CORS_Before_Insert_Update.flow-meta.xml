@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>61.0</apiVersion>
+    <assignments>
+        <name>Set_Sold_To_Region</name>
+        <label>Set Sold To Region</label>
+        <locationX>50</locationX>
+        <locationY>695</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Sold_To_Account_Region__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>$Record.Account__r.Territory_Region__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Check_For_Contract_Admin</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_UC_Region</name>
+        <label>Set UC Region</label>
+        <locationX>50</locationX>
+        <locationY>395</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Ultimate_Consignee_Region__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>$Record.Ultimate_Consignee__r.Territory_Region__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Set_Sold_To_Territory_Region</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Update_Currency_Rate</name>
+        <label>Update Currency Rate</label>
+        <locationX>50</locationX>
+        <locationY>1295</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.CurrencyIsoCode</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>$Record.PO_Currency__c</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Check_Status_is_Completed</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Update_Currency_Ratea</name>
+        <label>Update Currency Rate</label>
+        <locationX>50</locationX>
+        <locationY>1595</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Currency_Rate_On_Completion__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>FormulaCurrencyrateonCompletion</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <assignments>
+        <name>Update_the_Status</name>
+        <label>Update the Status</label>
+        <locationX>50</locationX>
+        <locationY>995</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Contract_Review_Status__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>In Review</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Check_if_PO_Amount_is_changed</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Check_For_Contract_Admin</name>
+        <label>Check For Contract Admin</label>
+        <locationX>182</locationX>
+        <locationY>887</locationY>
+        <defaultConnector>
+            <targetReference>Check_if_PO_Amount_is_changed</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>False Check For Contract Admin</defaultConnectorLabel>
+        <rules>
+            <name>True_Check_For_Contract_Admin</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Contract_Admin_Name__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Contract_Review_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Open</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Contract_Review_Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue>Completed</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_the_Status</targetReference>
+            </connector>
+            <label>True Check For Contract Admin</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_if_PO_Amount_is_changed</name>
+        <label>Check if PO Amount is changed</label>
+        <locationX>182</locationX>
+        <locationY>1187</locationY>
+        <defaultConnector>
+            <targetReference>Check_Status_is_Completed</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>False Check if PO Amount is changed</defaultConnectorLabel>
+        <rules>
+            <name>True_Check_if_PO_Amount_is_changed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.PO_Currency__c</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Currency_Rate</targetReference>
+            </connector>
+            <label>True Check if PO Amount is changed</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Status_is_Completed</name>
+        <label>Check Status is Completed</label>
+        <locationX>182</locationX>
+        <locationY>1487</locationY>
+        <defaultConnectorLabel>False Check Status is Completed</defaultConnectorLabel>
+        <rules>
+            <name>True_Check_Status_is_Completed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Contract_Review_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Completed</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Currency_Ratea</targetReference>
+            </connector>
+            <label>True Check Status is Completed</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Set_Sold_To_Territory_Region</name>
+        <label>Set Sold To Territory Region</label>
+        <locationX>182</locationX>
+        <locationY>587</locationY>
+        <defaultConnector>
+            <targetReference>Check_For_Contract_Admin</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>False Set Sold To Territory Region</defaultConnectorLabel>
+        <rules>
+            <name>True_Set_Sold_To_Territory_Region</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>FormulaSetSoldToTerritoryRegion</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Sold_To_Region</targetReference>
+            </connector>
+            <label>True Set Sold To Territory Region</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Set_UC_Territory_Region</name>
+        <label>Set UC Territory Region</label>
+        <locationX>182</locationX>
+        <locationY>287</locationY>
+        <defaultConnector>
+            <targetReference>Set_Sold_To_Territory_Region</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>False Set UC Territory Region</defaultConnectorLabel>
+        <rules>
+            <name>True_Set_UC_Territory_Region</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>FormulaSetUCTerritoryRegion</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_UC_Region</targetReference>
+            </connector>
+            <label>True Set UC Territory Region</label>
+        </rules>
+    </decisions>
+    <description>Migrated from the CORS : Update Status and Send Email To Contract Admin process using multiple criteria.
+Updates the Status and Send Email to Contract Admin flag</description>
+    <formulas>
+        <name>FormulaCurrencyrateonCompletion</name>
+        <dataType>Number</dataType>
+        <expression>CURRENCYRATE( TEXT({!$Record.CurrencyIsoCode} ) )</expression>
+        <scale>17</scale>
+    </formulas>
+    <formulas>
+        <name>FormulaSetSoldToTerritoryRegion</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+          NOT(ISBLANK({!$Record.Account__c} )),
+          OR(
+                 ISNEW(),
+                 ISCHANGED({!$Record.Account__c} ) 
+          )
+)</expression>
+    </formulas>
+    <formulas>
+        <name>FormulaSetUCTerritoryRegion</name>
+        <dataType>Boolean</dataType>
+        <expression>AND(
+          NOT(ISBLANK({!$Record.Ultimate_Consignee__c} )),
+          OR(
+                 ISNEW(),
+                 ISCHANGED({!$Record.Ultimate_Consignee__c} ) 
+          )
+)</expression>
+    </formulas>
+    <interviewLabel>CORS : Before Insert Update {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>CORS : Before Insert Update</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>56</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Set_UC_Territory_Region</targetReference>
+        </connector>
+        <object>Contract_Order_Routing_Sheet__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

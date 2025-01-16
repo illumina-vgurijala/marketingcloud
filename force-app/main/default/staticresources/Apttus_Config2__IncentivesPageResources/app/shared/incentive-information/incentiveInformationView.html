@@ -1,0 +1,71 @@
+<div class="directives-common incentive-information-container">
+    <div class="incentive-information-fields-cont">
+        <div ng-repeat="field in settings.dataModel.infoSectionFieldSet" class="incentive-information-field">
+            <label for="{{field.apiName}}">{{field.labelText}}</label>
+            <p id="{{field.apiName}}" ng-if="field.type == sfDataTypes.DATE || field.type == sfDataTypes.DATETIME">{{settings.dataModel.incentiveRecord[field.apiName] | aptDateToString}}</p>
+            <p id="{{field.apiName}}" ng-if="field.type == sfDataTypes.BOOLEAN">
+                {{($parent.settings.dataModel.incentiveRecord[field.apiName] == true
+                ? settings.dataModel.radioOptions[0].label : settings.dataModel.radioOptions[1].label )}}
+            </p>
+            <p ng-if="field.type == sfDataTypes.REFERENCE">
+                {{settings.dataModel.incentiveRecord[field.relationshipApiName].Name}}
+            </p>
+            <p ng-if="field.type == sfDataTypes.PICKLIST && field.options">
+                {{(settings.dataModel.incentiveRecord[field.apiName] ? settings.dataModel.incentiveRecord[field.apiName].label : labels.picklistValueNone)}}
+            </p>
+            <p ng-if="field.apiName.indexOf('CannotCombinewiththeseIncentives__c') == -1
+                && (field.type == sfDataTypes.DOUBLE || field.type == sfDataTypes.STRING || field.type == sfDataTypes.EMAIL
+                    || field.type == sfDataTypes.PHONE || field.type == sfDataTypes.PERCENT || field.type == sfDataTypes.URL
+                    || field.type == sfDataTypes.CURRENCY)">
+                {{$parent.settings.dataModel.incentiveRecord[field.apiName]}}
+            </p>
+            <p ng-if="field.type == sfDataTypes.TEXTAREA" ng-bind-html="renderHtml(settings.dataModel.incentiveRecord[field.apiName])"></p>
+            <!-- this is an advanced search lookup type field. Only display first selection then use advanced search directive
+                in read-only mode to display rest -->
+            <p ng-if="field.apiName.indexOf('CannotCombinewiththeseIncentives__c') > -1 && StopProcessingMoreIncentivesExists()">
+                <span ng-if="settings.dataModel.relatedIncentivesList && settings.dataModel.relatedIncentivesList.length > 0">
+                    {{settings.dataModel.relatedIncentivesList[0].Name}}
+                </span>
+                <span ng-if="settings.dataModel.relatedIncentivesList && settings.dataModel.relatedIncentivesList.length > 1"
+                      class="directives-common-link" ng-click="showSelectedIncentives()">{{labels.viewAll}} ({{settings.dataModel.relatedIncentivesList.length}})</span>
+            </p>
+        </div>
+        <advanced-search settings="settings.advRelIncSettings"
+                         unique-id="advSearchRelatedIncentives"></advanced-search>
+    </div>
+    <div ng-show="settings.dataModel.infoDetailSectionFieldSet && settings.dataModel.infoDetailSectionFieldSet.length > 0" class="incentive-information-section-header" slide-toggle="#customFieldSection" expanded="true" ng-click="customFieldSection.expanded = !customFieldSection.expanded;">
+        <h3><i class="fa" ng-class="{'fa-caret-down' : customFieldSection.expanded,
+                                     'fa-caret-right' : !customFieldSection.expanded}"></i> {{labels.additionalData}}
+        </h3>
+    </div>
+    <div id="customFieldSection" class="slideable" expanded="true" duration="500ms">
+        <div class="incentive-information-fields-cont" >
+
+            <div ng-repeat="field in settings.dataModel.infoDetailSectionFieldSet" class="incentive-information-field">
+                <label for="{{field.apiName}}" ng-show="field.type != sfDataTypes.MULTIPICKLIST">{{field.labelText}}</label>
+                <p id="cust{{field.apiName}}" ng-if="field.type == sfDataTypes.DATE || field.type == sfDataTypes.DATETIME">{{settings.dataModel.incentiveRecord[field.apiName] | aptDateToString}}</p>
+                <p id="cust{{field.apiName}}" ng-if="field.type == sfDataTypes.BOOLEAN">
+                    {{($parent.settings.dataModel.incentiveRecord[field.apiName] == true
+                    ? settings.dataModel.radioOptions[0].label : settings.dataModel.radioOptions[1].label )}}
+
+                </p>
+                <p ng-if="field.type == sfDataTypes.REFERENCE">
+                    {{settings.dataModel.incentiveRecord[field.relationshipApiName].Name}}
+                </p>
+                <p ng-if="field.type == sfDataTypes.PICKLIST && field.options">
+                    {{(settings.dataModel.incentiveRecord[field.apiName] ? settings.dataModel.incentiveRecord[field.apiName].label : labels.picklistValueNone)}}
+                </p>
+                <p ng-if="field.type == sfDataTypes.DOUBLE || field.type == sfDataTypes.EMAIL
+                    || field.type == sfDataTypes.PHONE || field.type == sfDataTypes.PERCENT || field.type == sfDataTypes.URL
+                    || field.type == sfDataTypes.CURRENCY">
+                    {{$parent.settings.dataModel.incentiveRecord[field.apiName]}}
+                </p>
+                <p class="incentive-information-additional-data" ng-if="field.type == sfDataTypes.STRING" 
+                ng-bind-html="renderHtml($parent.settings.dataModel.incentiveRecord[field.apiName])" ></p>
+                <p ng-if="field.type == sfDataTypes.TEXTAREA" ng-bind-html="renderHtml($parent.settings.dataModel.incentiveRecord[field.apiName])"></p>
+                <picklist ng-if="field.type == sfDataTypes.MULTIPICKLIST && field.options" settings="field"></picklist>
+            </div>
+        </div>
+    </div>
+
+</div>

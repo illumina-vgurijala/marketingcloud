@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckOtherReasonReqdForAmendmentReason</fullName>
+    <active>true</active>
+    <description>This rule is to enforce user to populate Other Reason when Amendment Reason is Other</description>
+    <errorConditionFormula>AND(
+    !$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+    RecordType.DeveloperName= 
+$Label.AgreementRecordTypeDevNameOpenOffer,
+    OR(
+        AND(
+            NOT(ISNEW()),
+            ISPICKVAL(Apttus__Status_Category__c,&quot;Request&quot;),
+            ISPICKVAL(Apttus__Status__c,&quot;In Amendment&quot;),
+            OR(
+                AND(
+                    INCLUDES(Amendment_Reason__c, &apos;Other&apos;),
+                    ISBLANK(Other_Reason__c)
+                ),
+            ISBLANK(Amendment_Reason__c)
+            )
+        ),
+        AND(
+            ISBLANK(Parent_Agreement_Number__c),
+            NOT(ISPICKVAL(Apttus__Status__c,&quot;In Amendment&quot;)),
+            OR(
+                NOT(ISBLANK(Amendment_Reason__c)),
+                NOT(ISBLANK(Other_Reason__c))
+            )
+        )
+    )	
+)</errorConditionFormula>
+    <errorMessage>The Reason for Amendment cannot be entered during the initial agreement creation. Please provide the reason for Amendment while amending the agreements.</errorMessage>
+</ValidationRule>

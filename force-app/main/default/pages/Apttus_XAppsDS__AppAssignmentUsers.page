@@ -1,0 +1,103 @@
+<!-- 
+    Apttus XAuthor Apps
+    AppAssignmentUsers
+     
+    @2014 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus_XAppsDS.AppAssignmentUsersController">
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_XApps__jquery, 'js/jquery.min.js')}"  />
+
+    <script type="text/javascript">
+        $j = jQuery.noConflict();
+        var selection = {};
+
+        $j(document).ready(function() {
+
+            for (var i = 0; i < assignedIds.length; i++) {
+                assignedIds[i] = assignedIds[i].substring(0, 15);
+            }
+
+            var actionColumns = $j(".actionColumn");
+            var regex = "(https?://.*\.salesforce.com/)(.*)(/.*)";
+            var id;
+            var checked;
+
+            for (var i = 0; i < actionColumns.length; i++) {
+                var node = actionColumns.eq(i);
+
+                var link = node.children(".actionLink")[0];
+                if (link == undefined)
+                    continue;
+
+                id = node.children(".actionLink")[0].href.match(regex)[2];
+
+                if (assignedIds.indexOf(id) != -1) {
+                    checked = "checked=checked";
+                    selection[id] = true;
+                } else {
+                    checked = "";
+                }
+
+                
+                while (node[0].firstChild) {
+                    node[0].removeChild(node[0].firstChild);
+                }
+
+                node.append("<input type=\"checkbox\" value=\"" + id + "\" onclick=\"updateSelection(this);\" " + checked + " />");
+            }
+                        
+        });
+
+        function updateSelection(input) {
+            if (input.checked)
+                selection[input.value] = true;
+            else
+                delete selection[input.value];
+        }
+
+        function submitSelection() {
+            var res = new Array();
+
+            for(var prop in selection) {
+               res.push(prop);
+            }
+
+            submitSelectedIds(JSON.stringify(res));
+        }
+
+        function stopEvent(ev) {
+            ev.preventDefault ? ev.preventDefault() : ev.returnValue = false;
+        }
+
+        var assignedIds = '{!JSENCODE(assignedIds)}';
+    </script>
+
+    <apex:sectionHeader title="{!$Label.apttus_xappsds__assignusers}" subtitle="{!appName}"/>
+
+    <apex:outputPanel rendered="{!isError}">
+        <apex:pageMessages />
+    </apex:outputPanel>
+
+    <apex:form >
+        <apex:actionFunction name="submitSelectedIds" action="{!save}" rerender="none" status="saveStatus">
+            <apex:param name="selectedIds" value="" assignTo="{!selectedIds}" />
+        </apex:actionFunction>
+
+        <apex:actionStatus id="saveStatus"
+                            onstop="refreshPage();" />
+
+        <apex:actionFunction name="refreshPage" action="{!refresh}" />
+    </apex:form>
+
+    <apex:outputPanel rendered="{!NOT(isError)}">
+        <apex:ListViews type="User" />
+    </apex:outputPanel>
+
+    <apex:form >
+        <apex:commandButton onclick="submitSelection();" value="{!$Label.apttus_xappsds__save}" rerender="none" rendered="{!NOT(isError)}" />
+        <apex:commandButton action="{!cancel}" value="{!$Label.apttus_xappsds__cancel}" />
+    </apex:form>
+
+</apex:page>

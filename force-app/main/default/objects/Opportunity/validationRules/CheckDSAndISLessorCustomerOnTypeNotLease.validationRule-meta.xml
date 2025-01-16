@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSAndISLessorCustomerOnTypeNotLease</fullName>
+    <active>true</active>
+    <description>Validation rule to check that &quot;Lessor Customer&quot; should have a value when type = &quot;Instrument Lease&quot;.</description>
+    <errorConditionFormula>AND ( 
+    OR ( 
+        $RecordType.DeveloperName = $Label.OpportunityRTDirectStandard, 
+        $RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard 
+    ), 
+    NOT ( ISPICKVAL ( Type,&apos;Instrument Lease&apos; ) ),
+    NOT ( ISBLANK (Lessor_Customer__c) ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Lessor_Customer__c</errorDisplayField>
+    <errorMessage>Lessor Customer cannot be provided unless Type = Instrument Lease.</errorMessage>
+</ValidationRule>

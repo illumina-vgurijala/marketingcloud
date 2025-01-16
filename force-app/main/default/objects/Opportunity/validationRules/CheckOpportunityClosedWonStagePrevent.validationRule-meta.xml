@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckOpportunityClosedWonStagePrevent</fullName>
+    <active>true</active>
+    <description>Prevents user from going to closed won opportunity.</description>
+    <errorConditionFormula>AND (
+    TEXT( StageName ) =  $Label.OpportunityStageClosedWon,
+    NOT (
+        TEXT( PRIORVALUE ( StageName ) ) =  $Label.OpportunityStageClosedWon        
+    ),
+    ISCHANGED ( StageName ),
+    $Permission.Opportunity_Manually_Close_Opportunity = FALSE,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward,
+            $RecordType.DeveloperName = $Label.OpportunityRTStandingQuote
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>Opportunity will be automatically set to Closed-Won once Sales Order has been created.</errorMessage>
+</ValidationRule>

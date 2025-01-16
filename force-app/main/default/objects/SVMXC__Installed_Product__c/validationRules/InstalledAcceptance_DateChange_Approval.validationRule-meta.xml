@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>InstalledAcceptance_DateChange_Approval</fullName>
+    <active>true</active>
+    <description>Once a user enters value in &quot;Date Installed&quot; and &quot;Acceptance Date&quot;, those values cannot be changed by anyone but System Admins.</description>
+    <errorConditionFormula>AND
+	(
+	CASE( $Profile.Name ,&quot;System Administrator&quot;,1,0)=0,
+	NOT($Profile.Name ==$Label.Integration_SAP_Service),
+	NOT($Profile.Name ==$Label.Integration_Service_SNAP_Profile),
+    OR(
+    AND(
+    $CustomMetadata.Feature_Flag__mdt.UpdateAcceptanceDate.IsOn__c,
+    NOT(OR (ISPICKVAL(SVMXC__Status__c , &apos;Decommissioned&apos;), ISPICKVAL(SVMXC__Status__c , &apos;Scrapped&apos;) , ISPICKVAL(SVMXC__Status__c ,&apos;Returned&apos;)))),
+    $CustomMetadata.Feature_Flag__mdt.UpdateAcceptanceDate.IsOn__c == false
+    ),
+	NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+	NOT($User.FirstName ==$Label.Automated_Process_User),
+	NOT($Permission.SS_Permissions_for_Installed_Acceptance_Date),
+	IF(
+	AND( 
+	(
+	TODAY() - DATEVALUE(CreatedDate) ) &gt; 60,
+	OR(
+	AND(NOT(ISBLANK(PRIORVALUE(Acceptance_Date__c))),
+					ISCHANGED(Acceptance_Date__c)),
+	Acceptance_Date__c &gt; TODAY()
+	)							 
+	),						                            
+	TRUE,
+	IF(
+	AND(
+	( TODAY() - DATEVALUE(CreatedDate) ) &lt; 60,
+	Acceptance_Date__c &gt; TODAY()
+	),
+	TRUE,
+	FALSE
+	)		
+	)
+	)</errorConditionFormula>
+    <errorMessage>Date Installed and Acceptance Date require review and Field Management approval. Please obtain approvals and contact Customer Care to request this change</errorMessage>
+</ValidationRule>

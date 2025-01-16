@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RestrictCaseAssignmentToSalesOrLogistics</fullName>
+    <active>true</active>
+    <description>Validation rule to restrict Case Assignment to Sales User Or Logistics User</description>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($User.FirstName == $Label.Automated_Process_User),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+/* INC0399970 Bypass validation for QA users to reopen/complete pending QA Review case when caseowner is Sales/service logistics*/
+NOT($Profile.Name == $Label.Quality_Assurance),
+NOT(ISPICKVAL(Status, 'Reopen Requested' )),
+/* INC0380378 Allow update for post completion status*/
+NOT(ISPICKVAL(Status, 'Pending Logistics Review')),
+NOT(ISPICKVAL(Status, 'Pending QA Review')),
+/* INC0379003 To allow updating Unread Email Check Box*/
+NOT(ISCHANGED(Unread_Emails__c)),
+/* INC0379003 To allow updating Work Order Status*/
+NOT(ISCHANGED( Work_Order_Status__c )),
+OR(
+Owner:User.ProfileId = &apos;00e1N0000016eTz&apos;, /*Sales User*/
+Owner:User.ProfileId = &apos;00e3l000001GGq8&apos;  /*Service Logistics */
+)
+)</errorConditionFormula>
+    <errorMessage>Sales and Logistics users are unable to edit cases. Assign this case to another user.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

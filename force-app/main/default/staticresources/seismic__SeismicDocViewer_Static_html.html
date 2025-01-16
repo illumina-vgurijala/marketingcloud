@@ -1,0 +1,43 @@
+<seismic-busy is-busy="!currentDocument.__initialized">
+    <div class="col-md-12">
+
+        <div class="delivery-option-icon-list-cover" ng-show="currentDocument && currentDocument.isBusy">
+            <div class="cover-message-contianer">
+                <img ng-show="!currentDocument.busyIconHidden" class="image-responsive center-block" src="https://redtealtest2.seismic.com/html5/Theme/base/images/spinner48.gif">
+                <span>{{currentDocument.busyMessage}}</span>
+            </div>
+        </div>
+
+        <div class="doc-content-header">
+            <ng-include src="seismicDocViewer_DeliveryOptionList_include_html"></ng-include>
+
+            <div class="doc-content-header-info" style="margin-right: 400px;">
+	            <div class="doc-content-header-icon">
+	                <img ng-src="{{currentDocument.documentFormatIcon}}" ng-click="sideBarStatus.switch()" />
+	            </div>
+	            <div class="doc-content-header-title">Preview</div>
+	            <div class="doc-content-header-subtitle">
+	            	<div class="doc-content-header-subtitle-name">
+	            	    <span>{{currentDocument.BasicInfo.Name}}</span>
+	            	</div>
+	            </div>
+            </div>
+        </div>
+        <div class="doc-content-body" style="overflow: hidden; position: relative;">
+            <seismic-busy ng-show="type == 'externalUrlDialog'" is-busy="!externalUrl">
+                <!-- External Url Open In a Dialog -->
+                <iframe allow="autoplay; fullscreen" style="height: 600px;" class="embed-iframe seismic-image-player-page" ng-src="{{externalUrl}}"></iframe>
+            </seismic-busy>
+
+            <seismic-busy ng-show="type == 'vid'" is-busy="!videoUrl">
+                <!-- VIDEO -->
+                <iframe allow="autoplay; fullscreen" ng-src="{{videoUrl}}" width='640' height='480' style="border: none; margin: auto; display: block;" seamless="" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen="" frameborder="0" align="middle"></iframe>
+            </seismic-busy>
+
+            <seismic-busy ng-show="type == 'embed'" is-busy="!embedUrl">
+                <!-- Youtube / Vimeo -->
+                <iframe allow="autoplay; fullscreen" ng-src="{{embedUrl}}" width='1280' height='720' style="border: none; margin: auto; display: block;" seamless="" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen="" frameborder="0" align="middle"></iframe>
+            </seismic-busy>
+        </div>
+    </div>
+</seismic-busy>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSAndISBackwardToCreateStage</fullName>
+    <active>true</active>
+    <description>Prevents user to move the opportunity to the Create stage from other stages.</description>
+    <errorConditionFormula>AND (
+    OR ( 
+        RecordType.DeveloperName = $Label.OpportunityRTDirectStandard, 
+        RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard 
+       ), 
+       NOT (
+            OR ( 
+                PRIORVALUE ( RecordTypeName__c ) = $Label.OpportunityRTDirectReOrder, 
+                PRIORVALUE ( RecordTypeName__c ) = $Label.IndirectReOrder, 
+                PRIORVALUE ( RecordTypeName__c ) = $Label.FieldServices, 
+                PRIORVALUE ( RecordTypeName__c ) = $Label.IndirectFieldServices 
+            )
+       ),
+        AND (
+             ISCHANGED ( StageName ),
+             ISPICKVAL ( StageName, &apos;Create&apos; ) 
+        ),
+        OR (
+           ISPICKVAL ( PRIORVALUE ( StageName ) , &apos;Qualify&apos; ),
+           ISPICKVAL ( PRIORVALUE ( StageName ) , &apos;Develop&apos; ),
+           ISPICKVAL ( PRIORVALUE ( StageName ) , &apos;Prove&apos; ),
+           ISPICKVAL ( PRIORVALUE ( StageName ) , &apos;Negotiate &amp; Resolve&apos; ),
+           ISPICKVAL ( PRIORVALUE ( StageName ) , &apos;Finalize&apos; )
+       ),
+       TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+       TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+       TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+       TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+       TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+       TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+       TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+       TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete,
+       /*Allow system to change record type &amp; stage*/
+       NOT ( ByPass_Change_Record_Type_To_Standard__c ),
+       NOT (
+           OR (     
+               ISCHANGED ( Is_Updated_By_System__c ),
+               Is_Updated_By_System__c = true,
+               TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+			    $Profile.Name =  $Label.ProfileSystemAdmin,
+			    $Profile.Name =  $Label.ProfileDataSteward
+           )
+       )			
+)</errorConditionFormula>
+    <errorMessage>Cannot move Opportunity back to Create stage.</errorMessage>
+</ValidationRule>

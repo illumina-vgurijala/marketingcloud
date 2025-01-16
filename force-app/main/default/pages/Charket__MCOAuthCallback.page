@@ -1,0 +1,49 @@
+<apex:page showHeader="false" controller="Charket.MCOAuthCallbackController" standardStylesheets="false" docType="html-5.0" applyHtmlTag="false" applyBodyTag="false">
+<html>
+<head>
+    <script type="text/javascript">
+        var params = {}
+        var arr = window.location.hash.substr(1).split(/&|=/)
+
+        for (var i = 0; i < arr.length; i++) {
+            params[arr[i]] = decodeURIComponent(arr[i + 1])
+            i++
+        }
+
+        if (params.access_token && params.instance_url && params.id
+                && params.issued_at && params.signature) {
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.MCOAuthCallbackController.verifySignature}',
+                params.id + params.issued_at,
+                params.signature,
+                function (result, event) {
+                    if (event.status) {
+                        if (result) {
+                            setCookies()
+                            window.location.href = params.instance_url
+                        }
+                    }
+                }, { escape: false, timeout: 120000 }
+            )
+        }
+
+        function setCookies () {
+            setCookie('charket__access_token', params.access_token, 2)
+            setCookie('charket__base_url', params.instance_url, 2)
+            setCookie('charket__user_id', params.id.substr(params.id.lastIndexOf('/') + 1), 2)
+        }
+
+        function setCookie (name, value, hours) {
+            var expires = ''
+            if (hours) {
+                var date = new Date()
+                date.setTime(date.getTime() + (hours * 60 * 60 * 1000))
+                expires = `;expires=${date.toUTCString()}`
+            }
+            document.cookie = `${name}=${value}${expires}; path=/; samesite=none; secure`
+        }
+    </script>
+</head>
+<body></body>
+</html>
+</apex:page>

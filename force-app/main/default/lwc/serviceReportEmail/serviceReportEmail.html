@@ -1,0 +1,180 @@
+<template>
+    <!---To show a spinner before load-->
+    <template if:true={loaded}>
+        <!---All handled errors appear here-->
+        <template if:true={error}>
+            <c-error-panel errors={error}></c-error-panel>
+        </template>
+        <!---Display form only when Service Report is Succesfully generated-->
+        <template if:true={boolServiceReportGenerated}>
+            <div class="slds-page-header" role="banner">
+                <h1 class="slds-page-header__title slds-m-right--small slds-align-middle slds-truncate">
+            Send Service Report
+        </h1>
+            </div>
+            <!---Mail Form Part-->
+
+            <div class="slds-m-around--medium">
+                <div class="slds-container--medium" onclick={handlefocus}>
+                    <div class="slds-form--stacked">
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <!--ComboBox for TO Email Starts Here-->
+                                <div class="slds-combobox_container">
+
+                                    <div class={txtToclassname} data-id="resultBox" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+                                        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon toEmailDiv slds-input-has-icon_left-right" role="none">
+                                            <!---Searchbox for To Email-->
+                                        
+                                            <lightning-input label="To Email:" type="email" data-id="userinput" name="searchText" onkeyup={handleToEnterkey} onchange={handleToEmail} onclick={handleToFieldFocus} value={SearchTextTO} class="leftspace to-email email-field" multiple></lightning-input>
+                                       
+                                        </div>
+                                        <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon slds-input-has-icon_left-right" role="none">
+                                            <template for:each={selectedToRecords} for:item="serecord">
+                                                <span key={serecord.recId}>
+                                 <!---Show selected Entities-->
+                                <lightning-pill label={serecord.recName} name={serecord.recId} onremove={removeToRecord}>
+                                        <lightning-icon icon-name={serecord.icontype} variant="circle" alternative-text={serecord.recName}></lightning-icon>
+                                    </lightning-pill>
+                                </span>
+                                            </template>
+                                        </div>
+
+                                        <!-- Second part display result -->
+                                        <div id="listbox-id-1" class="slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid" role="listbox">
+                                            <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                <template for:each={sObjectMap} for:item="serecord">
+                                                    <li role="presentation" class="slds-listbox__item" key={serecord.key}>
+
+                                                        <div data-id={serecord.key.recId} data-name={serecord.key.recName} data-email={serecord.key.recEmail} onclick={setSelectedToRecords} class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta" role="option">
+                                                            <span class="slds-media__figure">
+                                                <span class="slds-icon_container slds-icon-standard-account">
+                                                    <lightning-icon icon-name={serecord.value} class="slds-icon slds-icon slds-icon_small slds-icon-text-default" size="x-small"></lightning-icon>
+                                                </span>
+                                                            </span>
+                                                            <span class="slds-media__body">
+                                                <span class="slds-listbox__option-text slds-listbox__option-text_entity">{serecord.key.recName}</span>
+                                                            <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">{serecord.key.recEmail}</span>
+                                                            </span>
+                                                        </div>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                        <div if:true={TOmessageFlag}>
+                                            No result found.
+                                        </div>
+                                        <div if:true={TOLoadingText}>
+                                            <lightning-spinner size="medium" variant="brand" alternative-text="Loading"></lightning-spinner>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--ComboBox for To Email Ends Here-->
+                        </div>
+                        <div class="slds-form-element__control">
+                            <!--ComboBox for CC Email Starts Here-->
+                            <div class="slds-combobox_container">
+
+                                <div class={txtCCclassname} data-id="resultBox" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+                                    <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon slds-input-has-icon_left-right" role="none">
+                                        <!---Searchbox for To Email-->
+                                        <lightning-input label="CC Email :" type="email" data-id="userinputCC" name="searchText" onkeyup={handleCCEnterkey} onchange={handleCCEmail} onclick={handleCCFieldFocus} value={SearchTextCC} class="leftspace cc-email" multiple></lightning-input>
+
+                                    </div>
+                                    <div class="slds-form-element__control slds-input-has-icon slds-input-has-icon slds-input-has-icon_left-right" role="none">
+                                        <template for:each={selectedCCRecords} for:item="serecord">
+                                            <span key={serecord.recId}>
+                            <!---Show selected Entities-->
+                            <lightning-pill label={serecord.recName} name={serecord.recId} onremove={removeCCRecord}>
+                                    <lightning-icon icon-name={serecord.icontype} variant="circle" alternative-text={serecord.recName}></lightning-icon>
+                                </lightning-pill>
+                            </span>
+                                        </template>
+                                    </div>
+
+                                    <!-- Second part display result -->
+                                    <div id="listbox-id-2" class="slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid" role="listbox">
+                                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                            <template for:each={sObjectMap} for:item="serecord">
+                                                <li role="presentation" class="slds-listbox__item" key={serecord.key}>
+
+                                                    <div data-id={serecord.key.recId} data-name={serecord.key.recName} data-email={serecord.key.recEmail} onclick={setSelectedCCRecords} class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta" role="option">
+                                                        <span class="slds-media__figure">
+                                            <span class="slds-icon_container slds-icon-standard-account">
+                                                <lightning-icon icon-name={serecord.value} class="slds-icon slds-icon slds-icon_small slds-icon-text-default" size="x-small"></lightning-icon>
+                                            </span>
+                                                        </span>
+                                                        <span class="slds-media__body">
+                                            <span class="slds-listbox__option-text slds-listbox__option-text_entity">{serecord.key.recName}</span>
+                                                        <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">{serecord.key.recEmail}</span>
+                                                        </span>
+                                                    </div>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                    <div if:true={CCmessageFlag}>
+                                        No result found.
+                                    </div>
+                                    <div if:true={CCLoadingText}>
+                                        <lightning-spinner size="medium" variant="brand" alternative-text="Loading"></lightning-spinner>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--ComboBox for CC Email Ends Here-->
+                        <!---Subject Field-->
+                        <div class="slds-form-element">
+                            <div class="slds-form-element__control">
+                                <lightning-input required label="Subject :" value={subject} onchange={handleSubject}>
+                                </lightning-input>
+                            </div>
+                        </div>
+                        <!---Body Field-->
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="CC">Body :</label>
+                            <lightning-input-rich-text label="Body" value={body} onchange={handleBody}>
+                            </lightning-input-rich-text>
+                        </div>
+                        <!---List of Attachments-->
+                        <template if:true={files}>
+                            <div class="slds-col slds-size_12-of-12 grid_disp">
+                                <template if:true={files}>
+                                    <template for:each={files} for:item="fileinstance">
+
+                                        <div style="margin: 5px;" class="slds-button slds-m-top_medium slds-float_left" key={fileinstance.Id}>
+                                            <lightning-icon class="slds-form-element__label" icon-name="doctype:attachment" alternative-text="PDF file" title="pdf"></lightning-icon>
+                                            <div class="file-div">{fileinstance.name}</div>
+                                            <lightning-button-icon icon-name="action:delete" alternative-text="Delete" onclick={handleDelete} class="slds-m-left_small" title="Delete" data-id={fileinstance.Id} key={fileinstance.Id}></lightning-button-icon>
+                                        </div>
+
+                                    </template>
+                                </template>
+                            </div>
+                        </template>
+                        <!---List of Attachments Ends-->
+
+                        <!---File Upload Component-->
+                        <lightning-file-upload label="" name="fileUploader" record-id={recordId} onuploadfinished={handleUploadFinished} variant="label-hidden" multiple>
+                        </lightning-file-upload>
+                        </br>
+                        <!---EMail Send Button-->
+                        <div class="slds-form-element">
+                            <lightning-button variant="brand" label="Send Email" title="Send Email" onclick={sendEmail} class="slds-m-left_x-small"></lightning-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+         <!---Error  message for non qualifying records-->
+        <template if:false={boolServiceReportGenerated}>
+            <div style="font-size:14px;" class="left-align">
+                There is no Service Report generated on this Work Order. Please generate a Service Report using the SFMs, and then return to this tab to send the report.
+            </div>
+        </template>
+    </template>
+    <template if:false={loaded}>
+        <lightning-spinner size="large" variant="brand" alternative-text="Loading"></lightning-spinner>
+    </template>
+</template>

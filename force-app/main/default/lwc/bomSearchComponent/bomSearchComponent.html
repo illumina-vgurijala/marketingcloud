@@ -1,0 +1,358 @@
+<!--
+    Component name: ProdcutHierarchy
+    Description: To display hierarchy of the selected product
+-->
+<!-- Section to display search functionality-->
+
+<template>
+    
+    <template if:false={loaded}>
+        <lightning-spinner alternative-text="Loading"></lightning-spinner>
+    </template>
+        
+        <div class="slds-card_boundary">
+            <lightning-card  title="Search" class="">
+                <div class="slds-grid slds-wrap">
+                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                        <!--look up component for searching product-->
+                        <c-product-Lookup object-name="Product2" label="Product Code" field-name="ProductCode" 
+                        icon-name="standard:product" display-field = "Name" optional-field= "Description" select-record-name = {productCode} onselected = {handleLookupValueSelect}
+                        obj-api-name = {objectInfo} onreadonly = {handleReadOnly}>
+                        </c-product-Lookup>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                        <c-product-Lookup object-name="SVMXC__Installed_Product__c" label="Serial Number" field-name="SVMXC__Serial_Lot_Number__c" 
+                        icon-name="standard:product" display-field = "Name" optional-field= "Name" select-record-name = {ipName} onselected = {handleLookupValueSelectIP}
+                        obj-api-name = 'SVMXC__Installed_Product__c'>
+                        </c-product-Lookup>
+                        </div>
+                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small"> <lightning-input type="text" label="Product Name" data-field="ProductName" name="ProductName" value={name} read-only = "true"></lightning-input></div>                   
+                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small"><lightning-input type="text" label="Lot/Batch Number" name="Batch_Number"></lightning-input></div>
+                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small"><lightning-input type="text" label="Service Product Type" data-field="Service_ProductType"  name="Service_ProductType" value={ServiceProductType} read-only = "true"></lightning-input></div>
+					<div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                    <lightning-combobox name="bomLevels" label="BOM Levels" value={bomLevelInput}
+                        placeholder="Select Bom Level" options={options} onchange={handleChange}></lightning-combobox>
+					</div>
+                    
+                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                        <label class="slds-form-element__label" for="text-input-id-1">
+                            Applicable Date
+                        </label>
+                        <lightning-helptext content={applicableDateHelpText}></lightning-helptext>
+                            <lightning-input variant="label-hidden" type="date" name="Valid_From"  value={dateToday}>
+                            </lightning-input>
+                    </div>
+                    <template if:false={checkCaseOrWO}>
+                        <div class="slds-col slds-size_1-of-2 slds-p-around_x-small"></div>
+                    </template>
+                    <!--QACM-78 Added account lookup field on Case and work order-->
+                    <template if:true={checkCaseOrWO}>
+                        <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                            <!--look up component for searching Account-->
+                            <c-product-Lookup object-name="Account" label="Account" field-name="Name" 
+                            icon-name="standard:Account" display-field = "ERP_Customer_Id__c" select-record-name = {accountName} onselected = {handleAccountLookupValueSelect}
+                            obj-api-name = "Account" case-wo-obj-api-name = {caseWOObjectApiName}>
+                            </c-product-Lookup>
+                        </div>
+                    </template>
+                    <!--QACM-78 Ends-->
+                    
+                    <div class="slds-col slds-size_1-of-2 slds-p-around_x-small slds-m-top_x-small">
+                        <lightning-helptext content={label.helpText}></lightning-helptext>
+                        <lightning-input type="checkbox" name="Multi_Level" label="Limit To Single Level" style="width: 150px;"></lightning-input>
+                    </div>
+
+                    <!--QACM-78 Start Date and End End field only will display on Case and Work order page-->
+                    <template if:true={checkCaseOrWO}>
+                        <div class="slds-col slds-size_1-of-2 slds-p-horizontal_x-small slds-m-top_x-small" >
+                            <div class="slds-form-element__label slds-text-title_bold">Order Shipment Period</div>
+                            <lightning-layout>
+                                <lightning-layout-item flexibility="auto"  style = "width:132px; padding-left: 0px; padding-right:0px;">
+                                    <lightning-input type="date" name="StartDate" label="Start Date" value={startDate} onchange={startDateEventHandler}></lightning-input>
+                                </lightning-layout-item>
+                                <lightning-layout-item flexibility="auto"  style ="width:132px; padding-left: 10px; padding-right:0px;">
+                                    <lightning-input type="date" name="EndDate" label="End Date" value={currentDate} class="enddate" onchange={endDateEventHandler}></lightning-input>
+                                </lightning-layout-item>
+                            </lightning-layout>
+                        </div>
+                    </template>
+                    <!--QACM-78 Ends-->
+
+                </div>
+				<div class="slds-col slds-size_1-of-2 slds-p-around_x-small ">
+                        <template if:true={message}>
+                            <b>NOTE: </b> <lightning-formatted-text value={message} ></lightning-formatted-text>
+                        </template>
+                        
+                </div>
+                <div slot="footer" class="slds-clearfix">
+                    <div class="slds-float_right">
+                        <lightning-button class= "slds-m-left_x-small " label="Search" variant = "brand" onclick= {handleClick}></lightning-button>
+                        <lightning-button class = "slds-m-left_x-small" label = "Clear All" variant = "neutral" onclick={clearData}></lightning-button>
+                    </div>
+                    
+                </div>
+                
+            </lightning-card>
+        </div>
+        <!--service bom section-->
+        <template if:true={showServiceSbom}>
+            <c-service-bom  ipid={ipId} sbomid={sbomId}></c-service-bom>
+        </template>
+
+
+        <!-- Section to display Products Retruned Table-->
+
+        <template if:true={showReturnedProducts}> 
+            <div  class="slds-p-around_x-small slds-card_boundary">
+                <lightning-card  title="Product Returned" class="slds-p-around_x-small">
+					<div class={className}>
+						<lightning-datatable
+								key-field="id"
+								data={productsReturnedData}
+								columns={columnsRP}
+								onrowselection={fetchTopLevels}
+								max-row-selection = "1"
+								hide-checkbox-column={hideCheckBoxColumn}
+								onrowaction={callRowAction}
+								>
+						</lightning-datatable>
+					</div>
+                </lightning-card>
+            </div>
+        </template>  
+        
+        <!-- Section to display Top Level Products Table-->
+
+        <template if:true={showTopLevel}> 
+            <div  class="slds-p-around_x-small slds-card_boundary">
+                <lightning-card  title={title} class="slds-p-around_x-small">
+					<div class={topLevelCls}>
+						<lightning-datatable
+								key-field="id"
+								data={topLevelData}
+								columns={columns}
+								onrowselection={fetchProductComponent}
+								max-row-selection = "1"
+								onrowaction={callRowAction}>
+						</lightning-datatable>
+					</div>
+                </lightning-card>
+            </div>
+        </template> 
+        
+
+<!-- product component-->
+<template if:true={showProductComponents}>  
+    <div  class="slds-p-around_x-small slds-card_boundary">
+   
+       <lightning-card  title="Product Components" class="slds-p-around_x-small">
+           <template lwc:if={displayaddbutton}>
+               <lightning-button label="Add Product(s)" slot="actions" variant="brand" onclick={openModal} class="slds-m-left_x-small" disabled={isAddButtonDisabled}>
+               </lightning-button>
+           </template> 
+       
+           <template if:true={showExpandAllTreeGridBtn}>
+               <lightning-button label="Expand All" slot="actions" variant= "brand" onclick={clickToExpandAll} class="slds-m-left_x-small">
+               </lightning-button>
+           </template>
+           <template if:true={showCollapseAllTreeGridBtn}>
+               <lightning-button slot="actions" label="Collapse All" variant= "brand" onclick={clickToCollapseAll} class="slds-m-left_x-small">
+               </lightning-button>
+           </template>
+           <template lwc:if={showComponent}>
+           <template lwc:if={isCaseOrWorkOredr}> 
+            <lightning-tree-grid data={treeItems} columns={columnsProductComponents} key-field="Material" aria-multiselectable="true" onrowselection={handleSelectionChange} onrowaction={callRowAction} selected-rows={selectedRows}>
+               </lightning-tree-grid>
+           </template>
+           <template lwc:else>
+            <lightning-tree-grid data={treeItems} columns={columnsProductComponents} key-field="Material" hide-checkbox-column="true" onrowaction={callRowAction}>
+            </lightning-tree-grid>
+           </template>
+        </template>
+        <template lwc:else>
+            <lightning-tree-grid data={treeItems} columns={columnsProductComponents} key-field="Material" hide-checkbox-column="true" onrowaction={callRowAction}>
+            </lightning-tree-grid>
+        </template>
+       </lightning-card>
+   </div>
+</template> 
+<!-- product component close-->
+
+    <!--Added for modal popup-->
+    <template if:true={isModalOpen}>
+        <!-- Modal/Popup Box LWC starts here -->
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <!-- Modal/Popup Box LWC header here -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModalPopup}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add Products {productName}</h2>
+                </header>
+                <!-- Modal/Popup Box LWC body starts here -->
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+					<!-- CMCM-5524 Added spinner -->
+					<div if:true={isSpinner}>
+						<lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+					</div>
+                    <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                        <thead>
+                            <tr class="slds-text-title_caps">
+                                <th scope="col">
+                                    <div class="slds-truncate">isPrimary</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate">Product Code</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate">Product Name</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate">Product Lot Number</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate">Product Serial Number</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate">Expired Date</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate">Is Expired</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            <!--CMCM-3200 start-->                    
+            <template for:each={dataForDataTable} for:item="item" for:index="index">
+                <tr key={item.Material}>
+                    <template if:true={item.Material}>
+						<td>
+							<div class="slds-truncate">
+								<!-- CMCM-5524 changed input type from radio to checkbox and changed value of disabled attributes -->
+								<lightning-input type="checkbox" data-index={index}
+									checked={item.isPrimary} onchange={handleIsPrimaryChange}>
+								</lightning-input>
+							</div>
+						</td>
+						<td>
+							<div class="slds-truncate">{item.Material}</div>
+						</td>
+						<td>
+							<div class="slds-truncate">{item.Material_Desc}</div>
+						</td>
+						<td>
+							<div class="slds-truncate">
+								<lightning-input type="text" value={item.lotNumber} data-index={index}
+									disabled={item.disabled} onchange={handleLotNumberUpdate}>
+								</lightning-input>
+							</div>
+						</td>
+						<td>
+							<div class="slds-truncate">
+								<lightning-input type="text" value={item.serialnumber}
+									data-index={index} disabled={item.disabled}
+									onchange={handleSerialNoUpdate}></lightning-input>
+							</div>
+						</td>
+						<td>
+							<div class="slds-truncate">
+								<lightning-input type="date" name="Valid_From" data-index={index}
+									onchange={handleExpiredDateUpdate} value={item.ExpiredDate}
+									disabled={item.disabled}></lightning-input>
+							</div>
+						</td>
+						<td>
+							<div class="slds-truncate">
+								<lightning-input type="checkbox" checked={item.isExpire}
+									onchange={handleisExpireUpdate} data-index={index}
+									disabled={item.disabled}></lightning-input>
+							</div>
+						</td>
+					</template>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+                </div>
+    
+                <!-- Modal/Popup Box LWC footer starts here -->
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeModalPopup} title="Cancel">Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick={submitDetails} title="Save">Save</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+	<!--CMCM-3200 end-->
+	<!-- Show Error Modal-->
+    <template if:true={showModal}>
+        <div class="demo-only" style="height: 640px;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <lightning-button-icon
+                        class="slds-modal__close"
+                        title="Close"
+                        icon-name="utility:close"
+                        icon-class="slds-button_icon-inverse"
+                        onclick={closeModal}></lightning-button-icon>
+                        <h2 id="modal-heading-012" class="slds-text-heading_medium slds-hyphenate">Looks like there's a problem.</h2>
+                    </header>
+                        <div class="slds-modal__content slds-p-around_medium slds-scrollable" id="modal-content-id-13">
+                            <lightning-datatable
+                                    key-field="id"
+                                    data={data}
+                                    show-row-number-column
+                                    columns={DataTablecolumns}>
+                            </lightning-datatable> 
+                        </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button label="Close" variant="destructive" onclick={closeModal}></lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </template>
+
+    <!--QACM-78 Show model pop to display the lot number and expiration date-->
+    <lightning-card>
+        <template if:true={checkCaseOrWO}>
+            <template if:true={isShowModal}>
+                <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={hideModalBox}>
+                            <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                    </header>
+                    <div style="height: 300px;">
+                        <lightning-datatable
+                                key-field="Id"
+                                data={batchColumnsData}
+                                columns={lotNoAndExpirDateColumns}
+                                hide-checkbox-column = "true">
+                        </lightning-datatable>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={hideModalBox}>Close</button>
+                    </footer>
+                
+                </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+        </template>
+    </lightning-card>
+</template>

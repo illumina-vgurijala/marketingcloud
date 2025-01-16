@@ -1,0 +1,330 @@
+<template>
+  <lightning-card variant="Narrow">
+    <div slot="title"><strong>Actions Items</strong></div>
+    <lightning-button
+      label="New Action"
+      slot="actions"
+      variant="brand"
+      onclick={createNewTask}
+      value={objectiveRecordId}
+    >
+    </lightning-button>
+    <!-- Accordian for Task data -->
+    <template if:true={hasData}>
+      <template if:false={smallScreen}>
+        <c-custom-datatable
+          recordlist={actionData}
+          column={column}
+          oneditclick={componenttaskedit}
+          ondeleteclick={componenttaskdelete}
+        >
+        </c-custom-datatable>
+      </template>
+      <template if:true={smallScreen}>
+        <div>
+          <template for:each={actionData} for:item="tsklist">
+            <lightning-card
+              variant="Narrow"
+              key={tsklist.subject}
+              title={tsklist.subject}
+              class="slds-card_boundary"
+            >
+              <lightning-button
+                slot="actions"
+                onclick={componenttaskedit}
+                icon-name="utility:edit"
+                variant="border-filled"
+                value={tsklist}
+              >
+              </lightning-button>
+              <lightning-button
+                slot="actions"
+                onclick={componenttaskdelete}
+                icon-name="utility:delete"
+                variant="border-filled"
+                value={tsklist}
+              >
+              </lightning-button>
+              <lightning-layout multiple-rows>
+                <lightning-layout-item
+                  size="12"
+                  small-device-size="6"
+                  medium-device-size="4"
+                  large-device-size="3"
+                  padding="around-small"
+                >
+                  <div class="header-column">
+                    <p class="field-title" title="Field 1">Action</p>
+                    <p>{tsklist.subject}</p>
+                  </div>
+                </lightning-layout-item>
+                <lightning-layout-item
+                  size="12"
+                  small-device-size="6"
+                  medium-device-size="4"
+                  large-device-size="3"
+                  padding="around-small"
+                >
+                  <div class="header-column">
+                    <p class="field-title" title="Field 1">Assigned To</p>
+                    <p>{tsklist.assignedTo}</p>
+                  </div>
+                </lightning-layout-item>
+                <lightning-layout-item
+                  size="12"
+                  small-device-size="6"
+                  medium-device-size="4"
+                  large-device-size="3"
+                  padding="around-small"
+                >
+                  <div class="header-column">
+                    <p class="field-title" title="Field 1">Due Date</p>
+                    <p>{tsklist.dueDate}</p>
+                  </div>
+                </lightning-layout-item>
+                <lightning-layout-item
+                  size="12"
+                  small-device-size="6"
+                  medium-device-size="4"
+                  large-device-size="3"
+                  padding="around-small"
+                >
+                  <div class="header-column">
+                    <p class="field-title" title="Field 1">Priority</p>
+                    <p>{tsklist.priority}</p>
+                  </div>
+                </lightning-layout-item>
+                <lightning-layout-item
+                  size="12"
+                  small-device-size="6"
+                  medium-device-size="4"
+                  large-device-size="3"
+                  padding="around-small"
+                >
+                  <div class="header-column">
+                    <p class="field-title" title="Field 1">Status</p>
+                    <p>{tsklist.status}</p>
+                  </div>
+                </lightning-layout-item>
+              </lightning-layout>
+            </lightning-card>
+          </template>
+        </div>
+      </template>
+    </template>
+    <!-- Delete confirmation-->
+    <!-- Delete confirmation-->
+    <template if:true={showConfirmation}>
+      <div style="height: 640px">
+        <section
+          role="dialog"
+          tabindex="-1"
+          aria-label="Meaningful description of the modal content"
+          aria-modal="true"
+          aria-describedby="modal-content-id-1"
+          class="slds-modal slds-fade-in-open"
+        >
+          <div class="slds-modal__container">
+            <header class="slds-modal__header slds-modal__header_empty">
+              <button
+                class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                title="Close"
+                onclick={closeModal}
+              >
+                <lightning-icon
+                  icon-name="utility:close"
+                  alternative-text="close"
+                  variant="inverse"
+                  size="small"
+                ></lightning-icon>
+                <span class="slds-assistive-text">Close</span>
+              </button>
+            </header>
+            <div
+              class="slds-modal__content slds-p-around_medium"
+              id="modal-content-id-3"
+            >
+              {ConfirmationMessage}
+            </div>
+            <footer class="slds-modal__footer">
+              <lightning-button
+                label="No"
+                variant="neutral"
+                onclick={closeModal}
+              ></lightning-button>
+              &nbsp;&nbsp;&nbsp;&nbsp;
+              <lightning-button
+                label="Yes"
+                variant="brand"
+                onclick={deleteDeactivateRecords}
+              >
+              </lightning-button>
+            </footer>
+          </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+      </div>
+    </template>
+    <!-- Task creation / Edit form -->
+    <!-- Edit VIew-->
+    <template if:true={showTaskView}>
+      <section
+        role="dialog"
+        tabindex="-1"
+        aria-labelledby="modal-heading-01"
+        aria-modal="true"
+        aria-describedby="modal-content-id-1"
+        class="slds-modal slds-fade-in-open slds-modal_large"
+      >
+        <div class="slds-modal__container">
+          <div>
+            <template if:true={booLoading}>
+              <lightning-spinner
+                alternative-text="Loading"
+                variant="brand"
+              ></lightning-spinner>
+            </template>
+          </div>
+          <!-- modal header start -->
+          <header class="slds-modal__header">
+            <button
+              class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+              title="Close"
+              onclick={closeModal}
+            >
+              <lightning-icon
+                icon-name="utility:close"
+                alternative-text="close"
+                variant="inverse"
+                size="small"
+              ></lightning-icon>
+              <span class="slds-assistive-text">Close</span>
+            </button>
+            <h2
+              id="modal-heading-03"
+              class="slds-text-heading_medium slds-hyphenate"
+            >
+              {ModalHeaders}
+            </h2>
+          </header>
+          <!-- modal body start -->
+          <div
+            class="slds-modal__content slds-p-around_medium"
+            id="modal-content-id-4"
+          >
+            <div class="slds-grid slds-grid_align-center"></div>
+            <div class="slds-grid slds-wrap"></div>
+            <div class="slds-grid slds-wrap bordermarginclass">
+              <div class="slds-col slds-size_1-of-1">
+                <span>
+                  <lightning-input
+                    class="subjectSelect"
+                    name="Subject"
+                    label="Action"
+                    onchange={taskFieldChange}
+                    value={Subject} 
+                    required
+                  ></lightning-input>
+                </span>
+              </div>
+              <div class="slds-col slds-size_1-of-1">
+                <span>
+                  <lightning-input
+                    class="duedateSelect"
+                    type="date"
+                    name="DueDate"
+                    label="Due Date"
+                    onchange={taskFieldChange}
+                    value={DueDate} 
+                    required
+                  ></lightning-input>
+                </span>
+              </div>
+              <div class="slds-col slds-size_1-of-1">
+                <span>
+                  <template if:true={editTask}>
+                    <c-lookup-custom
+                      iconname="standard:user"
+                      objectname="user"
+                      label="Assigned To"
+                      displayfieldname="Assigned"
+                      searchfield="Name"
+                      selectedrecord={lookuprecord}
+                    >
+                    </c-lookup-custom>
+                  </template>
+                  <template if:false={editTask}>
+                    <!--Multiselect Component-->
+                    <c-multi-select-lookup 
+                      objectname="User"
+                      fieldname="Name"
+                      iconname-search="utility:people"
+                      iconname-drop-down="utility:user"
+                      -label="Assigned To"  
+                      order-by="asc" 
+                      limit="20"
+                      required  
+                      error-message="Please populate this field"                
+                      onselected={setSelectedList}
+                    >
+                    </c-multi-select-lookup>
+                  </template>
+                </span>
+              </div>
+              <div class="slds-col slds-size_1-of-1">
+                <span>
+                  <lightning-combobox
+                    name="TaskPriority"
+                    label="Priority"
+                    options={TaskPriorityoptions}
+                    value={TaskPriority}
+                    onchange={taskFieldChange}
+                  >
+                  </lightning-combobox>
+                </span>
+              </div>
+              <div class="slds-col slds-size_1-of-1">
+                <span>
+                  <lightning-combobox
+                    name="TaskStatus"
+                    label="Status"
+                    options={TaskStatusoptions}
+                    value={TaskStatus}
+                    onchange={taskFieldChange}
+                  >
+                  </lightning-combobox>
+                </span>
+              </div>
+              <div class="slds-col slds-size_1-of-1">
+                <span>
+                  <lightning-input
+                    name="Description"
+                    label="Comments"
+                    onchange={taskFieldChange}
+                    value={Description}
+                  ></lightning-input>
+                </span>
+              </div>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              label="Cancel"
+              variant="neutral"
+              onclick={closeModal}
+            ></lightning-button>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <lightning-button
+              label="Save"
+              variant="brand"
+              onclick={saveEditTask}
+              disabled={booLoading}
+            >
+            </lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </lightning-card>
+</template>

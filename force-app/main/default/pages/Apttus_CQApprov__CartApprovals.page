@@ -1,0 +1,144 @@
+<!-- 
+    Apttus CPQ Approvals
+    CartApprovals
+     
+    @2013-2020 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus_CQApprov.CartApprovalsController"
+           sidebar="{!showSidebar}"
+           showHeader="{!showHeader}"
+           title="{!ctxObjectLabel & ': ' & ctxObjectName}"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+           						   $User.UIThemeDisplayed == 'Theme4u' ||
+           						   $User.UIThemeDisplayed == 'Theme4t'}">
+
+    <script type="text/javascript">
+        // determine if we are in Classic, Lightning, or Sf1 mobile theme
+		// Theme3—Salesforce Classic 2010 user interface theme
+		// Theme4d—Modern “Lightning Experience” Salesforce theme
+		// Theme4u-Lightning Console theme
+		// Theme4t—Salesforce mobile app theme
+		
+        var inClassicMode = "{!$User.UIThemeDisplayed == 'Theme3'}";
+        var inLightningMode = "{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}";
+        var inSf1Mode = "{!$User.UIThemeDisplayed == 'Theme4t'}";
+
+        //console.log('CartApprovalsController::inClassicMode='+inClassicMode+'\n'+
+        	//'inLightningMode='+inLightningMode+'\n'+
+        	//'inSf1Mode='+inSf1Mode+'\n'+
+        	//"{!$User.UIThemeDisplayed}");
+    </script>
+    
+    <script>
+        /**
+            AWA-942: unknown exception displayed while previewing approvals in communities
+            Receiving an 500 (Internal Server Error) in the javascript console (Chrome) when invoking Apex from sforce.apex.execute.
+            When showHeader="true" this error does not appear and it is successful to call an public webservice method but when
+            showHeader="false", it fails with the status code as 500. 
+    
+            https://help.salesforce.com/apex/HTViewSolution?urlname=Receiving-an-500-Internal-Server-Error-in-the-javascript-console-when-invoking-Apex-from-sforce-apex-execute&language=en_US
+        */
+        var __sfdcSessionId = '{!GETSESSIONID()}';
+    </script>
+
+    <!-- include required resources without cart header -->
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Approval__ApprovalsSF1Assets, 'js/jquery.js')}" />
+    
+    <script type="text/javascript" src="/soap/ajax/48.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/48.0/apex.js"></script>
+
+    <apex:form >
+        <!-- Add invisible button to resolve AWA-942.  To add 'UserContext' with standardStylesheets="true" and showHeader="false",
+             it is necessary to have a component which requires standard style sheets at least in the page. -->
+        <apex:commandButton style="display: none;"/>
+        
+        <apex:outputPanel id="idReturnToCaller">
+            <script type="text/javascript">
+				// make sure jQuery doesn't conflict with any other JS libraries
+				j$ = jQuery.noConflict();
+
+                // call this once the page is ready
+                j$(document).ready(function() {
+                          
+                    var pageLoaded = "{!pageLoaded}";
+                    var pageURL = "{!JSENCODE(pageURL)}";
+					var siteDomain = "{!siteDomain}";
+					//console.log('pageURL='+pageURL);
+					//console.log('siteDomain='+siteDomain);
+                    
+					var inClassicMode = "{!$User.UIThemeDisplayed == 'Theme3'}";
+					var inLightningMode = "{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}";
+					var inSf1Mode = "{!$User.UIThemeDisplayed == 'Theme4t'}";
+
+					//console.log('pageLoaded='+pageLoaded+'\n'+'pageURL='+pageURL+'\n'+'inClassicMode='+inClassicMode+'\n'+'inLightningMode='+inLightningMode+'\n'+'inSf1Mode='+inSf1Mode+'\n'+"{!$User.UIThemeDisplayed}");
+                    if (pageLoaded == 'false') {
+						//console.log('calling launchSObjectApprovals');
+                        launchSObjectApprovals(inClassicMode, inLightningMode, inSf1Mode);
+
+                    } else {
+                        if (pageURL.length > 0) {
+                            try {
+                                if (inClassicMode == 'false') {
+                                    var pos = pageURL.indexOf(siteDomain);
+                                    if (pos == -1) {
+                                    	sforce.one.navigateToURL(pageURL);
+                                    } else {
+                                    	// strip site domain from the URL
+                                    	var relativePageURL = pageURL.substring(pos + siteDomain.length);
+										//console.log('relativePageURL='+relativePageURL);
+                                    	sforce.one.navigateToURL(relativePageURL);
+                                    }
+                                }
+                                else {
+									//console.log('top.location.replace');
+                                    top.location.replace(pageURL);
+                                    return true;
+                                }
+                            }
+                            catch(err) {
+                            }
+                        }
+                    
+                    }
+                    
+                });
+            </script>
+        </apex:outputPanel>
+
+        <script>
+            function invokeDoReturn(actionTaken) {
+                // pass actionTaken as parameter since we will redirect page after refresh
+                //console.log('calling returnToCaller('+actionTaken+')');
+                returnToCaller(actionTaken);
+            }
+        </script>
+        
+        <apex:pageMessages id="idErrorPanel" />
+
+        <apex:outputPanel id="idApprovalsPanel">
+            <Apttus_Approval:SObjectApprovals2 id="idSObjectApprovals"
+            								   rendered="{!pageLoaded && (inClassicMode || inLightningMode) && NOT(inSf1Mode)}"
+            								   contextInfoParam="{!contextInfo}" />
+            <Apttus_Approval:SObjectApprovals2Sf1 id="idSObjectApprovalsSf1"
+            									  rendered="{!pageLoaded && NOT(inClassicMode || inLightningMode) && inSf1Mode}"
+            									  contextInfoParam="{!contextInfo}" />
+        </apex:outputPanel>
+
+        <apex:actionFunction name="launchSObjectApprovals"
+                             action="{!doLaunchSObjectApprovals}"
+                             reRender="idErrorPanel,idApprovalsPanel">
+            <apex:param name="param1" assignTo="{!inClassicMode}" value="" />
+            <apex:param name="param2" assignTo="{!inLightningMode}" value="" />
+            <apex:param name="param3" assignTo="{!inSf1Mode}" value="" />
+        </apex:actionFunction>
+
+        <!-- pass actionTaken as parameter since we will redirect page after refresh -->
+        <apex:actionFunction name="returnToCaller"
+                             action="{!doReturnToCaller}"
+                             reRender="idReturnToCaller">
+            <apex:param name="actionTaken" value="" />
+        </apex:actionFunction>
+
+    </apex:form>
+</apex:page>

@@ -1,0 +1,612 @@
+<apex:page id="thePage" controller="XactlyCorp.XactlyTabController" action="{!loginToIncent}" showHeader="false" sidebar="false" docType="html-5.0" wizard="true">
+ 
+  <!-- <apex:outputPanel rendered="{!(!isError)}">
+    <c:XactlyTabHeader />
+  </apex:outputPanel> -->
+  <apex:outputPanel id="statementPanel">
+  <apex:outputPanel rendered="{!message!='' && isError}" styleClass="xtab-msg-div col-sm-12 col-md-12 col-lg-12 col-xs-12" layout="block">
+        <div id="msg-div" class="alert xtab-msg-div">
+           <apex:outputText value="{!message}"/>
+        </div>
+        <apex:outputPanel rendered="{!isError}" styleClass="error-component">
+            <c:xactly_error />
+        </apex:outputPanel>
+    </apex:outputPanel>
+    <apex:outputPanel rendered="{!loggedIn && !isError}" layout="block">
+      
+   <!--toggle links for incentive statement and ranking page-->
+   <div class="xtab-main-div xtab-main-div-bckground xtab-main-div-classic" style="min-height: 200px;"> 
+            <!-- mobile view --> 
+            <div class="hidden-md hidden-lg col-xs-12 col-sm-12 xtab-mobile-statement-div statement-bckground"> 
+             <apex:variable var="attainment" value="{!incentiveStatement.IncentiveAttainment}"/>                 
+                         
+             <div class="hidden-md hidden-lg col-xs-12 col-sm-12 xtab-mobile-attainment-div statement-bckground"> 
+               <div class="mobile-gauges">
+                 <div class="col-xs-7 col-sm-6" >
+                   <label class="label-text-long">
+                       {!attainment.title}
+                   </label>
+               </div>
+               <apex:outputPanel rendered="{!loadUserDropDown}">
+               <div class="col-xs-5 col-sm-2 hidden-lg hidden-md top-margin-mobile" style="text-align:right">
+                    <div class="dropdown btn-group open">
+                              <span class="btn btn-primary"><i class="fa fa-user fa-fw"></i></span>
+                              <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+                                <span class="fa fa-caret-down"></span></a>
+                              <ul class="dropdown-menu dropdown-menu-right drop-mobile">
+                              <apex:repeat var="pariticipant" value="{!participantList}">
+                                <li class="dropdown-li">
+                                    <span onclick="getParticipantData(this);"><!-- loadParticipantData(event,this); -->
+                                        <i class="{!IF(pariticipant.isSelected, 'fa fa-check fa-fw', 'fa fa-fw')}"></i> {!pariticipant.name}
+                                        <input type="hidden" value="{!pariticipant.url}" />
+                                    </span>
+                                </li>
+                              </apex:repeat>                               
+                              </ul>
+                            </div>
+                          
+                   </div>
+                                  
+               </apex:outputPanel>
+               
+               <div class="{!IF(loadUserDropDown, 'hidden', 'hidden-xs col-sm-2')}" style="height: 34px;max-width: 15%;margin-top: 10px;"></div>
+               
+               <div class="hidden-xs col-sm-2 xtab-ui-button" style="text-align:center;max-width: 31.333333%;">
+                           <a href="/apex/XactlyCorp__XactlyIncentRanking" style="color:#0070D2">
+                               {!$Label.view_ranking}
+                               </a>
+                           </div>
+                   
+                   <div class="clearfix visible-md-block visible-sm-block visible-lg-block visible-xs-block "></div>
+                 </div>                 
+                 
+            <apex:outputPanel rendered="{!attainment!=null}">
+          <div id="slidermobile" class="carousel slide col-xs-12 col-sm-12 hidden-md hidden-lg xtab-top-margin" data-interval="false" data-ride="carousel">
+               <!-- Carousel indicators -->
+            <ol class="carousel-indicators">
+            <apex:variable var="j" value="{!0}"/>
+            <apex:variable var="attainmentList" value="{!attainment.attainmentlist}" />
+            <apex:repeat var="count" value="{!attainmentList}">
+                <li data-target="#slidermobile" data-slide-to="{!j}" class="{!IF(j==0, 'active', '')}"></li>
+                
+                <apex:variable var="j" value="{!j + 1}"/>
+            </apex:repeat>
+            </ol>   
+                   <!-- Carousel items -->
+            <div class="carousel-inner col-sm-12 col-xs-12" style="padding:0">
+            <apex:variable var="i" value="{!0}"/>
+            <apex:repeat var="record" value="{!attainmentList}">
+                <div class="{!IF(i==0, 'active item', 'item')}">
+                    <div style="text-align:center;" class="gauge-inner-div col-xs-12 col-sm-12 col-md-4 col-lg-4">
+                                <label style="font-size:16px" class="label-text-long">{!record.value}</label>
+                                <small class="label-text-long" style="display: block;color:#9FAAB6;font-weight: normal;max-width:100%">{!record.valueType}</small>
+                                <label style="display:block;font-size:24px;margin-bottom:-20px">{!record.amountPercent}<sub style="bottom: -0.1em">{!record.displaySymbol}</sub></label>                   <div style="width:80%;margin-left:auto;margin-right:auto;text-align:center">
+                            
+                            <canvas class="gauges-canvas" title="{!record.amountPercent}" width="200" height="100">
+
+                                </canvas>
+                                
+                   </div>
+                   </div>
+                
+               <div class="clearfix visible-md-block visible-sm-block visible-lg-block visible-xs-block "></div>
+                 <apex:variable var="i" value="{!i + 1}"/> 
+                 </div>
+            </apex:repeat>               
+           </div>
+                <!-- Carousel nav -->
+            <a class="carousel-control carousel-anchor-custom carousel-anchor-custom-mobile left" href="#slidermobile" data-slide="prev" style="background-image:none">
+                <span class="fa fa-angle-left"></span>
+            </a>
+            <a class="carousel-control carousel-anchor-custom  carousel-anchor-custom-mobile right" href="#slidermobile" data-slide="next" style="background-image:none">
+                <span class="fa fa-angle-right"></span>
+            </a>
+               </div> 
+               </apex:outputPanel> 
+                   <apex:outputPanel rendered="{!message!=''}" styleClass="xtab-msg-div col-sm-12 hidden-md hidden-lg col-xs-12" layout="block">
+                    <div>
+                       <apex:outputText value="{!message}"/>
+                    </div>  
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!messageMobile!=''}" styleClass="xtab-msg-div col-sm-12 hidden-md hidden-lg col-xs-12" layout="block">
+                    <div>
+                       <apex:outputText value="{!messageMobile}"/>
+                    </div>  
+                </apex:outputPanel>
+                             
+                </div>
+                <!--for mobile -->
+             <apex:variable var="paymentSummary" value="{!incentiveStatement.paymentSummary}"/>  
+             <apex:outputPanel >
+            <apex:outputPanel layout="block" styleClass="hidden-md hidden-lg col-xs-12 hidden-sm xtab-mobile-payment-summary statement-bckground" rendered="{!paymentSummary!=null}">
+                <div class="col-xs-12 col-sm-12 mobile-payment-title-div">
+                   <label class="label-text-long">
+                      {!paymentSummary.title}
+                   </label>
+               </div> 
+                <div class="clearfix visible-xs-block visible-md-block visible-sm-block visible-lg-block"></div> 
+                <apex:outputPanel rendered="{!paymentSummary.currentPeriodName != null}">
+                <div class="col-xs-12 col-sm-12 mobile-payment-div xtab-padding-none" style="margin-top: 5px;">
+                    <div class="col-xs-6 col-sm-6 top-bottom-pad">
+                        <label class="label-text-long">{!paymentSummary.currentPeriodName}&nbsp;:</label>
+                    </div>
+                    
+                    <div class="col-xs-6 col-sm-6 top-bottom-pad" style="padding-right:0">
+                    <!-- <div style="float:right;width:90%;white-space: nowrap;"> -->
+                    <apex:repeat var="current" value="{!paymentSummary.currentList}">
+                    <div style="text-align:right">
+                        <div class="currency-symbol-amount" style="float:left;width:75%;overflow: hidden;text-overflow:ellipsis">
+                            <span>{!current.amount}</span>
+                            </div>
+                            <div style="display:inline-block;margin-left:5px;width:20%;text-align: left;">
+                                <small>{!current.displaySymbol}</small>
+                                </div>
+                    </div>
+                    </apex:repeat>                         
+                    <!-- </div>  -->
+                    
+                    </div>
+                <div class="clearfix visible-xs-block visible-md-block visible-sm-block visible-lg-block"></div> 
+                 <div class="xtab-solid-separator col-xs-12 hidden-md hidden-lg hidden-sm">
+                   </div>
+                </div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!paymentSummary.previousPeriodName != null}">
+                <div class="col-xs-12 col-sm-12 mobile-payment-div xtab-padding-none" style="margin-top: 5px;">
+                    <div class="col-xs-6 col-sm-6 top-bottom-pad">
+                        <label class="label-text-long">{!paymentSummary.previousPeriodName}&nbsp;:</label>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 top-bottom-pad" style="padding-right:0">
+                    <!-- <div style="float:right;width:90%;white-space: nowrap;" class="top-bottom-pad">  -->
+                    <apex:repeat var="prev" value="{!paymentSummary.prevList}">
+                    <div style="text-align:right">
+                        <div class="currency-symbol-amount" style="float:left;width:75%;overflow: hidden;text-overflow:ellipsis">
+                            <span>{!prev.amount}</span>
+                            </div>
+                            <div style="display:inline-block;margin-left:5px;width:20%;text-align: left;">
+                                <small>{!prev.displaySymbol}</small>
+                                </div>
+                    </div>
+                  
+                    </apex:repeat>                        
+                    <!-- </div> -->
+                    </div>
+                 <div class="clearfix visible-xs-block visible-md-block visible-sm-block visible-lg-block"></div> 
+                 <apex:outputPanel rendered="{!paymentSummary.ytd != null}">
+                 <div class="xtab-solid-separator col-xs-12 hidden-md hidden-lg hidden-sm">
+                   </div>
+                   </apex:outputPanel>
+                </div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!paymentSummary.ytd != null}">
+                <div class="col-xs-12 col-sm-12 mobile-payment-div xtab-padding-none" style="margin-top: 5px;">
+                    <div class="col-xs-6 col-sm-6 top-bottom-pad">
+                        <label class="label-text-long">{!paymentSummary.ytd}&nbsp;: </label>
+                    </div>
+                    <div class="col-xs-6 col-sm-6 top-bottom-pad" style="padding-right: 0px;">
+                    <!-- <div style="float:right;width:90%;white-space: nowrap;"> -->
+                    <apex:repeat var="ytd" value="{!paymentSummary.ytdList}">
+                       <div style="text-align:right">
+                        <div class="currency-symbol-amount" style="float:left;width:75%;overflow: hidden;text-overflow:ellipsis">
+                            <span>{!ytd.amount}</span>
+                            </div>
+                            <div style="display:inline-block;margin-left:5px;width:20%;text-align:left">
+                                <small>{!ytd.displaySymbol}</small>
+                                </div>
+                    </div>
+                    <apex:outputPanel rendered="{!ytd.ote != null}" style="text-align:right" layout="block">
+                             <small style="display:block;color:#9FAAB6;text-align: right;margin-right: 1%;"> &#40;{!ytd.ote.amount} {!ytd.ote.displaySymbol} {!$Label.label_of} {!ytd.ote.name} &#41;</small>
+                         </apex:outputPanel>    
+                         </apex:repeat>                       
+                   <!--  </div>         -->            
+                    </div>
+                     <div class="clearfix visible-xs-block visible-md-block visible-sm-block visible-lg-block"></div> 
+                 
+                </div>                
+                </apex:outputPanel>
+                </apex:outputPanel>   
+                 
+             </apex:outputPanel>
+            </div> 
+            <div>     
+           </div>                 
+                <!-- mobile view end--> 
+            <!-- header desktop version-->
+            <div class="col-md-12 col-lg-12 hidden-xs hidden-sm xtab-header-container">
+                        <div class="col-sm-6 col-md-6 col-lg-6 hidden-xs xtab-logo-icon">
+                       <div class="xtab-logo">
+                            <apex:image value="{!URLFOR($Resource.XactlyCorp__XactlyTabResource,'images/xtab_logo_gauge.png')}" />                                                            
+                            </div>
+                             <div class="xtab-prod-label">
+                               <label class="company">
+                                   {!$Label.xactlycorp__company}
+                               </label>
+                               <label class="prod">
+                                {!$Label.xactlycorp__incent}
+                               </label>
+                           </div>                        
+                            
+                        </div>
+                        <div class="col-sm-6 col-md-6 col-lg-6 hidden-xs dropdown-wrapper">
+                           <apex:outputPanel rendered="{!loadUserDropDown}">
+                           <div class="dropdown btn-group open">
+                              <span class="btn btn-primary"><i class="fa fa-user fa-fw"></i></span>
+                              <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+                                <span class="fa fa-caret-down"></span></a>
+                              <ul class="dropdown-menu dropdown-menu-right drop-desktop">
+                              <apex:repeat var="pariticipant" value="{!participantList}">
+                                <li class="dropdown-li">
+                                <span onclick="getParticipantData(this);">
+                                    <i class="{!IF(pariticipant.isSelected, 'fa fa-check fa-fw', 'fa fa-fw')}"></i> {!pariticipant.name}
+                                    <input type="hidden" value="{!pariticipant.url}"/>
+                                </span>
+                                </li>
+                              <!-- onclick="loadParticipantData(event,this);" -->
+                              </apex:repeat>                               
+                              </ul>
+                            </div>
+                           </apex:outputPanel> 
+                            
+                            
+                           <div class="xtab-ui-button" style="text-align: center">
+                           <a href="/apex/XactlyCorp__XactlyIncentRanking" style="color:#0070D2">
+                               {!$Label.view_ranking}
+                               </a>
+                           </div>
+                        </div>
+            </div>
+           <!-- header desktop end-->
+            <div id="pageLoaderBottom" style="display:none;text-align:center;position: absolute;width: 100%;" class="pageLoader">
+                    <img src="{!URLFOR($Resource.XactlyTabResource, 'images/progressBar.gif')}"/>            
+                </div>  
+            <div class="clearfix visible-md-block visible-sm-block visible-lg-block"></div>
+             <apex:outputPanel rendered="{!message!=''}" styleClass="xtab-msg-div hidden-xs hidden-sm col-md-12 col-lg-12" layout="block">
+                <div>
+                   <apex:outputText value="{!message}"/>
+                </div>  
+            </apex:outputPanel>
+            <!-- main section-->
+            <div class="{!IF(message==null, 'col-sm-12 col-md-12 col-lg-12 hidden-xs statement-bckground', 'col-sm-12 col-md-12 col-lg-12 hidden-xs')}">
+                 <!-- separtor-->
+                 <apex:outputPanel rendered="{!paymentSummary!= null}">
+                    <div class="col-sm-12 col-md-12 col-lg-12 hidden-xs xtab-dash-separator"></div>
+                 </apex:outputPanel>
+            <!-- summary desktop -->
+                <div class="col-sm-12 col-md-12 col-lg-12 hidden-xs">                              
+                <apex:outputPanel styleClass="row" layout="block" rendered="{!paymentSummary!= null}">
+                <div class="col-sm-1 col-md-1 col-lg-1 logo-label-div" style="padding:0"> 
+                <label style="font-size: 18px;font-weight:normal;" class="label-text-long">{!paymentSummary.title}</label>
+                    <span style="display:block">
+                    <apex:image value="{!URLFOR($Resource.XactlyCorp__XactlyTabResource,'images/payment-icon.png')}" style="height:50px;width:50px;"/>   
+                    </span>
+                </div> 
+                <apex:outputPanel rendered="{!paymentSummary.currentPeriodName != null}">               
+                <div id="current-payment" class="col-sm-3 col-md-3 col-lg-3 right">
+                    <label class="summary-label-new label-text-long"><!-- {!$Label.current} {!$Label.period}  --> 
+                        <span class="summary-period label-text-long">{!paymentSummary.currentPeriodName}&nbsp;:</span>
+                    </label>
+                    <div style="width:100%">
+                    <apex:repeat var="current" value="{!paymentSummary.currentList}">
+                    <div style="text-align:right;white-space:nowrap">
+                        <div class="currency-symbol-amount" style="float:left;min-width:87%">
+                            <span>{!current.amount}</span>
+                            </div>
+                            <div style="display:inline-block;margin-left:5px">
+                                <small>{!current.displaySymbol}</small>
+                                </div>
+                    </div>
+                       <!-- <span class="currency-symbol-amount">{!current.amount} <small class="font-size-small">{!current.displaySymbol}</small></span> -->                     
+                    </apex:repeat>  
+                    
+                    </div> 
+                                 
+                </div>
+               
+                <div class="col-sm-1 col-md-1 col-lg-1 xtab-vertical-separator"></div>
+                 </apex:outputPanel>
+                <apex:outputPanel rendered="{!paymentSummary.previousPeriodName != null}"> 
+                <div id="previous-payment" class="col-sm-3 col-md-3 col-lg-3 right">
+                    <label class="summary-label-new label-text-long"><!-- {!$Label.previous} {!$Label.period}  --> <span class="summary-period label-text-long">{!paymentSummary.previousPeriodName}&nbsp;:</span></label>
+                    <div style="width:100%">
+                    <apex:repeat var="prev" value="{!paymentSummary.prevList}">
+                    <div style="text-align:right;white-space:nowrap">
+                        <div class="currency-symbol-amount" style="float:left;min-width:87%">
+                            <span>{!prev.amount}</span>
+                            </div>
+                            <div style="display:inline-block;margin-left:5px">
+                                <small>{!prev.displaySymbol}</small>
+                                </div>
+                    </div>
+                         <!-- <span class="currency-symbol-amount">{!prev.amount} <small class="font-size-small">{!prev.displaySymbol}</small></span> -->                    
+                    </apex:repeat>
+                                           
+                    </div>
+                   
+                </div>
+                
+                <div class="col-sm-1 col-md-1 col-lg-1 xtab-vertical-separator"></div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!paymentSummary.ytd != null}"> 
+                <div id="ytd-payment" class="col-sm-3 col-md-3 right">
+                    <label class="summary-label-new label-text-long"><!-- {!$Label.ytd_full}  --> <span class="summary-period label-text-long">{!paymentSummary.ytd}&nbsp;:</span></label>
+                    <div style="width:100%">
+                    <apex:repeat var="ytd" value="{!paymentSummary.ytdList}">
+                    <div style="text-align:right;white-space:nowrap">
+                        <div class="currency-symbol-amount" style="float:left;min-width:87%">
+                            <span>{!ytd.amount}</span>
+                            </div>
+                            <div style="display:inline-block;margin-left:5px">
+                                <small>{!ytd.displaySymbol}</small>
+                                </div>
+                    </div>
+                        <!-- <span class="currency-symbol-amount">{!ytd.amount} {!ytd.displaySymbol}</span> --> 
+                         <apex:outputPanel rendered="{!ytd.ote != null}" style="text-align:right">
+                             <small style="display:block;color:#9FAAB6;text-align: right;"> &#40;{!ytd.ote.amount} {!ytd.ote.displaySymbol} {!$Label.label_of} {!ytd.ote.name} &#41;</small>
+                         </apex:outputPanel>                    
+                    </apex:repeat>
+                    </div>
+                    
+                </div>
+                </apex:outputPanel>
+                <div class="clearfix visible-md-block visible-sm-block visible-lg-block"></div>
+            </apex:outputPanel>
+            </div>
+                <!-- summary desktop end-->
+                <!-- separtor-->
+             <div class="col-sm-12 col-md-12 col-lg-12 hidden-xs xtab-dash-separator">
+               </div>  
+                 <div class="clearfix visible-md-block visible-sm-block visible-lg-block visible-xs-block "></div>      
+            
+                
+                
+            <!-- attainment desktop-->
+            <!--style="border: 1px solid #ccc;border-radius:6px;margin-top:10px;padding-bottom:20px">-->
+            <apex:outputPanel rendered="{!attainment!=null}" layout="block"> 
+               <div class="hidden-xs hidden-sm col-md-12 col-lg-12" style="padding:5px">
+                   <label class="font-size-big label-text-long" style="font-weight:normal;margin-top: 10px;">
+                       {!attainment.title}
+                   </label>
+               </div>              
+               
+              <!-- gauges --> 
+            <div id="sliderMonthly" class="carousel slide col-sm-12 col-md-12 col-lg-12 hidden-xs hidden-sm" data-interval="false" data-ride="carousel">
+               <!-- Carousel indicators -->
+            <ol class="carousel-indicators">
+            <apex:variable var="m" value="{!0}"/>
+            <apex:variable var="mainList" value="{!attainment.desktopList}"/>
+            <apex:repeat var="count" value="{!mainList}">
+                <li data-target="#sliderMonthly" data-slide-to="{!m}" class="{!IF(m==0, 'active', '0')}active"></li>
+                <apex:variable var="m" value="{!m + 1}"/>
+            </apex:repeat>
+            </ol>   
+                   <!-- Carousel items -->
+            <div class="carousel-inner col-sm-12 col-md-12 col-lg-12">
+            <apex:variable var="k" value="{!0}"/>
+            <apex:repeat var="outer" value="{!mainList}">
+            <div class="{!IF(k==0 , 'active item row xtab-slider-width', 'item row xtab-slider-width')}">
+                <apex:repeat var="inner" value="{!outer}">
+                    <div style="float:left;text-align:center;border-right: thin solid #eee;" class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+                                <label style="font-size:16px" class="label-text-long">{!inner.value}</label>
+                                <small class="label-text-long" style="display: block;color: #9FAAB6;font-weight: normal;">{!inner.valueType}</small>
+                                <label style="display:block;font-size:24px;margin-bottom:-20px">{!inner.amountPercent}<sub style="bottom: -0.1em">{!inner.displaySymbol}</sub></label>
+                                <canvas class="gauges-canvas" title="{!inner.amountPercent}">
+
+                                </canvas>
+                            </div>
+                </apex:repeat>
+            </div>
+            <apex:variable var="k" value="{!k + 1}"/>
+            </apex:repeat>
+                
+            </div>
+            <!-- Carousel nav -->
+            <a class="carousel-control carousel-anchor-custom left" href="#sliderMonthly" data-slide="prev" style="background-image:none">
+                <span class="fa fa-angle-left"></span>
+            </a>
+            <a class="carousel-control carousel-anchor-custom right" href="#sliderMonthly" data-slide="next" style="background-image:none">
+                <span class="fa fa-angle-right"></span>
+            </a>
+        </div>  
+                <!-- attainment desktop-->
+                 <!-- dashed separator -->
+                <div class="xtab-dash-separator hidden-sm col-md-12 col-lg-12 hidden-xs">
+                   </div>
+         </apex:outputPanel> 
+          <!--previous held incentive section --> 
+          <apex:variable var="heldSummary" value="{!incentiveStatement.heldincentiveSummary}"/>                 
+          <apex:outputPanel rendered="{!heldSummary != null}">
+            <div class="col-sm-12 col-md-12 col-lg-12 hidden-xs">                
+                <div class="row" style="margin-top:10px">
+                <div class="col-sm-12 col-md-12 col-lg-12 logo-label-div" style="padding:0;min-height:30px"> 
+                    <label style="font-size: 16px;font-weight:normal" class="label-text-long">{!heldSummary.title}</label>   
+                </div> 
+                <div class="col-sm-12 col-md-12 col-lg-12 hidden-xs">
+                <apex:variable var="heldCount" value="{!1}"/> 
+                    <apex:repeat var="heldyear" value="{!heldSummary.yearvalues}">
+                    <div class="col-sm-3 col-md-3 col-lg-3 right">
+                    <label style="display:block;text-align:right;padding-right: 12px" class="label-text-long">
+                        {!heldyear.name}
+                    </label>
+                    <div style="width:100%">
+                    <apex:repeat var="record" value="{!heldyear.records}">
+                    <div style="text-align:right">
+                        <div class="currency-symbol-amount" style="float:left;min-width:87%">
+                            <span>{!record.value}</span>
+                            </div>
+                            <div style="width: 13%;float: left;text-align: left">
+                                <small style="margin-left:5px">{!record.displaySymbol}</small>
+                                </div>
+                    </div>
+                    </apex:repeat>
+                    </div>
+                    
+                </div>
+                <apex:outputPanel rendered="{!heldCount != 3}">
+                    <div class="col-sm-1 col-md-1 col-lg-1 xtab-vertical-separator"></div>
+                </apex:outputPanel>
+                <apex:variable var="heldCount" value="{!heldCount + 1}"/>
+                </apex:repeat>
+                </div>
+            </div>
+            </div>
+          
+                 <!-- dashed separator -->
+                <div class="xtab-dash-separator col-sm-12 col-md-12 col-lg-12 hidden-xs">
+                   </div>
+          </apex:outputPanel>
+                
+                <!-- previous held incentive section end-->
+                <!-- table section-->
+            <!-- incentive details desktop-->
+            <apex:outputPanel id="detailSection">
+            <div class="col-sm-12 col-md-12 col-lg-12 hidden-xs xtab-padding-none">
+            <apex:variable var="sections" value="{!incentiveStatement.reportSections}"/>
+            <!--report sections-->
+            <apex:variable var="secCount" value="{!1}" />
+            <apex:repeat var="section" value="{!sections}">
+            <div class="col-sm-12 col-md-12 col-lg-12 xtab-padding-none">
+            <div class="col-sm-12 col-md-12 col-lg-12 xtab-padding-none">
+                <div class="row xtab-margin-none" style="margin-top:20px;margin-bottom:15px">
+                <div class="col-sm-4 col-md-4 col-lg-4" style="text-align:left">
+                    <label class="font-size-big label-text-long" style="font-weight:normal">{!section.title}</label>
+                </div>
+                <div class="col-sm-8 col-md-8 col-lg-8" style="text-align:right">
+                <apex:variable var="year" value="{!incentiveStatement.yearLabel}"/>
+                    <div class="xtab-detail-periods" style="white-space: nowrap;width: 100%;">
+                    <apex:variable var="k" value="{!1}"/>
+                    <apex:repeat var="quarterlabel" value="{!year.quarterLabels}">
+                    <!-- <apex:variable var="id" value="q{!k}-btn"/>
+                        <span class="{!IF(k==1, 'section-toggle-btn-text xtab-selected-quarter '+id, 'section-toggle-btn-text '+id)}" style="cursor:pointer" onclick="loadSection(this, 'q{!k}');">{!quarterlabel.name}</span>
+                    <apex:variable var="k" value="{!k + 1}"/>
+                    </apex:repeat>
+                                <span id="payment-yr" class="section-toggle-btn-text yr-btn" style="cursor:pointer" onclick="loadSection(this, 'yr');">{!year.name}</span>
+                     </div>  -->
+                     
+                    <apex:variable var="id" value="q{!k}-sec{!secCount}-btn"/>
+                        <span class="{!IF(k==1, 'section-toggle-btn-text xtab-selected-quarter '+id, 'section-toggle-btn-text '+id)}" style="cursor:pointer" onclick="loadSection(this, 'q{!k}', 'sec{!secCount}');">{!quarterlabel.name}</span>
+                    <apex:variable var="k" value="{!k + 1}"/>
+                    </apex:repeat>
+                                <span class="section-toggle-btn-text yr-sec{!secCount}-btn" style="cursor:pointer" onclick="loadSection(this, 'yr', 'sec{!secCount}');">{!year.name}</span>
+                     </div>
+                </div>
+                <!-- onclick="loadSection(this, 'q{!k}');return false;"  -->
+             
+            </div>
+            </div>                
+            <!--values table -->                                                           
+                <apex:outputPanel layout="block">
+                    <div class="table-custom col-sm-12 col-md-12 col-lg-12" style="color: #54698D !important;">
+                    <!-- header row -->
+                        <div class="row row-border-bottom xtab-margin-none">
+                        <div class="data-div col-sm-2 col-md-2 col-lg-2 td-wide"></div>
+                        <apex:variable var="n" value="{!1}"/>
+                        <apex:repeat var="quarterlabel" value="{!year.quarterLabels}">
+                            <apex:repeat var="monthLabel" value="{!quarterlabel.monthLabels}">
+                                <apex:outputPanel rendered="{!n==1}">
+                                           <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right q{!n}-sec{!secCount} xtab-text-ellipsis">{!monthLabel.name}</div>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!n != 1}">
+                                         <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right q{!n}-sec{!secCount} xtab-text-ellipsis xtab-hidden">{!monthLabel.name}</div>                                       
+                                 </apex:outputPanel> 
+                                </apex:repeat>
+                             <apex:outputPanel rendered="{!n == 1}">
+                                       <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right q{!n}-sec{!secCount} xtab-text-ellipsis">{!quarterlabel.name}</div>                                           
+                                       </apex:outputPanel>
+                                   <apex:outputPanel rendered="{!n != 1}">
+                                           <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right q{!n}-sec{!secCount} xtab-text-ellipsis xtab-hidden">{!quarterlabel.name}</div>
+                                    </apex:outputPanel>                                
+                                <apex:variable var="n" value="{!n + 1}"/>                          
+                            </apex:repeat>
+                            <!-- qtrs-->
+                            <apex:repeat var="quarterlabel" value="{!year.quarterLabels}">
+                                <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right yr-sec{!secCount} xtab-text-ellipsis xtab-hidden">{!quarterlabel.name}</div>                            
+                            </apex:repeat>
+                            <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right xtab-text-ellipsis">{!year.name}</div> 
+                        <div class="clearfix visible-md-block visible-sm-block visible-lg-block visible-xs-block "></div>
+                        </div>
+                        
+                        <!-- body row -->
+                        <div class="row xtab-margin-none">
+                            <apex:repeat var="recordSection" value="{!section.records}" >
+                            <apex:repeat var="yearRecord" value="{!recordSection.yearRecords}" >
+                            <div class="row row-border-bottom xtab-margin-none">
+                                <div style="background-color: #F4F6F9" class="{!IF(yearRecord.isTotal, 'td-wide data-div col-sm-2 col-md-2 col-lg-2 label-text-long ', 'td-wide data-div col-sm-2 col-md-2 col-lg-2 xtab-text-indent label-text-long')}">{!yearRecord.typeName} &#40;{!yearRecord.unitTypeSymbol}&#41;</div>
+                                <apex:variable var="l" value="{!1}"/>
+                                <apex:repeat var="quarterRecord" value="{!yearRecord.quarterRecords}">
+                                    <apex:repeat var="monthRecord" value="{!quarterRecord.monthRecords}">
+                                        <apex:outputPanel id="monthValues">
+                                        <apex:outputPanel rendered="{!l == 1}">
+                                            <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right label-text-long q{!l}-sec{!secCount}">{!monthRecord.value}</div>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!l != 1}">
+                                            <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right xtab-hidden label-text-long q{!l}-sec{!secCount}">{!monthRecord.value}</div>
+                                        </apex:outputPanel>
+                                        </apex:outputPanel>
+                                    </apex:repeat>
+                                    <apex:outputPanel id="qtrValues">
+                                    <apex:outputPanel rendered="{!l == 1}">
+                                        <div style="background-color: #E8EEF3" class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right label-text-long q{!l}-sec{!secCount}">{!quarterRecord.value}</div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!l != 1}">
+                                        <div style="background-color: #E8EEF3" class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right xtab-hidden label-text-long q{!l}-sec{!secCount}">{!quarterRecord.value}</div>
+                                    </apex:outputPanel>
+                                    </apex:outputPanel>                                    
+                                    <apex:variable var="l" value="{!l + 1}"/>
+                                </apex:repeat>
+                                <!-- year values-->                                
+                                    <apex:repeat var="quarterRecord" value="{!yearRecord.quarterRecords}">
+                                        <div class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right xtab-hidden label-text-long yr-sec{!secCount}">{!quarterRecord.value}</div>                                    
+                                    </apex:repeat>                                
+                                    <div style="background-color: #F4F6F9" class="td-small data-div col-sm-2 col-md-2 col-lg-2 xtab-text-align-right label-text-long">{!yearRecord.Totalvalue}</div>
+                            </div>
+                            </apex:repeat>
+                        </apex:repeat>
+                        <div class="clearfix visible-md-block visible-sm-block visible-lg-block visible-xs-block "></div>                       
+                        </div>
+                        
+                    </div>                                                                                      
+                    </apex:outputPanel>
+            <apex:variable var="secCount" value="{!secCount + 1}" />            
+            </div>
+            <div class="xtab-dash-separator col-sm-12 col-md-12 col-lg-12 hidden-xs">
+                   </div>
+            </apex:repeat>
+            
+            </div>
+           
+            </apex:outputPanel>
+            </div>
+        </div>  
+        <div class="hidden-lg hidden-md col-xs-12 hidden-sm show-ranking-btn-mobile">
+                           <a href="/apex/XactlyCorp__XactlyIncentRanking" class="xtab-btn-text">
+                               {!$Label.view_ranking}
+                               </a>
+                           </div>      
+        <apex:form >
+            <apex:actionFunction name="loadStatement" action="{!showIncentiveStatement}" reRender="statementPanel,detailSection,tables" oncomplete="createGauges();">
+                <apex:param name="endPointUrl" value=""/>
+            </apex:actionFunction>
+        </apex:form>        
+   </apex:outputPanel>
+   </apex:outputPanel>
+    
+    <link rel="stylesheet"  href="{!URLFOR($Resource.XactlyTabResource,'bootstrap-3.3.5/css/bootstrap.min.css')}"/>
+        <link rel="stylesheet" href="{!URLFOR($Resource.XactlyTabResource,'css/xtab_new.css')}" />
+        <link rel="stylesheet" href="{!URLFOR($Resource.XactlyTabResource,'font-awesome/css/font-awesome.min.css')}" />
+        <script src="{!URLFOR($Resource.XactlyTabResource,'jquery-1.11.3/jquery-1.11.3.min.js')}"></script>       
+        <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource,'js/xtab_new.js')}"></script> 
+        <script src="{!URLFOR($Resource.XactlyTabResource,'bootstrap-3.3.5/js/bootstrap.min.js')}"></script>    
+        <script type="text/javascript" language="javascript" src="{!URLFOR($Resource.XactlyTabResource,'gauge-plugin/gauge.js')}"></script>
+        
+        <script>
+        
+        var getParticipantData = function(elem){
+            //event.preventDefault();
+            $('#pageLoaderBottom').show();;
+            loadStatement($(elem).children("input").val());
+        }
+        
+        </script>
+     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+     </meta>
+ </apex:page>

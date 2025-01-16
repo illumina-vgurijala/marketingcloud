@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckEditWhenWOIsClosedOrComplete</fullName>
+    <active>true</active>
+    <description>To Prevent edit of record when associated work order is closed/Complete</description>
+    <errorConditionFormula>AND(
+NOT(
+AND(
+TEXT(SVMXC__Line_Status__c)==$Label.Canceled,
+TEXT(SVMXC__Service_Order__r.SVMXC__Order_Status__c) == $Label.Completed
+)
+),	
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c), 
+NOT(
+AND(
+NOT(ISBLANK(SVMX_PS_External_ID__c)),
+ISCHANGED(Integration_Status__c),
+Integration_Status__c==&apos;Success&apos;
+)),
+NOT(/*Bypass for Account Maintenance and Presales type Work Orders*/
+    AND(
+        ISNEW(),
+        SVMXC__Service_Order__r.RecordType.Name = $Label.WorkOrderRecordTypeServiceSupport,
+        OR(
+            TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c)=$Label.WorkOrderTypeAccountMaintenance,
+            TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c)=$Label.WorkOrderTypePresales
+        )
+    )
+/*Bypass for Account Maintenance and Presales type Work Orders*/
+),
+/*bypass the validation to create QS review if work order is completed*/ 
+NOT( 
+AND( 
+ISNEW(), 
+TEXT( SVMXC__Activity_Type__c) == $Label.WorkDetailActivityQSReview 
+) 
+), 
+NOT(
+        AND(
+		    ISNEW(),
+			OR(
+                $Profile.Name == $Label.ProfileQualityAssurance,
+			    $Profile.Name ==$Label.ProfileCustomerService,
+			    $Profile.Name ==$Label.ProfileTechnicalSupport,
+			    $Profile.Name ==$Label.ProfileFieldService,
+				$Permission.SS_Field_Compliance_Review,
+				$Profile.Name == &apos;Channel Partner Sales and Read Only Service&apos;,
+                $Profile.Name == &apos;Channel Partner Sales and Read Only Service Login&apos;,
+                $Profile.Name == &apos;Channel Partner Sales and Service&apos;,
+                $Profile.Name == &apos;Channel Partner Service&apos;,
+                $Profile.Name == $Label.Field_Service_Third_Party           
+				),
+            OR(
+            CONTAINS(SVMXC__Service_Order__r.SVMXC__Component__r.SVMXC__Product__r.Regulatory_Type__c,$Label.IPRegulatoryTypeDX),
+            CONTAINS(SVMXC__Service_Order__r.SVMXC__Component__r.SVMXC__Product__r.Regulatory_Type__c,$Label.IPRegulatoryTypeEUA)
+            ),
+            NOT(TEXT(SVMXC__Service_Order__r.SVMXC__Case__r.Sub_Type__c)=$Label.CaseSubTypeComplaint),
+			TEXT(SVMXC__Activity_Type__c) == $Label.WorkDetailActivityFieldComplianceReview
+	    )
+    ),
+/* to bypass the validation to create customer service review activity if work order is completed*/
+NOT(
+AND(
+ISNEW(), 
+OR(
+TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c) ==$Label.WorkOrderTypeInstallation,
+TEXT(SVMXC__Service_Order__r.SVMXC__Order_Type__c) ==$Label.WorkOrderTypeTradeinEOL,
+TEXT(SVMXC__Service_Order__r.SVMXC__Billing_Type__c)==$Label.WorkOrderBillingTypeBillable
+),
+TEXT( SVMXC__Activity_Type__c) == $Label.WorkDetailActivityCustomerServiceReview
+)
+),	
+OR( 
+TEXT(SVMXC__Service_Order__r.SVMXC__Order_Status__c) == $Label.Closed, 
+TEXT(SVMXC__Service_Order__r.SVMXC__Order_Status__c) == $Label.Completed 
+),
+NOT( 
+OR( 
+ISCHANGED(SVMXC__Work_Description__c),
+ISCHANGED(SVMXC__Line_Status__c) , 
+ISCHANGED(SVMXC__Posted_To_Inventory__c), 
+ISCHANGED(SVMX_PS_VS_Consumed_Status__c), 
+ISCHANGED(SVMX_PS_VS_Part_Out_Status__c), 
+$Profile.Name == $Label.ProfileFieldCompliance, 
+$Permission.SS_Field_Compliance_Review,
+$Profile.Name == $Label.ProfileSystemAdmin,
+$Profile.Name ==$Label.Integration_SAP_Service, 
+$User.FirstName ==$Label.Automated_Process_User, 
+$Profile.Name == $Label.Integration_Service_SNAP_Profile 
+ ) 
+),
+/*bypass the validation to create Illumina review if work order is completed*/ 
+NOT( 
+AND( 
+ISNEW(), 
+TEXT( SVMXC__Activity_Type__c) == $Label.WorkDetailActivityIlluminaReview
+) 
+),
+/*bypass the validation to create Illumina review if work order is completed*/ 
+NOT( 
+AND( 
+ISNEW(), 
+TEXT( SVMXC__Activity_Type__c) == $Label.WorkDetailActivityIlluminaReview
+
+) 
+) 
+)</errorConditionFormula>
+    <errorMessage>Record cannot be created/edited when associated Work Order is Completed/Closed</errorMessage>
+</ValidationRule>

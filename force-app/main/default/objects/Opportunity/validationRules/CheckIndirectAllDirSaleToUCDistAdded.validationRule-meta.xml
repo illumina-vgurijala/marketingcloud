@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckIndirectAllDirSaleToUCDistAdded</fullName>
+    <active>true</active>
+    <description>Direct Sale To Ultimate Consignee must be set to False if Account and/or Ultimate Consignee&apos;s Account Group is Distributor.</description>
+    <errorConditionFormula>AND (
+    OR (
+        $RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard, 
+        $RecordType.DeveloperName = $Label.IndirectReOrder,  
+        $RecordType.DeveloperName = $Label.IndirectFieldServices
+    ),
+    OR ( 
+        TEXT ( Account.Account_Group__c ) = $Label.AccountGroupDistributor, 
+        TEXT ( Ultimate_Consignee__r.Account_Group__c ) = $Label.AccountGroupDistributor
+    ),
+    AND ( 
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+    ), 
+    Direct_Sale_to_Ultimate_Consignee__c,
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward 
+        )
+    ) 
+)</errorConditionFormula>
+    <errorMessage>Based on indication that this is a Direct Sale to Ultimate Consignee, Account/Ultimate Consignee cannot be a Distributor. Please update opportunity</errorMessage>
+</ValidationRule>

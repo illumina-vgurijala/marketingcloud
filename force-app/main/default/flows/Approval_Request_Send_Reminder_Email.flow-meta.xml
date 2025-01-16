@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Approval_Request_Send_Email_To_Approval_Request_Owner</name>
+        <label>Approval Request Send Email To Approval Request Owner</label>
+        <locationX>308</locationX>
+        <locationY>384</locationY>
+        <actionName>Apttus_Approval__Approval_Request__c.Approval_Request_Send_Email_To_Approval_Request_Owner</actionName>
+        <actionType>emailAlert</actionType>
+        <faultConnector>
+            <targetReference>Assign_Current_Failure_Element1</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>SObjectRowId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>Apttus_Approval__Approval_Request__c.Approval_Request_Send_Email_To_Approval_Request_Owner</nameSegment>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <apiVersion>62.0</apiVersion>
+    <assignments>
+        <name>Assign_Current_Failure_Element</name>
+        <label>Assign Current Failure Element</label>
+        <locationX>836</locationX>
+        <locationY>384</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Update Send Next email Send</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Assign_Current_Failure_Element1</name>
+        <label>Current Failure Element</label>
+        <locationX>572</locationX>
+        <locationY>492</locationY>
+        <assignmentItems>
+            <assignToReference>currentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>Approval Request Send Email To Approval Request Owner</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <description>To send Approver Reminder Email if approver does not take any action on submitted approval requests. Migrating Workflow into Flow</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>FlowandFailureElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Approval Request : Send Reminder Email - &apos;+{!currentElement}</expression>
+    </formulas>
+    <formulas>
+        <name>SendNextemailDateFormula</name>
+        <dataType>DateTime</dataType>
+        <expression>{!$Record.Send_Next_Email_Date__c}+1</expression>
+    </formulas>
+    <interviewLabel>Approval Request : Send Reminder Email {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Approval Request : Send Reminder Email</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Update_Send_Next_email_Send</name>
+        <label>Update Send Next email Send</label>
+        <locationX>308</locationX>
+        <locationY>276</locationY>
+        <connector>
+            <targetReference>Approval_Request_Send_Email_To_Approval_Request_Owner</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Assign_Current_Failure_Element</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Send_Next_Email_Date__c</field>
+            <operator>IsNull</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Send_Next_Email_Date__c</field>
+            <value>
+                <elementReference>SendNextemailDateFormula</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>
+        <filterFormula>AND( NOT(ISBLANK({!$Record.Send_Next_Email_Date__c})),
+ 	 NOT(ISBLANK({!$Record.Apttus_Approval__Object_Type__c})),
+         {!$Record.Apttus_Approval__Object_Type__c} != &apos;Apttus__APTS_Agreement__c&apos;,
+         OR( TEXT({!$Record.Apttus_Approval__Approval_Status__c}) = {!$Label.ApprovalRequestApprovalStatusAssigned}, 		 
+                TEXT({!$Record.Apttus_Approval__Approval_Status__c} ) = {!$Label.ApprovalRequestApprovalStatusReassigned} ),      	 
+         TEXT({!$Record.Apttus_Approval__Assigned_To_Type__c} ) != NULL, 
+	 {!$Record.Apttus_Approval__Assigned_To_Id__c} != NULL,	 
+         NOT(ISPICKVAL({!$Record.Apttus_QPApprov__ProposalId__r.Apttus_Proposal__Approval_Stage__c} , &apos;Denied&apos; ))  
+          )</filterFormula>
+        <object>Apttus_Approval__Approval_Request__c</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <scheduledPaths>
+            <name>Run_After_0_Hours_Send_Next_Email_Date</name>
+            <connector>
+                <targetReference>Update_Send_Next_email_Send</targetReference>
+            </connector>
+            <label>Run After 0 Hours Send Next Email Date</label>
+            <offsetNumber>0</offsetNumber>
+            <offsetUnit>Hours</offsetUnit>
+            <recordField>Send_Next_Email_Date__c</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>836</locationX>
+        <locationY>492</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFailureElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Sales</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <variables>
+        <name>currentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

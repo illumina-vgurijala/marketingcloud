@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSAndISBlankConsortForTypeConsort</fullName>
+    <active>true</active>
+    <description>Consortium lookup is required if the Type is one of the consortium values.</description>
+    <errorConditionFormula>AND (
+    OR (
+        RecordType.DeveloperName = $Label.OpportunityRTDirectStandard,
+        RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard
+    ),
+    ISBLANK ( Consortium__c ),
+    OR (
+        TEXT ( Type ) = $Label.OpportunityTypeConsortium,
+        TEXT ( Type ) = $Label.OpportunityTypeReorderConsortiumConsumable
+     ),
+    AND ( 
+	TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+	TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+	TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete 
+    ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+			$Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Consortium__c</errorDisplayField>
+    <errorMessage>The Opportunity type is &quot;Consortium&quot;. Please select the Consortium related to this Opportunity.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckLOAToCompleteWorkOrder</fullName>
+    <active>true</active>
+    <description>Check if LOA is generated before completion of Installation Work Order</description>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User),
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+AND(RecordType.Name = $Label.WorkOrderRecordTypeFieldService,ISPICKVAL(SVMXC__Order_Type__c, &apos;Installation&apos;)),
+ISCHANGED(SVMXC__Order_Status__c),
+ISPICKVAL(SVMXC__Order_Status__c,&apos;Completed&apos; ),
+OR(
+ISPICKVAL(Acceptance_Code__c, &apos;ACD: Acceptance Upon Delivery&apos;),
+ISPICKVAL(Acceptance_Code__c, &apos;ACI: Acceptance Upon Installation&apos;),
+ISPICKVAL(Acceptance_Code__c, &apos;SPD: Shipment with Partial Deferral&apos;),
+ISPICKVAL(Acceptance_Code__c, &apos;ACP: Acceptance Upon Performance&apos;)
+),
+NOT(
+OR(
+ISPICKVAL(Acceptance_Forecast_in_Current_Quarter__c,&apos;0% - Instrument DOA&apos;),
+AND(
+ISPICKVAL(Acceptance_Forecast_in_Current_Quarter__c,&apos;100% Completed - LOA Signed&apos;),
+LOA_Signed_and_Attached__c,
+ISPICKVAL(Acceptance_Status__c,&apos;Completed&apos;)
+)
+)
+)
+)</errorConditionFormula>
+    <errorMessage>An LOA is required on this work order. Please manually attach a fully signed LOA through the Document Upload tab or ensure an Adobe e-sign LOA is attached with status &quot;Signed&quot;</errorMessage>
+</ValidationRule>

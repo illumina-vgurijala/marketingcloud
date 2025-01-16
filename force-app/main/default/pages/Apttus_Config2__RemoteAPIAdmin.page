@@ -1,0 +1,1464 @@
+<!-- 
+	Apttus Config & Pricing
+	RemoteAPIAdmin
+	 Workbench for RemoteAPIAdmin
+	@2015-2016 Apttus Inc. All rights reserved.
+ -->
+ 
+ <apex:page controller="Apttus_Config2.RemoteCPQAdminController" 
+			title="Remote API Admin Workbench"
+			showHeader="false" sidebar="false">
+
+
+<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+
+<!-- translation is wrapped inside function and added to angular module -->
+<apex:include pageName="Apttus_Config2__Translation" />
+
+<style>
+	#codeViewPortContainer, #requestViewPort {
+		position: absolute;
+		background-color: rgb(206, 239, 255);
+		padding: 10px;
+		width: 80%;
+		-moz-border-radius: 10px;
+		border-radius: 10px;
+	}
+	
+	#codeViewPort, #requestViewPort {
+		white-space: pre-wrap;
+		font-family: courier, monotype;
+	}
+	
+	input {
+		margin-left: 4px;
+		margin-right: 4px;
+	}
+		
+	h1 {
+		font-size: 1.5em;
+	}
+	
+	div {
+		padding-bottom: 1em!important;
+	}
+	
+	a {
+		padding: 4px;
+	}
+	
+	label {
+		padding-left: 4px;
+		padding-right: 4px;
+	}
+	
+	#rest-help {
+		width: 500px;
+	}
+	
+	#timeLine {
+		position: absolute;
+		left: 75%;
+		top: 30px;
+		width: 120px;
+		background-color: white;
+		border: 2px solid #ccc;
+		padding: 6px;
+	}
+	
+	#tabs-1, #tabs-2, #tabs-3, #tabs-4, #tabs-5, #tabs-6 {
+		border: 1px solid lightblue;
+		width: 80%;
+	}
+	
+	.smalllabel {
+		font-size: 50%;
+	}
+	
+	
+	
+	
+</style>
+	<script>
+
+		var j$ = jQuery.noConflict();
+		var jsonData;
+
+		j$.REMOTE = {};
+		j$.REMOTE.createProducts = '{!$RemoteAction.RemoteCPQAdminController.createProducts}';
+		j$.REMOTE.updateProducts = '{!$RemoteAction.RemoteCPQAdminController.updateProducts}';
+		j$.REMOTE.createCategory = '{!$RemoteAction.RemoteCPQAdminController.createCategories}';
+		j$.REMOTE.associateProductToCategory = '{!$RemoteAction.RemoteCPQAdminController.associateProductToCategory}';
+		j$.REMOTE.removeProductFromCategory = '{!$RemoteAction.RemoteCPQAdminController.removeProductFromCategory}';
+		j$.REMOTE.buildHierarchy = '{!$RemoteAction.RemoteCPQAdminController.buildHierarchy}';
+		j$.REMOTE.removeProductFromHierarchy = '{!$RemoteAction.RemoteCPQAdminController.removeProductFromHierarchy}';
+		j$.REMOTE.isProductInHierarchy = '{!$RemoteAction.RemoteCPQAdminController.isProductInHierarchy}';
+		j$.REMOTE.getChildOptionGroups = '{!$RemoteAction.RemoteCPQAdminController.getChildOptionGroups}';
+		j$.REMOTE.getChildOptions = '{!$RemoteAction.RemoteCPQAdminController.getChildOptions}';
+		j$.REMOTE.getProductStructure = '{!$RemoteAction.RemoteCPQAdminController.getProductStructure}';
+		j$.REMOTE.getParentProducts = '{!$RemoteAction.RemoteCPQAdminController.getParentProducts}';
+		j$.REMOTE.getProductIds = '{!$RemoteAction.RemoteCPQAdminController.getProductIds}';
+		j$.REMOTE.getAssociatedCategoryIds = '{!$RemoteAction.RemoteCPQAdminController.getAssociatedCategoryIds}';
+		j$.REMOTE.createAttributeGroup = '{!$RemoteAction.RemoteCPQAdminController.createAttributeGroup}';
+		j$.REMOTE.updateAttributeGroup = '{!$RemoteAction.RemoteCPQAdminController.updateAttributeGroup}';
+		j$.REMOTE.associateAttributeGroup = '{!$RemoteAction.RemoteCPQAdminController.associateAttributeGroup}';
+		j$.REMOTE.removeAttributeGroup = '{!$RemoteAction.RemoteCPQAdminController.removeAttributeGroup}';
+		
+		j$.REMOTE.getAllProducts = '{!$RemoteAction.RemoteCPQAdminController.getAllProducts}';
+		j$.REMOTE.getProductsAssociatedToCategory = '{!$RemoteAction.RemoteCPQAdminController.getProductsAssociatedToCategory}';
+		j$.REMOTE.getDisplayColumns = '{!$RemoteAction.RemoteCPQAdminController.getProductDisplayColumns}';
+		j$.REMOTE.getProductDetails = '{!$RemoteAction.RemoteCPQAdminController.getProductDetails}';
+		j$.REMOTE.getFullCatalogHierarchy = '{!$RemoteAction.RemoteCPQAdminController.getFullCatalogHierarchy}';
+		j$.REMOTE.getAssociatedCategories = '{!$RemoteAction.RemoteCPQAdminController.getAssociatedCategories}';
+		
+		j$.REMOTE.getAllAttributes = '{!$RemoteAction.RemoteCPQAdminController.getAllAttributes}';
+		j$.REMOTE.getAllPriceLists = '{!$RemoteAction.RemoteCPQAdminController.getAllPriceLists}';
+		j$.REMOTE.getParentBundles = '{!$RemoteAction.RemoteCPQAdminController.getParentBundles}';
+		j$.REMOTE.getPriceListItems = '{!$RemoteAction.RemoteCPQAdminController.getPriceListItems}';
+		j$.REMOTE.getAssociatedAttributes = '{!$RemoteAction.RemoteCPQAdminController.getAssociatedAttributes}';
+		j$.REMOTE.getPriceListItemPicklistMetadata = '{!$RemoteAction.RemoteCPQAdminController.getPriceListItemPicklistMetadata}';
+		j$.REMOTE.uploadAttachments = '{!$RemoteAction.RemoteCPQAdminController.uploadAttachments}';
+		j$.REMOTE.updateAttachments = '{!$RemoteAction.RemoteCPQAdminController.updateAttachments}';
+		j$.REMOTE.removeAttachments = '{!$RemoteAction.RemoteCPQAdminController.removeAttachments}';
+		j$.REMOTE.getAttachmentsByParentId = '{!$RemoteAction.RemoteCPQAdminController.getAttachmentsByParentId}';
+		j$.REMOTE.createPriceListItems = '{!$RemoteAction.RemoteCPQAdminController.createPriceListItems}';
+		j$.REMOTE.updatePriceListItems = '{!$RemoteAction.RemoteCPQAdminController.updatePriceListItems}';
+		j$.REMOTE.deletePriceListItems = '{!$RemoteAction.RemoteCPQAdminController.deletePriceListItems}';
+		j$.REMOTE.getAllProductGroups = '{!$RemoteAction.RemoteCPQAdminController.getAllProductGroups}';
+		j$.REMOTE.removeProductsFromOptionGroups = '{!$RemoteAction.RemoteCPQAdminController.removeProductsFromOptionGroups}';
+		j$.REMOTE.getAllOptionGroups = '{!$RemoteAction.RemoteCPQAdminController.getAllOptionGroups}';
+		j$.REMOTE.getOptionGroupDetails = '{!$RemoteAction.RemoteCPQAdminController.getOptionGroupDetails}';
+		j$.REMOTE.setOptionGroupDetails = '{!$RemoteAction.RemoteCPQAdminController.setOptionGroupDetails}';
+
+		j$.REMOTE.getProductFootnotes = '{!$RemoteAction.RemoteCPQAdminController.getProductFootnotes}';
+		j$.REMOTE.getProductInformation = '{!$RemoteAction.RemoteCPQAdminController.getProductInformation}';
+		j$.REMOTE.getRelatedProducts = '{!$RemoteAction.RemoteCPQAdminController.getRelatedProducts}';
+		j$.REMOTE.getAssociatedFeatures = '{!$RemoteAction.RemoteCPQAdminController.getAssociatedFeatures}';
+
+		
+		function createProducts(){
+			var createProductsRequest = createCreateProductsRequest();
+			// displayRequestTab, invoke remoteAction
+			displayResult(createProductsRequest,'createProducts');
+			invokeRemoteAction(j$.REMOTE.createProducts,[createProductsRequest]);
+
+
+		}
+
+
+		function createCreateProductsRequest(){
+			var createProductsRequest = [
+											{
+												"Name" : "Product123",
+												"ConfigurationType__c" : j$('input[name=ConfigType]:checked').val(),
+												"IsActive" : true
+											}
+										];
+			return createProductsRequest;
+
+		}
+
+		function updateProducts() {
+			var updateProductsRequest = createUpdateProductsRequest();
+			displayResult(updateProductsRequest,'updateProducts');
+			invokeRemoteAction(j$.REMOTE.updateProducts,[updateProductsRequest]);
+
+		}
+
+		function createUpdateProductsRequest() {
+			var request = [
+											{
+												"Name" : j$('#prodName2').val(),
+												"Id" : j$('#prodId26').val()
+											}
+										];
+			return request;
+
+		}
+
+
+
+		function createCategory(){
+			var createCategoryRequest = createCreateCategoryRequest();
+			displayResult(createCategoryRequest,'createCategories');
+			invokeRemoteAction(j$.REMOTE.createCategory,[createCategoryRequest]);
+
+		}
+
+		function createCreateCategoryRequest(){
+
+			var categoryRequest = {
+									"CategoryDOs" : [
+														{
+															"Name":"Category 1",
+															"Label":"Category_1",
+															"Type":j$('input[name=CategoryType]:checked').val(),
+															"OptionalFields":[]
+														}
+
+													]
+
+								};
+			return categoryRequest;
+		}
+
+		function associateProdToCateg(){
+
+			var prodToCategRequest = createProdCategRequest();
+			displayResult(prodToCategRequest,'associateProductToCategory');
+			invokeRemoteAction(j$.REMOTE.associateProductToCategory,[prodToCategRequest]);
+		}
+
+		function createProdCategRequest(){
+			var request = {"ProductDOs" : [ {"ProductSO" : { "Id":j$('#prodId1').val() },"CategoryId" :j$('#categId1').val() }]
+
+			};
+			return request;
+
+		}
+
+		function removeProdFromCateg() {
+			var removeProdFromCategRequest = createRemoveProdFromCategRequest();
+			displayResult(removeProdFromCategRequest,'removeProductFromCategory');
+			invokeRemoteAction(j$.REMOTE.removeProductFromCategory,[removeProdFromCategRequest]);
+
+		}
+
+		function createRemoveProdFromCategRequest() {
+			var request = {"ProductDOs" : [ {"ProductSO" : { "Id":j$('#prodId27').val() },"CategoryId" :j$('#categId6').val() }]
+
+			};
+			return request;
+
+		}
+
+		function buildHierarchy(){
+			var buildHierarchyRequest = createBuildHierarchyRequest();
+			displayResult(buildHierarchyRequest,'buildHierarchy');
+			invokeRemoteAction(j$.REMOTE.buildHierarchy,[buildHierarchyRequest]);
+
+		}
+
+		function createBuildHierarchyRequest() {
+			var ParentProductId = j$('#prodId6').val();
+			var ChildProductId = j$('#prodId7').val();
+			var ParentOptionGroupId = j$('#categId2').val();
+			var ChildOptionGroupId = j$('#categId3').val();
+			var request = {
+							"HierarchyDOs" : [
+												{
+													"ParentProductId" : ParentProductId.length > 0 ? ParentProductId : null,
+													"ChildProductId" : ChildProductId.length > 0 ? ChildProductId : null,
+													"ParentOptionGroupId" : ParentOptionGroupId.length > 0 ? ParentOptionGroupId : null,
+													"ChildOptionGroupId" : ChildOptionGroupId.length > 0 ? ChildOptionGroupId : null
+												}	
+											],
+							"ProductId" : null,
+							"ProductIds" : [],
+							"OptionGroupId" : null,
+
+			};
+			return request;
+
+		}
+
+		function removeProdFromHier(){
+			var removeProdRequest = createRemoveProdRequest();
+			displayResult(removeProdRequest,'removeProductFromHierarchy');
+			invokeRemoteAction(j$.REMOTE.removeProductFromHierarchy,[removeProdRequest]);
+
+		}
+
+		function createRemoveProdRequest(){
+			var request = {
+							"HierarchyDOs" : [
+												{
+													"ParentProductId" : j$('#prodId8').val(),
+													"ChildProductId" : j$('#prodId9').val(),
+													"ParentOptionGroupId" : null,
+													"ChildOptionGroupId" : null
+												}	
+											],
+							"ProductId" : null,
+							"ProductIds" : [],
+							"OptionGroupId" : null,
+
+			};
+			return request;
+		}
+
+		function prodInHier(){
+			var prodInHierRequest = createProdInHierRequest();
+			displayResult(prodInHierRequest,'isProductInHierarchy');
+			invokeRemoteAction(j$.REMOTE.isProductInHierarchy,[prodInHierRequest]);
+
+
+		}
+
+		function createProdInHierRequest(){
+			var request = {
+							"HierarchyDOs" : [ 
+												{
+													"ParentProductId" : j$('#prodId10').val(),
+													"ChildProductId" : j$('#prodId11').val()
+												}
+											]
+						};
+			return request;			
+
+
+		}
+
+		function getChildOptionGroups(){
+			var getChildOptionGroupsRequest = createGetChildOptionGroupsRequest();
+			displayResult(getChildOptionGroupsRequest,'getChildOptionGroups');
+			invokeRemoteAction(j$.REMOTE.getChildOptionGroups,[getChildOptionGroupsRequest]);
+		}
+
+		function createGetChildOptionGroupsRequest(){
+			var request = {
+							"HierarchyDOs" : [
+												{
+													"ParentProductId" : null,
+													"ChildProductId" : null,
+													"ParentOptionGroupId" : null,
+													"ChildOptionGroupId" : null
+												}	
+											],
+							"ProductId" : j$('#prodId2').val(),
+							"ProductIds" : [],
+							"OptionGroupId" : null,
+
+			};
+			return request;
+		}
+
+		function getChildOptions(){
+			var getChildOptionsRequest = createGetChildOptionsRequest();
+			displayResult(getChildOptionsRequest,'getChildOptions');
+			invokeRemoteAction(j$.REMOTE.getChildOptions,[getChildOptionsRequest]);
+		}
+
+		function createGetChildOptionsRequest(){
+			var request = {
+							"HierarchyDOs" : [
+												{
+													"ParentProductId" : null,
+													"ChildProductId" : null,
+													"ParentOptionGroupId" : null,
+													"ChildOptionGroupId" : null
+												}	
+											],
+							"ProductId" : j$('#prodId3').val(),
+							"ProductIds" : [],
+							"OptionGroupId" : j$('#optionGroupId1').val()
+
+			};
+			return request;
+		}
+
+		function getProductStructure(){
+			var getProductStructureRequest = createGetProductStructureRequest();
+			displayResult(getProductStructureRequest,'getProductStructure');
+			invokeRemoteAction(j$.REMOTE.getProductStructure,[getProductStructureRequest]);
+
+		}
+
+		function createGetProductStructureRequest(){
+			var request = {
+							"ProductIds" : [ j$('#prodId15').val()]
+
+			};
+			return request;
+
+		}
+
+		function getParentProducts2(){
+			var prodId = j$('#prodId4').val();
+			//displayResult(prodId,'getParentProducts');
+			invokeRemoteAction(j$.REMOTE.getParentProducts,[prodId]);
+
+		}
+
+		function getProductIds(){
+			var productName = j$('#prodName').val();
+			//displayResult(productName,'getProductIds');
+			invokeRemoteAction(j$.REMOTE.getProductIds,[productName]);
+		}
+
+		function getCategoryIds(){
+			var prodId = j$('#prodId5').val();
+			//displayResult(prodId,'getCategoryIds');
+			invokeRemoteAction(j$.REMOTE.getAssociatedCategoryIds,[prodId]);
+		}
+
+		function createAttributeGroup(){
+			var createAttGroupRequest = createCreateAttributeGroupRequest();
+			displayResult(createAttGroupRequest,'createAttributeGroup');
+			invokeRemoteAction(j$.REMOTE.createAttributeGroup,[createAttGroupRequest]);
+
+		}
+
+		function createCreateAttributeGroupRequest(){
+			var request = { 
+							"ProductAttributeDOs" : [
+														{
+															"ProductId" : null,
+															"AttributeGroupId" : null, 
+															"AttributeGroupName" : "AttributeGroup Test",
+															"Action" : null,
+															"ProductAttributesToAdd" : ["Color", "Length"],
+															"ProductAttributesToRemove"  : []
+														}
+
+													]
+						};
+			return request;
+		}
+
+		function updateAttributeGroup(){
+			var updateAttGroupRequest = createUpdateAttributeGroupRequest();
+			displayResult(updateAttGroupRequest,'updateAttributeGroup');
+			invokeRemoteAction(j$.REMOTE.updateAttributeGroup,[updateAttGroupRequest]);
+
+		}
+
+		function createUpdateAttributeGroupRequest(){
+			var request = { 
+							"ProductAttributeDOs" : [
+														{
+															"ProductId" : null,
+															"AttributeGroupId" : "a2t36000000AL6i", 
+															"AttributeGroupName" : "AttributeGroup Test",
+															"Action" : null,
+															"ProductAttributesToAdd" : ["Width"],
+															"ProductAttributesToRemove"  : ["Color"]
+														}
+
+													]
+						};
+			return request;
+		}
+
+		function associateAttributeGroup(){
+			var associateAttributeGroupRequest = createAssociateAttributeGroupRequest();
+			displayResult(associateAttributeGroupRequest,'associateAttributeGroup');
+			invokeRemoteAction(j$.REMOTE.associateAttributeGroup,[associateAttributeGroupRequest]);
+
+		}
+
+		function createAssociateAttributeGroupRequest(){
+			var request = { 
+							"ProductAttributeDOs" : [
+														{
+															"ProductId" : "01t36000001Rui2",
+															"AttributeGroupId" : "a2t36000000AL6i", 
+															"AttributeGroupName" : null,
+															"Action" : null,
+															"ProductAttributesToAdd" : [],
+															"ProductAttributesToRemove"  : []
+														}
+
+													]
+						};
+			return request;
+		}
+
+		function removeAttributeGroup(){
+			var remoteAttributeGroupRequest = createRemoveAttributeRequest();
+			displayResult(remoteAttributeGroupRequest,'removeAttributeGroup');
+			invokeRemoteAction(j$.REMOTE.removeAttributeGroup,[remoteAttributeGroupRequest]);
+
+		}
+
+		function createRemoveAttributeRequest(){
+			var request = { 
+							"ProductAttributeDOs" : [
+														{
+															"ProductId" : "01t36000001Rui2",
+															"AttributeGroupId" : "a2t36000000AL6i", 
+															"AttributeGroupName" : null,
+															"Action" : null,
+															"ProductAttributesToAdd" : [],
+															"ProductAttributesToRemove"  : []
+														}
+
+													]
+						};
+			return request;
+		}
+
+		function getAllProducts(){
+			var getAllProductsRequest = createGetAllProductsRequest();
+			displayResult(getAllProductsRequest,'getAllProducts');
+			invokeRemoteAction(j$.REMOTE.getAllProducts,[getAllProductsRequest]);
+
+
+		}
+
+		function getProductsAssociatedToCategory() {
+			var categoryId = j$('#categId5').val(); 
+			invokeRemoteAction(j$.REMOTE.getProductsAssociatedToCategory,[categoryId]);
+		}
+
+		function createGetAllProductsRequest(){
+			var request = {
+								"ChunkNumber" : j$('#chunknumber').val(),
+								"ViewName" : j$('#viewname1').val(),
+								"SearchString" : j$('#searchstr').val(),
+								"NumberOfProductsPerChunk" : null,
+								"ConfigType" : j$('#configtype').val(),
+								"SortField" : null,
+								"SortDirection" : null
+			};
+			return request;
+
+		}
+
+		function getDisplayColumns(){
+			var viewName = j$('#viewname2').val(); 
+			invokeRemoteAction(j$.REMOTE.getDisplayColumns,[viewName]);
+		}
+
+		function getProductDetails(){
+			var prodId = j$('#prodId12').val();
+			var viewname = j$('#viewname3').val();
+			invokeRemoteAction(j$.REMOTE.getProductDetails,[prodId, viewname]);
+
+		}
+
+		function getCatalogHierarchy(){
+			var priceListId = j$('#priceListId1').val();
+			invokeRemoteAction(j$.REMOTE.getFullCatalogHierarchy,[priceListId]);
+
+		}
+
+		function getAssociatedCategories() {
+			var prodId = j$('#prodId28').val();
+			invokeRemoteAction(j$.REMOTE.getAssociatedCategories,[prodId]);
+		}
+
+		function getAllAttributes(){
+			var chunk = 2;
+			invokeRemoteAction(j$.REMOTE.getAllAttributes,[chunk]);
+
+		}
+
+		function getAllPriceLists(){
+			invokeRemoteAction(j$.REMOTE.getAllPriceLists,[]);			
+		}
+
+		function getParentBundles(){
+			var categId = j$('#categId4').val();
+			invokeRemoteAction(j$.REMOTE.getParentBundles,[categId]);	
+		}
+		
+		function getPriceListItems(){
+			var prodId = j$('#prodId13').val();
+			invokeRemoteAction(j$.REMOTE.getPriceListItems,[prodId]);	
+		}
+		
+		function getAssociatedAttributes(){
+			var prodId = j$('#prodId14').val();
+			invokeRemoteAction(j$.REMOTE.getAssociatedAttributes,[prodId]);
+		}
+
+		function getPriceListItemPicklistMetadata(){
+			invokeRemoteAction(j$.REMOTE.getPriceListItemPicklistMetadata,[]);			
+		}
+
+		function uploadAttachments() {
+			var uploadAttachmentsRequest = createUploadAttachmentsRequest();
+			displayResult(uploadAttachmentsRequest,'uploadAttachments');
+			invokeRemoteAction(j$.REMOTE.uploadAttachments,[uploadAttachmentsRequest]);
+
+		}
+
+		function createUploadAttachmentsRequest() {
+			var request = [
+							{
+								"ParentId" : j$('#prodId20').val(),
+								"AttachmentName" : j$('#attName1').val(),
+								"AttachmentBody" : j$('#attBody1').val()
+							}
+							];
+			return request;
+
+		}
+
+		function updateAttachments() {
+			var updateAttachmentsRequest = createUpdateAttachmentsRequest();
+			displayResult(updateAttachmentsRequest,'updateAttachments');
+			invokeRemoteAction(j$.REMOTE.updateAttachments,[updateAttachmentsRequest]);
+
+		}
+
+		function createUpdateAttachmentsRequest() {
+			var request = [
+							{
+								"Id" : j$('#attId1').val(),
+								"ParentId" : j$('#prodId21').val(),
+								"AttachmentName" : j$('#attName2').val(),
+								"AttachmentBody" : j$('#attBody2').val()
+							}
+							];
+			return request;
+
+		}
+
+		function removeAttachments() {
+			var removeAttachmentsRequest = [j$('#attId2').val()];
+			displayResult(removeAttachmentsRequest,'removeAttachments');
+			invokeRemoteAction(j$.REMOTE.removeAttachments,[removeAttachmentsRequest]);
+
+		}
+
+		function getAttachments() {
+			var getAttachmentsRequest = [j$('#prodId22').val()];
+			displayResult(getAttachmentsRequest,'getAttachmentsByParentId');
+			invokeRemoteAction(j$.REMOTE.getAttachmentsByParentId,[getAttachmentsRequest]);
+
+		}
+
+		function createPriceListItems() {
+			var createPriceListItemsRequest = createCreatePriceListItemsRequest();
+			displayResult(createPriceListItemsRequest,'createPriceListItems');
+			invokeRemoteAction(j$.REMOTE.createPriceListItems,[createPriceListItemsRequest]);			
+
+		}
+
+		function createUpdatePriceListItemsRequest() {
+			var request = [
+							{
+								"ProductId__c" : j$('#prodId23').val(), 
+								"PriceListId__c" : j$('#priceListId2').val()
+							}
+						];
+			return request;
+		}
+
+		function updatePriceListItems() {
+			var updatePriceListItemsRequest = createUpdatePriceListItemsRequest();
+			displayResult(updatePriceListItemsRequest,'updatePriceListItems');
+			invokeRemoteAction(j$.REMOTE.updatePriceListItems,[updatePriceListItemsRequest]);						
+
+		}
+
+
+		function createUpdatePriceListItemsRequest() {
+			var request = [
+							{
+								"Id" : j$('#pliId').val(), 
+								"ListPrice__c" : "10"
+							}
+						];
+			return request;
+
+		}
+
+		function deletePriceListItems() {
+			var deletePriceListItemsRequest = [j$('#pliId2').val()];
+			invokeRemoteAction(j$.REMOTE.deletePriceListItems,[deletePriceListItemsRequest]);						
+
+		}
+
+		function getAllProductGroups() {
+			invokeRemoteAction(j$.REMOTE.getAllProductGroups,[]);
+
+		}
+
+		function removeProductsFromOptionGroups() {
+			var request = createRemoveProductsFromOptionGroupsRequest();
+			displayResult(request,'removeProductsFromOptionGroups');
+			invokeRemoteAction(j$.REMOTE.removeProductsFromOptionGroups,[request]);
+
+		}
+		function createRemoveProductsFromOptionGroupsRequest() {
+			var request = {
+								"HierarchyDOs" : [
+												 {
+													"ParentProductId" : j$('#prodId24').val(), 
+													"ChildProductId" : j$('#prodId25').val(), 
+													"ParentOptionGroupId" : j$('#pogId2').val() 
+												}
+												]
+							};
+			return request;
+		}
+
+		function getAllOptionGroups() {
+			invokeRemoteAction(j$.REMOTE.getAllOptionGroups,[]);			
+		}
+
+		function getOptionGroupDetails() {
+			var getOptionGroupDetailsRequest = j$('#pogId1').val();
+			invokeRemoteAction(j$.REMOTE.getOptionGroupDetails,[getOptionGroupDetailsRequest]);
+
+		}
+
+		function setOptionGroupDetails() {
+			var setOptionGroupDetailsRequest = createSetOptionGroupDetailRequest();
+			displayResult(setOptionGroupDetailsRequest,'setOptionGroupDetails');
+			invokeRemoteAction(j$.REMOTE.setOptionGroupDetails,[setOptionGroupDetailsRequest]);
+			
+		}
+
+		function createSetOptionGroupDetailRequest() {
+			var request = [
+							{
+								"ProductOptionGroupSO" : {
+															"Id": j$('#pogId3').val(), 
+															"MaxOptions__c" : j$('#maxOptions1').val()
+														},
+								"ComponentSOs" : [ 
+													{
+														"Id" : j$('#pocId1').val() 
+													}
+												]
+							}
+						];
+			return request;
+
+		}
+
+
+		function getProductFootnotes() {
+			var prodId = j$('#prodId19').val();
+			invokeRemoteAction(j$.REMOTE.getProductFootnotes,[prodId]);
+
+		}
+
+		function getProductInformation() {
+			var prodId = j$('#prodId16').val();
+			invokeRemoteAction(j$.REMOTE.getProductInformation,[prodId]);
+
+		}
+
+		function getRelatedProducts() {
+			var prodId = j$('#prodId17').val();
+			invokeRemoteAction(j$.REMOTE.getRelatedProducts,[prodId]);
+
+		}
+
+
+		function getAssociatedFeatures() {
+			// var prodId = j$('#prodId18').val();
+			invokeRemoteAction(j$.REMOTE.getAssociatedFeatures,[prodId]);
+
+		}
+
+
+	   	/**
+	 	* display json data
+	    */
+		function displayResult(result, methodName) {
+		jsonData = result; //used in debugging
+		 
+		if (typeof methodName === "undefined") {
+			j$("#tabs2").tabs('option', "active", 0);
+			
+		} else {
+			document.getElementById("requestViewPort").innerHTML = '<p>Method Name: '+methodName+'</p>' + JSON.stringify(result, null, 2);
+			
+		}
+
+		// if you are getting the typeahead result
+		if (typeof result === "string") {
+			var decodedHTMLEntities = j$("<div>").html(result).text();
+			result = JSON.parse(decodedHTMLEntities);
+		}
+
+		document.getElementById("codeViewPort").innerHTML = JSON.stringify(result, null, 2);
+		document.getElementById("recordCount").innerHTML = 'NA';
+		
+		if (result.hasOwnProperty('categories')) {
+			document.getElementById("recordCount").innerHTML = result.categories.length;
+		}
+		
+		if (result.hasOwnProperty('products')) {
+			document.getElementById("recordCount").innerHTML = result.products.length;
+			if (typeof result.products[0].productSO !== 'undefined') {
+				j$.cachedData.products = jsonData.products;
+			}
+		}
+		
+		if (result.hasOwnProperty('lineItems')) {
+			document.getElementById("recordCount").innerHTML = result.lineItems.length;
+			if (typeof result.lineItems[0].lineItemSO !== 'undefined') {
+				j$.cachedData.lineItems = jsonData.lineItems;
+			}
+		}
+
+		if (result.hasOwnProperty('assetLineItems')) {
+			document.getElementById("recordCount").innerHTML = result.assetLineItems.length;
+			if (typeof result.assetLineItems[0].assetLineItemSO !== 'undefined') {
+				j$.cachedData.assetLineItems = jsonData.assetLineItems;
+			}
+		}
+		
+
+		if (result.hasOwnProperty("timeTaken")) {
+			document.getElementById("timeTaken").innerHTML = result.timeTaken;
+
+			//time line display
+			j$.TIME_TRACKER.push(result.timeTaken);
+			document.getElementById("timeRows").innerHTML = document
+					.getElementById("timeRows").innerHTML
+					+ '<tr><td style="width: 60px; text-align: right;">'
+					+ formatDate(new Date())
+					+ '</td><td style="width: 30px; text-align: right;">'
+					+ result.timeTaken + '</td></tr>';
+			var totalTime = 0;
+			for (var i = 0; i < j$.TIME_TRACKER.length; i++) {
+				totalTime += j$.TIME_TRACKER[i];
+			}
+			document.getElementById("averageTime").innerHTML = Math
+					.round(totalTime / j$.TIME_TRACKER.length);
+
+		}
+	}
+
+	/**
+	 * return remote function result
+	 */
+	function invokeRemoteAction(actionName, actionParams) {
+		//Constuct deferred object for return
+		var remoteActionWithParams, resolver, remotingParams;
+		if (!actionName || typeof actionName !== 'string') {
+			console.log("Error - Could not invoke remote action: action name invalid!");
+		}
+		//Construct list with aciton name and parameters to pass to invokeAction
+		remoteActionWithParams = [actionName];
+		for (var argIndex = 0, nextArg; argIndex < actionParams.length; argIndex++) {
+			nextArg = actionParams[argIndex];
+			if (!nextArg) {
+				console.log("Error - Could not construce remote action parameters. Parameter #" + argIndex +" is undefined!");
+			}
+			remoteActionWithParams.push(nextArg);
+
+		}
+		//Add the resolve function and remoting params to argument array
+		resolver = function resolveRemoteAction(result, event) {
+			if (event.status) {
+				displayResult(result);
+				
+			} else {
+				console.log('Error in VF remote: ' + result);
+
+			}
+			
+		};
+		remoteActionWithParams.push(resolver);
+
+		//Add the default parameters for remoting call
+		remotingParams = {
+			"buffer": false, 
+			"escape": true, 
+			"timeout": 30000
+		};
+		remoteActionWithParams.push(remotingParams);
+		
+		console.log('remoteActionWithParams: ' + remoteActionWithParams);
+		//Try to call visualforce remoting invokeAction with the parameters we built 
+		try {
+			Visualforce.remoting.Manager.invokeAction.apply(Visualforce.remoting.Manager, remoteActionWithParams);
+
+		} catch(ex) {
+			
+			console.log('Error - Could not invoke remote action: ' + actionName);
+			console.log(ex);	
+		}
+
+	}
+
+
+	</script>
+
+	<script>
+	j$(function() {
+		j$("#tabs1, #tabs2").tabs();
+	});
+	
+</script>
+
+<style>
+.ui-widget-content { border: none; background: none; color: black; }
+.ui-widget-content a { color: blue; }
+.ui-widget-header { border: none; background: none; color: black; font-weight: bold; }
+.ui-widget-header a { color: blue; }
+
+</style>
+
+<div style="padding: 10px; display: block">
+	<h1>Remote CPQ Admin Workbench</h1>
+
+	<apex:form id="idMainForm">
+		<div id="tabs1">
+			<ul>
+				<li><a href="#createProducts">Create Products</a></li> 
+				<li><a href="#updateProducts">Update Products</a></li>
+				<li><a href="#createCategory">Create a category</a></li>
+				<li><a href="#associateProdToCateg">Associate Product to category</a></li>
+				<li><a href="#removeProductFromCategory">Remove Product from category</a></li>
+				<li><a href="#buildHierarchy">Build Hierarchy</a></li>
+				<li><a href="#removeProdFromHier">Remove Product from Hierarchy</a></li>
+				<li><a href="#isProdInHier">Is Product in Hierarchy?</a></li>
+				<li><a href="#getChildOptionGroups">Get Child Option Groups</a></li>
+				<li><a href="#getChildOptions">Get Child Options</a></li>
+				<li><a href="#getProductStructure">Get Product Structure</a></li>
+				<li><a href="#getParentProducts">Get Parent Products</a></li>
+				<li><a href="#getProductIDs">Get Product IDs</a></li>
+				<li><a href="#getCategoryIDs">Get Category IDs</a></li>
+				<li><a href="#createAttGroup">Create Attribute Group</a></li>
+				<li><a href="#updateAttGroup">Update Attribute Group</a></li>
+				<li><a href="#associateAttGroup">Associate Attribute Group</a></li>
+				<li><a href="#removeAttGroup">Remove Attribute Group</a></li>
+
+				
+				<li><a href="#getAllProducts">Get All Products</a></li>
+				<li><a href="#getProductsAssociatedToCategory">Get Products Associated to Category</a></li>
+				<li><a href="#getDisplayColumns">Get Display Columns</a></li>	
+				<li><a href="#getProductDetails">Get Product Details</a></li>	
+				<li><a href="#getFullCatalogHierarchy">Get Catalog Hierarchy</a></li>
+				<li><a href="#getAssociatedCategories">Get Associated Categories</a></li>	
+				<li><a href="#getAllAttributes">Get All Attributes</a></li>	
+				<li><a href="#getAllPriceLists">Get All Price Lists</a></li>	
+				<li><a href="#getParentBundles">Get Parent Bundles</a></li>	
+				<li><a href="#getPriceListItems">Get PriceList Items</a></li>	
+				<li><a href="#getAssociatedAttributes">Get Associated Attributes</a></li>	
+				<li><a href="#getPriceListItemPicklistMetadata">Get PriceListItem Picklist Metatdata</a></li>	
+				<li><a href="#uploadAttachments">Upload Attachments</a></li>	
+				<li><a href="#updateAttachments">Update Attachments</a></li>
+				<li><a href="#removeAttachments">Remove Attachments</a></li>
+				<li><a href="#getAttachmentsByParentId">Get Attachments</a></li>
+				
+				<li><a href="#createPriceListItems">Create PriceListItem</a></li>
+				<li><a href="#updatePriceListItems">Update PriceListItem</a></li>
+				<li><a href="#deletePriceListItems">Delete PriceListItem</a></li>
+				<li><a href="#getAllProductGroups">Get All Product Groups</a></li>
+				<li><a href="#removeProductsFromOptionGroups">Remove Products from Option Groups</a></li><!-- removeProductsFromOptionGroups -->
+				<li><a href="#getAllOptionGroups">Get All Option Groups</a></li>
+				<li><a href="#getOptionGroupDetails">Get Option Group Details</a></li>
+				<li><a href="#setOptionGroupDetails">Set Option Group Details</a></li>
+
+				<li><a href="#getProductFootnotes">Get Product Footnotes</a></li>	
+				<li><a href="#getProductInformation">Get Product Information</a></li>	
+				<li><a href="#getRelatedProducts">Get Related Products</a></li>	
+				<li><a href="#getAssociatedFeatures">Get Associated Features</a></li>	
+			</ul>
+
+			<div id="createProducts">
+				<div id="ConfigTypeBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Config Type: </span> 
+					<input type="radio" id="standalone" name = "ConfigType" value="Standalone" checked="checked" /><label for="standalone">Standalone</label> 
+					<input type="radio" id="bundle" name = "ConfigType" value="Bundle"  /><label for="bundle">Bundle</label>
+					<input type="radio" id="option" name = "ConfigType" value="Option" /><label for="option">Option</label> 
+				</div>
+				<div style="display: block;">
+					<input name="btnCreateProduct" type="button" value="Create Product" onclick="createProducts();" />
+				</div> 
+			</div>
+
+			<div id="updateProducts">
+				<div id="ConfigTypeBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId26" name="productId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Product Name to be updated: </span> 
+					<input type="text" id="prodName2" name="prodName" />
+				</div>
+				<div style="display: block;">
+					<input name="btnCreateProduct" type="button" value="Create Product" onclick="updateProducts();" />
+				</div> 
+			</div>
+
+			<div id="createCategory">
+				<div id="CategoryTypeBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Category Type: </span> 
+					<input type="radio" id="offering" name = "CategoryType" value="Offering" checked="checked" /><label for="offering">Offering</label>
+					<input type="radio" id="optionGroup" name = "CategoryType" value="Option Group" /><label for="optionGroup">Option Group</label>
+				</div>
+				<div style="display: block;">
+					<input name="btnCreateCategory" type="button" value="Create Category" onclick="createCategory();" />
+				</div> 
+			</div>
+
+			<div id="associateProdToCateg">
+				<div id="associateProdToCategBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId1" name="productId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">CategoryId: </span> 
+					<input type="text" id="categId1" name="categoryId" />
+				</div>
+				<div style="display: block;">
+					<input name="btnAssociateProdToCateg" type="button" value="Associate" onclick="associateProdToCateg();" />
+				</div> 
+			</div>
+
+			<div id="removeProductFromCategory">
+				<div id="removeProductFromCategoryBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId27" name="productId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">CategoryId: </span> 
+					<input type="text" id="categId6" name="categoryId" />
+				</div>
+				<div style="display: block;">
+					<input name="btnRemoveProductFromCategory" type="button" value="Remove" onclick="removeProdFromCateg();" />
+				</div> 
+			</div>
+			<div id="buildHierarchy">
+				<div id="buildHierarchyBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Parent ProductId: </span> 
+					<input type="text" id="prodId6" name="parentProductId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Child ProductId: </span> 
+					<input type="text" id="prodId7" name="childProductId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Parent Option GroupId: </span> 
+					<input type="text" id="categId2" name="parentOptionGrpId" />
+					<span style="font-weight: bold; padding: 4px;">Child Option GroupId: </span> 
+					<input type="text" id="categId3" name="childOptionGrpId" />
+				</div>
+				<div style="display: block;">
+					<input name="btnBuildHierarchy" type="button" value="Build Hierarchy" onclick="buildHierarchy();" />
+				</div> 
+			</div>
+
+			<div id="removeProdFromHier">
+				<div id="removeProdFromHierBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Parent ProductId: </span> 
+					<input type="text" id="prodId8" name="parentProductId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Child ProductId: </span> 
+					<input type="text" id="prodId9" name="childProductId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnRemoveProdFromHier" type="button" value="Remove Product" onclick="removeProdFromHier();" />
+				</div> 
+			</div>
+
+			<div id="isProdInHier">
+				<div id="isProdInHierBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Parent ProductId: </span> 
+					<input type="text" id="prodId10" name="parentProductId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Child ProductId: </span> 
+					<input type="text" id="prodId11" name="childProductId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnProdInHier" type="button" value="Is Product in Hierarchy?" onclick="prodInHier();" />
+				</div> 
+			</div>
+
+			<div id="getChildOptionGroups">
+				<div id="getChildOptionGroupsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId2" name="productId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetChildOptionGroups" type="button" value="Get Child Option Groups" onclick="getChildOptionGroups();" />
+				</div> 
+			</div>
+
+			<div id="getChildOptions">
+				<div id="getChildOptionsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId3" name="productId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">OptionGroupId: </span> 
+					<input type="text" id="optionGroupId1" name="optionGroupId" />
+				</div>
+				<div style="display: block;">
+					<input name="btnGetChildOptions" type="button" value="Get Child Options" onclick="getChildOptions()" />
+				</div> 
+			</div> 
+
+			<div id="getProductStructure">
+				<div id="getProductStructureBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId15" name="productId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetProductStr" type="button" value="Get Product Structure" onclick="getProductStructure();" />
+				</div> 
+			</div>
+
+			<div id="getParentProducts">
+				<div id="getParentProductsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId4" name="productId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetParentProducts" type="button" value="Get Parent Products" onclick="getParentProducts2();" />
+				</div> 
+			</div>
+
+			<div id="getProductIDs"> 
+				<div id="GetProductIDsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Name: </span> 
+					<input type="text" id="prodName" name="prodName" />
+				</div>
+				<div style="display: block;">
+					<input name="btnGetProductIDs" type="button" value="Get Product IDs" onclick="getProductIds();" />
+				</div> 
+			</div>
+
+			 <div id="getCategoryIDs">
+				<div id="GetCategoryIDsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId5" name="productId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetCategoryIDs" type="button" value="Get Category IDs" onclick="getCategoryIds();" />
+				</div> 
+			</div>
+
+			<div id="createAttGroup">
+				
+				<div style="display: block;">
+					<input name="btnCreateAttGroup" type="button" value="Create Attribute Group" onclick="createAttributeGroup();" />
+				</div> 
+			</div>
+
+			<div id="updateAttGroup">
+				
+				<div style="display: block;">
+					<input name="btnUpdateAttGroup" type="button" value="Update Attribute Group" onclick="updateAttributeGroup();" />
+				</div> 
+			</div>
+
+			<div id="associateAttGroup">
+				
+				<div style="display: block;">
+					<input name="btnAssociateAttGroup" type="button" value="Associate Attribute Group" onclick="associateAttributeGroup();" />
+				</div> 
+			</div>
+
+			<div id="removeAttGroup">
+				
+				<div style="display: block;">
+					<input name="btnRemoveAttGroup" type="button" value="Remove Attribute Group" onclick="removeAttributeGroup();" />
+				</div> 
+			</div>
+
+			<!-- new apis  -->
+			<div id="getAllProducts">
+				<div id="GetAllProductsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Chunk Number </span> 
+					<input type="text" id="chunknumber" name="chunknumber" /><br/>
+					<span style="font-weight: bold; padding: 4px;">View name: </span> 
+					<input type="text" id="viewname1" name="viewname" /><br/>
+					<span style="font-weight: bold; padding: 4px;">SearchString: </span> 
+					<input type="text" id="searchstr" name="searchstr" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Config Type: </span> 
+					<input type="text" id="configtype" name="configtype" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetAllProducts" type="button" value="Get All Products" onclick="getAllProducts();" />
+				</div> 
+			</div>
+			
+			<div id="getProductsAssociatedToCategory">
+				<div id="getProductsAssociatedToCategoryBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Category Id: </span> 
+					<input type="text" id="categId5" name="categoryId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetProductsAssociatedToCategory" type="button" value="Get Products associated to Category" onclick="getProductsAssociatedToCategory();" />
+				</div> 
+			</div>
+			
+			<div id="getDisplayColumns">
+				<span style="font-weight: bold; padding: 4px;">View name: </span> 
+				<input type="text" id="viewname2" name="viewname" /><br/>
+				<div style="display: block;">
+					<input name="btnGetDisplayColumns" type="button" value="Get Display Columns" onclick="getDisplayColumns();" />
+				</div> 
+			</div>
+
+			<div id="getProductDetails">
+				<div id="GetProductDetailsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">View name: </span> 
+					<input type="text" id="viewname3" name="viewname" /><br/>
+					<span style="font-weight: bold; padding: 4px;">ProductId: </span> 
+					<input type="text" id="prodId12" name="productId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetProductDetails" type="button" value="Get Product Details" onclick="getProductDetails();" />
+				</div> 
+			</div>
+		
+			<div id="getFullCatalogHierarchy">
+				<div id="getFullCatalogHierarchyBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">PriceList Id: </span> 
+					<input type="text" id="priceListId1" name="priceListId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetCatalogHierarchy" type="button" value="Get Catalog Hierarchy" onclick="getCatalogHierarchy();" />
+				</div> 
+			</div>	
+
+			<div id="getAssociatedCategories">
+				<div id="getAssociatedCategoriesBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId28" name="productId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetAssociatedCategories" type="button" value="Get Associated Categories" onclick="getAssociatedCategories();" />
+				</div> 
+			</div>	
+
+			
+			<div id="getAllAttributes">
+				
+				<div style="display: block;">
+					<input name="btnGetAllAttributes" type="button" value="Get All Attributes" onclick="getAllAttributes();" />
+				</div> 
+			</div>	
+
+			<div id="getAllPriceLists">
+				
+				<div style="display: block;">
+					<input name="btnGetAllPriceLists" type="button" value="Get All PriceLists" onclick="getAllPriceLists();" />
+				</div> 
+			</div>	
+			
+			<div id="getParentBundles">
+				<div id="getParentBundlesBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Category Id: </span> 
+					<input type="text" id="categId4" name="categId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetParentBundles" type="button" value="Get Parent Bundles" onclick="getParentBundles();" />
+				</div> 
+			</div>
+			
+			<div id="getPriceListItems">
+				<div id="getPriceListItemsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId13" name="prodId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetPriceListItems" type="button" value="Get PriceList Items" onclick="getPriceListItems();" />
+				</div> 
+			</div>
+			
+			<div id="getAssociatedAttributes">
+				<div id="getAssociatedAttributesBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId14" name="prodId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetAssociatedAttributes" type="button" value="Get Associated Attributes" onclick="getAssociatedAttributes();" />
+				</div> 
+			</div>
+			
+			<div id="getPriceListItemPicklistMetadata">
+				<div style="display: block;">
+					<input name="btnGetPriceListItemPicklistMetadata" type="button" value="Get PriceListItem Picklist Metadata" onclick="getPriceListItemPicklistMetadata();" />
+				</div> 
+			</div>
+			
+			<div id="uploadAttachments">
+				<div id="uploadAttachmentsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Parent Id: </span> 
+					<input type="text" id="prodId20" name="prodId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Attachment name: </span> 
+					<input type="text" id="attName1" name="attName" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Attachment Body: </span> 
+					<input type="text" id="attBody1" name="attBody" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnUploadAttachments" type="button" value="Upload Attachments" onclick="uploadAttachments();" />
+				</div> 
+			</div>
+
+			<div id="updateAttachments">
+				<div id="updateAttachmentsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Attachment Id: </span> 
+					<input type="text" id="attId1" name="attId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Parent Id: </span> 
+					<input type="text" id="prodId21" name="prodId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Attachment name: </span> 
+					<input type="text" id="attName2" name="attName" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Attachment Body: </span> 
+					<input type="text" id="attBody2" name="attBody" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnUpdateAttachments" type="button" value="Update Attachments" onclick="updateAttachments();" />
+				</div> 
+			</div>
+
+			<div id="removeAttachments">
+				<div id="removeAttachmentsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Attachment Id: </span> 
+					<input type="text" id="attId2" name="attId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnRemoveAttachments" type="button" value="Remove Attachments" onclick="removeAttachments();" />
+				</div> 
+			</div>
+
+			<div id="getAttachmentsByParentId">
+				<div id="getAttachmentsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId22" name="prodId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetAttachments" type="button" value="Get Attachments" onclick="getAttachments();" />
+				</div> 
+			</div>
+			
+			<div id="createPriceListItems">
+				<div id="createPriceListItemsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId23" name="prodId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Price List Id: </span> 
+					<input type="text" id="priceListId2" name="priceListId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnCreatePriceListItems" type="button" value="Create PLI" onclick="createPriceListItems();" />
+				</div> 
+			</div>
+
+			<div id="updatePriceListItems">
+				<div id="updatePriceListItemsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">PLI Id: </span> 
+					<input type="text" id="pliId" name="pliId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">List Price: </span> 
+					<input type="text" id="listPrice" name="listprice" /><br/>
+
+				</div>
+				<div style="display: block;">
+					<input name="btnUpdatePriceListItems" type="button" value="Update PLI" onclick="updatePriceListItems();" />
+				</div> 
+			</div>
+			
+			<div id="deletePriceListItems">
+				<div id="deletePriceListItemsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">PLI Id: </span> 
+					<input type="text" id="pliId2" name="pliId" /><br/>
+
+				</div>
+				<div style="display: block;">
+					<input name="btnDeletePriceListItems" type="button" value="Delete PLI" onclick="deletePriceListItems();" />
+				</div> 
+			</div>
+
+			<div id="getAllProductGroups">
+				<div style="display: block;">
+					<input name="btnGetAllProductGroups" type="button" value="Get All Product Groups" onclick="getAllProductGroups();" />
+				</div> 
+			</div>
+			
+			<div id="removeProductsFromOptionGroups">
+				<div id="removeProductsFromOptionGroupsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">ParentProductId: </span> 
+					<input type="text" id="prodId24" name="prodId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">ChildProductId: </span> 
+					<input type="text" id="prodId25" name="prodId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">ParentOptionGroupId: </span> 
+					<input type="text" id="pogId2" name="pogId" /><br/>
+
+				</div>
+				<div style="display: block;">
+					<input name="btnRemoveProductsFromOptionGroups" type="button" value="Remove Products From Option Groups" onclick="removeProductsFromOptionGroups();" />
+				</div> 
+			</div>
+			
+			<div id="getAllOptionGroups">
+				<div style="display: block;">
+					<input name="btnGetAllOptionGroups" type="button" value="Get All Option Groups" onclick="getAllOptionGroups();" />
+				</div> 
+			</div>
+
+			<div id="getOptionGroupDetails">
+				<div id="getOptionGroupDetailsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Option Group Id: </span> 
+					<input type="text" id="pogId1" name="pogId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetOptionGroupDetails" type="button" value="Get Option Group details" onclick="getOptionGroupDetails();" />
+				</div> 
+			</div>
+
+			<div id="setOptionGroupDetails">
+				<div id="setOptionGroupDetailsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Option Group Id: </span> 
+					<input type="text" id="pogId3" name="pogId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Product Option Component Id: </span> 
+					<input type="text" id="pocId1" name="pocId" /><br/>
+					<span style="font-weight: bold; padding: 4px;">Max Options to Update </span> 
+					<input type="text" id="maxOptions1" name="maxOptions" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnSetOptionGroupDetails" type="button" value="Set Option Group details" onclick="setOptionGroupDetails();" />
+				</div> 
+			</div>
+			
+			
+
+			<div id="getProductFootnotes">
+				<div id="getProductFootnotesBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId19" name="prodId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetProductFootnotes" type="button" value="Get Product Footnotes" onclick="getProductFootnotes();" />
+				</div> 
+			</div>
+
+			<div id="getProductInformation">
+				<div id="getProductInformationBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId16" name="prodId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetProductInformation" type="button" value="Get Product Information" onclick="getProductInformation();" />
+				</div> 
+			</div>
+
+			<div id="getRelatedProducts">
+				<div id="getRelatedProductsBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId17" name="prodId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetRelatedProducts" type="button" value="Get Related Product" onclick="getRelatedProducts();" />
+				</div> 
+			</div>
+
+			<div id="getAssociatedFeatures">
+				<div id="getAssociatedFeaturesBlock" style="display: block;">
+					<span style="font-weight: bold; padding: 4px;">Product Id: </span> 
+					<input type="text" id="prodId18" name="prodId" /><br/>
+				</div>
+				<div style="display: block;">
+					<input name="btnGetAssociatedFeatures" type="button" value="Get Associated Features" onclick="getAssociatedFeatures();" />
+				</div> 
+			</div>
+
+		</div>
+
+		<div id="tabs2">
+			<ul style="clear: left;">
+				<li><a href="#tabs-8">Response</a></li>
+				<li><a href="#tabs-9">Request</a></li>
+			</ul>
+			<div id="tabs-8">
+				<div id="codeViewPortContainer">
+					<div style="display: inline;">
+						<!-- <label for="timeTaken">Time Taken: </label><span id="timeTaken" style="font-weight: bold; color: red;"></span>  -->
+						<label for="recordCount">Record Count: </label><span id="recordCount" style="font-weight: bold; color: red;"></span>
+					</div>
+					<p id="codeViewPort"></p>
+				</div>
+			</div>
+			<div id="tabs-9">
+				<div id="requestViewPortContainer">
+					<p id="requestViewPort"></p>
+				</div>
+			</div>
+		</div>	
+		
+	</apex:form>
+
+</div>
+	
+</apex:page>

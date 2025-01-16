@@ -1,0 +1,134 @@
+<style>
+	.category-tree ul {
+		list-style-type: none;
+		padding: 0px;
+		margin: 12px;
+	}
+
+	.category-tree ul li {
+		background: none; 
+	}
+
+	.expand-icon {
+
+	}
+
+	.selected-category {
+		background: #ADF;
+		border-radius: 4px;
+		padding: 4px;
+	}
+</style>
+<div id="idAngularCatalog" class="container">
+	<div class="col-md-12">
+		<pageactions page-name="catalogPageActions" action-location="topbar"></pageactions>
+	</div>
+	<div class="col-md-2">
+		<div class="row">
+			<h3>{{labels.Categories || 'Categories'}}</h3>
+		</div>
+		<div class="row">
+			<div class="category-tree"
+					 ng-include="'category.html'" 
+					 ng-init="category = categoryTree">
+			</div>
+		</div>
+		<div class="row" style="margin-top: 20px;">
+			Refine Your Search
+
+		<div data-ng-repeat="flt in productFilters track by $index" style="margin-top:2%; font-weight: bold;">
+ 			{{flt.fieldLabel}}
+ 			<div data-ng-repeat="filterValues in flt.filterFieldValues track by $index" style="font-weight: normal;">
+ 				<input type="checkBox" class="filterValues.FieldValue__c" ng-model="filterValues.isSelected" ng-change="searchProducts();"/> <span> {{filterValues.label}} </span>
+
+ 			</div>
+	</div>
+</div>
+	</div>
+	<div class="col-md-7">
+		<div class="row">
+			<span ng-repeat="category in breadcrumb">
+				<a ng-click="filterByCategory(category.nodeId)">{{category.label}}</a>&nbsp;&gt;&nbsp;
+			</span>
+		</div>
+		<div class="row">
+			<div class="row">
+				<!-- <input type="button" value="Refresh" data-ng-click="reloadCatalog();"/> -->
+				<label for="idFilter">Search</label>
+				<input id="idFilter" type="text" data-ng-model="textFilter.productSO.$"/>
+			</div>
+			<div class="row">
+				<span pagination-controls 
+					start="pageStart"
+					end="pageEnd"
+					size="pageSize"
+					items="bundleList.length"
+					options="true">
+				</span>
+			</div>
+		</div>
+		<hr/>
+		<div class="row">
+			<div class="col-md-12" ng-show="isSearching" >
+				{{labels.LoadingProducts}}
+			</div>
+			<div ng-show="!isSearching" >
+				<div class="row">
+					<div class="col-md-3"></div>
+					<div class="col-md-2"></div>
+					<div class="col-md-3">{{labels.Amount}}</div>
+					<div class="col-4">{{labels.OptionQty}}</div>
+				</div>
+				<div class="row"
+							data-ng-repeat="bundle in filteredBundleList = (bundleList | filter: textFilter).slice(pageStart, pageEnd) track by $index"
+							ng-init="bundle.quantity = 1">  
+					<div class="col-md-3">{{bundle.productSO.Name}}</div>
+					<div class="col-md-2">{{bundle.productSO.ProductCode}}</div>
+					<!-- <div class="col-md-2">{{bundle.productSO.Description}}</div> -->
+					<div class="col-md-3" ng-show="bundle.chargeList.length">
+						{{bundle.chargeList[0].ListPrice__c | aptCurrency}}
+					</div>
+					<div class="col-4">
+						<input class="input-sm"
+										type="number"
+										ng-model="bundle.quantity"
+										min="0">
+						</input>
+						<input class="btn btn-default btn-sm"
+										type="button" 
+										data-ng-click="addProductToCart(bundle)"
+										value="Add">
+						</input>
+					</div>
+				</div>
+				<div ng-show="bundleList.length > 0 && filteredBundleList == 0" >
+					{{labels.NoRecordsToDisplay}}
+				</div>
+				<div ng-show="bundleList.length == 0" >
+					No products for category.
+				</div>
+			</div>
+		</div>
+	</div>
+	<minicart class="col-md-3"></minicart>
+</div>
+
+<!-- Template html for recursive tree -->
+<script type="text/ng-template"  id="category.html">
+	<span ng-show="category.childCategories.length > 0"
+				style="cursor: pointer;">
+		<span ng-show="category.expanded" 
+					ng-click="category.expanded = false"> - </span>
+		<span ng-show="!category.expanded" 
+					ng-click="category.expanded = true"> + </span>
+	</span>
+	<span ng-click="filterByCategory(category.nodeId)"
+				ng-class="{'selected-category': (filterCategory == category.nodeId)}">
+		{{category.label}}
+	</span>
+	<ul ng-show="category.expanded">
+		<li ng-repeat="category in category.childCategories"
+				ng-include="'category.html'">
+		</li>
+	</span>
+</script>

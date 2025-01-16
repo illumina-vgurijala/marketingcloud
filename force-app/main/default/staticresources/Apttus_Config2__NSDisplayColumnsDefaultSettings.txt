@@ -1,0 +1,950 @@
+[ {
+  
+  "Name" : "Cart Line Item 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ProductId__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__HeaderStyle__c" : "width:200px;",
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ChargeType__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__BasePrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__OptionPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 5",
+  "Apttus_Config2__Sequence__c" : 5,
+  "Apttus_Config2__StyleClass__c" : "aptQuantity",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__Quantity__c",
+  "Apttus_Config2__Style__c" : "text-align:right; width:60px;",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 6",
+  "Apttus_Config2__Sequence__c" : 6,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__PriceUom__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 7",
+  "Apttus_Config2__Sequence__c" : 7,
+  "Apttus_Config2__StyleClass__c" : "aptQuantity",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__SellingTerm__c",
+  "Apttus_Config2__Style__c" : "text-align:right; width:60px;",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 8",
+  "Apttus_Config2__Sequence__c" : 8,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__SellingFrequency__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 9",
+  "Apttus_Config2__Sequence__c" : 9,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ExtendedPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 10",
+  "Apttus_Config2__Sequence__c" : 10,
+  "Apttus_Config2__StyleClass__c" : "aptAdjustmentType",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustmentType__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 11",
+  "Apttus_Config2__Sequence__c" : 11,
+  "Apttus_Config2__StyleClass__c" : "aptAdjustment",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustmentAmount__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 12",
+  "Apttus_Config2__Sequence__c" : 12,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustedPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 13",
+  "Apttus_Config2__Sequence__c" : 13,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Line Item 14",
+  "Apttus_Config2__Sequence__c" : 14,
+  "Apttus_Config2__StyleClass__c" : "aptPercentage",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetAdjustmentPercent__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Line Item"
+}, {
+  
+  "Name" : "Cart Total Item 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Name",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ChargeType__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__Frequency__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__OptionPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 5",
+  "Apttus_Config2__Sequence__c" : 5,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ExtendedPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 6",
+  "Apttus_Config2__Sequence__c" : 6,
+  "Apttus_Config2__StyleClass__c" : "aptAdjustmentType",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustmentType__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 7",
+  "Apttus_Config2__Sequence__c" : 7,
+  "Apttus_Config2__StyleClass__c" : "aptAdjustment",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustmentAmount__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 8",
+  "Apttus_Config2__Sequence__c" : 8,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustedPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 9",
+  "Apttus_Config2__Sequence__c" : 9,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Cart Total Item 10",
+  "Apttus_Config2__Sequence__c" : 10,
+  "Apttus_Config2__StyleClass__c" : "aptPercentage",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetAdjustmentPercent__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Cart Total Item"
+}, {
+  
+  "Name" : "Asset Line Item 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ProductId__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Name",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__StyleClass__c" : "aptQuantity",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__Quantity__c",
+  "Apttus_Config2__Style__c" : "text-align:right; width:60px;",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AllowedActions__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 5",
+  "Apttus_Config2__Sequence__c" : 5,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__LocationId__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 6",
+  "Apttus_Config2__Sequence__c" : 6,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ChargeType__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 7",
+  "Apttus_Config2__Sequence__c" : 7,
+  "Apttus_Config2__StyleClass__c" : "aptQuantity",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__SellingTerm__c",
+  "Apttus_Config2__Style__c" : "text-align:right;width:60px;",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 8",
+  "Apttus_Config2__Sequence__c" : 8,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__SellingFrequency__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 9",
+  "Apttus_Config2__Sequence__c" : 9,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__StartDate__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 10",
+  "Apttus_Config2__Sequence__c" : 10,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__EndDate__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 11",
+  "Apttus_Config2__Sequence__c" : 11,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right;",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Asset Line Item 12",
+  "Apttus_Config2__Sequence__c" : 12,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AssetStatus__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Asset Line Item"
+}, {
+  
+  "Name" : "Related Purchases 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ProductId__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Name",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__StyleClass__c" : "aptQuantity",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__Quantity__c",
+  "Apttus_Config2__Style__c" : "text-align:right; width:60px;",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AllowedActions__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 5",
+  "Apttus_Config2__Sequence__c" : 5,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__LocationId__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 6",
+  "Apttus_Config2__Sequence__c" : 6,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ChargeType__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 7",
+  "Apttus_Config2__Sequence__c" : 7,
+  "Apttus_Config2__StyleClass__c" : "aptQuantity",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__SellingTerm__c",
+  "Apttus_Config2__Style__c" : "text-align:right;width:60px;",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 8",
+  "Apttus_Config2__Sequence__c" : 8,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__SellingFrequency__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 9",
+  "Apttus_Config2__Sequence__c" : 9,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__StartDate__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 10",
+  "Apttus_Config2__Sequence__c" : 10,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__EndDate__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 11",
+  "Apttus_Config2__Sequence__c" : 11,
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetPrice__c",
+  "Apttus_Config2__Style__c" : "text-align:right;",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Related Purchases 12",
+  "Apttus_Config2__Sequence__c" : 12,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AssetStatus__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Related Purchases"
+}, {
+  
+  "Name" : "Agreement Price Rule 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__Sequence__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Rule"
+}, {
+  
+  "Name" : "Agreement Price Rule 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__PriceListItemId__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Rule"
+}, {
+  
+  "Name" : "Agreement Price Rule 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ProductId__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Rule"
+}, {
+  
+  "Name" : "Agreement Price Rule 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__BundleProductId__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Rule"
+}, {
+  
+  "Name" : "Agreement Price Rule 5",
+  "Apttus_Config2__Sequence__c" : 5,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ChargeType__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Rule"
+}, {
+  
+  "Name" : "Agreement Price Tier 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__Sequence__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier"
+}, {
+  
+  "Name" : "Agreement Price Tier 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__TierStartValue__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier"
+}, {
+  
+  "Name" : "Agreement Price Tier 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__TierEndValue__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier"
+}, {
+  
+  "Name" : "Agreement Price Tier 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__PeriodStartDate__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier"
+}, {
+  
+  "Name" : "Agreement Price Tier 5",
+  "Apttus_Config2__Sequence__c" : 5,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__PeriodEndDate__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier"
+}, {
+  
+  "Name" : "Agreement Price Tier 6",
+  "Apttus_Config2__Sequence__c" : 6,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__TierRate__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier",
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__Style__c" : "text-align:right"
+}, {
+  
+  "Name" : "Agreement Price Tier 7",
+  "Apttus_Config2__Sequence__c" : 7,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__FlatPrice__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier",
+  "Apttus_Config2__StyleClass__c" : "aptCurrency",
+  "Apttus_Config2__Style__c" : "text-align:right"
+}, {
+  
+  "Name" : "Agreement Price Tier 8",
+  "Apttus_Config2__Sequence__c" : 8,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustmentType__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier",
+  "Apttus_Config2__StyleClass__c" : "aptAdjustmentType"
+}, {
+  
+  "Name" : "Agreement Price Tier 9",
+  "Apttus_Config2__Sequence__c" : 9,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__AdjustmentAmount__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Agreement Price Tier",
+  "Apttus_Config2__StyleClass__c" : "aptAdjustment"
+}, {
+
+  "Name" : "Line Item Waterfall 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ListPrice__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Line Item Waterfall"
+}, {
+  
+  "Name" : "Line Item Waterfall 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__BasePrice__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Line Item Waterfall"
+}, {
+  
+  "Name" : "Line Item Waterfall 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetUnitPrice__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Line Item Waterfall"
+}, {
+  
+  "Name" : "Line Item Waterfall 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__BaseCost__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Line Item Waterfall"
+}, {
+  
+  "Name" : "Line Item Waterfall 5",
+  "Apttus_Config2__Sequence__c" : 5,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__UnitCostAdjustment__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Line Item Waterfall"
+}, {
+  
+  "Name" : "Line Item Waterfall 6",
+  "Apttus_Config2__Sequence__c" : 6,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__UnitPriceAdjustmentAuto__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Line Item Waterfall"
+}, {
+  
+  "Name" : "Line Item Waterfall 7",
+  "Apttus_Config2__Sequence__c" : 7,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__UnitPriceAdjustmentManual__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Line Item Waterfall"
+}, {
+  
+  "Name" : "Line Item Metrics 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetPrice__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Line Item Metrics"
+}, {
+  
+  "Name" : "Line Item Metrics 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetAdjustmentPercent__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Line Item Metrics"
+}, {
+  
+  "Name" : "Line Item Metrics 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__GroupAdjustmentPercent__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Line Item Metrics"
+}, {
+  
+  "Name" : "Line Item Metrics 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__Guidance__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Line Item Metrics"
+}, {
+  
+  "Name" : "Summary Waterfall 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ExtendedListPrice__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Summary Waterfall"
+}, {
+  
+  "Name" : "Summary Waterfall 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__ExtendedPrice__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Summary Waterfall"
+}, {
+  
+  "Name" : "Summary Waterfall 3",
+  "Apttus_Config2__Sequence__c" : 3,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetPrice__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Summary Waterfall"
+}, {
+  
+  "Name" : "Summary Waterfall 4",
+  "Apttus_Config2__Sequence__c" : 4,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__BaseExtendedCost__c",
+  "Apttus_Config2__IsEditable__c" : true,
+  "Apttus_Config2__DisplayType__c" : "Summary Waterfall"
+}, {
+  
+  "Name" : "Summary Metrics 1",
+  "Apttus_Config2__Sequence__c" : 1,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetAdjustmentPercent__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Summary Metrics"
+}, {
+  
+  "Name" : "Summary Metrics 2",
+  "Apttus_Config2__Sequence__c" : 2,
+  "Apttus_Config2__IsSortable__c" : false,
+  "Apttus_Config2__FieldName__c" : "Apttus_Config2__NetPrice__c",
+  "Apttus_Config2__IsEditable__c" : false,
+  "Apttus_Config2__DisplayType__c" : "Summary Metrics"
+}, {
+  
+  "Name": "Price Ramp 1",
+  "Apttus_Config2__Sequence__c": 1,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__Quantity__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": false,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Price Ramp 2",
+  "Apttus_Config2__Sequence__c": 2,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__SellingTerm__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Price Ramp 3",
+  "Apttus_Config2__Sequence__c": 3,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__SellingFrequency__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Price Ramp 4",
+  "Apttus_Config2__Sequence__c": 4,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__ExtendedPrice__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": false,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Price Ramp 5",
+  "Apttus_Config2__Sequence__c": 5,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__AdjustmentType__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Price Ramp 6",
+  "Apttus_Config2__Sequence__c": 6,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__AdjustmentAmount__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Price Ramp 7",
+  "Apttus_Config2__Sequence__c": 7,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__StartDate__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Price Ramp 8",
+  "Apttus_Config2__Sequence__c": 8,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__EndDate__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Price Ramp"
+}, {
+  
+  "Name": "Tiered Price 1",
+  "Apttus_Config2__Sequence__c": 1,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__Sequence__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Tiered Price"
+}, {
+  
+  "Name": "Tiered Price 2",
+  "Apttus_Config2__Sequence__c": 2,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__BreakupType__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Tiered Price"
+}, {
+  
+  "Name": "Tiered Price 3",
+  "Apttus_Config2__Sequence__c": 3,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__TierStartValue__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Tiered Price"
+}, {
+  
+  "Name": "Tiered Price 4",
+  "Apttus_Config2__Sequence__c": 4,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__TierEndValue__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Tiered Price"
+}, {
+  
+  "Name": "Tiered Price 5",
+  "Apttus_Config2__Sequence__c": 5,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__TierQuantity__c",
+  "Apttus_Config2__Flow__c": "NGDefault",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Tiered Price"
+}, {
+  
+  "Name": "Tiered Price 6",
+  "Apttus_Config2__Sequence__c": 6,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__TierFlatPrice__c",
+  "Apttus_Config2__Flow__c": "NGDefault",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Tiered Price"
+}, {
+  
+  "Name": "Tiered Price 7",
+  "Apttus_Config2__Sequence__c": 7,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__TierExtendedPrice__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Tiered Price"
+}, {
+  
+  "Name": "Related Price 1",
+  "Apttus_Config2__Sequence__c": 1,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__Sequence__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Related Price"
+}, {
+  
+  "Name": "Related Price 2",
+  "Apttus_Config2__Sequence__c": 2,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__BreakupType__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Related Price"
+}, {
+  
+  "Name": "Related Price 3",
+  "Apttus_Config2__Sequence__c": 3,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__RelatedQuantity__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Related Price"
+}, {
+  
+  "Name": "Related Price 4",
+  "Apttus_Config2__Sequence__c": 4,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__RelatedChargeType__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Related Price"
+}, {
+  
+  "Name": "Related Price 5",
+  "Apttus_Config2__Sequence__c": 5,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__RelatedStartDate__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Related Price"
+}, {
+  
+  "Name": "Related Price 6",
+  "Apttus_Config2__Sequence__c": 6,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__RelatedEndDate__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Related Price"
+}, {
+  
+  "Name": "Related Price 7",
+  "Apttus_Config2__Sequence__c": 7,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__NetUnitPrice__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Related Price"
+}, {
+  
+  "Name": "Adjustment Line Item 1",
+  "Apttus_Config2__Sequence__c": 1,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__Type__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Adjustment Line Item"
+}, {
+  
+  "Name": "Adjustment Line Item 2",
+  "Apttus_Config2__Sequence__c": 2,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__AdjustmentAppliesTo__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Adjustment Line Item"
+}, {
+  
+  "Name": "Adjustment Line Item 3",
+  "Apttus_Config2__Sequence__c": 3,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__AdjustmentType__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Adjustment Line Item"
+}, {
+  
+  "Name": "Adjustment Line Item 4",
+  "Apttus_Config2__Sequence__c": 4,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Apttus_Config2__AdjustmentAmount__c",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": true,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Adjustment Line Item"
+}, {
+  
+  "Name": "Adjustment Line Item 5",
+  "Apttus_Config2__Sequence__c": 5,
+  "Apttus_Config2__IsSortable__c": false,
+  "Apttus_Config2__FieldName__c": "Id",
+  "Apttus_Config2__Flow__c": "Default",
+  "Apttus_Config2__IsEditable__c": false,
+  "Apttus_Config2__IsPricePoint__c": false,
+  "Apttus_Config2__DisplayType__c": "Adjustment Line Item"
+}]

@@ -1,0 +1,137 @@
+<!--
+    Component name: ProactiveComponent
+    Description: To display the runs and metric information corresponding to each Installed product
+-->
+
+<template>
+    <!--- Used to display a spinner at UI during processing time-->
+    <lightning-spinner alternative-text="Loading" variant="brand" size="medium" class={strToggleSpinnerClass}>
+    </lightning-spinner>
+    <!-- Used to display message on UI,when component's criteria is not met-->
+    <template if:true={displayErrorMessage}>
+        <div style="color: firebrick;">
+            <strong>NOTE:-</strong>
+            <lightning-formatted-text value={message}></lightning-formatted-text>
+        </div>
+    </template>
+    <div class="slds-box">
+        <template if:true={showComponent}>
+            <!--- Section hodling filter criteria, Autopopulated and editable-->
+            <lightning-card title="Filter Criteria">
+                <lightning-layout>
+                    <lightning-layout-item flexibility="auto" padding="around-small">
+                        <lightning-input type="date" name="Start_Date" label="Start Date" value={dateBehind} required="true">
+                        </lightning-input>
+                    </lightning-layout-item>
+                    <lightning-layout-item flexibility="auto" padding="around-small">
+                        <lightning-input type="date" name="Endng_Date" label="End Date" value={dateTodays} required="true">
+                        </lightning-input>
+                    </lightning-layout-item>
+                </lightning-layout>
+                <lightning-layout>
+                    <lightning-layout-item flexibility="auto" size="6" padding="around-small" data-id="refreshId">
+                        <c-product-Lookup object-name="SVMXC__Installed_Product__c" label="Installed Product"
+                            field-name="SVMXC__Serial_Lot_Number__c" icon-name="standard:product" display-field="Name"
+                            optional-field="Name" select-record-name={ipName} onselected={handleLookupValueSelectIP}
+                            obj-api-name='SVMXC__Installed_Product__c' required="true">
+                        </c-product-Lookup>
+                    </lightning-layout-item>
+                </lightning-layout>
+                <div class="slds-var-p-top_small">
+                    <lightning-button class="slds-var-m-left_x-small " label="Fetch Runs" variant="brand"
+                        onclick={handleClick} disabled={enableFetchRuns}>
+                    </lightning-button>
+                    <lightning-button class="slds-var-m-left_x-small" label="Reset" variant="neutral" onclick={resetData}>
+                    </lightning-button>
+                </div>
+            </lightning-card>
+        </template>
+    </div>
+
+    <!-- Section to display returned Runs from Proactive system-->
+
+    <template if:true={renderIPResults}>
+        <div class="slds-box">
+            <lightning-card title="Runs Returned" class="slds-var-p-around_x-small">
+                <c-proactive-lightning-data-table 
+                    lst-table-columns={lstAllTableColumns}
+                    lst-table-data={productsReturnedData}
+                    onnextpageevent={handlenextpage}
+                    onmycustomevent={handleCustomEvent}>
+                </c-proactive-lightning-data-table>
+            </lightning-card>
+        </div>
+    </template>
+
+    <!--Section to display the each selected Run's Metric information-->
+
+    <template if:true={displayEachRecInfo}>
+        <div class="slds-box">
+            <lightning-card title="Selected Run's Metrics">
+                <lightning-layout horizontal-align="true" multiple-rows="true">
+                    <template for:each={mapData} for:item="mapKey">
+                        <div class="slds-grid slds-size_1-of-4" key={mapKey.key}>
+                            <lightning-layout-item padding="around-small">
+                                <lightning-input name="Environment" type="text" label={mapKey.key} value={mapKey.value}
+                                    disabled></lightning-input>
+                            </lightning-layout-item>
+                        </div>
+                    </template>
+                </lightning-layout>
+                <lightning-layout>
+
+                    <!-- This allows user to click on the Proactive link provided for each Run-->
+
+                    <lightning-layout-item>
+                        <div class="slds-var-p-around_medium ">
+                            <h1 class="slds-text-heading_small slds-text-title_bold">
+                                Proactive Link
+                            </h1>
+                            <p>
+                                <lightning-formatted-url value={proactiveLink} tooltip="Click to navigate to proactive"
+                                    target="_blank">
+                                </lightning-formatted-url>
+                            </p>
+                        </div>
+                    </lightning-layout-item>
+                </lightning-layout>
+                <lightning-layout>
+                    <div class="slds-var-p-around_medium ">
+                    <h1 class="slds-text-heading_small slds-text-title_bold">
+                        Run's Notes
+                    </h1>
+                    <lightning-layout-item>
+                        <lightning-textarea name="input3" label="" placeholder="Enter notes..." value={runNotes} onchange={notesChange} max-length="1000"></lightning-textarea>
+                    </lightning-layout-item>    
+                    </div>
+                </lightning-layout>
+            </lightning-card>
+        </div>
+    </template>
+
+ <!--CMCM-303-->
+    <!---Section to display the associated products returned from the second response and allow user to select the associated products-->
+    <template if:true={selectAssociatedProducts}>
+        <div class="slds-box">
+            <lightning-card title={label.SelectAssociatedProductHeader}>
+                <!-- sldsValidatorIgnoreNextLine -->
+                <lightning-datatable 
+                    data-id="idApDataTable" 
+                    key-field="serialNumber" 
+                    data={apLstData} 
+                    selected-rows={selectedRows}
+                    columns={apTableColumns}
+                    class="slds-size_1-of-1" 
+                    show-row-number-column>
+    </lightning-datatable>
+    <lightning-layout class="slds-var-p-top_medium">
+        <lightning-button class="slds-var-m-left_x-small " label="Save Run and Products" variant="brand"
+            onclick={saveRunAPData}></lightning-button>
+        <lightning-button class="slds-var-m-left_x-small " label="Cancel" variant="neutral"
+            onclick={closeApSelectionSection}></lightning-button>
+    </lightning-layout>
+            </lightning-card>
+        </div>
+    </template>
+</template>
+<!-- CMCM-303-->

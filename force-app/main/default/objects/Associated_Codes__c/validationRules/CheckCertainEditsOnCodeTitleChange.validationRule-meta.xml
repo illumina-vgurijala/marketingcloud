@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCertainEditsOnCodeTitleChange</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User),
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+				
+TEXT(Case__r.Status) = $Label.CaseStatusPendingQAReview,
+$Permission.SS_Quality_Assurance_Super_User,
+ISCHANGED (Code_Title__c ),
+
+OR(
+ISPICKVAL(PRIORVALUE(Code_Type__c) ,&quot;Analysis&quot;),
+   ISPICKVAL(PRIORVALUE(Code_Type__c) ,&quot;Subject&quot;)
+),
+NOT(CONTAINS(Code_Title_Name__c, &quot;Code Disassociated&quot;)),
+OR(
+TEXT (Code_Title__r.Code_Type__c) != TEXT(PRIORVALUE(Code_Type__c)),
+ISPICKVAL(CheckCertainEditsOnCodeTitleChange_Check__c, &quot;FALSE&quot;),
+Code_Title__r.Logistics_Supply_Chain_code__c,
+TEXT (Code_Title__r.Case_Type__c) != Case__r.RecordType.Name
+)
+
+)</errorConditionFormula>
+    <errorMessage>Updated Associated Codes must have the same Code Type, Case Type, and Case Sub Type, or be “Code Disassociated”. Select a different code that matches the appropriate criteria. If you want to update to a logistics code, reopen the Case instead</errorMessage>
+</ValidationRule>

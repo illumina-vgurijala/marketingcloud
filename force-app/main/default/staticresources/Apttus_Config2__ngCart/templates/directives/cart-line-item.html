@@ -1,0 +1,98 @@
+
+<!--/ http://jsfiddle.net/emn13/YMvk9/-->
+<!--/ http://codepen.io/ajkochanowicz/pen/KHdih-->
+<!--/ CPQ 1.0-->
+<!--/	cl: Standard Price-->
+<!--/ cl: Implementation Fee-->
+<!--/ cl: Installation Fee-->
+<!--/ ol: CPQ Installation-->
+<!--/ ol: + CPQ Master-->
+<!--/			ol: EchoSiqn CPQ-->
+<!--/				cl: Implementation Fee-->
+<!--/ 		ol: CPQ Admin-->
+<!--/-->
+<!--/-->
+<!--/	top level: lineItemCart.item.lineItemSO.Apttus_Config2__ProductId__r.Name-->
+<!--/ option line: subOption.lineItemSO.Option_Name__c-->
+<!--/ charge line: chargeLine.lineItemSO.Apttus_Config2__ChargeType__c-->
+<!--/-->
+<!--/-->
+
+<div ng-class="{'main-cart__product-row--expanded': true, 'main-cart__product-row--unexpanded': false}" class="main-cart__product-row">
+  <!-- Main line item-->
+  <div class="main-cart__product-config">
+    <div ng-repeat="column in lineItemCart.columnKeys" ng-switch="column.FieldType" class="main-cart__product-col main-cart__product-col--{{column.columnClassName}}"><span ng-switch-when="DETAIL" style="{{column.HeaderStyle}}">
+        <div class="checkbox-override">
+          <input type="checkbox" id="cpq-1.0" ng-model="lineItemCart.item.checked"/>
+          <label for="cpq-1.0"></label>
+        </div>
+        <h3>{{lineItemCart.getColumnData(column.FieldName).Name}}
+          <ul class="main-cart__product-details">
+            <li class="main-cart__product-type">Bundle</li>
+            <li class="main-cart__product-approval">Approval Required</li>
+          </ul>
+        </h3></span><span ng-switch-when="CURRENCY">
+        <p>{{lineItemCart.getColumnData(column.FieldName) | currency}}</p></span><span ng-switch-when="DOUBLE">
+        <input type="text" value="{{lineItemCart.getColumnData(column.FieldName)}}" ng-if="!column.IsEditable"/></span><span ng-switch-when="DATE">
+        <date-field date-start="1462838400000" date-end="1494288000000"></date-field></span><span ng-switch-when="REFERENCE">
+        <p>REFERENCE</p></span><span ng-switch-when="PERCENT">
+        <p>PERCENT</p></span><span ng-switch-when="PICKLIST">
+        <div ng-if="!column.IsEditable">{{lineItemCart.getColumnData(column.FieldName)}}</div>
+        <dropdown-list options="column.pickListEntries" model="column.pickListEntries[0].value" ng-if="column.IsEditable"></dropdown-list></span><span ng-switch-when="STRING">
+        <p>STRING</p></span><span ng-switch-default="ng-switch-default">
+        <p>field type not found		</p></span></div>
+  </div>
+  <!-- Charge line-->
+  <div ng-if="lineItemCart.item.chargeLines.length &gt; 0" ng-repeat="chargeLine in lineItemCart.item.chargeLines" ng-include="'lineItemChargeLineRow'" class="main-cart__product-row main-cart__product-row--chargeline"></div>
+  <!--Option line-->
+  <div ng-if="lineItemCart.item.optionLines.length &gt; 0" ng-repeat="optionLine in lineItemCart.item.optionLines" ng-include="'lineItemOptionRow'" class="main-cart__product-row main-cart__product-row--optionline"></div>
+</div>
+<script type="text/ng-template" id="lineItemOptionRow">
+  <div class="main-cart__product-config">
+    <!--SRS - this is going to be changed-->
+    <div class="main-cart__product-col main-cart__product-col--detail">{{optionLine.lineItemSO.Option_Name__c}}</div>
+    <div ng-repeat="column in lineItemCart.columnKeys" ng-switch="column.FieldType" class="main-cart__product-col main-cart__product-col--{{column.columnClassName}}"><span ng-switch-when="CURRENCY">
+        <p>{{optionLine.lineItemSO[column.FieldName] | currency}}</p></span><span ng-switch-when="DOUBLE">
+        <input type="text" value="{{optionLine.lineItemSO[column.FieldName]}}"/></span><span ng-switch-when="DATE">
+        <date-field date-start="1462838400000" date-end="1494288000000"></date-field></span><span ng-switch-when="REFERENCE">
+        <p>REFERENCE</p></span><span ng-switch-when="PERCENT">
+        <p>PERCENT</p></span><span ng-switch-when="PICKLIST">
+        <div ng-if="!column.IsEditable">{{chargeLine.lineItemSO[column.FieldName]}} </div>
+        <dropdown-list options="column.pickListEntries" model="column.pickListEntries[0].value" ng-if="column.IsEditable"></dropdown-list></span><span ng-switch-when="STRING">
+        <p>STRING</p></span></div>
+    <!--First row of option lines-->
+    <div ng-if="optionLine.optionLines.length &gt; 0" ng-repeat="subOptionLine in optionLine.optionLines" ng-include="'lineItemOptionSubLine'" class="main-cart__product-row main-cart__product-row--optionline"></div>
+  </div>
+</script>
+<script type="text/ng-template" id="lineItemOptionSubLine">
+  <!-- Charge line-->
+</script>
+<div ng-if="subOptionLine.chargeLines.length &gt; 0" ng-repeat="chargeLine in subOptionLine.chargeLines" ng-include="'lineItemChargeLineRow'" class="main-cart__product-row main-cart__product-row--chargeline">
+  <div class="main-cart__product-config">
+    <!--SRS - this is going to be changed-->
+    <div class="main-cart__product-col main-cart__product-col--detail">{{subOptionLine.lineItemSO.Option_Name__c}} -subline</div>
+    <div ng-repeat="column in lineItemCart.columnKeys" ng-switch="column.FieldType" class="main-cart__product-col main-cart__product-col--{{column.columnClassName}}"><span ng-switch-when="CURRENCY">
+        <p>{{subOptionLine.lineItemSO[column.FieldName] | currency}}</p></span><span ng-switch-when="DOUBLE">
+        <input type="text" value="{{subOptionLine.lineItemSO[column.FieldName]}}"/></span><span ng-switch-when="DATE">
+        <date-field date-start="1462838400000" date-end="1494288000000"></date-field></span><span ng-switch-when="REFERENCE">
+        <p>REFERENCE</p></span><span ng-switch-when="PERCENT">
+        <p>PERCENT</p></span><span ng-switch-when="PICKLIST">
+        <div ng-if="!column.IsEditable">{{chargeLine.lineItemSO[column.FieldName]}} </div>
+        <dropdown-list options="column.pickListEntries" model="column.pickListEntries[0].value" ng-if="column.IsEditable"></dropdown-list></span><span ng-switch-when="STRING">
+        <p>STRING</p></span></div>
+  </div>
+  <div ng-if="subOptionLine.optionLines.length &gt; 0" ng-repeat="subOptionLine in optionLine.optionLines" ng-include="'lineItemOptionSubLine'" class="main-cart__product-row main-cart__product-row--optionline">		</div>
+</div>
+<script type="text/ng-template" id="lineItemChargeLineRow">
+  <div class="main-cart__product-config">
+    <div ng-repeat="column in lineItemCart.columnKeys" ng-switch="column.FieldType" class="main-cart__product-col main-cart__product-col--{{column.columnClassName}}"><span ng-switch-when="CURRENCY">
+        <p>{{chargeLine.lineItemSO[column.FieldName] | currency}}</p></span><span ng-switch-when="DOUBLE">
+        <input type="text" value="{{chargeLine.getColumnData(column.FieldName)}}"/></span><span ng-switch-when="DATE">
+        <date-field date-start="1462838400000" date-end="1494288000000"></date-field></span><span ng-switch-when="REFERENCE">
+        <p>REFERENCE</p></span><span ng-switch-when="PERCENT">
+        <p>PERCENT</p></span><span ng-switch-when="PICKLIST">
+        <div ng-if="!column.IsEditable">{{chargeLine.lineItemSO[column.FieldName]}} </div>
+        <dropdown-list options="column.pickListEntries" model="column.pickListEntries[0].value" ng-if="column.IsEditable"></dropdown-list></span><span ng-switch-when="STRING">
+        <p>STRING</p></span></div>
+  </div>
+</script>

@@ -1,0 +1,569 @@
+<apex:page standardStylesheets="false" sidebar="false" showHeader="true" controller="openq.InsightChartsController">
+<apex:pageMessages />         
+<apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"> </apex:includescript>
+<apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.js"></apex:includescript>
+<!--[if IE]><script src="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/excanvas.js')}" type="text/javascript"></script><![endif]-->           
+<apex:includescript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/circleMenu.js')}"> </apex:includescript>
+
+<apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/f-combobox.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/common-functions.js')}"/>
+<apex:includeScript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/ui.combobox.r.js')}"/>
+
+
+<script src="../../soap/ajax/26.0/connection.js" type="text/javascript"></script>
+<script src="../../soap/ajax/26.0/apex.js" type="text/javascript"></script>
+
+<apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/common.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/advocacy.css')}"/> 
+
+<apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style2.css')}"/>    
+<apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/autoSuggest.css')}"/>
+<apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/jquery.multiselect.css')}"/> 
+     
+<apex:form rendered="{!contact != null}">
+ 
+     
+
+<div class="breadcrumbs" style="margin-bottom:10px;margin-top:10px;">
+You're here:&nbsp;
+<apex:outputLink value="{!$Page.openq__ContactListView}">Contacts</apex:outputLink>
+    / 
+<span class="active">{!contact.RecordType.Name} — 
+<apex:outputLink value="/{!contact.Id}">&nbsp;{!contact.LastName}{!IF(contact.FirstName != null, ',', '')} {!contact.FirstName}&nbsp;</apex:outputLink>
+/ Insights
+</span>
+</div>
+       
+<div class="marged">
+    <h1 class="header default" style="color: #1F497D; font-weight:bold; font-size: 24px;height: 25px;margin-bottom: -20px;">Insights</h1>
+    <br />
+</div>
+<div style="background-color:#ffffff;position:relative;height:100%;">
+<div class="shadow-wrap">
+        <apex:outputPanel id="all"> 
+        <div id="chatterContainer" class="wi-gen gr b-card shado conc">
+        <apex:outputPanel rendered="true">
+            <a class="btn b-c-minimize" style="background: none; border: none; padding: 0; margin: 0;" > <!-- onclick="hideContactAttributes();" -->
+                <i class="ig0"></i>
+            </a> 
+        </apex:outputPanel>     
+        <div class="block-features marged">
+            <div style="position:relative;" id="EngageIconParent">
+                <div style="   float: left; margin-right: -36px;margin-top: 26px;">Actions</div>
+                <div class="EngageIcon" style="float:left;position:relative; height:35px; width:30px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='{!URLFOR($Resource.StylesScriptsImages,'img/icon_Engage_lg.png')}', sizingMethod='scale');"> </div>
+                
+            </div>
+        
+        </div>
+        <div class="marged">
+            
+            <apex:outputPanel layout="block" rendered="{!contact.openq__OPENQ_Profile_Access_Request_Id__c != null}" title="Profile Already Purchased" style="float:left;" styleClass="navImageCustom navImage3 purchased" />
+            <h1 class="header default" style="margin-left: 0; font-family: Verdana, sans-serif; font-size: 16px; line-height: 28.85px; padding: 0;">{!contact.LastName}{!IF(contact.FirstName != null, ',', '')} {!contact.FirstName}</h1>
+        </div>
+                 
+        <apex:outputPanel id="ContactDetails" rendered="{!IF(isSummary == false, true, false)}">                    
+            <div class="hide">
+                <div id="photoNotSummary" class="photo-wrap kol-photo">
+                    <apex:outputpanel id="image" layout="block">
+                        <apex:image styleClass="fileImage" value="{!URLFOR($Resource.openq__StylesScriptsImages, 'img/unknownperson.jpg')}" rendered="{!NOT( hasPicture )}" height="100" width="100"/>
+                        <apex:image styleClass="fileImage" value="/servlet/servlet.FileDownload?file={!file.Id}" rendered="{!hasPicture}" height="150" width="175"/>
+                    </apex:outputpanel>                             
+                 </div> 
+                 <table style="width:80%">
+                    <tbody>
+                        <tr>
+                            <td style="padding-left: 8px;">
+                                <apex:outputPanel id="spec">   
+                        <apex:outputPanel id="noAddressText" rendered="{!IF(noAddressExists, true, false)}">
+                            <apex:outputText value="No address known"/>
+                            </apex:outputPanel>
+                            <apex:outputText value="{!contact.openq__Physician_Address_Line_1__c}"/><br/>
+                            <apex:outputText value="{!contact.openq__Physician_Address_Line_2__c}"/><br/>
+                            <apex:outputText value="{!contact.openq__Physician_Address_City__c}"/><br/>
+                            <apex:outputText value="{!contact.openq__Physician_Address_State__c}"/>&nbsp;
+                            <apex:outputText value="{!contact.openq__Physician_Address_Postal_Code__c}"/><br/>
+                            <apex:outputText value="{!contact.openq__Physician_Address_Country__c}"/>
+                          </apex:outputPanel>                                                    
+                            </td>
+                            <td>
+                                <a href="mailto:{!email}">{!email}</a><br/>
+                                (P) {!phone}<br/>
+                                (M) {!mobilePhone} 
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>   
+                <div style="clear: both;"></div>               
+            </div>                       
+        </apex:outputPanel>        
+            
+        <apex:outputPanel id="all2">
+                <div class="chatterBar hide" style="margin-top: 40px;">
+                    <chatter:feedWithFollowers entityId="{!contact.Id}" />
+                 </div>
+                <div id="contactAttrSection" class="marged ver {!IF(isSummary == false, 'kol-data clearFix', '')} {!IF(isSummary == true, 'minimumHeight', '')}">
+                    <div id="photoParent" style="position: relative;">
+                        <apex:outputPanel rendered="{!IF(isSummary == true, true, false)}">
+                            <div id="editBtn">                                  
+                                <div class="block-features block-actions">
+                                    <apex:outputLink value="{!$Page.openq__editCoDi}?id={!URLENCODE(contact.Id)}&retUrl={!URLENCODE(contact.Id)}" styleClass="btnCustom default gr btnOverride">Edit Contact</apex:outputLink>
+                                 </div>
+                             </div>
+                         </apex:outputPanel>                                                              
+                     </div>
+                     <div class="n-t-f-info">        
+                         
+                     </div> 
+                 </div>
+             </apex:outputPanel>
+         </div>
+     </apex:outputPanel>             
+</div>
+<style>
+.lensWrapper{ 
+    
+    position: relative;
+    width: 100%;
+    z-index: 99999;
+}
+.lensLabel{
+    margin-left:26px;
+    width:10px;
+}
+.lensOptWrapper{
+    margin-bottom: 10px;
+    margin-left: 70px;
+    margin-top: -20px;
+    position: relative;
+    width: 200px;
+}
+.lensWrapper label{
+    color: #1F497D;
+    font-size: 12px;
+    font-weight: bold;
+    height: 18px;
+    margin-right: 10px;
+    position: relative;
+    vertical-align: middle;
+}
+.relative-wrapper{
+    position:relative;
+    height:550px;
+}
+.loadingStatus{
+    color: #1F497D;
+    font-family: helvetica;
+    font-weight: bold;
+    left: 50%;
+    margin-left: -100px;
+    margin-top: -29px;
+    position: absolute;
+    text-align: center;
+    width: 200px;
+}
+input:focus{
+    outline:none;
+}
+.interactionP{
+    /*float: right;*/
+     width:450px;
+}
+div[id$=interactionPeriodOptWrapp]{
+    text-align:center;
+    float: right;
+        margin-top: -28px;
+}
+.interactionP td {
+    padding-left: 22px;
+    text-align: center;
+    vertical-align: middle;
+    padding-right: 22px;
+}
+</style>
+    <div class="relative-wrapper">
+        <apex:outputpanel id="lensWrapper" styleClass="lensWrapper" layout="block" > 
+            <apex:outputlabel for="lensOpt" value="Lens:" styleClass="lensLabel"/>
+            <div class="lensOptWrapper ui-combobox-container">
+                <apex:selectList id="lensOpt" value="{!selectedChart}" size="1" styleClass="ui-combobox" onchange="evalLoadChart(this);">
+                    <apex:selectOptions value="{!lensOpt}"/>
+                </apex:selectList> 
+            </div>
+            <div class="loadingStatus"> 
+                <apex:actionStatus startText="Loading..." id="loadingStatus" />
+            </div>
+            <apex:outputpanel id="interactionPeriodOptWrapp" layout="block">
+                <apex:outputPanel layout="none" rendered="{!isInteractionChart}">
+                    <div style="float: left; color: rgb(31, 73, 125); font-weight: bold; margin-left: -100px;">Chart Period:</div>
+                </apex:outputPanel>
+                <apex:selectRadio value="{!interactionPeriod}" id="interactionPeriodOp" styleClass="interactionP" rendered="{!isInteractionChart}">
+                    <apex:selectOptions value="{!interactionPeriodOpt}"/>
+                    <apex:actionSupport event="onclick" action="{!loadCharts}" rerender="chartWrapper" status="loadingStatus" oncomplete="floatChart();avoidOverload=false;"/>
+                </apex:selectRadio>
+            </apex:outputpanel>
+            
+        </apex:outputpanel>    
+        
+        <apex:outputpanel styleClass="chartWrapper" id="chartWrapper" layout="block">
+            <c:HighChartComponent width="90%" height="450px" configJsFunc="changeConfig" pgController="{!hcw}" />
+        </apex:outputpanel>
+    </div>
+</div>
+<apex:actionFunction name="loadCharts" action="{!loadCharts}" rerender="chartWrapper,interactionPeriodOptWrapp" status="loadingStatus" oncomplete="floatChart();avoidOverload=false;" >
+    <apex:param value="" name="par1" assignTo="{!selectedChart}" />
+</apex:actionFunction>
+<apex:actionFunction action="{!viewMapping}" name="goToMappingFc"/>
+<apex:outputPanel rendered="{!isInsightEnabled}"> 
+    <apex:actionFunction action="{!viewInsights}" name="goToInsightsFc"/>
+</apex:outputPanel>
+ 
+<script>
+//this function is empty because overwrite a salesforce js function that set the focus in the first input of the page.
+function setFocusOnLoad(){}
+
+
+var lastIndex ='{!JSEncode(selectedChart)}';
+var avoidOverload = false;
+function evalLoadChart(e){
+    if(avoidOverload)return;
+    var index = jQuery('option:selected',e).val();
+    if(lastIndex != index){
+        lastIndex = index;
+        loadCharts(lastIndex);
+        avoidOverload = true;
+    }
+    
+}
+function floatChart(){
+    jQuery('.chartWrapper').css('float','left');
+}
+
+function formaterWhenPieChart(){
+     var s;
+     if (this.point.name) { // the pie chart
+         s =  'Total '+ this.point.name.replace('by Year','').replace('Number','').replace('of','') +': '+ this.y +'<br/>'+'Percentage: '+Math.round(this.point.percentage*10)/10 +' %';
+     } else {
+         s = ''+ this.series.name.replace('by Year','')  +': '+ this.y;
+     }
+     return s;
+                
+}
+function formaterWhenColumnChart(){
+    return  this.series.name.replace('by Year','') +': '+ this.y;
+}
+
+function changeConfig(cfg){ 
+    var plotOptions = {
+           pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: true,
+                    color: '#000000',
+                    connectorColor: '#000000',
+                    format: '<b>{point.name}</b>:{point.percentage:.1f} %'
+                }
+            },
+             column: {
+                stacking: 'normal'
+            },
+             bar: {
+                stacking: 'normal'
+            }
+        }
+     var legend = {
+        labelFormatter : function(){
+            return this.name.replace('by Year','');
+        
+        },
+        itemStyle: {
+           cursor: 'pointer',
+            textAlign:'center'
+        }
+     
+     } 
+     if(cfg.series){
+        var factor = (cfg.series.length<3)?3:cfg.series.length;
+        var exporting = {
+            sourceWidth: 200*factor,
+            sourceHeight: 700,
+            scale: 1
+             
+        }
+          cfg.exporting=exporting;
+      }
+     var tooltip = config.tooltip;
+     tooltip.formatter = window[config.tooltip.formater];
+
+    cfg.tooltip = tooltip;
+    cfg.legend = legend; 
+    cfg.plotOptions = plotOptions; 
+}
+
+jQuery(document).ready(function() {
+    minimize();
+    minimizeBC();       
+    checkPhotoPosition();   
+        
+    jQuery('#settingsSentiment').hide();     
+    floatChart();
+   jQuery('.dateFormat').html('(mm/dd/yyyy)').css( 
+        {   'font-size' : '10px', 
+            'font-style' : 'italic' 
+        });     
+        InitCircleMenu();
+        loadCombos();
+});
+
+
+function uiCombobox_( selector, callback ) {
+    if ( typeof selector == 'function' ) {
+        callback = selector;
+        selector = null;
+    }
+    
+    selector = selector || '.ui-combobox';
+    
+    jQuery( selector )
+        .combobox( { html: true, addClasses: 'ui-widget-combobox input-combobox' } )
+        .siblings( '.ui-autocomplete-input' )
+        .autocomplete( 'option', 'position', { my: "right top", at: "right bottom" } )
+        .autocomplete( { minLength : 0 } )
+        .autocomplete( 'widget' )       
+        .addClass( 'lensCombo-ui-widget-combobox-list' )
+        
+    ;
+    jQuery('.lensCombo-ui-widget-combobox-list').click(function(){
+        jQuery('select[id$=lensOpt]').change();
+    });
+    jQuery(selector).focus(function(){
+        jQuery(selector).autocomplete("search","");
+    });
+}   
+var lastIndexSelected = 0;
+function loadCombos() {
+    uiCombobox_('.ui-combobox-container select');
+    
+    jQuery('.ui-combobox-container select').each(function(i, e) {
+                     
+        var selectElem = jQuery(this);
+        var val = jQuery('option:selected',selectElem).text();
+        var inputElem = selectElem.next('input');
+        inputElem.val(val);         
+        inputElem.change(function(){
+            jQuery('select',this.parentNode).change();
+        });
+        inputElem.blur(function(){
+            jQuery('select',this.parentNode).change();
+        });
+    });
+}
+      
+ function hidePhotoAndName(){
+     
+     jQuery('.socialProfilePhoto').remove();
+     jQuery('.topName').remove();
+     jQuery('.headerPhotoContainer').remove();
+     jQuery('.textBlock').css('float', 'none');
+     jQuery('.textBlock').css('padding-left', '12px');
+     jQuery('.socialRow').css('margin-top', '0px');
+ }
+       
+function alreadyPurchased() {
+    alert('This Profile has already been purchased.');          
+}
+
+function purchaseProfile() {
+    
+    sforce.connection.sessionId = '{!$Api.Session_ID}';    
+    
+    var ans = confirm("You are about to purchase a profile for {!JSENCODE(Contact.Name)}, would you like to proceed?");
+    if(ans) {
+        var res = sforce.apex.execute("{!if(packagePrefix!='',packageprefix+'.','')}OpenQOutboundHandler","requestProfileAccess",{contact_id:'{!Contact.Id}'});
+    
+        if(res=='pass') {
+            alert('Your Profile Purchase Request for {!JSENCODE(Contact.Name)} has been sent to OpenQ');
+            setTimeout("location.reload(true);",2000);              
+         }
+         else {
+             alert('Your request failed');
+         }             
+    } 
+}     
+      
+function hideContactAttributes(){
+    
+    if(jQuery('.b-c-minimize').hasClass('state-minimized')){
+        jQuery('.b-c-minimize').removeClass('state-minimized');
+        jQuery('#contactAttrSection').show();
+    }else{
+        jQuery('.b-c-minimize').addClass('state-minimized');
+        jQuery('#contactAttrSection').hide();
+    }
+}
+
+      
+/*** Minimize feature ***/
+      
+function minimize() {   
+    
+    var doc = document;
+    jQuery( doc.body ).on( 'click.minimize', '.minimize', function(e) {
+    
+        e.preventDefault();
+        var link = $(this);
+
+        if ( link.hasClass( 'in-progress' ) ) { return; }
+
+        var el = undefined,
+            minTarget = ( link.attr( 'minimize' ) || '' ).toLowerCase(),
+             dictionary = {
+                'siblings': 'siblings',
+                'next': 'nextAll'
+            },
+            fxTime = 350
+        ;
+
+        if ( typeof dictionary[ minTarget ] != 'undefined' ) {
+            el = link[ dictionary[ minTarget ] ]();
+        }
+        else {
+            el = $( link.attr('minimize') ); 
+        }
+
+        if ( !el.length ) { return; }
+
+        link.addClass( 'in-progress' );
+
+        if ( el.hasClass( 'minimized-block' ) ) {
+            el.slideDown( fxTime, function() { 
+                el.removeClass( 'minimized-block' ); 
+                link
+                    .removeClass( 'state-minimized' )
+                    .removeClass( 'in-progress' )
+                    .closest( '.minimize-container' )
+                    .removeClass( 'state-minimized' );
+            });
+        }
+        else {
+            el.slideUp( fxTime, function() { 
+                el.addClass( 'minimized-block' ); 
+                link
+                    .addClass( 'state-minimized' )
+                    .removeClass( 'in-progress' )
+                    .closest( '.minimize-container' )
+                    .addClass( 'state-minimized' );
+            });
+        }
+    }); // .minimize
+};
+/*** End Minimize feature ***/
+      
+      
+/*** B-card minimize ***/
+  function minimizeBC() {
+      var initialHeight = 0;
+
+      jQuery( '.b-card .b-c-minimize' ).bind( 'click', function(e) {
+          e.preventDefault();
+          var link = $(this);
+          if ( link.hasClass( 'in-progress' ) ) { return; }
+
+          link.addClass( 'in-progress' );
+
+          var bCard = link.closest( '.b-card' ),
+              header = bCard.find( 'h1.header.default' ),
+              photoWrap = bCard.find( '.kol-photo' )
+          ;
+          
+          if ( link.is( '.state-minimized' ) ) { // The bCard is minimized
+              bCard
+                  .find( '.kol-data' )
+                  .fadeIn( 600 )
+              ;
+              bCard
+                  .animate( { 'height': initialHeight }, toggleClasses );
+              /*header
+                  .animate( { 'marginLeft': '+=' + photoWrap.outerWidth(true) } );*/
+                  
+                  $('.hide').fadeIn('slow');
+          }
+          else {
+              initialHeight = bCard.height();
+              bCard
+                  .css( { height: initialHeight } )
+                  .find( '.kol-data' )
+                  .fadeOut( 400, function() {
+                      bCard
+                          .animate( { 'height': header.outerHeight(true) }, toggleClasses );
+                      /*header
+                          .animate( { 'marginLeft': '-=' + photoWrap.outerWidth(true) } );*/
+                  })
+              ;
+              $('.hide').fadeOut('slow');
+          }           
+          
+          function toggleClasses() {
+              link
+                  .toggleClass( 'state-minimized' )
+                  .removeClass( 'in-progress' );
+              bCard
+                  .toggleClass( 'minimized-block' );                  
+              
+              $('#chatterContainer').css('height', 'auto');
+          }
+      });
+  };
+  /*** End B-card minimize ***/       
+       
+function checkPhotoPosition() {                 
+    if (!{!isSummary}) {        
+        jQuery('#photoNotSummary').css('display', 'block');
+        jQuery('#photoSummary').css('display', 'none');
+        jQuery('.chatterBar.hide').css('margin-top', '10px');
+            
+    }           
+    else {          
+        jQuery('#photoNotSummary').css('display', 'none');
+        jQuery('#photoSummary').css('display', 'block');
+        jQuery('.chatterBar.hide').css('margin-top', 0);
+    }       
+}
+function showPrintBio(){
+    window.print();
+}
+function InitCircleMenu(){
+    
+    jQuery("#EngageIconParent" ).bind('click',function(e){e.stopPropagation();jQuery("#EngageIconParent" ).circleMenu('open');})
+    jQuery("#EngageIconParent" ).circleMenu({ratio:250,iconSize:48,opacity:'0.8',bgColor:'#E5F2F6'});
+      
+    //Purchase Profile
+    <apex:outputPanel layout="none" rendered="{!AND(hasPurchasePermission, contact.openq__OPENQ_Profile_Access_Request_Id__c==null)}">
+        jQuery("#EngageIconParent" ).circleMenu('addButton',{opacity:'0.4',icon:' {!URLFOR($Resource.openq__StylesScriptsImages,'img/purchase.png')}',title:'Purchase Profile',titleShort:'Purchase',actionType:'function',action:purchaseProfile,hoverProp:'',iconBgColor:'#E5F2F6', iconLineColor:'#E5F2F6',titleColor:'#1F497D'});
+    </apex:outputpanel>
+        
+    //Mapping
+    <apex:outputPanel layout="none" rendered="{!hasMappingPermission}"> 
+        jQuery("#EngageIconParent" ).circleMenu('addButton',{opacity:'0.4',icon:' {!URLFOR($Resource.openq__StylesScriptsImages,'img/network.png')}',title:'Mapping',titleShort:'Maps',actionType:'function',action:goToMappingFc,hoverProp:'',iconBgColor:'#E5F2F6', iconLineColor:'#E5F2F6',titleColor:'#1F497D'});
+    </apex:outputPanel>
+    
+    //Insight
+    <apex:outputPanel layout="none" rendered="{!AND(hasAdvocacyPermission, isInsightEnabled)}"> 
+        jQuery("#EngageIconParent" ).circleMenu('addButton',{opacity:'0.4',icon:' {!URLFOR($Resource.openq__StylesScriptsImages,'img/advocacy.png')}',title:'Advocacy',titleShort:'Advocacy',actionType:'function',action:goToInsightsFc,hoverProp:'',iconBgColor:'#E5F2F6', iconLineColor:'#E5F2F6',titleColor:'#1F497D'});
+    </apex:outputpanel>
+    
+    //Edit Contact 
+    <apex:outputPanel layout="none" rendered="{!isContactUpdatable}">
+        jQuery("#EngageIconParent" ).circleMenu('addButton',{opacity:'0.4',icon:'{!URLFOR($Resource.openq__StylesScriptsImages,'img/editContact.png')}',title:'Edit Contact',titleShort:'Edit',actionType:'redirect',action:"{!$Page.openq__editCoDi}?id={!URLENCODE(contact.Id)}&retUrl="+("{!$Page.openq__InsightCharts}".replace('/', ''))+"?contactId={!URLENCODE(contact.Id)}",hoverProp:'',iconBgColor:'#E5F2F6', iconLineColor:'#E5F2F6',titleColor:'#1F497D'});
+    </apex:outputpanel>
+    
+    //Change Photo
+    <apex:outputPanel layout="none" rendered="{!hasChangePhotoPermission}">
+        jQuery("#EngageIconParent" ).circleMenu('addButton',{opacity:'0.4',icon:'{!URLFOR($Resource.openq__StylesScriptsImages,'img/changePhoto.png')}',title:'Change Photo',titleShort:'Photo',actionType:'redirect',action:"{!$Page.openq__fileupload}?id={!contact.Id}&retUrl="+("{!$Page.openq__InsightCharts}".replace('/', ''))+"?contactId={!URLENCODE(contact.id)}",hoverProp:'',iconBgColor:'#E5F2F6', iconLineColor:'#E5F2F6',titleColor:'#1F497D'});
+    </apex:outputPanel>
+    
+ }
+</script>
+</apex:form>
+</apex:page>

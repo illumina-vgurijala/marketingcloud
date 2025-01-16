@@ -1,0 +1,951 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>	<CodeSnippet>		<Snippet>			<SVMXC__Name__c>Standard Get Price</SVMXC__Name__c>			<SVMXC__Data__c>(function(){var tag = new Object();tag[&apos;TAG001&apos;] = &apos;Price not calculated, because entitlement check has not been performed.&apos;;tag[&apos;TAG002&apos;] = &apos;Part is not covered by contract.&apos;;tag[&apos;TAG003&apos;] = &apos;Part is covered by warranty.&apos;;tag[&apos;TAG004&apos;] = &apos;Labor is covered by contract.&apos;;tag[&apos;TAG005&apos;] = &apos;Labor is not covered by contract.&apos;;tag[&apos;TAG006&apos;] = &apos;Labor is covered by warranty&apos;;tag[&apos;TAG007&apos;] = &apos;Expense is covered by contract.&apos;;tag[&apos;TAG008&apos;] = &apos;Expense is not covered by contract.&apos;;tag[&apos;TAG009&apos;] = &apos;Expense is covered by warranty.&apos;;tag[&apos;TAG010&apos;] = &apos;Travel is covered by contract.&apos;;tag[&apos;TAG011&apos;] = &apos;Travel is not covered by contract.&apos;;tag[&apos;TAG012&apos;] = &apos;Travel is covered by warranty.&apos;;tag[&apos;TAG013&apos;] = &apos;Parts price defined in contract.&apos;;tag[&apos;TAG014&apos;] = &apos;Parts price defined in contract price book.&apos;;tag[&apos;TAG015&apos;] = &apos;Parts price defined in standard price book.&apos;;tag[&apos;TAG016&apos;] = &apos;Parts discount defined in contract.&apos;;tag[&apos;TAG017&apos;] = &apos;Labor Price defined in contract.&apos;;tag[&apos;TAG018&apos;] = &apos;Labor Price defined in contract price book.&apos;;tag[&apos;TAG019&apos;] = &apos;Labor Price defined in standard price book.&apos;;tag[&apos;TAG020&apos;] = &apos;Expense Price defined in contract.&apos;;tag[&apos;TAG021&apos;] = &apos;Travel price defined in contract.&apos;;tag[&apos;TAG022&apos;] = &apos;No expense price found for &apos;;tag[&apos;TAG023&apos;] = &apos;No travel price found&apos;;tag[&apos;TAG024&apos;] = &apos;The price for this part could not be determined. Please verify that a price for this part has been set in the service contract or product price book.&apos;;tag[&apos;TAG025&apos;] = &apos;The price for this labor entry cannot be determined. Please verify that a price for this activity has been set in the contract or service price book.&apos;;tag[&apos;TAG026&apos;] = &apos;No warranty found.&apos;;tag[&apos;TAG027&apos;] = &apos;No service offering found.&apos;;tag[&apos;TAG028&apos;] = &apos;A special price is available for &apos;;tag[&apos;TAG029&apos;] = &apos;Part is covered by contract.&apos;;tag[&apos;TAG030&apos;] = &apos;A special price is available for the PRODUCT: &apos;;var setting = new Object();var recordTypeName = new Object();var IBWarranty = new Object();var PSEntitled = new Object();var IBSconPartsPricing = new Object();var IBSconPartsDiscount = new Object();var IBSconLaborPricing = new Object();var LinePartPriceBook = new Object();var LineLaborPriceBook = new Object();var IBSconDefinition = new Object();var IBExpenseInfo = new Object();var totalWorkOrderPrice = 0;function getQuantityField(record){ var recordTypeId = getItemForDetailRecordKey("RecordTypeId", record); if(recordTypeName[recordTypeId.value] == &apos;Estimate&apos;) {  return &apos;Estimated_Quantity2__c&apos;; } if(recordTypeName[recordTypeId.value] == &apos;Usage/Consumption&apos;) {  return &apos;Actual_Quantity2__c&apos;; }}function getUnitPriceField(record){ var recordTypeId = getItemForDetailRecordKey("RecordTypeId", record); if(recordTypeName[recordTypeId.value] == &apos;Estimate&apos;) {  return &apos;Estimated_Price2__c&apos;; } if(recordTypeName[recordTypeId.value] == &apos;Usage/Consumption&apos;) {  return &apos;Actual_Price2__c&apos;; }}function getTotalLinePriceField(record){ var recordTypeId = getItemForDetailRecordKey("RecordTypeId", record); if(recordTypeName[recordTypeId.value] == &apos;Estimate&apos;) {  return &apos;Billable_Line_Price__c&apos;; } if(recordTypeName[recordTypeId.value] == &apos;Usage/Consumption&apos;) {  return &apos;Billable_Line_Price__c&apos;; }}function processPartLine(record, pb, recordType, params){ var linePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record); var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record); var discountField = getItemForDetailRecordKey("Discount__c", record); var product = getItemForDetailRecordKey("Product__c", record); var coverageField = getItemForDetailRecordKey("Covered__c", record); var up = getUnitPriceForPart(product, pb, recordType, params); if(up.tag != null){  var appliedCoverage = {applied: false, isCovered: false};  var discount = 0; if(up.tag == &apos;TAG014&apos; || up.tag == &apos;TAG015&apos;) {  discount = getPartDiscount(product, pb, params); } if(discount &gt; 0) {  addLogWorkOrderLine(params.logField, tag[&apos;TAG016&apos;]); }  discountField.value = getOnlyPositiveValue(discount);    if(!params.isLineEntitled)  {   coverageField.value = 0;   var customCoverage = getPartCustomCoverage(product, pb);   if (customCoverage) {     appliedCoverage = applyServiceOffering(coverageField, customCoverage, "Parts_Discount_Covered__c", "Parts_Discount_Not_Covered__c");   }      if (!appliedCoverage.applied) {     appliedCoverage = applyServiceOffering(coverageField, params.so, "Parts_Discount_Covered__c", "Parts_Discount_Not_Covered__c");    }  }  if(!appliedCoverage.applied){   if(applyWarranty(coverageField, params, "Material_Covered__c")){      addLogWorkOrderLine(params.logField, tag[&apos;TAG003&apos;]);    }  }  else{   appliedCoverage.isCovered == true ? addLogWorkOrderLine(params.logField, tag[&apos;TAG029&apos;]) : addLogWorkOrderLine(params.logField, tag[&apos;TAG002&apos;]);  }    addLogWorkOrderLine(params.logField, tag[up.tag]);   up = getOnlyPositiveValue(up.value);  unitPriceField.value = up;  params.quantity = (params.quantity).toFixed(3);  params.calculatedQuantityField.value = params.quantity;  var rate = params.quantity * up;    var totalLinePrice = getBillableLinePrice(rate, discountField, coverageField);  linePriceField.value = totalLinePrice;  if(params.isBillable){   totalWorkOrderPrice += parseFloat(totalLinePrice);  } } else{  linePriceField.value = 0;  unitPriceField.value = 0;  coverageField.value = 0;  params.calculatedQuantityField.value = 0;  addLogWorkOrderLine(params.logField, tag[&apos;TAG024&apos;]);  return; }}function getUnitPriceForPart(product, pb, recordType, params){ var ret = new Object();  ret.value = -1; ret.tag = null; /* Check if a special pricing is available as part of service contract */ ret.value = getUnitPriceFromPartsSpecialPricing(product, pb, params);   if(ret.value != -1)ret.tag = &apos;TAG013&apos;;  if(ret.value == -1){  /* Check if a service contract exists. Assumption is that if no contract is available, then this item will NOT be available */  var recordTypeKey = &apos;RECORDTYPEINFO_PARTS_CONTRACT&apos;;  /*if(recordTypeInfo)    pbKey = getPriceBookIdForRecordType(recordType, recordTypeInfo);    */    ret.value = getUnitPriceFromPartsPricing(recordTypeKey, pb, product, params, recordType);    if(ret.value != -1)ret.tag = &apos;TAG014&apos;; } /* No price book is available for this record type under service contract, switch to basic calculation */  if(ret.value == -1){   ret.value = getBasicUnitPriceForPart(product, pb, recordType, params);   if(ret.value != -1)ret.tag = &apos;TAG015&apos;; }  if(ret.value == -1) ret.value = 0;  return ret;}function getBasicUnitPriceForPart(product, pb, recordType, params){ var recordTypeKey = &apos;RECORDTYPEINFO_PARTS&apos;, ret = -1;   ret = getUnitPriceFromPartsPricing(recordTypeKey, pb, product, params,recordType); return ret;}function getUnitPriceFromPartsSpecialPricing(product, pb, params){ var specialPricing; var detailLineId = params.detailLineId; if(!params.isLineEntitled){    specialPricing = getFromPriceBookDefinition(pb, "CONTRACT_SPECIALPARTSPRICING"); }else{    if(IBSconPartsPricing &amp;&amp; IBSconPartsPricing[detailLineId]){      specialPricing = new Object();      specialPricing.data = [];      for(var i in IBSconPartsPricing[detailLineId]){        specialPricing.data.push(IBSconPartsPricing[detailLineId][i]);      }    }   } var ret = -1; if(specialPricing){  var allSpecialPricing = specialPricing.data, l = allSpecialPricing.length;  for(var i = 0; i &lt; l; i++){   if( allSpecialPricing[i][getQualifiedFieldName("Product__c")] == product.value){    ret = allSpecialPricing[i][getQualifiedFieldName("Price_Per_Unit__c")];    addLogWorkOrderLine(params.logField, tag[&apos;TAG030&apos;] + product.value1 + &apos;.&apos;);    break;   }  } } return ret;}/** * @returns price if a matching pricebook is found, -1 otherwise */function getUnitPriceFromPartsPricing(recordTypeKey, pb, product, params, recordType){  var partsPricingInfo, detailLineId = params.detailLineId, pbKey ,ret = -1;  var recordTypeInfo = getFromPriceBookDefinition(pb, recordTypeKey);  if(recordTypeInfo)    pbKey = getPriceBookIdForRecordType(recordType, recordTypeInfo);   partsPricingInfo = getFromPriceBookDefinition(pb, "PARTSPRICING");   if(params.isLineEntitled){    if(recordTypeKey == &apos;RECORDTYPEINFO_PARTS_CONTRACT&apos;){      recordTypeKey = &apos;RECORDTYPEINFO_PARTS&apos;;      partsPricingInfo = null;      if(LinePartPriceBook &amp;&amp; LinePartPriceBook[detailLineId] ){        pbKey = null;        partsPricingInfo = new Object();        partsPricingInfo.data = [];        partsPricingInfo.data = LinePartPriceBook[detailLineId];      }    }      }       if(partsPricingInfo){     var allProductsInfo = partsPricingInfo.data, l = allProductsInfo.length, i;    for(i = 0; i &lt; l; i++){     if(((recordTypeKey != &apos;RECORDTYPEINFO_PARTS_CONTRACT&apos; &amp;&amp; pbKey == null ) ||       (pbKey != null &amp;&amp; pbKey == allProductsInfo[i].Pricebook2Id)) &amp;&amp; allProductsInfo[i].Product2Id == product.value){      ret = allProductsInfo[i].UnitPrice;      break;     }    }  } return ret;}function getPartDiscount(product, pb,params){ var discountDefinitionInfo; var prodDefinition = getProductDefinition(pb, product), ret = null; var detailLineId = params.detailLineId; if(prodDefinition){  if(!params.isLineEntitled){    discountDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_PARTSDISCOUNT");  }else{    if(IBSconPartsDiscount &amp;&amp; IBSconPartsDiscount[detailLineId]){      discountDefinitionInfo = new Object();      discountDefinitionInfo.data = [];      for(var i in IBSconPartsDiscount[detailLineId]){        discountDefinitionInfo.data.push(IBSconPartsDiscount[detailLineId][i]);      }          }       }   if(discountDefinitionInfo){   var allDiscountDefinitionInfo = discountDefinitionInfo.data, j, dlength = allDiscountDefinitionInfo.length, bfound = true;   for(j = 0; j &lt; dlength; j++){    bfound = false;    var discountDefinition = allDiscountDefinitionInfo[j];    if(discountDefinition[getQualifiedFieldName("Product__c")] == prodDefinition[&apos;Id&apos;]){     bfound = true;    }else if(prodDefinition[getQualifiedFieldName("Product_Line__c")] &amp;&amp; discountDefinition[getQualifiedFieldName("Product_Line__c")] == prodDefinition[getQualifiedFieldName("Product_Line__c")]){     bfound = true;    }else if(prodDefinition["Family"] &amp;&amp; discountDefinition[getQualifiedFieldName("Product_Family__c")] == prodDefinition["Family"]){     bfound = true;    }        if(bfound){     ret = discountDefinition[getQualifiedFieldName("Discount_Percentage__c")];     break;    }   }  } } return ret;}function getPartCustomCoverage(product, pb){  var prodDefinition = getProductDefinition(pb, product), ret = null;  if(prodDefinition){  var customCoverageInfo = getFromPriceBookDefinition(pb, "CONTRACT_CUSTOMCOVERAGE");  if(customCoverageInfo){   var customCoverages = customCoverageInfo.data, j, dlength = customCoverages.length, bfound = false;   var productTypeField = getQualifiedFieldName("Product_Type__c");   for(j = 0; j &lt; dlength; j++){    var customCoverage = customCoverages[j];    if(customCoverage[productTypeField] == prodDefinition[productTypeField]){     bfound = true;    }        if(bfound){     ret = customCoverage;     ret.isCovered = (customCoverageInfo.value == "COVERED") ? true : false;     break;    }   }  } } return ret;}/*///////////////////////////////////////////////// END - PARTS FUNCTIONS ////////////////////////////////////////////*//*///////////////////////////////////////////////// START - LABOR FUNCTIONS //////////////////////////////////////////*/function processLaborLine( record, pb, recordType, params){ var linePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record); var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record); var activityType = getItemForDetailRecordKey("Activity_Type__c", record); var coverageField = getItemForDetailRecordKey("Covered__c", record); var unitType = getItemForDetailRecordKey("Applied_Rate_Type__c", record); var product = getItemForDetailRecordKey("Product__c", record); var discountField = getItemForDetailRecordKey("Discount__c", record); var up;  if(setting["WORD005_SET019"] === "Product price book"){  up = getPriceForLaborAsParts(product, pb, recordType, params);   var discount = 0; if(up.tag == &apos;TAG014&apos; || up.tag == &apos;TAG015&apos;) {  discount = getPartDiscount(product, pb, params); } if(discount &gt; 0) {  addLogWorkOrderLine(params.logField, tag[&apos;TAG016&apos;]); } discountField.value = getOnlyPositiveValue(discount); } else{  up = getUnitPriceForLabor(activityType, pb, recordType, record, params); }  if(up.tag != null){  var appliedCoverage = {applied: false, isCovered: false};  coverageField.value = 0;  if(!params.isLineEntitled)  {   appliedCoverage = applyServiceOffering(coverageField, params.so, "Labor_Discount_Covered__c", "Labor_Discount_Not_Covered__c");  }  if(!appliedCoverage.applied){   if(applyWarranty(coverageField, params, "Time_Covered__c"))    addLogWorkOrderLine(params.logField, tag[&apos;TAG006&apos;]);  }  else{   appliedCoverage.isCovered == true ? addLogWorkOrderLine(params.logField, tag[&apos;TAG004&apos;]) : addLogWorkOrderLine(params.logField, tag[&apos;TAG005&apos;]);  }  addLogWorkOrderLine(params.logField, tag[up.tag]);  up = up.value;  var rateType = up.rateType, rate = 0, duration, estimateDuration;  var regularRate = up.regularRate;  if(!up.regularRate) regularRate = 0;  var laborRoundingType;  var laborToRoundNearest;  var scMinimumLabor;  var contractDefinitionInfo;  if(rateType == "Per Hour"){    if(!params.isLineEntitled){      contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION");    }else{      var detailLineId = params.detailLineId;      if(IBSconDefinition &amp;&amp; IBSconDefinition[detailLineId]){        contractDefinitionInfo = new Object();        contractDefinitionInfo.data = [];        contractDefinitionInfo.data.push(IBSconDefinition[detailLineId]);      }    }         if(contractDefinitionInfo){    contractDefinition = contractDefinitionInfo.data[0];    laborRoundingType = contractDefinition[getQualifiedFieldName("Labor_Rounding_Type__c")];    laborToRoundNearest = contractDefinition[getQualifiedFieldName("Round_Labor_To_Nearest__c")];    scMinimumLabor = contractDefinition[getQualifiedFieldName("Minimum_Labor__c")];   }   var minDuration = up.minimumUnit ? up.minimumUnit : scMinimumLabor;   estimateDuration = getDuration(record,true);      if(estimateDuration &lt; 0){    estimateDuration = params.quantity * 60;   }   if(laborRoundingType &amp;&amp; laborToRoundNearest)   {    estimateDuration = getRounded(laborRoundingType,laborToRoundNearest,estimateDuration);   }      duration = (minDuration &gt; estimateDuration) ? minDuration  : estimateDuration;   duration = (duration / 60).toFixed(3);   rate = duration * (regularRate );   params.calculatedQuantityField.value = duration;  }else{   /* Flat rate*/   rate = regularRate;   params.calculatedQuantityField.value = 1;  }   unitPriceField.value = regularRate;  /* Added to support both discount and coverage for Labor line based on Global setting */  var totalLinePrice = (!!discountField) ? getBillableLinePrice(rate, discountField, coverageField) : getBillableLinePrice(rate, null, coverageField);  linePriceField.value = totalLinePrice;  if(params.isBillable)   totalWorkOrderPrice += parseFloat(totalLinePrice);  unitType.value = rateType; } else{  linePriceField.value = 0;  unitPriceField.value = 0;  coverageField.value = 0;  params.calculatedQuantityField.value = 0;  addLogWorkOrderLine(params.logField, tag[&apos;TAG025&apos;] + activityType.value);  return; }}function getPriceForLaborAsParts(product, pb, recordType, params){ var up = new Object(); var rate = getUnitPriceForPart(product, pb, recordType, params); up.tag = rate.tag; up.value = {  rateType    : "Per Hour",  regularRate : rate.value,  minimumUnit : null, }; return up;}function getUnitPriceForLabor(activityType, pb, recordType, record, params){ var ret = new Object();  ret.value = null; ret.tag = null;  /* Check if a special pricing is available as part of service contract */ ret.value  = getUnitPriceFromLaborSpecialPricing(activityType, pb, record, params);   if(ret.value  != null) ret.tag = &apos;TAG017&apos;; if(ret.value  == null){   /* Check if a service contract exists. Assumption is that if no contract is available, then this item will NOT be available */  var recordTypeKey = &apos;RECORDTYPEINFO_LABOR_CONTRACT&apos;;    ret.value  = getUnitPriceFromLaborPricing(recordTypeKey, pb, activityType, record, params,recordType);   if(ret.value  != null) ret.tag = &apos;TAG018&apos;; }   /* Get the price book corresponding to record type and do the basic calculation */ if(ret.value  == null){  ret.value  = getBasicUnitPriceForLabor(activityType, pb, recordType, record, params);  if(ret.value  != null) ret.tag = &apos;TAG019&apos;; }  return ret;}function getBasicUnitPriceForLabor(activityType, pb, recordType, record, params){ var recordTypeKey = &apos;RECORDTYPEINFO_LABOR&apos;, ret = null;  ret = getUnitPriceFromLaborPricing(recordTypeKey, pb, activityType, record, params,recordType); return ret;}function getUnitPriceFromLaborSpecialPricing(activityType, pb, record, params){ var detailLineId = params.detailLineId;  var specialPricing ;  if(!params.isLineEntitled){    specialPricing = getFromPriceBookDefinition(pb, "CONTRACT_SPECIALLABORPRICING");  }else{    if(IBSconLaborPricing &amp;&amp; IBSconLaborPricing[detailLineId]){      specialPricing = new Object();      specialPricing.data = [];      for(var i in IBSconLaborPricing[detailLineId]){        specialPricing.data.push(IBSconLaborPricing[detailLineId][i]);      }            }  }   var ret = null; if(specialPricing){  var allSpecialPricing = specialPricing.data, l = allSpecialPricing.length, defaultPricing;  for(var i = 0; i &lt; l; i++){   var pricing = allSpecialPricing[i];   if( pricing[getQualifiedFieldName("Activity_Type__c")] == activityType.value){        ret = extractLaborPricing(pricing, record, pb, "Minimum_Labor__c");    if(ret){     defaultPricing = ret;     if(ret.found) break;    }else{     ret = defaultPricing;    }   }  } }  if(ret) addLogWorkOrderLine(params.logField, tag[&apos;TAG028&apos;] + activityType.value);  return ret;}function getUnitPriceFromLaborPricing(recordTypeKey, pb, activityType, record, params,recordType){ var pbKey; var laborPricingInfo, ret = null;  var detailLineId = params.detailLineId;  var recordTypeInfo = getFromPriceBookDefinition(pb, recordTypeKey);   if(recordTypeInfo)  pbKey = getPriceBookIdForRecordType(recordType, recordTypeInfo); laborPricingInfo = getFromPriceBookDefinition(pb, "LABORPRICING"); if(params.isLineEntitled){  if(recordTypeKey == &apos;RECORDTYPEINFO_LABOR_CONTRACT&apos;){    recordTypeKey = &apos;RECORDTYPEINFO_LABOR&apos;;    laborPricingInfo = null;    if(LineLaborPriceBook &amp;&amp; LineLaborPriceBook[detailLineId]){     pbKey = null;     laborPricingInfo = new Object();     laborPricingInfo.data = [];     laborPricingInfo.data = LineLaborPriceBook[detailLineId];   }  } }  if(laborPricingInfo){ /* Get the price book corresponding to the product type */  var allLaborPricingInfo = laborPricingInfo.data, l = allLaborPricingInfo.length, i, defaultPricing;  for(i = 0; i &lt; l; i++){   var pricing = allLaborPricingInfo[i];   if(((recordTypeKey != &apos;RECORDTYPEINFO_LABOR_CONTRACT&apos; &amp;&amp; pbKey == null ) ||     (pbKey != null &amp;&amp; pbKey == pricing[getQualifiedFieldName("Price_Book__c")])) &amp;&amp; pricing[getQualifiedFieldName("Activity_Type__c")] == activityType.value){    ret = extractLaborPricing(pricing, record, pb);    if(ret){     defaultPricing = ret;     if(ret.found) break;    }else{     ret = defaultPricing;    }   }  } }  return ret;}function extractLaborPricing(pricing, record, pb, minLaborField){ var isAssociatedWithProduct = !!pricing[getQualifiedFieldName("Activity_Product__c")], ret = null; var product = getItemForDetailRecordKey("Product__c", record); if(!product || !product.value || product.value == "") product = woProduct; if(isAssociatedWithProduct &amp;&amp; product &amp;&amp; product.value &amp;&amp; product.value != ""){  var prodDefinition = getProductDefinition(pb, product), bfound = false;  if(!prodDefinition) return;  if((get15CharId(pricing[getQualifiedFieldName("Product__c")]) == get15CharId(product.value))){   bfound = true;  }else if(prodDefinition[getQualifiedFieldName("Product_Line__c")] &amp;&amp; pricing[getQualifiedFieldName("Product_Line__c")] == prodDefinition[getQualifiedFieldName("Product_Line__c")]){   bfound = true;  }else if(prodDefinition["Family"] &amp;&amp; pricing[getQualifiedFieldName("Product_Family__c")] == prodDefinition["Family"]){   bfound = true;  }  if(bfound){   ret = {     rateType    : pricing[getQualifiedFieldName("Unit__c")],     regularRate : pricing[getQualifiedFieldName("Regular_Rate__c")],     minimumUnit : minLaborField != null ? pricing[getQualifiedFieldName(minLaborField)] : null,     found : true   };  } }else{  ret = {    rateType    : pricing[getQualifiedFieldName("Unit__c")],    regularRate : pricing[getQualifiedFieldName("Regular_Rate__c")],    minimumUnit : minLaborField != null ? pricing[getQualifiedFieldName(minLaborField)] : null  };  if(!product) ret.found = true; } return ret;}/*///////////////////////////////////////////////// END - LABOR FUNCTIONS ////////////////////////////////////////////*//*///////////////////////////////////////////////// START - EXPENSE FUNCTIONS ////////////////////////////////////////*/function processExpenseLine(record, pb, params){ var expenseType = getItemForDetailRecordKey("Expense_Type__c", record); var linePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record); var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record); var coverageField = getItemForDetailRecordKey("Covered__c", record);  if(expenseType != "" &amp;&amp; expenseType.value != null &amp;&amp; expenseType.value != ""){  var expenseInfo = null, expenseDetail = null;    if(!params.isLineEntitled){   expenseInfo = getFromPriceBookDefinition(pb, "CONTRACT_EXPENSE"), expenseDetail = null;  }else{    var detailLineId = params.detailLineId;    if(IBExpenseInfo &amp;&amp; IBExpenseInfo[detailLineId]){      expenseInfo = new Object();      expenseInfo.data = [];      for(var i in IBExpenseInfo[detailLineId]){        expenseInfo.data.push(IBExpenseInfo[detailLineId][i]);      }          }  }      /* Covered by service contract */  if(expenseInfo){   var allExpensesInfo = expenseInfo.data, l = allExpensesInfo.length;   for(var i = 0; i &lt; l; i++){    if( allExpensesInfo[i][getQualifiedFieldName("Expense_Type__c")] == expenseType.value){     expenseDetail = allExpensesInfo[i];     break;    }   }      if(expenseDetail != null){    coverageField.value = 0;    var appliedCoverage = applyServiceOffering(coverageField, params.so, "Expense_Discount_Covered__c", "Expense_Discount_Not_Covered__c");    if(!appliedCoverage.applied){     /*Warranty coverage should not be considered*/    }    else{     appliedCoverage.isCovered == true ? addLogWorkOrderLine(params.logField, tag[&apos;TAG007&apos;]) : addLogWorkOrderLine(params.logField, tag[&apos;TAG008&apos;]);    }         addLogWorkOrderLine(params.logField, tag[&apos;TAG020&apos;]);    var totalLinePrice = 0;    params.quantity = (params.quantity).toFixed(3);    var rate = expenseDetail[getQualifiedFieldName("Rate__c")];    var rateType = expenseDetail[getQualifiedFieldName("Rate_Type__c")];    var unitType = getItemForDetailRecordKey("Applied_Rate_Type__c", record);    if(rate !== undefined &amp;&amp; rate !== null &amp;&amp; typeof(rate) === "string") rate = parseFloat(rate);    if(rateType == "Per Unit"){     unitPriceField.value = rate;     totalLinePrice = params.quantity * rate;    }else if(rateType == "Flat Rate"){     totalLinePrice = rate;     params.calculatedQuantityField.value = 1;     unitPriceField.value = rate;    }else if(rateType == "Markup %"){     if(unitPriceField.value &amp;&amp; unitPriceField.value != null &amp;&amp; unitPriceField.value &gt; 0)      totalLinePrice = unitPriceField.value * ((100 + rate) / 100) * params.quantity;    }else if(rateType == "Actuals"){     if(unitPriceField.value &amp;&amp; unitPriceField.value != null &amp;&amp; unitPriceField.value &gt; 0)      totalLinePrice = unitPriceField.value * params.quantity;    }else if(rateType == "Discount %"){     if(unitPriceField.value &amp;&amp; unitPriceField.value != null &amp;&amp; unitPriceField.value &gt; 0)      totalLinePrice = unitPriceField.value * ((100 - rate) / 100) * params.quantity;    }    totalLinePrice = getBillableLinePrice(totalLinePrice, null, coverageField);    linePriceField.value = totalLinePrice;    if(params.isBillable)     totalWorkOrderPrice += parseFloat(totalLinePrice);    unitType.value = rateType;    params.calculatedQuantityField.value = params.quantity;   }   else{    linePriceField.value = 0;    unitPriceField.value = 0;    coverageField.value = 0;    params.calculatedQuantityField.value = 0;    addLogWorkOrderLine(params.logField, tag[&apos;TAG022&apos;] + expenseType.value);    return;   }  }  /* Covered by warranty */  else if(applyWarranty(coverageField, params, "Expenses_Covered__c")){   addLogWorkOrderLine(params.logField, tag[&apos;TAG009&apos;]);   totalLinePrice = 0;   params.quantity = (params.quantity).toFixed(3);   totalLinePrice = params.quantity * unitPriceField.value;   totalLinePrice = getBillableLinePrice(totalLinePrice, null, coverageField);   linePriceField.value = totalLinePrice;   if(params.isBillable)    totalWorkOrderPrice += parseFloat(totalLinePrice);   params.calculatedQuantityField.value = params.quantity;  }  else{    linePriceField.value = 0;    unitPriceField.value = 0;    coverageField.value = 0;    params.calculatedQuantityField.value = 0;    addLogWorkOrderLine(params.logField, tag[&apos;TAG022&apos;] + expenseType.value);    return;  } }}/*///////////////////////////////////////////////// END - EXPENSE FUNCTIONS //////////////////////////////////////////*//*///////////////////////////////////////////////// START - TRAVEL FUNCTIONS ////////////////////////////////////////*/function processTravelLine(record, pb, params){ var linePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record); var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record); var unitType = getItemForDetailRecordKey("Applied_Rate_Type__c", record); var coverageField = getItemForDetailRecordKey("Covered__c", record); var appliedTravelPolicy = null, regularRate = 0; appliedTravelPolicy = params.appliedTravelPolicy; if(!params.isLineEntitled &amp;&amp; appliedTravelPolicy){  addLogWorkOrderLine(params.logField, tag[&apos;TAG021&apos;]);  var unit = appliedTravelPolicy[getQualifiedFieldName("Unit__c")];  var rate = 0, i, l;  var travelRoundingType;  var travelToRoundNearest;  var travel;  var contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION");  if(contractDefinitionInfo){   contractDefinition = contractDefinitionInfo.data[0];   travelRoundingType = contractDefinition[getQualifiedFieldName("Travel_Rounding_Type__c")];   travelToRoundNearest = contractDefinition[getQualifiedFieldName("Round_Travel_To_Nearest__c")];   scMinimumTravel = contractDefinition[getQualifiedFieldName("Minimum_Travel__c")];  }   if(unit == "Tiered Per Mile/Km"){   clearTravelLine(record, pb, params);   var mileageTiersInfo = getFromPriceBookDefinition(pb, "CONTRACT_MILEAGETIERS");   if(mileageTiersInfo){    var allMileageTiers = mileageTiersInfo.data, l = allMileageTiers.length;    for(i = 0; i &lt; l; i++){     var mileageTier = allMileageTiers[i], min = mileageTier[getQualifiedFieldName("Minimum__c")],         max = mileageTier[getQualifiedFieldName("Maximum__c")];          if(min == undefined || max == undefined) continue;          var mtEstimate = params.quantity;            if(mtEstimate &gt;= min &amp;&amp; mtEstimate &lt;= max){      var mtRateType = mileageTier[getQualifiedFieldName("Unit__c")];      var mtRate = mileageTier[getQualifiedFieldName("Rate__c")];            if(mtRateType == "Flat Rate"){       regularRate = mtRate;       rate = mtRate;       params.calculatedQuantityField.value = 1;      }else{              regularRate = mtRate;       mtEstimate = (mtEstimate).toFixed(3);       params.calculatedQuantityField.value = mtEstimate;       rate = mtEstimate * mtRate;      }      break;     }         }   }   if(coverageField.value == null) coverageField.value = 0;  }else if(unit == "Per Hour"){   regularRate = appliedTravelPolicy[getQualifiedFieldName("Rate__c")];   var estimatedDuration = getDuration(record,true);      if(estimatedDuration &lt; 0){    estimatedDuration = params.quantity * 60;   }   if(travelRoundingType &amp;&amp; travelToRoundNearest){    estimatedDuration = getRounded(travelRoundingType,travelToRoundNearest,estimatedDuration);   }   var minDuration = scMinimumTravel &gt; estimatedDuration ? scMinimumTravel : estimatedDuration;   minDuration = (minDuration / 60).toFixed(3);   params.calculatedQuantityField.value = minDuration;     rate = minDuration * (regularRate);   if(coverageField.value == null) coverageField.value = 0;  }else if(unit == "Zone Based"){   var contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION");   if(contractDefinitionInfo){    contractDefinition = contractDefinitionInfo.data[0],zone = contractDefinition[getQualifiedFieldName("Zone__c")];    var zonePriceInfo = getFromPriceBookDefinition(pb, "CONTRACT_ZONEPRICING");    if(zonePriceInfo){     var allzonePricing = zonePriceInfo.data, l = allzonePricing.length;     for(i = 0; i &lt; l; i++){      var zonePricing = allzonePricing[i], zoneFromZonePricing = zonePricing[getQualifiedFieldName("Zone__c")];      if(zoneFromZonePricing == zone){       /* Apply flat rate */       rate = zonePricing[getQualifiedFieldName("Rate__c")];       regularRate = rate;       params.calculatedQuantityField.value = 1;       break;      }     }    }   }   if(coverageField.value == null) coverageField.value = 0;  }  else{   linePriceField.value = 0;   unitPriceField.value = 0;   coverageField.value = 0;   params.calculatedQuantityField.value = 0;   addLogWorkOrderLine(params.logField, tag[&apos;TAG023&apos;]);   $EXPR.Logger.warn(tag[&apos;TAG023&apos;]);   return;  } } var appliedCoverage = {applied: false, isCovered: false}; if(regularRate &gt; 0 &amp;&amp;  !params.isLineEntitled){  appliedCoverage = applyServiceOffering(coverageField, params.so, "Travel_Discount_Covered__c", "Travel_Discount_Not_Covered__c");  if(!appliedCoverage.applied){   if(applyWarranty(coverageField, params, "Travel_Covered__c"))    addLogWorkOrderLine(params.logField, tag[&apos;TAG012&apos;]);  }  else{   appliedCoverage.isCovered == true ? addLogWorkOrderLine(params.logField, tag[&apos;TAG010&apos;]) : addLogWorkOrderLine(params.logField, tag[&apos;TAG011&apos;]);  }    unitPriceField.value = regularRate;  var totalLinePrice = getBillableLinePrice(rate, null, coverageField);  linePriceField.value = totalLinePrice;  if(params.isBillable)   totalWorkOrderPrice += parseFloat(totalLinePrice);  unitType.value = unit; } /* Covered by warranty */ else if(params.warranty){  var totalLinePrice = 0;  var travelDuration = getDuration(record,true);  if(travelDuration &lt; 0){   travelDuration = params.quantity * 60;  }  params.quantity = (travelDuration / 60).toFixed(3);  totalLinePrice = params.quantity * unitPriceField.value;  linePriceField.value = totalLinePrice;  if(params.isBillable)   totalWorkOrderPrice += parseFloat(totalLinePrice);  params.calculatedQuantityField.value = params.quantity; }}</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code001</SVMXC__SnippetId__c>			<SVMXC__Description__c>Standard Get Price</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>JavaScript</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c></SVMXC__Name__c>			<SVMXC__Data__c>function clearTravelLine(record, pb, params){ var linePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record); var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record); var coverageField = getItemForDetailRecordKey("Covered__c", record); linePriceField.value = 0; unitPriceField.value = 0; coverageField.value = 0; params.calculatedQuantityField.value = 0;}function getTravelPolicy(context, pb){    var travelPolicyInfo = getFromPriceBookDefinition(pb, "CONTRACT_TRAVELPOLICY"), appliedTravelPolicy = null;    if(travelPolicyInfo){  var wo = getMasterWorkOrder(context, pb);  appliedTravelPolicy = executeTravelPolicy(travelPolicyInfo.data, pb, wo); } return appliedTravelPolicy;}function executeTravelPolicy(travelPolicyInfo, pb, wo){ var i, l = travelPolicyInfo.length, appliedTravelPolicy = null; for(i = 0; i &lt; l; i++){  var travelPolicy = travelPolicyInfo[i];  var expressionId = travelPolicy[getQualifiedFieldName("Named_Expression__c")];  var expression = getExpression(expressionId, pb);  if(!expression){   appliedTravelPolicy = travelPolicy;   break;  }else{   var result = executeExpression(expression, wo);   if(result == true){    appliedTravelPolicy = travelPolicy;    break;   }  } } return appliedTravelPolicy;}/*///////////////////////////////////////////////// END - TRAVEL FUNCTIONS ////////////////////////////////////////////*/function getDuration(lineItem, inMinutes){ var startDateTime = null, endDateTime = null; var startDate = getItemForDetailRecordKey("Start_Date_and_Time__c", lineItem); var endDate = getItemForDetailRecordKey("End_Date_and_Time__c", lineItem); var duration = -1;  if(startDate == null || startDate.value == null || startDate.value == ""   || endDate == null || endDate.value == null || endDate.value == ""){  duration = -1; }else{    /* Calculate time */  startDateTime = getDateFromString(startDate.value);  endDateTime = getDateFromString(endDate.value);  var diff = (endDateTime - startDateTime) / (1000.0 * 60.0);    if(!inMinutes){   diff /= 60.0;   /* Assumed to be in hours */   diff = Math.ceil(diff);  }  if(diff &gt; 0){   duration = Math.round(diff*100)/100 ;  } } return duration;}function applyWarranty(coverageField, params, wField){ var warranty;  coverageField.value = 0; var detailLineId = params.detailLineId; if(!params.isLineEntitled){  warranty = params.warranty; }else{  if(IBWarranty &amp;&amp; IBWarranty[detailLineId])     warranty = IBWarranty[detailLineId]; }  if(warranty){  var coverage = warranty[getQualifiedFieldName(wField)];  coverageField.value =  getOnlyPositiveValue(coverage);  return true; } else {  $EXPR.Logger.info(tag[&apos;TAG026&apos;]);    }}function applyServiceOffering(coverageField, so, coveredField, notCoveredField){ var response = new Object(), coverage = null, fld = null; response.isCovered = false; response.applied = false; if(so){  if(so.isCovered){   fld = coveredField;   response.isCovered = true;  }else{   fld = notCoveredField;  }    coverage = so[getQualifiedFieldName(fld)];  coverageField.value = getOnlyPositiveValue(coverage);  response.applied = true; }else {  $EXPR.Logger.info(tag[&apos;TAG027&apos;]);    }  return response;}function addLogWorkOrderLine(logField, logMessage){ logField.value += logMessage + &apos;&apos;; logField.value1 += logMessage + &apos;&apos;; $EXPR.Logger.info(logMessage);}function getOnlyPositiveValue(value){ if(value == null || value &lt; 0) {  return 0;    } else {  return value;    }}function getPriceBookIdForRecordType(recordType, recordTypeInfo){ var rtype2PriceBookMap = recordTypeInfo.valueMap, l = rtype2PriceBookMap.length, i, pbKey = null; for(i = 0; i &lt; l; i++){  var rtype2PriceBook = rtype2PriceBookMap[i];  if(rtype2PriceBook.key == recordType.value){   pbKey = rtype2PriceBook.value;   break;  } } return pbKey;}function getFromPriceBookDefinition(pb, key){ var i, l = pb.length, ret = null; for(i = 0; i &lt; l; i++){  if(pb[i].key == key){   ret = pb[i];   break;  } } return ret;}function getWarrantyDefinition(pb){ var wDef = getFromPriceBookDefinition(pb, "WARRANTYDEFINITION"), ret = null; if(wDef) ret = wDef.data[0];  return ret;}function getIBWarrantyDefinition(pb){ var wDef = getFromPriceBookDefinition(pb, "IBWARRANTY"), ret = null; IBWarranty = createSingleObject(wDef);/*Line SCON Definition*/ wDef = getFromPriceBookDefinition(pb, "LINECONTRACTDEFINITION");  IBSconDefinition = createSingleObject(wDef);  /*Line Parts Pricing*/ wDef = getFromPriceBookDefinition(pb, "LINEPARTSPRICING");  IBSconPartsPricing = createObject(wDef);  /*Line Parts Discount Pricing */  wDef = getFromPriceBookDefinition(pb, "LINEPARTSDISCOUNTPRICING");   IBSconPartsDiscount = createObject(wDef);      wDef = getFromPriceBookDefinition(pb, "LINELABORPRICING");  IBSconLaborPricing = createObject(wDef);    wDef = getFromPriceBookDefinition(pb, "LINEEXPENSEPRICING");  IBExpenseInfo = createObject(wDef);    wDef = getFromPriceBookDefinition(pb, "LINEPARTPRICEBOOK");  LinePartPriceBook = createObject(wDef);    wDef = getFromPriceBookDefinition(pb, "LINELABORPRICEBOOK");  LineLaborPriceBook = createObject(wDef);    wDef = getFromPriceBookDefinition(pb, "LINEWARRANTYENTITLED");  var valueMap = [];  if(wDef &amp;&amp; wDef.valueMap){     var valueList = wDef.valueMap;     for(var i=0 ; i &lt; valueList.length; i++){      valueMap.push(valueList[i]);     }  }    wDef = getFromPriceBookDefinition(pb, "LINESCONTRACTENTITLED");  if(wDef &amp;&amp; wDef.valueMap){    var valueList = wDef.valueMap;    for(var i=0 ; i &lt; valueList.length; i++){      valueMap.push(valueList[i]);    }  }    for (var i = 0; i &lt; valueMap.length; i++) {   if(valueMap[i]){    if(valueMap[i].key &amp;&amp; valueMap[i].value){      if(PSEntitled[valueMap[i].key] &amp;&amp; PSEntitled[valueMap[i].key] == &apos;true&apos;){              continue;      }          PSEntitled[valueMap[i].key] = valueMap[i].value;    }   }  }   return ret;}function createSingleObject(wDef){ var tempObj = new Object(); if(wDef &amp;&amp; wDef.valueMap){  if(!wDef.valueMap.length)   wDef.valueMap = [wDef.valueMap];  for (var i = 0; i &lt; wDef.valueMap.length; i++) {   if(wDef.valueMap[i]){    if(wDef.valueMap[i].values &amp;&amp; !wDef.valueMap[i].values.length){          wDef.valueMap[i].values = [wDef.valueMap[i].values];    }    if(wDef.valueMap[i].values){     for (var j = 0; j &lt; wDef.valueMap[i].values.length; j++) {      tempObj[wDef.valueMap[i].values[j]] = wDef.valueMap[i].record;     }    }   }  } } return tempObj;}function createObject(wDef){ var tempObj = new Object(); if(wDef &amp;&amp; wDef.valueMap){  if(!wDef.valueMap.length)   wDef.valueMap = [wDef.valueMap];  for (var i = 0; i &lt; wDef.valueMap.length; i++) {   if(wDef.valueMap[i]){    if(wDef.valueMap[i].values &amp;&amp; !wDef.valueMap[i].values.length){          wDef.valueMap[i].values = [wDef.valueMap[i].values];    }    if(wDef.valueMap[i].values){     for (var j = 0; j &lt; wDef.valueMap[i].values.length; j++) {      if(tempObj[wDef.valueMap[i].values[j]]){        var temp = tempObj[wDef.valueMap[i].values[j]] ;        temp.push(wDef.valueMap[i].record);        tempObj[wDef.valueMap[i].values[j]] = temp;      }else{        tempObj[wDef.valueMap[i].values[j]] = [wDef.valueMap[i].record];      }            }    }   }  } } return tempObj;}function getServiceOffering(pb){ var so = getFromPriceBookDefinition(pb, "CONTRACT_SERVICEOFFERING"), ret = null; if(so) {  ret = so.data[0];  ret.isCovered = (so.value == "COVERED") ? true : false; } return ret;}function getItemForDetailRecordKey(key, record){   key = getFieldAPI(key);  var length = record.length, k, ret = ""; for(k = 0; k &lt; length; k++){  var fld = record[k];  if(fld.key == key){   ret = fld;   break;  } } return ret;}function getFieldAPI(key){ if(key.indexOf("__c", key.length - "__c".length) !== -1){  key = $EXPR.getOrgNamespace() + "__" + key; } return key;}function getQualifiedFieldName(name){ return $EXPR.getOrgNamespace() + "__" + name;}function getDateFromString(dateStr){ var dt = dateStr.split(" "); var date = dt[0].split("-"); var time = dt[1].split(":"); return new Date(parseInt(date[0], 10), parseInt(date[1]-1, 10), parseInt(date[2], 10),    parseInt(time[0], 10), parseInt(time[1], 10), parseInt(time[2], 10));}/* Hack to get around mixed ID lengths */function get15CharId(id){ if(id &amp;&amp; id.length == 18) {  id = id.substring(0, 15);    }  return id;}function formatAdvancedExpression(){ if(arguments.length == 0 ) { return "";}  var formatted = arguments[0];     for (var i = 0; i &lt; arguments[1].length; i++) {     formatted = formatted.split( "" + (i+1) ).join(arguments[1][i]);    }    return formatted;}function getProductDefinition(pb, product){ var prodDefinitionInfo = getFromPriceBookDefinition(pb, "PRODUCT_DEFINITION"), ret = null; if(prodDefinitionInfo){  var allProdDefinitionInfo = prodDefinitionInfo.data, i, l = allProdDefinitionInfo.length;  for(i = 0; i &lt; l; i++){   if(allProdDefinitionInfo[i].Id == product.value){    ret = allProdDefinitionInfo[i];    break;   }  } } return ret;}function executeExpression(expression, wo){  var expressionLines = expression.data, j, elength = expressionLines.length, exp = [], input = []; expressionLines = $SORT(expressionLines,getQualifiedFieldName("Sequence__c")); for(j = 0; j &lt; elength; j++){  var expressionLine = expressionLines[j];  var field = expressionLine[getQualifiedFieldName("Field_Name__c")];  var operator = expressionLine[getQualifiedFieldName("Operator__c")];  var operand = expressionLine[getQualifiedFieldName("Operand__c")];    input[j] = {field : field, value : operand};  if(operator == "starts"){   exp[j] = $FORMAT("$STARTS_WITH({0})", "input[" + j + "]");  }else if(operator == "contains"){   exp[j] = $FORMAT("$CONTAINS({0})", "input[" + j + "]");  }else if(operator == "eq"){   exp[j] = $FORMAT("$EQUALS({0})", "input[" + j + "]");  }else if(operator == "ne"){   exp[j] = $FORMAT("$NOT_EQUALS({0})", "input[" + j + "]");  }else if(operator == "gt"){   exp[j] = $FORMAT("$GREATER_THAN({0})", "input[" + j + "]");  }else if(operator == "ge"){   exp[j] = $FORMAT("$GREATER_THAN_OR_EQUAL_TO({0})", "input[" + j + "]");  }else if(operator == "lt"){   exp[j] = $FORMAT("$LESS_THAN({0})", "input[" + j + "]");  }else if(operator == "le"){   exp[j] = $FORMAT("$LESS_THAN_OR_EQUAL_TO({0})", "input[" + j + "]");  }else if(operator == "isnotnull"){   exp[j] = $FORMAT("$IS_NOT_NULL({0})", "input[" + j + "]");  }else if(operator == "isnull"){   exp[j] = $FORMAT("$IS_NULL({0})", "input[" + j + "]");  } }  var advancedExpression = expression.value; if(!advancedExpression || advancedExpression == null){  advancedExpression = "( ";  for(k = 0; k &lt; exp.length; k++){   advancedExpression += (k+1) + " AND ";  }      /* Remove the last AND */  advancedExpression = advancedExpression.substring(0, advancedExpression.length - 4);  advancedExpression += " )"; }   /* Replace apex conditional operators with JS operators */  advancedExpression = advancedExpression.toUpperCase(); advancedExpression = advancedExpression.split("AND").join("&amp;&amp;").split("OR").join("||"); var jsExpression = formatAdvancedExpression(advancedExpression, exp);  /* Evaluate the expression */ var result = true; (function(jsExpression, wo){    function $EQUALS(ip){   if(wo[ip.field] == ip.value) {    return true;   }   else {    return false;   }  }    function $STARTS_WITH(ip){   var field = wo[ip.field];   if(!field) field = "";      return field.indexOf(ip.value) == 0;  }    function $CONTAINS(ip){   var field = wo[ip.field];   if(!field) field = "";      return field.indexOf(ip.value) != -1;  }      function $NOT_EQUALS(ip){   var field = wo[ip.field], value = ip.value;   if(!field) field = "";      value = convertTargetToSourceType(field, value);   return (field != value);  }    function $GREATER_THAN(ip){   var field = wo[ip.field], value = ip.value;   if(!field) field = "";      value = convertTargetToSourceType(field, value);   return (field &gt; value);  }    function $GREATER_THAN_OR_EQUAL_TO(ip){   var field = wo[ip.field], value = ip.value;   if(!field) field = "";      value = convertTargetToSourceType(field, value);   return (field &gt;= value);  }    function $LESS_THAN(ip){   var field = wo[ip.field], value = ip.value;   if(!field) field = "";      value = convertTargetToSourceType(field, value);   return (field &lt; value);  }    function $LESS_THAN_OR_EQUAL_TO(ip){   var field = wo[ip.field], value = ip.value;   if(!field) field = "";      value = convertTargetToSourceType(field, value);   return (field &lt;= value);  }    function $IS_NOT_NULL(ip){   var field = wo[ip.field];   return !!field;  }  function $IS_NULL(ip){   var field = wo[ip.field];   return !field;  }  function convertTargetToSourceType(source, target){   var ret = target, sourceType = typeof(source);   if(sourceType == &apos;string&apos;) ret = "" + ret;   else if(sourceType == &apos;boolean&apos;) ret = !!ret;   else if(sourceType == &apos;number&apos;) ret = parseInt(ret, 10);      return ret;  }  result = eval(jsExpression); })(jsExpression, wo);  return result;}function getExpression(expressionId, pb){ var ret = null; if(expressionId){  var expressionsInfo = getFromPriceBookDefinition(pb, "RULES"), i;  if(expressionsInfo == null) return ret;/*For invalid expressions*/  var allExpressions = expressionsInfo.valueMap, l = allExpressions.length;  for(i = 0; i &lt; l; i++){   var expression = allExpressions[i];   if(get15CharId(expression.key) == get15CharId(expressionId)){    ret = expression;    break;   }  } } return ret;}function getMasterWorkOrder(context, pb){ var workOrder = getFromPriceBookDefinition(pb, "WORKORDER_DATA").data[0];     var woFromTransaction = context.headerRecord.records[0].targetRecordAsKeyValue;    var lookupDef = getFromPriceBookDefinition(pb, "LOOKUP_DEFINITION").valueMap;  var wo = mergeWO(workOrder, woFromTransaction, lookupDef); return wo;}function mergeWO(workOrder, woFromTransaction, lookupDef){ /* Reference fields */ var i, l = lookupDef.length; for(i = 0; i &lt; l; i++){  var def = lookupDef[i];  workOrder[def.key] = def.value; }  /* Merge transaction into wo data from server */ l = woFromTransaction.length; for(i = 0; i &lt; l; i++){  var value = woFromTransaction[i].value1;    if(!value) { value = woFromTransaction[i].value;}    workOrder[woFromTransaction[i].key] = value; }  return workOrder;}function getRounded(roundType,mins,actuals){ var roundingMins = actuals % 60; var remainingMins = actuals - (actuals % 60); var intMins = parseInt(mins); if(roundType == &apos;Round Up&apos;) {  if(intMins != 60 &amp;&amp; (Math.ceil(roundingMins/intMins) * intMins) != 60)   return (remainingMins + (Math.ceil(roundingMins/intMins) * intMins % 60));  else   return (remainingMins + (Math.ceil(roundingMins/intMins) * intMins)); }else if(roundType == &apos;Round Down&apos;) {  if(intMins != 60 &amp;&amp; (Math.floor(roundingMins/intMins) * intMins) != 60)   return (remainingMins + (Math.floor(roundingMins/intMins) * intMins % 60));  else   return (remainingMins + (Math.floor(roundingMins/intMins) * intMins)); }  return actuals;}/*///////////////////////////////////////////////// END - UTILITY FUNCTIONS ////////////////////////////////////////*//*///////////////////////////////////////////////// START - PRICING RULE FUNCTIONS /////////////////////////////////*/function getPricingRuleInfo(pb){ var contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION"), ret  = null, pricingRuleInfo = null; if(contractDefinitionInfo){  pricingRuleInfo = getFromPriceBookDefinition(pb, "CONTRACT_PRICINGRULES");  if(pricingRuleInfo &amp;&amp; pricingRuleInfo.data.length &gt; 0){   ret = pricingRuleInfo.data;  } } return ret;}function executePricingRules(pricingRuleInfo, pb, wo){ var i, l = pricingRuleInfo.length, appliedPricingRule = null; for(i = 0; i &lt; l; i++){  var pricingRule = pricingRuleInfo[i];  var expressionId = pricingRule[getQualifiedFieldName("Named_Expression__c")];  var expression = getExpression(expressionId, pb);  if(!expression){   appliedPricingRule = pricingRule;   break;  }else{   var result = executeExpression(expression, wo);      if(result == true){    appliedPricingRule = pricingRule;    break;   }  } } return appliedPricingRule;}/*///////////////////////////////////////////////// END - PRICING RULE FUNCTIONS ///////////////////////////////////*//*///////////////////////////////////////////////// START - UTILITY TO FIND TOTAL LINE PRICE ///////////////////////*/function getBillableLinePrice(totalLinePrice, discountField, coverageField){ var discount = 0; var response = 0; if(totalLinePrice != null) {  if(discountField != null &amp;&amp; discountField.value != null &amp;&amp; discountField.value &gt; 0)   discount= (totalLinePrice * discountField.value / 100);  var coverage = 0;  totalLinePrice = totalLinePrice - discount;  if(coverageField != null &amp;&amp; coverageField.value != null &amp;&amp; coverageField.value &gt; 0)   coverage = (totalLinePrice * coverageField.value / 100);    response = (totalLinePrice - coverage).toFixed(3); } return getOnlyPositiveValue(response);}/*///////////////////////////////////////////////// END - UTILITY TO FIND TOTAL LINE PRICE /////////////////////////*//*///////////////////////////////////////////////// START - UTILITY TO UPDATE WORKORDER FUNCTIONS //////////////////*/function updateTransactionWORateInfo(context, rateSource, rateTarget, unitSource, unitTarget, rateInfo){ var rateApplied = false, unitApplied = false, woFromTransaction = context.headerRecord.records[0].targetRecordAsKeyValue; for(var m = 0;  (m &lt; woFromTransaction.length) &amp;&amp; (rateApplied == false || unitApplied == false); m++){  if(woFromTransaction[m].key == getQualifiedFieldName(rateTarget)){   woFromTransaction[m].value = rateInfo[getQualifiedFieldName(rateSource)];   woFromTransaction[m].value1 = rateInfo[getQualifiedFieldName(rateSource)];   rateApplied = true;  }else if(woFromTransaction[m].key == getQualifiedFieldName(unitTarget)){   woFromTransaction[m].value = rateInfo[getQualifiedFieldName(unitSource)];   woFromTransaction[m].value1 = rateInfo[getQualifiedFieldName(unitSource)];   unitApplied = true;  } } if(!rateApplied){  woFromTransaction[woFromTransaction.length] = {key : getQualifiedFieldName(rateTarget),  value : rateInfo[getQualifiedFieldName(rateSource)], value1 : rateInfo[getQualifiedFieldName(rateSource)]}; } if(!unitApplied){  woFromTransaction[woFromTransaction.length] = {key : getQualifiedFieldName(unitTarget),  value : rateInfo[getQualifiedFieldName(unitSource)], value1 : rateInfo[getQualifiedFieldName(unitSource)]}; }}function tagHandler(pb){ var tagDefinition = getFromPriceBookDefinition(pb, "TAGS"); if(tagDefinition.valueMap != null){  var l = tagDefinition.valueMap.length;  for(i = 0; i &lt; l; i++){   var tagDef = tagDefinition.valueMap[i];   tag[tagDef.key] = tagDef.value;  } }}function settingHandler(pb){ var settingDefinition = getFromPriceBookDefinition(pb, "SETTINGS"); if(settingDefinition.valueMap != null){  var l = settingDefinition.valueMap.length;  for(i = 0; i &lt; l; i++){   var settingDef = settingDefinition.valueMap[i];   setting[settingDef.key] = settingDef.value;  } }}/*///////////////////////////////////////////////// END - UTILITY TO UPDATE WORKORDER FUNCTIONS ///////////////////*/function getObjectForKeyFromPBWorkOrder(key, pb){  key = getFieldAPI(key);  var retObject = {};  var lengthOfPB = pb != null &amp;&amp; pb.length;   for(var i = 0; i&lt;lengthOfPB; i++){    if(pb[i].key === &apos;WORKORDER_DATA&apos;){      var data = pb[i].data;      retObject.key = key;      retObject.value = data != null &amp;&amp; data.length&gt;0 &amp;&amp; data[0][key];      break;    }   }   return retObject;}function applyPriceBook(context, pb){  /* Load all tags and settings */    tagHandler(pb); settingHandler(pb);  /*Commented as part of story BAC-3279*/ /* Check if entitlement has been performed */ /*var isEntitlementPerfromed = getItemForDetailRecordKey('Is_Entitlement_Performed__c', context.headerRecord.records[0].targetRecordAsKeyValue);*/ /*Added as part of story BAC-3279*/ var isEntitlementPerfromed = getObjectForKeyFromPBWorkOrder(&apos;Is_Entitlement_Performed__c&apos;, pb);     if(setting["WORD005_SET020"] == &apos;true&apos; &amp;&amp; (isEntitlementPerfromed.value == null || isEntitlementPerfromed.value == &apos;false&apos; || isEntitlementPerfromed.value == false)) {   $EXPR.Logger.error(tag[&apos;EVER005_TAG087&apos;]);         if($EXPR.showMessage){   $EXPR.showMessage({    text : tag[&apos;EVER005_TAG087&apos;],    type : &apos;WARN&apos;,    buttons :  [&apos;OK&apos;],    handler : function(evt){     $RETURN(context);    }   });   return false;  }else{   alert(tag[&apos;EVER005_TAG087&apos;]);   return true;  } }else{          return continueApplyPriceBook(context, pb); }}function showAlert(data){     alert(JSON.stringify((data)));}function continueApplyPriceBook(context, pb){  /* Check whether the work order has a tarvel policy */ var appliedTravelPolicy = getTravelPolicy(context, pb), processTravelLines = true; processWorkOrderLines = true;  var contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION");     if((!appliedTravelPolicy || appliedTravelPolicy == null) &amp;&amp; contractDefinitionInfo) {  contractDefinition = contractDefinitionInfo.data[0];  appliedTravelPolicy = new Object();  if(contractDefinition[getQualifiedFieldName("Default_Travel_Price__c")])   appliedTravelPolicy.SVMXC__Rate__c = contractDefinition[getQualifiedFieldName("Default_Travel_Price__c")];  else    appliedTravelPolicy.SVMXC__Rate__c = 0;  if(contractDefinition[getQualifiedFieldName("Default_Travel_Unit__c")])   appliedTravelPolicy.SVMXC__Unit__c = contractDefinition[getQualifiedFieldName("Default_Travel_Unit__c")]; } updateTransactionWORateInfo(context, "Rate__c", "Travel_Rate__c", "Unit__c", "Travel_Unit__c", {SVMXC__Unit__c: null, SVMXC__Rate__c: null});    if(appliedTravelPolicy){  var unit = appliedTravelPolicy[getQualifiedFieldName("Unit__c")];  if(unit == "Flat Rate"){   processTravelLines = false;   updateTransactionWORateInfo(context, "Rate__c", "Travel_Rate__c", "Unit__c", "Travel_Unit__c", appliedTravelPolicy);   if(appliedTravelPolicy.SVMXC__Rate__c != null &amp;&amp; appliedTravelPolicy.SVMXC__Rate__c &gt; 0)    totalWorkOrderPrice += parseFloat(appliedTravelPolicy.SVMXC__Rate__c);  }else if(unit == "Zone Based"){   processTravelLines = false;   if(contractDefinitionInfo){    contractDefinition = contractDefinitionInfo.data[0];    zone = contractDefinition[getQualifiedFieldName("Zone__c")];    var zonePriceInfo = getFromPriceBookDefinition(pb, "CONTRACT_ZONEPRICING");    if(zonePriceInfo){     var allzonePricing = zonePriceInfo.data, l = allzonePricing.length;     for(i = 0; i &lt; l; i++){      var zonePricing = allzonePricing[i], zoneFromZonePricing = zonePricing[getQualifiedFieldName("Zone__c")];      if(zoneFromZonePricing == zone){       updateTransactionWORateInfo(context, "Rate__c", "Travel_Rate__c", "Unit__c", "Travel_Unit__c", {SVMXC__Unit__c: unit, SVMXC__Rate__c: zonePricing.SVMXC__Rate__c});       if(zonePricing.SVMXC__Rate__c != null &amp;&amp; zonePricing.SVMXC__Rate__c &gt; 0)        totalWorkOrderPrice += parseFloat(zonePricing.SVMXC__Rate__c);       break;      }     }    }   }  } }  /* Check whether the work order has a pricing rule */ var pricingRuleInfo = getPricingRuleInfo(pb); var wo = getMasterWorkOrder(context, pb); var woContext = context.headerRecord.records[0].targetRecordAsKeyValue;     if(pricingRuleInfo){  var appliedPricingRule = executePricingRules(pricingRuleInfo, pb, wo);  if(wo.SVMXC__Proforma_Invoice_Amount__c == null)   wo.SVMXC__Proforma_Invoice_Amount__c = 0;  var woTotal = getItemForDetailRecordKey(&apos;Proforma_Invoice_Amount__c&apos;, woContext);  if(woTotal == null | woTotal == &apos;&apos; )  {   woContext[woContext.length] = {key : &apos;SVMXC__Proforma_Invoice_Amount__c&apos; ,value : 0, value1 : 0};   woTotal = woContext[woContext.length];  }  if(appliedPricingRule){   updateTransactionWORateInfo(context, "Rate__c", "Rate_Pricing_Rule__c", "Rate_Type__c", "Rate_Type_Pricing_Rule__c", appliedPricingRule);      var unit = appliedPricingRule[getQualifiedFieldName("Rate_Type__c")];   if(unit == "Fixed"){    woTotal.value = appliedPricingRule[getFieldAPI("Rate__c")];    processWorkOrderLines = false;   }  } } else{  var appliedPricingRule = {SVMXC__Rate_Type__c: "", SVMXC__Rate__c: 0};  updateTransactionWORateInfo(context, "Rate__c", "Rate_Pricing_Rule__c", "Rate_Type__c", "Rate_Type_Pricing_Rule__c", appliedPricingRule);         }  if(!processWorkOrderLines) return true;  var recordTypeInfo = getFromPriceBookDefinition(pb, "RECORDTYPEDEFINITION");     var i, l = recordTypeInfo.valueMap.length; for(var i = 0; i &lt; l; i++){  var recordType = recordTypeInfo.valueMap[i];  recordTypeName[recordType.value] = recordType.key; }  woProduct = getItemForDetailRecordKey("Product__c", context.headerRecord.records[0].targetRecordAsKeyValue);  detailRecords = context.detailRecords, l = detailRecords.length; var warranty = getWarrantyDefinition(pb);  getIBWarrantyDefinition(pb); var so = getServiceOffering(pb); for(var i = 0; i &lt; l; i++){  var records = detailRecords[i].records, j, recordslength = records.length;  for(j = 0; j &lt; recordslength; j++){   var record = records[j].targetRecordAsKeyValue, length = record.length, k, isLineEntitled = false;   var detailLineId = getItemForDetailRecordKey("Id", record).value;   if(getQuantityField(record) == null) continue;   /* Do not process if the line item has this value set to true */   var usePriceBook = getItemForDetailRecordKey("Use_Price_From_Pricebook__c", record);   var isBillable = getItemForDetailRecordKey("Is_Billable__c", record);   if(!isBillable || !isBillable.value || isBillable.value == &apos;false&apos; || isBillable.value == false){    isBillable = false;   }   else{    isBillable = true;   }   /* Calculate the quantity */   var quantityField = getItemForDetailRecordKey(getQuantityField(record), record);   var calculatedQuantityField = getItemForDetailRecordKey(&apos;Billable_Quantity__c&apos;, record);   var totalLinePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record);   var quantity = 0;   try{    quantity = parseFloat(quantityField.value);     if( isNaN(quantity) ) quantity = 0;   } catch(e){ }   /*end quantity*/      /* Reset the Billing Infrormation field */   var logField = getItemForDetailRecordKey(&apos;Billing_Information__c&apos;, record);   logField.value = &apos;&apos;;   logField.value1 = &apos;&apos;;      if(usePriceBook != "" &amp;&amp; (usePriceBook.value != "true" &amp;&amp; usePriceBook.value != true))   {    var duration = 0;    var duration = getDuration(record,true);    if(duration &lt; 0){     duration = quantity * 60;    }    quantity = (duration / 60).toFixed(3);        var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record);    var totalLinePrice = 0;    if(unitPriceField.value)     totalLinePrice = parseFloat(unitPriceField.value) * quantity;        var coverageField = getItemForDetailRecordKey("Covered__c", record);    coverageField.value = 0;    var discountField = getItemForDetailRecordKey("Discount__c", record);    totalLinePrice = getBillableLinePrice(totalLinePrice, discountField, coverageField);        totalWorkOrderPrice += parseFloat(totalLinePrice);    calculatedQuantityField.value = quantity;    totalLinePriceField.value = totalLinePrice;        if(!isBillable){     if(calculatedQuantityField == null || calculatedQuantityField == "")      record[record.length] = {key : &apos;SVMXC__Billable_Quantity__c&apos; ,value : 0};     if(totalLinePriceField == null || totalLinePriceField == "")      record[record.length] = {key : &apos;SVMXC__&apos; + getTotalLinePriceField(record) ,value : 0};     calculatedQuantityField.value = &apos;0&apos;;     totalLinePriceField.value = &apos;0&apos;;    }    continue;   }      var lineType = getItemForDetailRecordKey("Line_Type__c", record);   var recordType = getItemForDetailRecordKey("RecordTypeId", record);   var workDetailId = getItemForDetailRecordKey("Id", record);   var productServicedId = getItemForDetailRecordKey("Work_Detail__c", record);   var isOffline = getFromPriceBookDefinition(pb, "SVMX_OFFLINE_MODE");   if(isOffline != null &amp;&amp; isOffline !== undefined &amp;&amp; isOffline.value !== undefined &amp;&amp; isOffline.value === "TRUE") {    workDetailId = getItemForDetailRecordKey("local_id", record);   }   if(productServicedId){      if(PSEntitled[productServicedId.value] &amp;&amp; PSEntitled[productServicedId.value] == &apos;true&apos;){         isLineEntitled = true;      }   }   if(lineType.value == "Parts"){    processPartLine(record, pb, recordType, {quantity : quantity, detailLineId: detailLineId,isLineEntitled: isLineEntitled,warranty : warranty, so : so, calculatedQuantityField: calculatedQuantityField, logField : logField, isBillable: isBillable});       }else if (lineType.value == "Labor"){    processLaborLine(record, pb, recordType, {quantity : quantity, detailLineId: detailLineId,isLineEntitled: isLineEntitled,warranty : warranty, quantityField : quantityField, so : so, calculatedQuantityField: calculatedQuantityField, logField : logField, isBillable: isBillable});   }else if (lineType.value == "Expenses"){    processExpenseLine(record, pb, {quantity : quantity, warranty : warranty, detailLineId: detailLineId, isLineEntitled: isLineEntitled, quantityField : quantityField, so : so, calculatedQuantityField: calculatedQuantityField, logField : logField, isBillable: isBillable});       }else if(lineType.value == "Travel"){    if(processTravelLines || !isLineEntitled )    processTravelLine(record, pb, {appliedTravelPolicy : appliedTravelPolicy,          quantity : quantity, isLineEntitled: isLineEntitled, warranty : warranty, quantityField : quantityField, so : so, calculatedQuantityField: calculatedQuantityField, logField : logField, isBillable: isBillable});    else    clearTravelLine(record, pb, {calculatedQuantityField: calculatedQuantityField});   }   if(!isBillable){    if(calculatedQuantityField == null || calculatedQuantityField == "")     record[record.length] = {key : &apos;SVMXC__Billable_Quantity__c&apos; ,value : 0};    if(totalLinePriceField == null || totalLinePriceField == "")     record[record.length] = {key : &apos;SVMXC__&apos;+getTotalLinePriceField(record) ,value : 0};    calculatedQuantityField.value = &apos;0&apos;;    totalLinePriceField.value = &apos;0&apos;;    continue;   }  } }  totalWorkOrderPrice = getOnlyPositiveValue(totalWorkOrderPrice); if(pricingRuleInfo){  var appliedPricingRule = executePricingRules(pricingRuleInfo, pb, wo);  var woTotal = getItemForDetailRecordKey(&apos;Proforma_Invoice_Amount__c&apos;, woContext);  if(woTotal == null || woTotal == &apos;&apos; ){   woTotal = woContext[woContext.length] = {key : &apos;SVMXC__Proforma_Invoice_Amount__c&apos; ,value : 0, value1 : 0};  }  if(appliedPricingRule &amp;&amp; appliedPricingRule[getFieldAPI("Rate__c")]){   var unit = appliedPricingRule[getQualifiedFieldName("Rate_Type__c")];   if(unit == "NTE"){    if(appliedPricingRule[getFieldAPI("Rate__c")] &lt; totalWorkOrderPrice)      woTotal.value = appliedPricingRule[getFieldAPI("Rate__c")];    else     woTotal.value = totalWorkOrderPrice;   }   else if(unit == "Minimum"){    if(appliedPricingRule[getFieldAPI("Rate__c")] &gt; totalWorkOrderPrice)      woTotal.value = appliedPricingRule[getFieldAPI("Rate__c")];    else     woTotal.value = totalWorkOrderPrice;   }   else if(unit == "Surcharge"){    var surchargeRate = appliedPricingRule[getFieldAPI("Rate__c")];     if(surchargeRate !== undefined &amp;&amp; surchargeRate !== null &amp;&amp; typeof(surchargeRate) === "string") surchargeRate = parseFloat(surchargeRate);    woTotal.value = totalWorkOrderPrice + surchargeRate;   }  }  else{   woTotal.value = totalWorkOrderPrice;  } } else{  var woTotal = getItemForDetailRecordKey(&apos;Proforma_Invoice_Amount__c&apos;, woContext);  if(woTotal == null || woTotal == &apos;&apos; )  {   woTotal = woContext[woContext.length] = {key : &apos;SVMXC__Proforma_Invoice_Amount__c&apos; ,value : 0, value1 : 0};  }  woTotal.value = totalWorkOrderPrice }  return true;}/** * Snippet start. * @param context the transaction data context. Note that &apos;context&apos; is a pre-defined variable, defined by the  *        expression engine. Do not overwrite! * @param callback function called back once the price book definition is obtained * @return the modified transaction context */$EXPR.getPricingDefinition(context, function(pb){ try{         if(!pb){   $EXPR.Logger.error("Could not get the price book definition!");                             $RETURN(context);  }else{                               if(applyPriceBook(context, pb)){                              $RETURN(context);   }  } }catch(e){                            $EXPR.Logger.error("There was an error while performing get price =&gt; " + e);                             $RETURN(context); }});})();</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code002</SVMXC__SnippetId__c>			<SVMXC__Description__c>Referenced Standard Get Price</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>JavaScript</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>Event trigger code snippet</SVMXC__Name__c>			<SVMXC__Data__c>CREATE TRIGGER &apos;Event_trigger&apos; BEFORE INSERT ON &apos;Event&apos; FOR EACH ROW WHEN NEW.Id = &apos;&apos; AND              (SELECT NOT COUNT(*) FROm Event_local_Ids where local_id = NEW.local_id)  AND (SELECT  COUNT(*)  from  Event where(strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.StartDatetime,&apos;+0000&apos;,&apos;Z&apos;))  &lt;=  strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  ( StartDatetime, &apos;+0000&apos;,&apos;Z&apos;) ) AND strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.EndDateTime,&apos;+0000&apos;,&apos;Z&apos;) )   &gt; strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  ( StartDatetime, &apos;+0000&apos;,&apos;Z&apos;) ) ) OR (strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.StartDatetime,&apos;+0000&apos;,&apos;Z&apos;) ) &lt;  strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  ( EndDateTime, &apos;+0000&apos;,&apos;Z&apos;) )   AND strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.EndDateTime, &apos;+0000&apos;,&apos;Z&apos;) ) &gt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  ( EndDateTime, &apos;+0000&apos;,&apos;Z&apos;) ))  OR (strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.StartDatetime, &apos;+0000&apos;,&apos;Z&apos;) ) &lt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  ( StartDatetime, &apos;+0000&apos;,&apos;Z&apos;) ) AND strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.EndDateTime, &apos;+0000&apos;,&apos;Z&apos;) ) &gt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  ( EndDateTime, &apos;+0000&apos;,&apos;Z&apos;) )) OR (strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.StartDatetime,&apos;+0000&apos;,&apos;Z&apos;) ) &gt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  ( StartDatetime, &apos;+0000&apos;,&apos;Z&apos;) )  and strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (NEW.EndDateTime, &apos;+0000&apos;,&apos;Z&apos;) ) &lt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE  (EndDateTime, &apos;+0000&apos;,&apos;Z&apos;) ))) BEGIN  SELECT RAISE(ABORT,&apos;StartDate Time and EndDate Time&apos;); END</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code003</SVMXC__SnippetId__c>			<SVMXC__Description__c>SQL trigger code to check overlapping event in iPad client.</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>SQL</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>Event trigger code snippet</SVMXC__Name__c>			<SVMXC__Data__c>CREATE TRIGGER &apos;Event_Update_trigger&apos; BEFORE UPDATE ON &apos;Event&apos;
+FOR EACH ROW BEGIN UPDATE Event SET ActivityDateTime = NEW.StartDateTime  WHERE local_id = NEW.local_id;
+SELECT RAISE (ABORT, &apos;Insert on Foo_Bar violates foreign key&apos;)
+WHERE ((SELECT   COUNT(*) from  Event where( (NEW.StartDatetime &gt;=  StartDatetime
+AND
+NEW.StartDatetime &lt; EndDateTime)
+OR (NEW.EndDateTime &gt;= StartDatetime
+AND
+NEW.EndDateTime &lt;=  EndDateTime)
+OR
+(NEW.StartDatetime &lt;= StartDatetime
+AND
+NEW.EndDateTime &gt;= EndDateTime)
+OR
+(NEW.StartDatetime &gt;=  StartDatetime
+AND
+NEW.StartDateTime &lt;= EndDateTime)) AND local_id!=NEW.local_id)
+AND   (SELECT  COUNT(*) FROm local_event_update where local_id = NEW.local_id)  AND  NOT New.Id
+
+);
+END</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code004</SVMXC__SnippetId__c>			<SVMXC__Description__c>SQL trigger code to check overlapping event in iPad client.</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>SQL</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>Case GetPrice</SVMXC__Name__c>			<SVMXC__Data__c>(function(){var tag = new Object();
+
+tag[&apos;TAG004&apos;] = &apos;Activity is covered by contract.&apos;;
+tag[&apos;TAG005&apos;] = &apos;Activity is not covered by contract.&apos;;
+tag[&apos;TAG006&apos;] = &apos;Activity is covered by warranty&apos;;
+tag[&apos;TAG017&apos;] = &apos;Labor Price defined in contract.&apos;;
+tag[&apos;TAG018&apos;] = &apos;Labor Price defined in contract price book.&apos;;
+tag[&apos;TAG019&apos;] = &apos;Labor Price defined in standard price book.&apos;;
+tag[&apos;TAG025&apos;] = &apos;No activity price found for &apos;;
+tag[&apos;TAG026&apos;] = &apos;No warranty found.&apos;;
+tag[&apos;TAG027&apos;] = &apos;No service offering found.&apos;;
+tag[&apos;TAG028&apos;] = &apos;A special price is available for &apos;;
+var recordTypeName = new Object();
+var totalWorkOrderPrice = 0;
+
+function getQuantityField(record)
+{
+ return &apos;Line_Qty__c&apos;;
+}
+function getUnitPriceField(record)
+{
+ return &apos;Line_Price__c&apos;;
+}
+
+function getTotalLinePriceField(record)
+{
+ return &apos;Billable_Line_Price__c&apos;;
+}
+
+/*///////////////////////////////////////////////// START - LABOR FUNCTIONS //////////////////////////////////////////*/
+function processLaborLine( record, pb, recordType, params){
+ var linePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record);
+ var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record);
+ var activityType = getItemForDetailRecordKey("Activity_Type__c", record);
+ var coverageField = getItemForDetailRecordKey("Covered__c", record);
+
+ var up = getUnitPriceForLabor(activityType, pb, recordType, record);
+ var unitType = getItemForDetailRecordKey("Applied_Rate_Type__c", record);
+
+ if(up.tag != null){
+  coverageField.value = 0;
+  var appliedCoverage = applyServiceOffering(coverageField, params.so, "Labor_Discount_Covered__c", "Labor_Discount_Not_Covered__c");
+  if(!appliedCoverage.applied){
+   if(applyWarranty(coverageField, params.warranty, "Time_Covered__c"))
+    addLogWorkOrderLine(params.logField, tag[&apos;TAG006&apos;]);
+  }
+  else{
+   appliedCoverage.isCovered == true ? addLogWorkOrderLine(params.logField, tag[&apos;TAG004&apos;]) : addLogWorkOrderLine(params.logField, tag[&apos;TAG005&apos;]);
+  }
+  addLogWorkOrderLine(params.logField, tag[up.tag]);
+  up = up.value;
+  var rateType = up.rateType, rate = 0, duration, estimateDuration;
+  var regularRate = up.regularRate;
+  if(!up.regularRate) regularRate = 0;
+  var laborRoundingType;
+  var laborToRoundNearest;
+  var scMinimumLabor;
+  if(rateType == "Per Hour"){
+   var contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION");
+   if(contractDefinitionInfo){
+    contractDefinition = contractDefinitionInfo.data[0];
+    laborRoundingType = contractDefinition[getQualifiedFieldName("Labor_Rounding_Type__c")];
+    laborToRoundNearest = contractDefinition[getQualifiedFieldName("Round_Labor_To_Nearest__c")];
+    scMinimumLabor = contractDefinition[getQualifiedFieldName("Minimum_Labor__c")];
+   }
+   var minDuration = up.minimumUnit ? up.minimumUnit : scMinimumLabor;
+   estimateDuration = getDuration(record,true);
+
+   if(estimateDuration &lt; 0){
+    estimateDuration = params.quantity * 60;
+   }
+
+   if(laborRoundingType &amp;&amp; laborToRoundNearest)
+   {
+    estimateDuration = getRounded(laborRoundingType,laborToRoundNearest,estimateDuration);
+   }
+   estimateDuration = estimateDuration;
+   duration = (minDuration &gt; estimateDuration) ? minDuration  : estimateDuration;
+   duration = (duration / 60).toFixed(3);
+   rate = duration * (regularRate );
+   params.calculatedQuantityField.value = duration;
+  }else{
+   /* Flat rate*/
+   rate = regularRate;
+   params.calculatedQuantityField.value = 1;
+  }
+
+  unitPriceField.value = regularRate;
+  var totalLinePrice = getBillableLinePrice(rate, null, coverageField);
+  linePriceField.value = totalLinePrice;
+  if(params.isBillable)
+   totalWorkOrderPrice += parseFloat(totalLinePrice);
+  unitType.value = rateType;
+ }
+ else{
+  linePriceField.value = 0;
+  unitPriceField.value = 0;
+  coverageField.value = 0;
+  params.calculatedQuantityField.value = 0;
+  $EXPR.Logger.warn(tag[&apos;TAG025&apos;] + activityType.value);
+  return;
+ }
+}
+
+function getUnitPriceForLabor(activityType, pb, recordType, record){
+ var ret = new Object(), pbKey = null;
+ ret.value = null;
+ ret.tag = null;
+
+ /* Check if a special pricing is available as part of service contract */
+ ret.value  = getUnitPriceFromLaborSpecialPricing(activityType, pb, record);
+ if(ret.value  != null) ret.tag = &apos;TAG017&apos;;
+ if(ret.value  == null){
+
+  /* Check if a service contract exists. Assumption is that if no contract is available, then this item will NOT be available */
+  var recordTypeInfo = getFromPriceBookDefinition(pb, "RECORDTYPEINFO_ACTIVITY_CONTRACT");
+  if(recordTypeInfo){
+   pbKey = getPriceBookIdForRecordType(recordType, recordTypeInfo);
+
+   if(pbKey){
+    ret.value  = getUnitPriceFromLaborPricing(pbKey, pb, activityType, record);
+    if(ret.value  != null) ret.tag = &apos;TAG018&apos;;
+   }
+  }
+ }
+
+
+ /* Get the price book corresponding to record type and do the basic calculation */
+ if(ret.value  == null){
+  ret.value  = getBasicUnitPriceForLabor(activityType, pb, recordType, record);
+  if(ret.value  != null) ret.tag = &apos;TAG019&apos;;
+ }
+
+ return ret;
+}
+
+function getBasicUnitPriceForLabor(activityType, pb, recordType, record){
+ var recordTypeInfo = getFromPriceBookDefinition(pb, "RECORDTYPEINFO_ACTIVITY"), ret = null, pbKey = null;
+ if(recordTypeInfo){
+  pbKey = getPriceBookIdForRecordType(recordType, recordTypeInfo);
+ }
+
+ if(pbKey){
+  ret = getUnitPriceFromLaborPricing(pbKey, pb, activityType, record);
+ }
+ return ret;
+}
+
+function getUnitPriceFromLaborSpecialPricing(activityType, pb, record){
+ var specialPricing = getFromPriceBookDefinition(pb, "CONTRACT_SPECIALACTIVITYPRICING");
+ var ret = null;
+ if(specialPricing){
+  var allSpecialPricing = specialPricing.data, l = allSpecialPricing.length, i, defaultPricing;
+  for(i = 0; i &lt; l; i++){
+   var pricing = allSpecialPricing[i];
+   if( pricing[getQualifiedFieldName("Activity_Type__c")] == activityType.value){
+
+    ret = extractLaborPricing(pricing, record, pb, "Minimum_Labor__c");
+    if(ret){
+     defaultPricing = ret;
+     if(ret.found) break;
+    }else{
+     ret = defaultPricing;
+    }
+   }
+  }
+ }
+
+ if(ret) $EXPR.Logger.info(tag[&apos;TAG028&apos;] + activityType.value);
+
+ return ret;
+}
+
+function getUnitPriceFromLaborPricing(pbKey, pb, activityType, record){
+
+ var laborPricingInfo = getFromPriceBookDefinition(pb, "ACTIVITYPRICING"), ret = null;
+ if(laborPricingInfo){
+ /* Get the price book corresponding to the product type */
+  var allLaborPricingInfo = laborPricingInfo.data, l = allLaborPricingInfo.length, i, defaultPricing;
+  for(i = 0; i &lt; l; i++){
+   var pricing = allLaborPricingInfo[i];
+   if(pbKey == pricing[getQualifiedFieldName("Price_Book__c")]
+     &amp;&amp; pricing[getQualifiedFieldName("Activity_Type__c")] == activityType.value){
+
+    ret = extractLaborPricing(pricing, record, pb);
+    if(ret){
+     defaultPricing = ret;
+     if(ret.found) break;
+    }else{
+     ret = defaultPricing;
+    }
+   }
+  }
+ }
+
+ return ret;
+}
+
+function extractLaborPricing(pricing, record, pb, minLaborField){
+
+ var isAssociatedWithProduct = !!pricing[getQualifiedFieldName("Activity_Product__c")], ret = null;
+ var product = getItemForDetailRecordKey("Product__c", record);
+ if(!product || !product.value || product.value == "") product = woProduct;
+ if(isAssociatedWithProduct &amp;&amp; product &amp;&amp; product.value &amp;&amp; product.value != ""){
+  var prodDefinition = getProductDefinition(pb, product), bfound = false;
+  if(!prodDefinition) return;
+  if((get15CharId(pricing[getQualifiedFieldName("Product__c")]) == get15CharId(product.value))){
+   bfound = true;
+  }else if(prodDefinition[getQualifiedFieldName("Product_Line__c")] &amp;&amp; pricing[getQualifiedFieldName("Product_Line__c")] == prodDefinition[getQualifiedFieldName("Product_Line__c")]){
+   bfound = true;
+  }else if(prodDefinition["Family"] &amp;&amp; pricing[getQualifiedFieldName("Product_Family__c")] == prodDefinition["Family"]){
+   bfound = true;
+  }
+  if(bfound){
+   ret = {
+     rateType    : pricing[getQualifiedFieldName("Unit__c")],
+     regularRate : pricing[getQualifiedFieldName("Regular_Rate__c")],
+     minimumUnit : minLaborField != null ? pricing[getQualifiedFieldName(minLaborField)] : null,
+     found : true
+   };
+  }
+ }else{
+  ret = {
+    rateType    : pricing[getQualifiedFieldName("Unit__c")],
+    regularRate : pricing[getQualifiedFieldName("Regular_Rate__c")],
+    minimumUnit : minLaborField != null ? pricing[getQualifiedFieldName(minLaborField)] : null,
+  };
+  if(!product) ret.found = true;
+ }
+ return ret;
+}
+
+/*///////////////////////////////////////////////// END - LABOR FUNCTIONS ////////////////////////////////////////////*/
+
+function getDuration(lineItem, inMinutes){
+ var startDateTime = null, endDateTime = null;
+ var startDate = getItemForDetailRecordKey("Start_Date_and_Time__c", lineItem);
+ var endDate = getItemForDetailRecordKey("End_Date_and_Time__c", lineItem);
+ var duration = -1;
+
+ if(startDate == null || startDate.value == null || startDate.value == ""
+  || endDate == null || endDate.value == null || endDate.value == ""){
+  duration = -1;
+ }else{
+
+  /* Calculate time */
+  startDateTime = getDateFromString(startDate.value);
+  endDateTime = getDateFromString(endDate.value);
+  var diff = (endDateTime - startDateTime) / (1000.0 * 60.0);
+
+  if(!inMinutes){
+   diff /= 60.0;
+   /* Assumed to be in hours */
+   diff = Math.ceil(diff);
+  }
+  if(diff &gt; 0){
+   duration = Math.round(diff*100)/100 ;
+  }
+ }
+ return duration;
+}
+
+function applyWarranty(coverageField, warranty, wField){
+ if(warranty){
+  var coverage = warranty[getQualifiedFieldName(wField)];
+  coverageField.value =  getOnlyPositiveValue(coverage);
+  return true;
+ }
+ else {
+  $EXPR.Logger.info(tag[&apos;TAG026&apos;]);
+    }
+}
+
+function applyServiceOffering(coverageField, so, coveredField, notCoveredField){
+ var response = new Object(), coverage = null, fld = null;
+ response.isCovered = false;
+ response.applied = false;
+ if(so){
+  if(so.isCovered){
+   fld = coveredField;
+   response.isCovered = true;
+  }else{
+   fld = notCoveredField;
+  }
+
+  coverage = so[getQualifiedFieldName(fld)];
+  coverageField.value = getOnlyPositiveValue(coverage);
+  response.applied = true;
+ }else {
+  $EXPR.Logger.info(tag[&apos;TAG027&apos;]);
+    }
+
+ return response;
+}
+
+function addLogWorkOrderLine(logField, logMessage){
+ logField.value += logMessage + &apos;&apos;;
+ $EXPR.Logger.info(logMessage);
+}
+
+function getOnlyPositiveValue(value){
+ if(value == null || value &lt; 0) {
+  return 0;
+    }
+ else {
+  return value;
+    }
+}
+
+function getPriceBookIdForRecordType(recordType, recordTypeInfo){
+ var rtype2PriceBookMap = recordTypeInfo.valueMap, l = rtype2PriceBookMap.length, i, pbKey = null;
+ for(i = 0; i &lt; l; i++){
+  var rtype2PriceBook = rtype2PriceBookMap[i];
+  if(rtype2PriceBook.key == recordType.value){
+   pbKey = rtype2PriceBook.value;
+   break;
+  }
+ }
+ return pbKey;
+}
+
+function getFromPriceBookDefinition(pb, key){
+ var i, l = pb.length, ret = null;
+ for(i = 0; i &lt; l; i++){
+  if(pb[i].key == key){
+   ret = pb[i];
+   break;
+  }
+ }
+ return ret;
+}
+
+function getWarrantyDefinition(pb){
+ var wDef = getFromPriceBookDefinition(pb, "WARRANTYDEFINITION"), ret = null;
+ if(wDef) ret = wDef.data[0];
+
+ return ret;
+}
+
+function getServiceOffering(pb){
+ var so = getFromPriceBookDefinition(pb, "CONTRACT_SERVICEOFFERING"), ret = null;
+ if(so) {
+  ret = so.data[0];
+  ret.isCovered = (so.value == "COVERED") ? true : false;
+ }
+ return ret;
+}
+
+function getItemForDetailRecordKey(key, record){
+
+
+ key = getFieldAPI(key);
+
+ var length = record.length, k, ret = "";
+ for(k = 0; k &lt; length; k++){
+  var fld = record[k];
+  if(fld.key == key){
+   ret = fld;
+   break;
+  }
+ }
+ return ret;
+}
+
+function getFieldAPI(key)
+{
+ if(key.indexOf("__c", key.length - "__c".length) !== -1){
+  key = $EXPR.getOrgNamespace() + "__" + key;
+ }
+ return key;
+}
+
+function getQualifiedFieldName(name){
+ return $EXPR.getOrgNamespace() + "__" + name;
+}
+
+function getDateFromString(dateStr){
+ var dt = dateStr.split(" ");
+ var date = dt[0].split("-");
+ var time = dt[1].split(":");
+ return new Date(parseInt(date[0], 10), parseInt(date[1], 10), parseInt(date[2], 10),
+   parseInt(time[0], 10), parseInt(time[1], 10), parseInt(time[2], 10));
+}
+
+
+/* Hack to get around mixed ID lengths */
+function get15CharId(id){
+ if(id &amp;&amp; id.length == 18) {
+  id = id.substring(0, 15);
+    }
+
+ return id;
+}
+
+function formatAdvancedExpression(){
+ if(arguments.length == 0 ) { return "";}
+
+ var formatted = arguments[0];
+
+    for (var i = 0; i &lt; arguments[1].length; i++) {
+     formatted = formatted.split( "" + (i+1) ).join(arguments[1][i]);
+    }
+    return formatted;
+}
+
+function getProductDefinition(pb, product){
+ var prodDefinitionInfo = getFromPriceBookDefinition(pb, "PRODUCT_DEFINITION"), ret = null;
+ if(prodDefinitionInfo){
+  var allProdDefinitionInfo = prodDefinitionInfo.data, i, l = allProdDefinitionInfo.length;
+  for(i = 0; i &lt; l; i++){
+   if(allProdDefinitionInfo[i].Id == product.value){
+    ret = allProdDefinitionInfo[i];
+    break;
+   }
+  }
+ }
+ return ret;
+}
+
+function executeExpression(expression, wo){
+
+ var expressionLines = expression.data, j, elength = expressionLines.length, exp = [], input = [];
+ expressionLines = $SORT(expressionLines,getQualifiedFieldName("Sequence__c"));
+ for(j = 0; j &lt; elength; j++){
+  var expressionLine = expressionLines[j];
+  var field = expressionLine[getQualifiedFieldName("Field_Name__c")];
+  var operator = expressionLine[getQualifiedFieldName("Operator__c")];
+  var operand = expressionLine[getQualifiedFieldName("Operand__c")];
+
+  input[j] = {field : field, value : operand};
+  if(operator == "starts"){
+   exp[j] = $FORMAT("$STARTS_WITH({0})", "input[" + j + "]");
+  }else if(operator == "contains"){
+   exp[j] = $FORMAT("$CONTAINS({0})", "input[" + j + "]");
+  }else if(operator == "eq"){
+   exp[j] = $FORMAT("$EQUALS({0})", "input[" + j + "]");
+  }else if(operator == "ne"){
+   exp[j] = $FORMAT("$NOT_EQUALS({0})", "input[" + j + "]");
+  }else if(operator == "gt"){
+   exp[j] = $FORMAT("$GREATER_THAN({0})", "input[" + j + "]");
+  }else if(operator == "ge"){
+   exp[j] = $FORMAT("$GREATER_THAN_OR_EQUAL_TO({0})", "input[" + j + "]");
+  }else if(operator == "lt"){
+   exp[j] = $FORMAT("$LESS_THAN({0})", "input[" + j + "]");
+  }else if(operator == "le"){
+   exp[j] = $FORMAT("$LESS_THAN_OR_EQUAL_TO({0})", "input[" + j + "]");
+  }else if(operator == "isnotnull"){
+   exp[j] = $FORMAT("$IS_NOT_NULL({0})", "input[" + j + "]");
+  }
+ }
+
+ var advancedExpression = expression.value;
+ if(!advancedExpression || advancedExpression == null){
+  advancedExpression = "( ";
+  for(k = 0; k &lt; exp.length; k++){
+   advancedExpression += (k+1) + " AND ";
+  }
+
+
+  /* Remove the last AND */
+  advancedExpression = advancedExpression.substring(0, advancedExpression.length - 4);
+  advancedExpression += " )";
+ }
+
+
+ /* Replace apex conditional operators with JS operators */
+ advancedExpression = advancedExpression.toUpperCase();
+ advancedExpression = advancedExpression.split("AND").join("&amp;&amp;").split("OR").join("||");
+ var jsExpression = formatAdvancedExpression(advancedExpression, exp);
+
+
+ /* Evaluate the expression */
+ var result = true;
+ (function(jsExpression, wo){
+
+  function $EQUALS(ip){
+     if(wo[ip.field] == ip.value) {
+    return true;
+     }
+     else {
+    return false;
+     }
+  }
+
+  function $STARTS_WITH(ip){
+   var field = wo[ip.field];
+   if(!field) field = "";
+
+   return field.indexOf(ip.value) == 0;
+  }
+
+  function $CONTAINS(ip){
+   var field = wo[ip.field];
+   if(!field) field = "";
+
+   return field.indexOf(ip.value) != -1;
+  }
+
+
+  function $NOT_EQUALS(ip){
+   var field = wo[ip.field], value = ip.value;
+   if(!field) field = "";
+
+   value = convertTargetToSourceType(field, value);
+   return (field != value);
+  }
+
+  function $GREATER_THAN(ip){
+   var field = wo[ip.field], value = ip.value;
+   if(!field) field = "";
+
+   value = convertTargetToSourceType(field, value);
+   return (field &gt; value);
+  }
+
+  function $GREATER_THAN_OR_EQUAL_TO(ip){
+   var field = wo[ip.field], value = ip.value;
+   if(!field) field = "";
+
+   value = convertTargetToSourceType(field, value);
+   return (field &gt;= value);
+  }
+
+  function $LESS_THAN(ip){
+   var field = wo[ip.field], value = ip.value;
+   if(!field) field = "";
+
+   value = convertTargetToSourceType(field, value);
+   return (field &lt; value);
+  }
+
+  function $LESS_THAN(ip){
+   var field = wo[ip.field], value = ip.value;
+   if(!field) field = "";
+
+   value = convertTargetToSourceType(field, value);
+   return (field &lt;= value);
+  }
+
+  function $IS_NOT_NULL(ip){
+   var field = wo[ip.field];
+   return !!field;
+  }
+
+  function convertTargetToSourceType(source, target){
+   var ret = target, sourceType = typeof(source);
+   if(sourceType == &apos;string&apos;) ret = "" + ret;
+   else if(sourceType == &apos;boolean&apos;) ret = !!ret;
+   else if(sourceType == &apos;number&apos;) ret = parseInt(ret, 10);
+
+   return ret;
+  }
+  result = eval(jsExpression);
+ })(jsExpression, wo);
+
+ return result;
+}
+
+function getExpression(expressionId, pb){
+ var ret = null;
+ if(expressionId){
+  var expressionsInfo = getFromPriceBookDefinition(pb, "RULES"), allExpressions = expressionsInfo.valueMap, l = allExpressions.length, i;
+  for(i = 0; i &lt; l; i++){
+   var expression = allExpressions[i];
+   if(get15CharId(expression.key) == get15CharId(expressionId)){
+    ret = expression;
+    break;
+   }
+  }
+ }
+ return ret;
+}
+
+function getMasterCase(context, pb){
+ var workOrder = getFromPriceBookDefinition(pb, "CASE_DATA").data[0];
+
+ var woFromTransaction = context.headerRecord.records[0].targetRecordAsKeyValue;
+
+ var lookupDef = getFromPriceBookDefinition(pb, "LOOKUP_DEFINITION").valueMap;
+
+ var wo = mergeWO(workOrder, woFromTransaction, lookupDef);
+ return wo;
+}
+
+function mergeWO(workOrder, woFromTransaction, lookupDef){
+ /* Reference fields */
+ var i, l = lookupDef.length;
+ for(i = 0; i &lt; l; i++){
+  var def = lookupDef[i];
+  workOrder[def.key] = def.value;
+ }
+
+
+ /* Merge transaction into wo data from server */
+ l = woFromTransaction.length;
+ for(i = 0; i &lt; l; i++){
+  var value = woFromTransaction[i].value1;
+  if(!value) { value = woFromTransaction[i].value;}
+
+  workOrder[woFromTransaction[i].key] = value;
+ }
+
+ return workOrder;
+}
+
+function getRounded(roundType,mins,actuals){
+ var roundingMins = actuals % 60;
+ var remainingMins = actuals - (actuals % 60);
+ var intMins = parseInt(mins);
+ if(roundType == &apos;Round Up&apos;) {
+  if(intMins != 60 &amp;&amp; (Math.ceil(roundingMins/intMins) * intMins) != 60)
+   return (remainingMins + (Math.ceil(roundingMins/intMins) * intMins % 60));
+  else
+   return (remainingMins + (Math.ceil(roundingMins/intMins) * intMins));
+ }else if(roundType == &apos;Round Down&apos;) {
+  if(intMins != 60 &amp;&amp; (Math.floor(roundingMins/intMins) * intMins) != 60)
+   return (remainingMins + (Math.floor(roundingMins/intMins) * intMins % 60));
+  else
+   return (remainingMins + (Math.floor(roundingMins/intMins) * intMins));
+ }
+ return actuals;
+}
+/*///////////////////////////////////////////////// END - UTILITY FUNCTIONS ////////////////////////////////////////*/
+
+/*///////////////////////////////////////////////// START - PRICING RULE FUNCTIONS /////////////////////////////////*/
+function getPricingRuleInfo(pb){
+ var contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION"), ret  = null, pricingRuleInfo = null;
+ if(contractDefinitionInfo){
+  pricingRuleInfo = getFromPriceBookDefinition(pb, "CONTRACT_PRICINGRULES");
+  if(pricingRuleInfo &amp;&amp; pricingRuleInfo.data.length &gt; 0){
+   ret = pricingRuleInfo.data;
+  }
+ }
+ return ret;
+}
+
+function executePricingRules(pricingRuleInfo, pb, wo){
+ var i, l = pricingRuleInfo.length, appliedPricingRule = null;
+ for(i = 0; i &lt; l; i++){
+  var pricingRule = pricingRuleInfo[i];
+  var expressionId = pricingRule[getQualifiedFieldName("Named_Expression__c")];
+  var expression = getExpression(expressionId, pb);
+  if(!expression){
+   appliedPricingRule = pricingRule;
+   break;
+  }else{
+   var result = executeExpression(expression, wo);
+
+   if(result == true){
+    appliedPricingRule = pricingRule;
+    break;
+   }
+  }
+ }
+ return appliedPricingRule;
+}
+/*///////////////////////////////////////////////// END - PRICING RULE FUNCTIONS ///////////////////////////////////*/
+
+/*///////////////////////////////////////////////// START - UTILITY TO FIND TOTAL LINE PRICE ///////////////////////*/
+function getBillableLinePrice(totalLinePrice, discountField, coverageField)
+{
+ var discount = 0;
+ var response = 0;
+ if(totalLinePrice != null)
+ {
+  if(discountField != null &amp;&amp; discountField.value != null &amp;&amp; discountField.value &gt; 0)
+   discount= (totalLinePrice * discountField.value / 100);
+  var coverage = 0;
+  totalLinePrice = totalLinePrice - discount;
+  if(coverageField != null &amp;&amp; coverageField.value != null &amp;&amp; coverageField.value &gt; 0)
+   coverage = (totalLinePrice * coverageField.value / 100);
+
+  response = (totalLinePrice - coverage).toFixed(3);
+ }
+ return getOnlyPositiveValue(response);
+}
+/*///////////////////////////////////////////////// END - UTILITY TO FIND TOTAL LINE PRICE /////////////////////////*/
+
+/*///////////////////////////////////////////////// START - UTILITY TO UPDATE WORKORDER FUNCTIONS //////////////////*/
+function updateTransactionWORateInfo(context, rateSource, rateTarget, unitSource, unitTarget, rateInfo){
+ var rateApplied = false, unitApplied = false, woFromTransaction = context.headerRecord.records[0].targetRecordAsKeyValue;
+ for(var m = 0;  (m &lt; woFromTransaction.length) &amp;&amp; (rateApplied == false || unitApplied == false); m++){
+  if(woFromTransaction[m].key == getQualifiedFieldName(rateTarget)){
+   woFromTransaction[m].value = rateInfo[getQualifiedFieldName(rateSource)];
+   woFromTransaction[m].value1 = rateInfo[getQualifiedFieldName(rateSource)];
+   rateApplied = true;
+  }else if(woFromTransaction[m].key == getQualifiedFieldName(unitTarget)){
+   woFromTransaction[m].value = rateInfo[getQualifiedFieldName(unitSource)];
+   woFromTransaction[m].value1 = rateInfo[getQualifiedFieldName(unitSource)];
+   unitApplied = true;
+  }
+ }
+ if(!rateApplied){
+  woFromTransaction[woFromTransaction.length] = {key : getQualifiedFieldName(rateTarget),
+  value : rateInfo[getQualifiedFieldName(rateSource)], value1 : rateInfo[getQualifiedFieldName(rateSource)]};
+ }
+ if(!unitApplied){
+  woFromTransaction[woFromTransaction.length] = {key : getQualifiedFieldName(unitTarget),
+  value : rateInfo[getQualifiedFieldName(unitSource)], value1 : rateInfo[getQualifiedFieldName(unitSource)]};
+ }
+}
+
+function tagHandler(pb){
+ var tagDefinition = getFromPriceBookDefinition(pb, "TAGS");
+ if(tagDefinition.valueMap != null){
+  var l = tagDefinition.valueMap.length;
+  for(i = 0; i &lt; l; i++){
+   var tagDef = tagDefinition.valueMap[i];
+   tag[tagDef.key] = tagDef.value;
+  }
+ }
+}
+
+/*///////////////////////////////////////////////// END - UTILITY TO UPDATE WORKORDER FUNCTIONS ///////////////////*/
+function applyPriceBook(context, pb){
+
+ /* Load all tags */
+    tagHandler(pb);
+ /* Check if entitlement has been performed
+ var isEntitlementPerfromed = getItemForDetailRecordKey(&apos;Is_Entitlement_Performed__c&apos;, context.headerRecord.records[0].targetRecordAsKeyValue);
+
+ if(isEntitlementPerfromed.value == null || isEntitlementPerfromed.value == &apos;false&apos; || isEntitlementPerfromed.value == false)
+ {
+  $EXPR.Logger.error(tag[&apos;EVER005_TAG087&apos;]);
+
+  if($EXPR.showMessage){
+   $EXPR.showMessage({
+    text : tag[&apos;EVER005_TAG087&apos;],
+    type : &apos;WARN&apos;,
+    buttons :  [&apos;OK&apos;],
+    handler : function(evt){
+     $RETURN(context);
+    }
+   });
+   return false;
+  }else{
+   alert(tag[&apos;EVER005_TAG087&apos;]);
+   return true;
+  }
+ }else{*/
+
+  return continueApplyPriceBook(context, pb);
+ //}
+}
+function showAlert(data){
+     alert(JSON.stringify((data)));
+}
+function continueApplyPriceBook(context, pb){
+ /* Check whether the work order has a tarvel policy */
+ processWorkOrderLines = true;
+
+ var contractDefinitionInfo = getFromPriceBookDefinition(pb, "CONTRACT_DEFINITION");
+
+ /* Check whether the work order has a pricing rule */
+ var pricingRuleInfo = getPricingRuleInfo(pb);
+
+
+ var wo = getMasterCase(context, pb);
+
+ var woContext = context.headerRecord.records[0].targetRecordAsKeyValue;
+
+ if(pricingRuleInfo){
+  var appliedPricingRule = executePricingRules(pricingRuleInfo, pb, wo);
+  if(wo.SVMXC__Proforma_Invoice_Amount__c == null)
+   wo.SVMXC__Proforma_Invoice_Amount__c = 0;
+  var woTotal = getItemForDetailRecordKey(&apos;Proforma_Invoice_Amount__c&apos;, woContext);
+  if(woTotal == null | woTotal == &apos;&apos; )
+  {
+   woContext[woContext.length] = {key : &apos;SVMXC__Proforma_Invoice_Amount__c&apos; ,value : 0, value1 : 0};
+   woTotal = woContext[woContext.length];
+  }
+  if(appliedPricingRule){
+   updateTransactionWORateInfo(context, "Rate__c", "Rate_Pricing_Rule__c", "Rate_Type__c", "Rate_Type_Pricing_Rule__c", appliedPricingRule);
+
+   var unit = appliedPricingRule[getQualifiedFieldName("Rate_Type__c")];
+   if(unit == "Fixed"){
+    woTotal.value = appliedPricingRule[getFieldAPI("Rate__c")];
+    processWorkOrderLines = false;
+   }
+  }
+ }
+ else{
+  var appliedPricingRule = {SVMXC__Rate_Type__c: "", SVMXC__Rate__c: 0};
+  updateTransactionWORateInfo(context, "Rate__c", "Rate_Pricing_Rule__c", "Rate_Type__c", "Rate_Type_Pricing_Rule__c", appliedPricingRule);
+
+ }
+
+ if(!processWorkOrderLines) return true;
+
+ /*var recordTypeInfo = getFromPriceBookDefinition(pb, "RECORDTYPEDEFINITION");
+
+ var i, l = recordTypeInfo.valueMap.length;
+ for(var i = 0; i &lt; l; i++){
+  var recordType = recordTypeInfo.valueMap[i];
+  recordTypeName[recordType.value] = recordType.key;
+ }*/
+
+ woProduct = getItemForDetailRecordKey("Product__c", context.headerRecord.records[0].targetRecordAsKeyValue);
+
+ detailRecords = context.detailRecords, l = detailRecords.length;
+ var warranty = getWarrantyDefinition(pb);
+ var so = getServiceOffering(pb);
+ for(var i = 0; i &lt; l; i++){
+  var records = detailRecords[i].records, j, recordslength = records.length;
+  for(j = 0; j &lt; recordslength; j++){
+   var record = records[j].targetRecordAsKeyValue, length = record.length, k;
+   if(getQuantityField(record) == null) continue;
+   /* Do not process if the line item has this value set to true */
+   var usePriceBook = getItemForDetailRecordKey("Calculate_Price__c", record);
+   var isBillable = getItemForDetailRecordKey("Is_Billable__c", record);
+   if(!isBillable || !isBillable.value || isBillable.value == &apos;false&apos; || isBillable.value == false){
+    isBillable = false;
+   }
+   else{
+    isBillable = true;
+   }
+   /* Calculate the quantity */
+   var quantityField = getItemForDetailRecordKey(getQuantityField(record), record);
+   var calculatedQuantityField = getItemForDetailRecordKey(&apos;Billable_Qty__c&apos;, record);
+   var totalLinePriceField = getItemForDetailRecordKey(getTotalLinePriceField(record), record);
+   var quantity = 0;
+   try{
+    quantity = parseFloat(quantityField.value);
+    if( isNaN(quantity) ) quantity = 0;
+   } catch(e){ }
+   /*end quantity*/
+
+   if(usePriceBook != "" &amp;&amp; (usePriceBook.value != "true" &amp;&amp; usePriceBook.value != true))
+   {
+    var unitPriceField = getItemForDetailRecordKey(getUnitPriceField(record), record);
+    var totalLinePrice = 0;
+    if(unitPriceField.value)
+     totalLinePrice = parseInt(unitPriceField.value) * quantity;
+    totalWorkOrderPrice += totalLinePrice;
+    calculatedQuantityField.value = quantity;
+    totalLinePriceField.value = totalLinePrice;
+    continue;
+   }
+
+   var lineType = getItemForDetailRecordKey("Type__c", record);
+   //var recordType = getItemForDetailRecordKey("RecordTypeId", record);
+
+   var logField = getItemForDetailRecordKey(&apos;Billing_Information__c&apos;, record);
+   logField.value = &apos;&apos;;
+   var recordTypeValue = {};
+   recordTypeValue.value = "MASTER";
+   if (lineType.value == "Activity"){
+    processLaborLine(record, pb, recordTypeValue, {quantity : quantity, warranty : warranty, quantityField : quantityField, so : so, calculatedQuantityField: calculatedQuantityField, logField : logField, isBillable: isBillable});
+   }
+
+   if(!isBillable){
+    if(calculatedQuantityField == null || calculatedQuantityField == "")
+     record[record.length] = {key : &apos;Billable_Qty__c&apos; ,value : 0};
+    if(totalLinePriceField == null || totalLinePriceField == "")
+     record[record.length] = {key : &apos;SVMXC__&apos;+getTotalLinePriceField(record) ,value : 0};
+    calculatedQuantityField.value = &apos;0&apos;;
+    totalLinePriceField.value = &apos;0&apos;;
+    continue;
+   }
+  }
+ }
+
+ totalWorkOrderPrice = getOnlyPositiveValue(totalWorkOrderPrice);
+ if(pricingRuleInfo){
+  var appliedPricingRule = executePricingRules(pricingRuleInfo, pb, wo);
+  var woTotal = getItemForDetailRecordKey(&apos;Proforma_Invoice_Amount__c&apos;, woContext);
+  if(woTotal == null || woTotal == &apos;&apos; ){
+   woTotal = woContext[woContext.length] = {key : &apos;SVMXC__Proforma_Invoice_Amount__c&apos; ,value : 0, value1 : 0};
+  }
+  if(appliedPricingRule &amp;&amp; appliedPricingRule[getFieldAPI("Rate__c")]){
+   var unit = appliedPricingRule[getQualifiedFieldName("Rate_Type__c")];
+   if(unit == "NTE"){
+    if(appliedPricingRule[getFieldAPI("Rate__c")] &lt; totalWorkOrderPrice)
+     woTotal.value = appliedPricingRule[getFieldAPI("Rate__c")];
+    else
+     woTotal.value = totalWorkOrderPrice;
+   }
+   else if(unit == "Minimum"){
+    if(appliedPricingRule[getFieldAPI("Rate__c")] &gt; totalWorkOrderPrice)
+     woTotal.value = appliedPricingRule[getFieldAPI("Rate__c")];
+    else
+     woTotal.value = totalWorkOrderPrice;
+   }
+   else if(unit == "Surcharge"){
+    woTotal.value = totalWorkOrderPrice + appliedPricingRule[getFieldAPI("Rate__c")];
+   }
+  }
+  else{
+   woTotal.value = totalWorkOrderPrice;
+  }
+ }
+ else{
+  var woTotal = getItemForDetailRecordKey(&apos;Proforma_Invoice_Amount__c&apos;, woContext);
+  if(woTotal == null || woTotal == &apos;&apos; )
+  {
+   woTotal = woContext[woContext.length] = {key : &apos;SVMXC__Proforma_Invoice_Amount__c&apos; ,value : 0, value1 : 0};
+  }
+  woTotal.value = totalWorkOrderPrice
+ }
+
+ return true;
+}
+
+/**
+ * Snippet start.
+ * @param context the transaction data context. Note that &apos;context&apos; is a pre-defined variable, defined by the
+ *        expression engine. Do not overwrite!
+ * @param callback function called back once the price book definition is obtained
+ * @return the modified transaction context
+ */
+$EXPR.getCasePricingDefinition(context, function(pb){
+ try{
+
+  if(!pb){
+   $EXPR.Logger.error("Could not get the price book definition!");
+
+   $RETURN(context);
+  }else{
+
+   if(applyPriceBook(context, pb)){
+
+    $RETURN(context);
+   }
+  }
+ }catch(e){
+
+  $EXPR.Logger.error("There was an error while performing get price =&gt; " + e);
+
+  $RETURN(context);
+ }
+});})();</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code005</SVMXC__SnippetId__c>			<SVMXC__Description__c>Case GetPrice</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>JavaScript</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>ServiceMax Event trigger code snippet</SVMXC__Name__c>			<SVMXC__Data__c>CREATE TRIGGER &apos;SVMXC__SVMX_Event__c_trigger&apos; BEFORE INSERT ON &apos;SVMXC__SVMX_Event__c&apos; FOR EACH ROW WHEN NEW.Id = &apos;&apos; AND (SELECT NOT COUNT(*) FROM Event_local_Ids where local_id = NEW.local_id) AND (SELECT COUNT(*) from SVMXC__SVMX_Event__c where(strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__StartDateTime__c,&apos;+0000&apos;,&apos;Z&apos;)) &lt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE ( SVMXC__StartDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) AND strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__EndDateTime__c,&apos;+0000&apos;,&apos;Z&apos;) ) &gt; strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE ( SVMXC__StartDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) ) OR (strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__StartDateTime__c,&apos;+0000&apos;,&apos;Z&apos;) ) &lt; strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE ( SVMXC__EndDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) AND strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__EndDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) &gt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE ( SVMXC__EndDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) )) OR (strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__StartDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) &lt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE ( SVMXC__StartDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) AND strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__EndDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) &gt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE ( SVMXC__EndDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) )) OR (strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__StartDateTime__c,&apos;+0000&apos;,&apos;Z&apos;) ) &gt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE ( SVMXC__StartDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) and strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (NEW.SVMXC__EndDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ) &lt;= strftime(&apos;%Y-%m-%d %H:%M&apos;, REPLACE (SVMXC__EndDateTime__c, &apos;+0000&apos;,&apos;Z&apos;) ))) BEGIN SELECT RAISE(ABORT,&apos;StartDate Time and EndDate Time&apos;); END</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code006</SVMXC__SnippetId__c>			<SVMXC__Description__c>ServiceMax event object SQLtrigger code to check overlapping event in iPad client.</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>SQL TRIGGER</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>ServiceMax Event trigger code snippet</SVMXC__Name__c>			<SVMXC__Data__c>CREATE TRIGGER &apos;SVMXC__SVMX_Event__c_Update_trigger&apos; BEFORE UPDATE ON &apos;SVMXC__SVMX_Event__c&apos; FOR EACH ROW BEGIN UPDATE Event SET SVMXC__ActivityDateTime__c = NEW.SVMXC__StartDateTime__c WHERE local_id = NEW.local_id; SELECT RAISE (ABORT, &apos;Insert on Foo_Bar violates foreign key&apos;) WHERE ((SELECT COUNT(*) from Event where( (NEW.SVMXC__StartDateTime__c &gt;= SVMXC__StartDateTime__c AND NEW.SVMXC__StartDateTime__c &lt; SVMXC__EndDateTime__c) OR (NEW.SVMXC__EndDateTime__c &gt;= SVMXC__StartDateTime__c AND NEW.SVMXC__EndDateTime__c &lt;= SVMXC__EndDateTime__c) OR (NEW.SVMXC__StartDateTime__c &lt;= SVMXC__StartDateTime__c AND NEW.SVMXC__EndDateTime__c &gt;= SVMXC__EndDateTime__c) OR (NEW.SVMXC__StartDateTime__c &gt;= SVMXC__StartDateTime__c AND NEW.SVMXC__StartDateTime__c &lt;= SVMXC__EndDateTime__c)) AND local_id!=NEW.local_id) AND (SELECT COUNT(*) FROm local_event_update where local_id = NEW.local_id) AND NOT New.Id); END</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code007</SVMXC__SnippetId__c>			<SVMXC__Description__c>ServiceMax event object SQLtrigger code to check overlapping event in iPad client.</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>SQL TRIGGER</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>Third party apps</SVMXC__Name__c>			<SVMXC__Data__c>[{"url_scheme_name": "docscan","app_display_name":"DocScan","url_prameters": "sendto=SVMXC__Invoice_Number__c&amp;goto=SVMXC__Zip__c"},{"url_scheme_name": "docscan1","app_display_name": "DocScan1","url_prameters": "sendto=SVMXC__Invoice_Number__c&amp;goto=SVMXC__Zip__c"}]</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code008</SVMXC__SnippetId__c>			<SVMXC__Description__c>To integrate sharing with other apps</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>JSON</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>Service Board - JSON configuration for appointment status</SVMXC__Name__c>			<SVMXC__Data__c>[{"status":"Accepted","transitions":[{"transition":"En Route","toStatus":"En Route"},{"transition":"Reject","toStatus":"Rejected"}]},{"status":"En Route","transitions":[{"transition":"Incomplete","toStatus":"Incomplete"},{"transition":"On-site","toStatus":"On-site"}]},{"status":"On-site","transitions":[{"transition":"Finish","toStatus":"Finished"},{"transition":"Incomplete","toStatus":"Incomplete"}]},{"status":"Pending","transitions":[{"transition":"Accept","toStatus":"Accepted"},{"transition":"Reject","toStatus":"Rejected"}]}]</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code009</SVMXC__SnippetId__c>			<SVMXC__Description__c>JSON file for Appointment status</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>SB CONFIG</SVMXC__Type__c>		</Snippet>		<Snippet>			<SVMXC__Name__c>Service Board - Tenant ID and PubNub Keys</SVMXC__Name__c>			<SVMXC__Data__c>{}</SVMXC__Data__c>			<SVMXC__SnippetId__c>Code010</SVMXC__SnippetId__c>			<SVMXC__Description__c>Service Board tenant ID and PubNub keys for real-time and push notifications to Phone</SVMXC__Description__c>			<SVMXC__IsStandard__c>True</SVMXC__IsStandard__c>			<SVMXC__Type__c>SB CONFIG</SVMXC__Type__c>		</Snippet>	</CodeSnippet>

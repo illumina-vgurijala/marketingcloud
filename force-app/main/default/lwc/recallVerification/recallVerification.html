@@ -1,0 +1,198 @@
+<template>
+     <template if:true={isRecall}> <!--Added by Vishal for CMCM-10403 -->
+    <div class="slds-box">
+        <template if:true={isSpinner}>
+            <div class="slds-is-relative">
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </div>
+        </template>
+        <div class="slds-grid">
+            <b>Upload Recall Verification Form</b>
+            <lightning-helptext style ="margin-top:-2px;" class="slds-var-m-left_x-small" content="Attach the verification form to this case and any additional cases where applicable."></lightning-helptext>
+        </div>
+        <div class="slds-grid slds-wrap">
+            <div class="search ">
+                <div class="first-search ">
+                    <div class="slds-col slds-size_1-of-4" style="width:auto;">
+                        <!--Account Lookup -->
+                        <c-account-lookup icon-name="standard:account"
+                        s-object-api-name="account"
+                        label="Select Account"
+                        onlookupupdate={handleAccountSelection}
+                        placeholder="Search Account here..."></c-account-lookup>
+                    </div>
+                </div>
+
+                <div class="slds-col slds-align_absolute-center" style="width: 24px; margin: 1px 5rem;padding-top:26px;">
+                    <span>OR</span>
+                </div>
+
+                <div class="second-search">
+                    <div class="slds-col slds-size_1-of-4" style="width:auto;">
+                        <c-product-Lookup object-name="Case" label="Case Number" field-name="CaseNumber" 
+                        icon-name="standard:case" display-field = "CaseNumber" optional-field= "CaseNumber" select-record-name = {caseNumber} onselected = {handleLookupValueSelectCase}
+                        obj-api-name = 'Case' onreadonly = {handleReadOnly}>
+                        </c-product-Lookup>
+                    </div>
+                    <div class="slds-col slds-var-m-left_x-small" style="width: 24px;">
+                    </div>
+                </div>
+
+                <div class="slds-col slds-align_absolute-center" style=" text-align: right;padding-top:20px;">
+                    <lightning-button disabled={isSearchEnabled} onclick={handleSearch} variant="brand" label="Search" title="Search Cases" icon-name="utility:search" icon-position="right" class="slds-var-m-left_x-small"></lightning-button>
+
+                </div>
+            </div>
+        </div>
+        <div class="slds-var-p-top_medium slds-var-p-bottom_small">
+            <b>Choose cases from below list</b>
+        </div>
+        <template if:true={cases}>
+            <div class="table_section">
+                <table class="slds-table slds-table_bordered slds-table_cell-buffer" aria-label="Table to show the Files related Cases">
+                    <thead>
+                        <tr>
+                            <th scope="col">Select Case</th>
+                            <th scope="col">Case Number</th>
+                            <th scope="col">FAN Number</th>
+                            <th scope="col">Owner</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Account</th>
+                            <th scope="col">Contact</th>
+                            <th scope="col">Subject</th>
+                            <th scope="col">Recall Acknowledgement Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={recordsToDisplay} for:item="caseItem">
+                            <tr key={caseItem.caseId}>
+                                <td>
+                                    <lightning-input data-caseid={caseItem.caseId} type="checkbox" checked={caseItem.isSelected} name={caseItem.caseId}
+										onchange={handleCheckboxChange} disabled={caseItem.isDisabled}></lightning-input>
+                                </td>
+                                <td>{caseItem.caseNumber}</td>
+                                <td>{caseItem.fanNumber}</td>
+                                <td>{caseItem.ownerName}</td>
+                                <td>{caseItem.caseStatus}</td>
+                                <td>{caseItem.accountName}</td>
+                                <td>{caseItem.contactName}</td>
+                                <td>{caseItem.caseSubject}</td>
+                                <td>{caseItem.recallAcknowledgementStatus}</td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination Buttons Start -->
+            <div class="slds-align_absolute-center slds-var-p-top_medium">
+                <lightning-button style="margin-right: 10px;" label="Previous"
+                    icon-name="utility:chevronleft" onclick={previousPage} disabled={bDisableFirst}>
+                </lightning-button>
+                <Span> Showing {pageNumber} &nbsp;of&nbsp; {totalPages} &nbsp;&nbsp;Page(s)</Span><!--Page Added by Dhairya Shah for CMCM-7944-->
+                <lightning-button label="Next" icon-name="utility:chevronright" icon-position="right"
+                    onclick={nextPage} disabled={bDisableLast}>
+                </lightning-button>
+            </div>
+            <div class="slds-clearfix">
+                <div class="slds-float_right">
+                    <span class="slds-badge"> Total Records: {totalCaseRecords}</span>
+                </div>
+            </div>
+            <!--  Pagination Buttons End -->
+        </template>
+        <div class="slds-text-align_center slds-grid slds-gutters" style="display: flex;align-items: center;">
+            <template lwc:if={fileName}>
+                <div class="slds-col" style="padding: 15px 0 0 0;">
+                    <p> File Name : {fileName}  <lightning-icon onclick={deleteFile} icon-name='utility:close' alternative-text='close' variant='error' size='xx-small' title='close'></lightning-icon> 
+                        
+                 </p>
+                </div>
+            </template>
+            <template lwc:else>
+                <div class="slds-col">
+                    <lightning-file-upload
+                    label="Attach Verification Form"
+                    name="fileUploader"
+                    accept={acceptedFormats}
+                    record-id={recordId}
+                    onuploadfinished={handleUploadFinished}
+                    disabled={isContentDocumentId}
+                    >
+                    </lightning-file-upload>
+               </div>
+            </template>
+            <div class="slds-col" style="padding: 15px 0 0 0;">
+                <lightning-button disabled={isFileName} onclick={previewAndLinkCases} variant="brand" label="Preview and Link Cases" title="Preview and Link Cases" icon-name="utility:view" icon-position="right" class="slds-var-m-left_x-small"></lightning-button>
+            </div>
+        </div>
+        <!-- popup model call -->
+        <template if:true={isShowModal}>
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                 <!-- modal header start -->
+                   <header class="slds-modal__header">
+                      <!-- sldsValidatorIgnoreNextLine -->
+                      <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCancel}>
+                         <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" ></lightning-icon>
+                         <span class="slds-assistive-text">Close</span>
+                      </button>
+                      <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Review Cases Before Attaching Form</h2>
+                   </header>
+               
+                   <!-- modal body start -->
+                   <div class="slds-modal__content slds-var-p-around_medium" id="modal-content-id-1">
+                    <div class="table_section">
+                        <table class="slds-table slds-table_bordered slds-table_cell-buffer" aria-label="Table to show the Files related Cases">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Select Case</th>
+                                    <th scope="col">Case Number</th>
+                                    <th scope="col">FAN Number</th>
+                                    <th scope="col">Owner</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Account</th>
+                                    <th scope="col">Contact</th>
+                                    <th scope="col">Subject</th>
+                                    <th scope="col">Recall Acknowledgement Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={selectedCases} for:item="caseItem" for:index="index">
+                                    <tr key={caseItem.caseId}>
+                                        <td>
+                                            <lightning-input data-caseid={caseItem.caseId} type="checkbox" checked={caseItem.isSelected} name={caseItem.caseId}
+                                                onchange={handleCheckboxChange} disabled={caseItem.isDisabled}></lightning-input>
+                                        </td>
+                                        <td>{caseItem.caseNumber}</td>
+                                        <td>{caseItem.fanNumber}</td>
+                                        <td>{caseItem.ownerName}</td>
+                                        <td>{caseItem.caseStatus}</td>
+                                        <td>{caseItem.accountName}</td>
+                                        <td>{caseItem.contactName}</td>
+                                        <td>{caseItem.caseSubject}</td>
+                                        <td>{caseItem.recallAcknowledgementStatus}</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                   </div>
+         
+                   <!-- modal footer start-->
+                   <footer class="slds-modal__footer">
+                      <!-- sldsValidatorIgnoreNextLine -->
+                      <button class="slds-button slds-button_neutral" onclick={handleCancel}>Cancel</button>
+                      <!-- sldsValidatorIgnoreNextLine -->
+                      <button class="slds-button slds-button_neutral" onclick={handleProceed}>Attach</button>
+                   </footer>
+                
+                </div>
+             </section>
+             <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>
+</template>

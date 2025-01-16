@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckStatusIsDeliveredOrShipped</fullName>
+    <active>true</active>
+    <description>If the status of line item is Delivered or shipped, prevent the change of status to &quot;On Hold&quot; and &quot;Cancelled&quot;</description>
+    <errorConditionFormula>AND(
+	NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)),	
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),  	
+    ISCHANGED( SVMXC__Line_Status__c ),
+    OR(
+        TEXT(PRIORVALUE(SVMXC__Line_Status__c)) == $Label.PartsOrderLineDelivered,
+        TEXT(PRIORVALUE(SVMXC__Line_Status__c)) == $Label.PartsOrderLineShipped
+    ),
+    OR(
+       TEXT(SVMXC__Line_Status__c) == $Label.PartsOrderLineOnHold,
+       TEXT(SVMXC__Line_Status__c) == $Label.PartsOrderLineCanceled
+      ) 
+  )</errorConditionFormula>
+    <errorMessage>Parts Order Lines cannot be moved to &quot;On Hold&quot; or &quot;Canceled&quot; when the line is in &quot;Shipped&quot; or &quot;Delivered&quot; status.   Parts will need to be received and returned with a trunk return.</errorMessage>
+</ValidationRule>

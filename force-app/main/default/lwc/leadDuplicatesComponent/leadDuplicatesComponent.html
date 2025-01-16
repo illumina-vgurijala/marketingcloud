@@ -1,0 +1,93 @@
+<!--
+Component name: leadDuplicatesComponent
+description: This LWC component is to display the duplicate records and provides an option for merging/converting those.
+@author: Prashanth Kumar
+Modification log:
+============================================================================
+developer                       date                      version
+===========================================================================
+Prashanth Kumar                18-09-2020                original version
+-->
+<template>
+    <lightning-card icon-name="standard:merge" variant="narrow">
+        <!-- Display spinner till the server load-->
+        <template if:false={loaded}>
+            <lightning-spinner variant = "brand" alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template if:true={loaded}>
+            <template if:false={error}>
+                <h1 slot="title" style="white-space:normal;font-weight: bold;">{title}</h1>
+                <!-- Display view duplicates option only if we have dupliicates-->
+                <template if:true={showContactButton}>
+                    <lightning-button class="slds-align_absolute-center" name="contact" label={contactBtnLabel} variant = "base" onclick= {viewDuplicates}></lightning-button>
+                </template>
+                <template if:true={showLeadButton}>
+                    <lightning-button class="slds-align_absolute-center" name = "lead" label={leadBtnLabel} variant = "base" onclick= {viewDuplicates}></lightning-button>
+                </template>
+            </template>
+        </template>
+    </lightning-card>
+    
+    <!-- Display the modal with list of duplicates using lightning data table-->
+    <template if:true={showModal}>
+        <div class="demo-only">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+                <div class="slds-modal__container">
+                    <!-- Header-->
+                    <header class="slds-modal__header">
+                        <lightning-button-icon
+                        class="slds-modal__close"
+                        title="Close"
+                        icon-name="utility:close"
+                        icon-class="slds-button_icon-inverse"
+                        onclick={closeModal}></lightning-button-icon>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Potential Duplicate Records</h2>
+                    </header>
+                    <!-- Modal Content-->
+                    <div class="slds-modal__content slds-var-p-around_medium slds-scrollable" id="modal-content-id-1">
+                        <!-- Display spinner till the server load-->
+                        <template if:false = {isCompleted}>
+                            <lightning-spinner variant = "brand" alternative-text="Loading"></lightning-spinner>
+                        </template>
+                        <!-- Call the generic data table component to display the duplicates based on the params that we sent-->
+                        <template if:false={showCommentBox}>
+                            <template if:true={isContact}>
+                                <div class="slds-text-heading_small slds-var-m-bottom_xx-small">Contacts</div>
+                                <c-potential-duplicates-component record-id ={recordId} object-api-name="Contact" field-names-str={fieldnamestr} lookupmap={lookupmap} rowactionmap={} whereclause={whereClauseContacts} columnactionmap={} hide-checkboxcolumn={hideCheckboxColumn} showrownum="true" onselected={handleSelectToConvert} column-width-mode="fixed"></c-potential-duplicates-component>
+                            </template>
+                            <template if:true={isLead}>
+                                <div class="slds-text-heading_small slds-var-m-bottom_xx-small">Leads</div>
+                                <c-potential-duplicates-component record-id ={recordId} object-api-name="Lead" field-names-str={leadfieldnamestr} lookupmap={} rowactionmap={} whereclause={whereClauseLeads} columnactionmap={} hide-checkboxcolumn={hideLeadsCheckboxColumn} showrownum="true" onselected={handleSelect} column-width-mode="fixed"></c-potential-duplicates-component>
+                            </template>
+                        </template>
+                        <!-- Display Merge request Comment Box-->
+                        <template if:true={showCommentBox}>
+                            <div>
+                                <lightning-textarea name="Comment Box" label={label.commentBoxMsg}></lightning-textarea>
+                            </div>
+                        </template>
+                       
+                    </div>
+                    
+                    <!-- Modal footer-->
+                    <footer class="slds-modal__footer">
+                        <template if:true={showMergeButton}>
+                            <lightning-button class= "slds-var-m-left_x-small" label="Submit Merge Request" variant = "brand" onclick= {submitMergeButton}></lightning-button>
+                        </template>
+                        <template if:true={showCommentBox}>
+                            <lightning-button class= "slds-var-m-left_x-small" label="Send Merge Request" variant = "brand" onclick= {sendEmail}></lightning-button>
+                        </template>
+                        <lightning-button label="Close" variant="neutral" class= "slds-var-m-left_x-small" onclick={closeModal}></lightning-button>
+                        <template if:true={isLead}> 
+                            <lightning-button class= "slds-var-m-left_x-small" label="Next" variant = "brand" onclick= {next} disabled={disableNextButton}></lightning-button>
+                        </template>
+                        <template if:true={isContact}> 
+                            <lightning-button class= "slds-var-m-left_x-small" label="Convert" variant = "brand" onclick= {onConvert} disabled={isConvertDisabled}></lightning-button>
+                        </template>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </template>
+</template>

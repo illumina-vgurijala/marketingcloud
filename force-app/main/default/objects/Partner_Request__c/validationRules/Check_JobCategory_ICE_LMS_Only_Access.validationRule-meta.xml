@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Check_JobCategory_ICE_LMS_Only_Access</fullName>
+    <active>true</active>
+    <description>CMCM 711:  Job Categories Sales, FAS, FAS/Sales, FAS/Clinical Specialist, FSE,Sales/Clinical Specialist​ cannot be selected when Access Configuration = ICE/LMS Only Access - NO ICPP ACCESS</description>
+    <errorConditionFormula>AND(
+	OR(
+		RecordType.DeveloperName== $Label.PortalRequestAddTeamMember, 	
+		RecordType.DeveloperName== $Label.PortalRequestUpdateMemberRequest
+	),	
+        (TEXT(Access_Configuration__c) == $Label.ICE_LMS_Only_Access_NO_ICPP_ACCESS),  
+	OR(
+		(TEXT(Job_Category__c) == $Label.FAS),
+		(TEXT(Job_Category__c) == $Label.FAS_Clinical_Specialist),
+		(TEXT(Job_Category__c) == $Label.FAS_Sales),
+		(TEXT(Job_Category__c) == $Label.FSE),
+		(TEXT(Job_Category__c) == $Label.Sales),
+		(TEXT(Job_Category__c) == $Label.Sales_Clinical_Specialist)
+	),
+	/*Bypass criterias are mentioned below*/
+	NOT (
+		OR (
+			$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+                        $Profile.Name = $Label.ProfileSystemAdmin
+		)
+	)
+)</errorConditionFormula>
+    <errorMessage>The Job Category selected typically needs ICPP access. If ICPP access is needed, do not use the &quot;ICE/LMS Only&quot; Access Configuration option; select a different Access Configuration to get ICPP access.</errorMessage>
+</ValidationRule>

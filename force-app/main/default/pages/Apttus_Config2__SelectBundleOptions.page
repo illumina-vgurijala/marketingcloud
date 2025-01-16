@@ -1,0 +1,2486 @@
+<!-- 
+    Apttus Config & Pricing
+    SelectBundleOptions
+     
+    @2010-2011 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__LineItem__c"
+		   extensions="Apttus_Config2.SelectBundleOptionsController,Apttus_Config2.RemoteActionController,Apttus_Config2.RemoteCartController" 
+		   showHeader="false"
+		   sidebar="false" 
+		   cache="false" 
+		   tabstyle="Product2">
+	
+	<!-- YAHOO library will be removed later. added to support RuleMessageDisplay controller -->
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/container/container-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/dragdrop/dragdrop-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/animation/animation-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/treeview/treeview-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/menu/menu-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo/yahoo-min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+   	
+   	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__ActionFunctionQueue)}"/>
+   	<apex:includeScript value="{!$Resource.Apttus_Config2__CPQJSLibrary}"/>
+	<apex:includeScript value="{!$Resource.Apttus_Config2__ConfigJSLib}"/>
+	<apex:includeScript value="{!$Resource.Apttus_Config2__ConfigSubbundleJSLib}"/>
+	<apex:includeScript value="{!$Resource.Apttus_Config2__CPQPricingJSLib}"/>
+	
+	
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQGlobalCSS, 'CPQNewUI.css')}" />
+	
+	<apex:stylesheet value="{!$Resource.Apttus_Config2__CPQCartCSS}"/>
+	 
+	<script type="text/javascript">
+		
+		//set the title and progress bar icon
+		var aptLoadingPageHeader = "{!JSINHTMLENCODE($Label.LoadingPage)}";
+		var aptRuleAlertHeader = "{!JSINHTMLENCODE($Label.ConstraintRuleAlert)}";
+		var aptDialogBody = '<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>';
+		var aptRemoveHeader = "{!JSINHTMLENCODE($Label.RemoveConfirmation)}";
+		var aptNoneNumber = {!NoneNumber};
+		
+		YAHOO.namespace("force.com");
+		// detail panel
+		YAHOO.force.com.globalCtx = new Object();
+		YAHOO.force.com.clsNodes = new Array();
+		YAHOO.force.com.selectedNode = new Object();
+				
+		//for IE load the script into DOM
+		function loadJSFile(filename){
+			var fileref = document.createElement('script');
+		 	if (typeof fileref != "undefined"){
+			 	fileref.setAttribute("type","text/javascript");
+			 	fileref.setAttribute("src", filename);
+		  		document.getElementsByTagName("head")[0].appendChild(fileref);
+		 	}
+		}
+		function closeAttributesDialog(){
+			j$('#idAttributesDialog').dialog('destroy');
+		}
+		
+		function setAttributeDialogHeader(dialogHeader){
+			j$('.attributesDialog span[class="ui-dialog-title"]').html(dialogHeader);
+		}
+		//load the JavaScript file. This is necessary for IE
+		loadJSFile("{!$Resource.ConfigPromptJSLib}");
+		
+	</script>
+	
+	<!-- >apex:includeScript value="{!$Resource.Apttus_Config2__ConfigSubbundleJSLib}"/> -->
+	    
+	<!-- TODO: Remove above YAHOO library related code -->
+    
+    <style>
+    	.aptProductHeader {
+			background: -moz-linear-gradient(top,  rgba(30,87,153,1) 0%, rgba(125,185,232,0) 100%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(30,87,153,1)), color-stop(100%,rgba(125,185,232,0)));
+			background: -webkit-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -o-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -ms-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: linear-gradient(to bottom,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#007db9e8',GradientType=0 );
+			border-radius: 3px;
+			height:30px;
+		}
+		.aptContextSystem {
+			text-align: left;
+			position: absolute;
+			left: 2em;
+		}
+		
+		.aptLeftPadding {
+			left: 2em;
+		}
+		
+		.aptQuantity {
+            text-align: right;
+            width:3em;
+        }
+        .clearfix {
+			float: none;
+			clear: both;
+		}
+		
+		.oddRow {
+			border-color: transparent;
+			height: 3em;
+		}
+		
+		.evenRow {
+			border-color: transparent;
+			height: 3em;
+		}
+		
+		.headerClass {
+			height: 2.5em;
+			font-size: 1em;
+			font-family: sans-serif;
+			padding: 2px 4px; 
+		}
+		
+		.bPageBlock {
+            border: none !important;
+        }   
+        
+        .aptGroupHeader {
+			background: -moz-linear-gradient(top,  rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%); /* FF3.6+ */
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0))); /* Chrome,Safari4+ */
+			background: -webkit-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* Chrome10+,Safari5.1+ */
+			background: -o-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* Opera 11.10+ */
+			background: -ms-linear-gradient(top,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* IE10+ */
+			background: linear-gradient(to bottom,  rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%); /* W3C */
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6d3d3d3', endColorstr='#00ffffff',GradientType=0 ); /* IE6-9 */
+			
+			height:30px;
+				
+		}
+		
+		.aptGroupHeaderHeaderPadding {
+			padding:5px;
+		}
+	    
+	    .aptAttributesCloseDialogIcon{
+			width: 28px;
+			height: 28px;
+			background:url('{!URLFOR($Resource.Image_Page_Icons)}') no-repeat 0 0;
+			-webkit-filter: drop-shadow(5px 5px 4px #888888);
+			filter: drop-shadow(5px 5px 5px #222);
+		}
+	
+        
+	</style>
+    
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+		
+		var selectedCheckboxOptions = {};
+		var selectedRadioOptions = {};
+		var emptyRadioGroups = {};
+		j$.APTTUS.activeTabId = null;
+		j$.APTTUS.removeConfirmationLabel  = "{!JSINHTMLENCODE($Label.RemoveConfirmation)}";
+		j$.APTTUS.constraintRuleAlertLabel = "{!JSINHTMLENCODE($Label.ConstraintRuleAlert)}";
+		j$.APTTUS.updatingPriceLabel = "{!JSINHTMLENCODE($Label.UpdatingPrice)}";
+		j$.APTTUS.deferPricingUntilCart = "{!DeferPricingUntilCart}";
+		j$.APTTUS.configurationId = "{!JSENCODE(ConfigurationId)}";
+		j$.APTTUS.ApplyAutomaticPricing = !{!DeferPricingUntilCart};
+		
+		j$.APTTUS.RemoteController = {};
+		j$.APTTUS.RemoteController.doComputeBasePriceForItemColl = '{!$RemoteAction.RemoteCartController.doComputeBasePriceForItemColl}';
+		j$.APTTUS.RemoteController.doComputeNetPriceForItemColl = '{!$RemoteAction.RemoteCartController.doComputeNetPriceForItemColl}';
+		j$.APTTUS.RemoteController.doComputeTotalPriceForCart = '{!$RemoteAction.RemoteCartController.doComputeTotalPriceForCart}';
+		
+		j$.APTTUS.RemoteController.getProductDescription = '{!$RemoteAction.RemoteActionController.getProductDescription}';
+		j$.APTTUS.RemoteController.doUpdatePriceForCart = '{!$RemoteAction.RemoteCartController.doUpdatePriceForCart}';
+		j$.APTTUS.RemoteController.getRecommendedProducts = '{!$RemoteAction.RemoteActionController.getRecommendedProducts2}';
+		
+		j$.APTTUS.ActionUrlMap = {};
+        j$.APTTUS.valueChanged = false; 
+		
+	   /**
+		* Get product information and display in popup panel
+		* using JavaScript remoting
+		*/
+		function getRemoteProductDetail(productId){
+			getProductDetail3('{!$RemoteAction.RemoteActionController.getProductDescription}', productId);
+		}
+		
+		function invokeDoViewCart(){
+        	invokeDoUpdateBundle('{!MoveToCart}');
+        
+        }
+		j$(document).ready(function(){
+			if({!isAssetCancelled}){
+			    var position = j$('.buttonsPanel').next().offset();
+				j$('.aptAssetCancelledOverlay').css({position:'absolute',left:0, top:position.top});
+				j$('.aptAssetCancelledOverlay').height(j$(document).height() - position.top - (j$(document).height() - j$('.bottomButtons').offset().top));
+				j$('.aptAssetCancelledOverlay').show();
+				
+			}
+		
+		})
+				
+			
+	</script>
+	
+	<script>
+		
+		/**
+		 * invokes doUpdateBundle
+		 */
+		function invokeDoUpdateBundle2(moveDirection){
+			showWaitPanel();
+			var selectedAndRemovedIds = aptGetSelectedAndRemovedIds();
+			//invoke apex function
+			sfdcDoUpdateBundle2(selectedAndRemovedIds[0], selectedAndRemovedIds[1], selectedAndRemovedIds[2], moveDirection);	
+			return false; //so that the command button do not submit the form by itself
+		
+		}
+	
+		var savedCustomPageURL;//used by openCustomActionDialog
+		 
+		//function overridden to first save before loading dialog
+		function openIframe(customPageURL) { 
+		    savedCustomPageURL = customPageURL;
+		    invokeDoUpdateBundle2('{!MoveStay}');
+		    
+		}
+		
+		//open custom action dialog
+		function openCustomActionDialog(){
+			j$("#dialog").html(j$("<iframe />").attr("src", savedCustomPageURL).attr("width", "100%").attr("height", "100%"));
+		    j$('#dialog').dialog({
+		        width: j$(window).width()*0.8,
+		        height: j$(window).height()*0.8
+		    });
+		    
+		}
+	
+	</script>
+	
+	<!-- fix issues with right hand side section
+	<apex:stylesheet value="{!URLFOR($Resource.CPQConfigStyles, 'CPQConfigStyles.css')}" />
+	-->
+	<apex:form id="idForm">
+
+		<!--  required fields -->
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__ProductId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__OptionId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.ProductId__r.Name}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.ProductId__r.Apttus_Config2__IconId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.ProductId__r.Apttus_Config2__IconSize__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__ConfigurationId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__PriceListId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__LineNumber__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__PrimaryLineNumber__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__ItemSequence__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__Quantity__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__Customizable__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__HasOptions__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__HasAttributes__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__AttributeValueId__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__LineType__c}" rendered="false" />
+		<apex:outputText value="{!Apttus_Config2__LineItem__c.Apttus_Config2__LineStatus__c}" rendered="false" />
+		<!--  Cart Header  -->
+	    <c:CartHeader id="idCartHeader" 
+	    			  cartId="{!ConfigurationId}" 
+	    			  requestId="{!RequestId}" />
+
+		
+			<apex:outputPanel id="idErrorMsg">
+				<apex:pageMessages />
+				<script>
+					j$.APTTUS.stopHide = false;
+					if({!HasPendingDefault} == true){
+						j$.APTTUS.stopHide = true;
+						j$(function(){
+							invokeDoUpdateBundle('{!MoveStay}');
+						});
+						
+					}
+					j$(document).ready(function(){
+						j$("*[data-enabled=\"false\"]").prop("disabled", true);
+					});	
+
+				</script>
+				
+				<c:RuleMessageDisplay id="idRuleMessageComponent" configId="{!ConfigurationId}" contextLineNumber="{!ContextLineNumber}" hasChoice="{!RuleResult.isEmpty == false}"/>	
+				<!-- <h2>{!ctxBundleNumber} --- {!ctxPrimaryLineNumber}</h2> -->
+				<!-- Start Error Message on Page Header-->
+				<apex:outputPanel id="idPageLevelError"
+					style="width: 100%; padding-bottom: 3px;"
+					rendered="{!hasPageLevelError}">
+					<div
+						style="border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+					<table border="0" cellspacing="0" cellpadding="0" width="100%">
+						<tr>
+							<td width="1%" class ="errorTitle" style="background-color: #F75D59;" rowspan="1"
+								valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+							<td width="98%" class ="errorTitle" style="background-color: #F75D59;"><span
+								style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+							<td width="1%" valign="top" style="text-align: right; background-color: #F75D59;">
+	                            <apex:image url="{!$Resource.Apttus_Config2__Image_Down}" style="display:none" styleClass="imageDownArrow"/>
+	                            <apex:image url="{!$Resource.Apttus_Config2__Image_Left}" style="display:none" styleClass="imageLeftArrow"/>
+	                        </td>
+						</tr>
+						<tr class="errorContent">
+							<td colspan="3">
+								<apex:outputPanel >
+									<apex:dataList value="{!productIdToGroupErrors}" type="none" var="productId"
+										id="idPageError" style="padding: 1px;">
+										<apex:outputText value="Errors for {!productIdToName[productId]}" id="idErrorProduct" />
+										<apex:dataList value="{!productIdToGroupErrors[productId]}" type="none" var="errorMsg">
+											<apex:outputText value="{!errorMsg}" id="idErrorValue" />
+										</apex:dataList>
+									</apex:dataList>
+								</apex:outputPanel>
+							</td> 
+							
+						</tr>
+					</table>
+					</div>
+					<br />
+				</apex:outputPanel>
+				<script>
+					j$('.errorContent').hide();
+					j$('.imageLeftArrow').show();
+					j$('.errorTitle,.imageDownArrow,.imageLeftArrow').on('click', function(){
+						if(j$('.errorContent').css('display') === 'none'){
+							j$('.errorContent').show();
+							j$('.imageDownArrow').show();
+							j$('.imageLeftArrow').hide();
+						} else {
+							j$('.errorContent').hide();
+							j$('.imageLeftArrow').show();
+							j$('.imageDownArrow').hide();
+						}
+					
+					});
+				
+				</script>
+				<!-- End Error Message on Page Header -->
+
+			</apex:outputPanel>
+
+			<apex:outputPanel style="display:block; text-align:center" styleClass="buttonsPanel">
+				<apex:outputText rendered="{!isAssetCancelled}" style="padding-top: 25px; margin-bottom: 0px; font-size: 1.5em;
+								color: red; display: inline;" value="{!$Label.apttus_config2__assetcancelled}"/>
+				<apex:outputPanel id="idTopLink" layout="inline" styleClass="aptContextSystem" rendered="false">
+					<apex:commandLink value="{!systemLineItemSO.ProductId__r.Name}" 
+						onclick="return invokeConfigureSystem();"/>
+					<apex:commandLink value="{!parentLineItemSO.OptionId__r.Name}" styleClass="aptLeftPadding"
+						onclick="return invokeConfigureSystem();"
+						rendered="{!(systemLineItemSO.Id != parentLineItemSO.Id)}"
+						/>
+				</apex:outputPanel>	
+				<apex:commandButton value="{!$Label.apttus_config2__removeitem}" 
+					onclick="showRemoveConfirmation('{!ContextLineNumber}');return false;"
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__addmoreproducts}"
+					onclick="return invokeDoUpdateBundle('{!MoveToSelect}');"
+					oncomplete="hideWaitPanel();" reRender="idErrorMsg" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__backtodetail}"
+					onclick="return invokeDoUpdateBundle('{!MoveToDetail}');"
+					oncomplete="hideWaitPanel();"
+					rendered="{!backToDetail}"  
+					reRender="idErrorMsg" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__validatebundle}"
+					onclick="return invokeDoUpdateBundle('{!MoveStay}');"
+					oncomplete="hideWaitPanel();" reRender="idErrorMsg" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__gotopricing}"
+					onclick="return invokeDoUpdateBundle('{!MoveToCart}');"
+					oncomplete="hideWaitPanel();" reRender="idErrorMsg"
+					rendered="{!NOT(IsBypassShoppingCart)}" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__updateprice}"
+					onclick="doPricePendingLineItems({!LineItemSO.Apttus_Config2__LineNumber__c});return false;"   
+					rendered="{!IsBypassShoppingCart && NOT(IsCartEmpty)}"
+					styleClass="aptListButton"
+					reRender="dummy"/>
+				<!--  print the custom action buttons -->	  
+				<apex:repeat value="{!PageActions}" var="actionInfo">
+                    <apex:outputPanel layout="none" rendered="{!actionInfo.IsDisplay && actionInfo.ActionSO.Apttus_Config2__DisplayAs__c != 'Link'}">
+                             <apex:commandLink value="{!$Label[actionInfo.ActionSO.Apttus_Config2__ActionLabelName__c]}" 
+                                              onclick="{!actionInfo.ActionScript}" 
+                                              styleClass="aptListButton {!actionInfo.ActionSO.Apttus_Config2__ActionStyleClass__c}"
+                                              status="buttonActionStatus"
+                                              html-displayas="{!actionInfo.ActionSO.Apttus_Config2__DisplayAs__c}"
+                                              html-actionarea="{!actionInfo.ActionSO.Apttus_Config2__ActionArea__c}"
+                                              html-aptdisabled="{!actionInfo.IsEnabled == false}"
+                                              reRender="dummy">
+                            </apex:commandLink>
+                            <script>
+                            	j$.APTTUS.ActionUrlMap["{!JSENCODE(actionInfo.ActionSO.ActionName__c)}"] = "{!JSENCODE(actionInfo.DirectUrl)}";
+                          	</script>
+                    </apex:outputPanel>    
+                </apex:repeat>
+			</apex:outputPanel>
+			
+			<apex:outputPanel id="idGroupOptionsPanel">
+					
+						<div style="width: {!ListedOptionsWidth}; float:left;"  valign="top">
+							<div style="margin:5px;">
+							
+							<div style="width: 100%; float:left; margin-bottom: 5px;" >
+								<div class="aptRoundedDiv">
+									<apex:outputPanel id="idProductHeaderPanel"> 	
+										<div class="aptProductHeader" style="width:100%">										  
+										</div>
+										<div class="clearfix" width="100%">
+										<apex:outputPanel rendered="{!NOT(ISNULL(bundleImageUrl))}">
+											<div style="float:left; text-align:center; padding-bottom:10px;">
+												<img style="{!bundleImageStyle}" src="{!bundleImageUrl}"></img>
+											</div>
+										</apex:outputPanel>
+										<div style="width:80%; float:left; padding-left: 5px;" class="{!systemLineItemSO.Id}">
+											<div style="width:100%; float:left;">
+												<apex:outputText style="font-weight:bold;color:#5487B9;text-transform:uppercase"
+														 value="{!$Label.apttus_config2__configureoptionsfor}" />
+												&nbsp;	
+												<apex:outputText style="font-weight:bold;color:#5487B9;" 
+														 value="{!bundleName}" />
+											</div>								
+											<!-- <apex:outputPanel style="width:100%; float:left;" rendered="{!NOT(ISBLANK(BundleDescriptionFieldName))}">
+												<apex:outputField rendered="{!NOT(ISBLANK(BundleDescriptionFieldName))}" value="{!systemLineItemSO.ProductId__r[BundleDescriptionFieldName]}"/>
+											</apex:outputPanel> -->
+										</div>
+										</div>
+									</apex:outputPanel>
+								</div>
+							
+							</div>
+							<div class="clearfix" width="100%"/>
+							<div id="idTabPanel">
+								<apex:outputPanel layout="none" rendered="{!NOT(isAssetCancelled)}">
+									<ul>
+										<li>
+											<apex:outputPanel rendered="{!HasAttributes && NOT(IsSystem)}"><a href="#AttributesTab">{!$Label.apttus_config2__attributes}</a></apex:outputPanel>
+										</li>
+										<li>
+											<apex:outputPanel rendered="{!group1TabEnabled}"><a href="#idGroup1Tab">{!group1TabLabel}</a></apex:outputPanel>
+										</li>
+										<li>
+											<apex:outputPanel rendered="{!group2TabEnabled}"><a href="#idGroup2Tab">{!group2TabLabel}</a></apex:outputPanel>
+										</li>
+										<li>
+											<apex:outputPanel rendered="{!group3TabEnabled}"><a href="#idGroup3Tab">{!group3TabLabel}</a></apex:outputPanel>
+										</li>
+										<li>
+											<apex:outputPanel rendered="{!group4TabEnabled}"><a href="#idGroup4Tab">{!group4TabLabel}</a></apex:outputPanel>
+										</li>
+										<li>
+											<apex:outputPanel rendered="{!group5TabEnabled}"><a href="#idGroup5Tab">{!group5TabLabel}</a></apex:outputPanel>
+										</li>
+										<li>
+											<apex:outputPanel rendered="{!group6TabEnabled}"><a href="#idGroup6Tab">{!group6TabLabel}</a></apex:outputPanel>
+										</li>
+										<li>
+											<apex:outputPanel rendered="{!group7TabEnabled}"><a href="#idGroup7Tab">{!group7TabLabel}</a></apex:outputPanel>
+										</li>
+										
+									</ul>
+								</apex:outputPanel>
+								<div id="AttributesTab" style="display:table; width: 97%;">
+									<!--  Start Attribute Groups -->
+				                    <apex:repeat value="{!AttrGroups}" var="grp" id="idAttributeGroups" rendered="{!HasAttributes && NOT(IsSystem)}" >                      
+				                        <div class="aptGroupHeader" id="{!grp.groupName}">
+				                             <div class="aptGroupHeaderHeaderPadding" >
+				                                <h2>{!grp.groupName}</h2>
+				                             </div>
+				                        </div>  
+				                        <apex:pageBlock id="idProductAttributeGroupsBlock">
+				                            <apex:pageBlockSection columns="{!IF(grp.twoColumnDisplay, '2', '1')}" 
+				                                  collapsible="true" >                        
+				                                <!-- attribute value fields -->
+				                                <apex:repeat value="{!grp.productAtributes}" var="f">
+				                                    <apex:outputField rendered="{!f.Apttus_Config2__IsReadOnly__c}" value="{!attributeValueSO[f.Apttus_Config2__Field__c]}" />
+				                                    <apex:inputField rendered="{!NOT(f.Apttus_Config2__IsReadOnly__c)}" value="{!attributeValueSO[f.Apttus_Config2__Field__c]}" />
+				                                </apex:repeat>                     
+				                            </apex:pageBlockSection>
+				                         </apex:pageBlock>                        
+				                    </apex:repeat>
+								</div>
+								<div id="idGroup1Tab" style="display:table; width: 97%;">
+									
+										<apex:repeat value="{!group1OptionInfos}"
+											var="groupInfo">
+											<div class="aptRoundedDiv">
+												<div class="aptProductListHeader" style="float:none" >
+													<h2>{!groupInfo.groupLineage}</h2>
+												</div>	
+												<apex:outputPanel title="{!groupInfo.groupLineage}"  
+														rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}">
+													
+													<!-- Start Error Message Per Group-->
+													<apex:outputPanel id="idOptionGroupErrorMessage"
+														styleClass="apt-page-error"
+														style="width: 100%; padding-bottom: 3px;"
+														rendered="{!groupInfo.hasError}">
+														<div
+															style="width: 100%; border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+														<table border="0" cellspacing="0" cellpadding="0"
+															width="100%">
+															<tr>
+																<td width="1%" style="background-color: #F75D59;"
+																	rowspan="1" valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+																<td width="98%" style="background-color: #F75D59;"><span
+																	style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+																<td width="1%" valign="top"
+																	style="text-align: right; background-color: #F75D59;">
+																&nbsp;</td>
+															</tr>
+															<tr>
+																<td colspan="3"><apex:outputPanel >
+																	<apex:dataList value="{!groupInfo.errorMessages}"
+																		var="messageString" id="theRepeat"
+																		style="padding: 1px;">
+																		<apex:outputText value="{!messageString}" id="theValue" />
+																	</apex:dataList>
+																</apex:outputPanel></td>
+															</tr>
+														</table>
+														</div>
+														<br />
+													</apex:outputPanel>
+													<!-- End Error Message Per Group-->
+													<apex:dataTable value="{!groupInfo.optionList}"
+														var="option" rules="rows" headerClass="headerClass" rowClasses="oddRow, evenRow"
+														width="100%" columns="7"
+														rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}"
+														>
+														
+														<apex:column width="10%">
+															<apex:facet name="header">{!$Label.apttus_config2__select}</apex:facet>
+															<apex:PanelGrid columns="5">
+																<apex:outputPanel rendered="{!NOT(ISNULL(groupInfo.groupSO.Apttus_Config2__MaxOptions__c)) && groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1}">
+																	<apex:outputPanel rendered="{!NOT(option.isCopy) && option.checked}">
+																		<input id="{!groupInfo.groupSO.Id}"
+																			name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																			value="{!option.primaryLineNumber}" checked="checked" 
+																			onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																		</input>
+																	</apex:outputPanel>
+																	<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																		<input id="{!groupInfo.groupSO.Id}"
+																			name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																			value="{!option.primaryLineNumber}"
+																			onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																		</input>
+																	</apex:outputPanel>
+																	<apex:outputPanel rendered="{!option.isCopy}">
+																		<input
+																			id="{!groupInfo.groupSO.Id}-{!option.primaryLineNumber}"
+																			name="{!groupInfo.groupSO.Id}" type="radio"
+																			value="{!option.primaryLineNumber}" 
+																			style="visibility: hidden">
+																		</input>
+																	</apex:outputPanel>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1)}">
+																	<apex:outputPanel rendered="{!NOT(option.isCopy) && (option.checked)}">
+																		<input id="{!option.primaryLineNumber}"
+																			name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																			value="{!option.primaryLineNumber}" checked="checked"
+																			onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																		</input>
+																	</apex:outputPanel>
+																	<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																		<input id="{!option.primaryLineNumber}"
+																			name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																			value="{!option.primaryLineNumber}"
+																			onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																		</input>
+																	</apex:outputPanel>
+																	<apex:outputPanel rendered="{!option.isCopy}">
+																		<input
+																			id="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																			name="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																			type="checkbox" value="{!option.primaryLineNumber}"
+																			checked="{!option.checked}" 
+																			style="visibility: hidden">
+																		</input>
+																	</apex:outputPanel>
+																</apex:outputPanel>
+																
+																<apex:outputPanel rendered="{!NOT(option.isBundle) || NOT(option.isSaved)}">
+																	<div style="width: 16px;">&nbsp;</div>
+																</apex:outputPanel>
+																
+																<!-- Icon for copy command link -->
+																<apex:commandLink action="{!copyOptionLine}"
+																	rendered="{!option.isCopyAllowed}"
+																	reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																	onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																	<apex:param name="param1" assignTo="{!ctxOptionId}"
+																		value="{!option.optionId}" />
+																	<apex:param name="param2" assignTo="{!ctxGroupId}"
+																		value="{!option.groupId}" />
+																	<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																		value="{!option.primaryLineNumber}" />
+																	<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}"
+																		title="{!$Label.apttus_config2__copy}" alt="{!$Label.apttus_config2__copy}" />
+																</apex:commandLink>
+																<!-- Icon for remove command link -->
+																<apex:commandLink action="{!removeCopiedOption}"
+																	rendered="{!option.isCopy}"
+																	reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																	onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																	<apex:param name="param1" assignTo="{!ctxOptionId}"
+																		value="{!option.optionId}" />
+																	<apex:param name="param2" assignTo="{!ctxGroupId}"
+																		value="{!option.groupId}" />
+																	<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																		value="{!option.primaryLineNumber}" />
+																	<apex:image url="{!$Resource.Apttus_Config2__Image_RemoveBlack}"
+																		title="{!$Label.apttus_config2__remove}" alt="{!$Label.apttus_config2__remove}" />
+																</apex:commandLink>
+																<!-- Icon for Configure command -->
+																<apex:commandLink rendered="{!option.isBundle}"
+																	reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																	onclick="return invokeDoConfigureOption('{!option.optionId}', '{!option.groupId}', '{!option.primaryLineNumber}', '{!option.parentBundleNumber}', '{!curTabSelection}');" 
+																	oncomplete="hideWaitPanel();">
+																	<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+																		title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+																</apex:commandLink>
+																<apex:commandLink oncomplete="setupAttributesPanel();"
+																					rendered="{!option.isSaved && option.lineSO.Apttus_Config2__HasAttributes__c}"
+																					rerender="idAttributesPanel">
+																				
+																		<!-- <span class="ui-icon ui-icon-gear"></span> -->
+																		<apex:image url="{!$Resource.Apttus_Config2__Image_Attributes}"/>
+																		<!-- <img class="attributesIcon"/> -->
+																		<apex:param name="param1" 
+																					assignTo="{!selectedLineItemId}"
+																					value="{!option.lineSO.Id}" />
+																	
+																</apex:commandLink>
+																<apex:image id="idLoadingIcon"
+																	value="{!$Resource.Apttus_Config2__Image_Blank}" />
+																</apex:panelGrid>
+														</apex:column>
+														<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+															<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__OptionSequence__c.Label}</apex:facet>
+															<apex:outputPanel rendered="{!NOT(option.isNone)}">
+																<apex:inputField styleClass="aptQuantity" 
+																				 value="{!option.lineSO.Apttus_Config2__OptionSequence__c}"
+																				 />
+															</apex:outputPanel>
+														</apex:column>
+														<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+															<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</apex:facet>
+															<apex:outputPanel rendered="{!NOT(option.isNone)}">
+																<apex:inputField styleClass="aptQuantity" 
+																				 value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																				 rendered="{!option.modifiable}"
+																				 />
+																<!-- <apex:outputText value="{0, number, 0}"
+																				 rendered="{!NOT(option.modifiable)}"
+																				 >
+																	 <apex:param value="{!option.lineSO.Apttus_Config2__Quantity__c}"/>
+																</apex:outputText> -->
+																<div class="aptQuantity">
+																	<apex:outputField value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																						rendered="{!NOT(option.modifiable)}"/>
+																</div>
+															</apex:outputPanel>
+														</apex:column>
+	
+														<apex:column width="40%">
+															<apex:facet name="header">{!$ObjectType.Product2.Fields.Name.Label}</apex:facet>
+															<apex:outputField value="{!option.componentSO.Apttus_Config2__ComponentProductId__c}" />
+															<apex:outputText value="{!option.optionName}"
+																style="font-weight:bold;"
+																rendered="{!(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+															<!--{!option.primaryLineNumber}---{!option.parentBundleNumber}-->	
+														</apex:column>
+														<apex:column width="20%" >
+															<apex:facet name="header">{!$ObjectType.Product2.Fields.ProductCode.Label}</apex:facet>
+															<apex:outputText value="{!option.productCode}" />
+															
+														</apex:column>
+														<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+															<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</div></apex:facet>
+															<!-- <apex:outputText id="idOptionListPrice"
+																value="{0,number,currency}" style="text-align: right;">
+																<apex:param value="{!option.ListPrice}" />
+															</apex:outputText> -->
+															<div class = "aptCurrency" style="text-align: right;">
+																<apex:outputField id="idOptionListPrice" value="{!option.ListPrice.charge.Apttus_Config2__ListPrice__c}" />
+															</div>
+														</apex:column>
+	
+														<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+															<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</div></apex:facet>
+															<!-- <apex:outputText id="idOptionExtendedPrice"
+																value="{0,number,currency}" style="text-align: right;"
+																rendered="{!NOT(option.isNone)}">
+																<apex:param value="{!option.ExtendedPrice}" />
+															</apex:outputText> -->
+															<div class = "aptCurrency" style="text-align: right;">
+																<apex:outputField id="idOptionExtendedPrice" value="{!option.ExtendedPrice.charge.Apttus_Config2__Cost__c}" rendered="{!NOT(option.isNone)}"/>
+															</div>
+														</apex:column>
+	
+														<apex:column width="5%" style="text-align: center;">
+															<apex:facet name="header"><div style="width: 100%; text-align: center;">{!$Label.apttus_config2__producthelp}</div></apex:facet>
+															<apex:commandLink rerender="dummy">
+																<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																	onclick="getRemoteProductDetail('{!option.componentProductId}');"
+																	rendered="{!NOT(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+															</apex:commandLink>	
+														</apex:column>
+	
+	
+													</apex:dataTable>
+	
+													<apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}"
+														rendered="{!groupInfo.optionList.size == 0}" />
+	
+												</apex:outputPanel>
+												
+											
+											</div>
+										</apex:repeat>
+									
+								</div>
+
+								<div id="idGroup2Tab" style="display:table; width: 97%;">
+
+									<apex:repeat value="{!group2OptionInfos}"
+										var="groupInfo">
+										<div class="aptRoundedDiv">
+											<div class="aptProductListHeader" style="float:none" >
+												<h2>{!groupInfo.groupLineage}</h2>
+											</div>
+											<apex:outputPanel title="{!groupInfo.groupLineage}"  
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}">
+
+												<!-- Start Error Message Per Group-->
+												<apex:outputPanel id="idOptionGroupErrorMessage"
+													style="width: 100%; padding-bottom: 3px;"
+													styleClass="apt-page-error"
+													rendered="{!groupInfo.hasError}">
+													<div
+														style="width: 100%; border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+													<table border="0" cellspacing="0" cellpadding="0"
+														width="100%">
+														<tr>
+															<td width="1%" style="background-color: #F75D59;"
+																rowspan="1" valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+															<td width="98%" style="background-color: #F75D59;"><span
+																style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+															<td width="1%" valign="top"
+																style="text-align: right; background-color: #F75D59;">
+															&nbsp;</td>
+														</tr>
+														<tr>
+															<td colspan="3"><apex:outputPanel >
+																<apex:dataList value="{!groupInfo.errorMessages}"
+																	var="messageString" id="theRepeat"
+																	style="padding: 1px;">
+																	<apex:outputText value="{!messageString}" id="theValue" />
+																</apex:dataList>
+															</apex:outputPanel></td>
+														</tr>
+													</table>
+													</div>
+													<br />
+												</apex:outputPanel>
+												<!-- End Error Message Per Group-->
+												<apex:dataTable value="{!groupInfo.optionList}"
+													var="option" rules="rows" headerClass="headerClass" rowClasses="oddRow, evenRow"
+													width="100%" columns="7"
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}"
+													>
+													
+													<apex:column width="10%">
+														<apex:facet name="header">{!$Label.apttus_config2__select}</apex:facet>
+														<apex:PanelGrid columns="4">
+															<apex:outputPanel rendered="{!NOT(ISNULL(groupInfo.groupSO.Apttus_Config2__MaxOptions__c)) && groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && option.checked}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked" 
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!groupInfo.groupSO.Id}-{!option.primaryLineNumber}"
+																		name="{!groupInfo.groupSO.Id}" type="radio"
+																		value="{!option.primaryLineNumber}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															<apex:outputPanel rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1)}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && (option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		type="checkbox" value="{!option.primaryLineNumber}"
+																		checked="{!option.checked}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															
+															<apex:outputPanel rendered="{!NOT(option.isBundle) || NOT(option.isSaved)}">
+																<div style="width: 16px;">&nbsp;</div>
+															</apex:outputPanel>
+															
+															<!-- Icon for copy command link -->
+															<apex:commandLink action="{!copyOptionLine}"
+																rendered="{!option.isCopyAllowed}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}"
+																	title="{!$Label.apttus_config2__copy}" alt="{!$Label.apttus_config2__copy}" />
+															</apex:commandLink>
+															<!-- Icon for remove command link -->
+															<apex:commandLink action="{!removeCopiedOption}"
+																rendered="{!option.isCopy}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_RemoveBlack}"
+																	title="{!$Label.apttus_config2__remove}" alt="{!$Label.apttus_config2__remove}" />
+															</apex:commandLink>
+															<!-- Icon for Configure command -->
+															<apex:commandLink rendered="{!option.isBundle}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="return invokeDoConfigureOption('{!option.optionId}', '{!option.groupId}', '{!option.primaryLineNumber}', '{!option.parentBundleNumber}', '{!curTabSelection}');" 
+																oncomplete="hideWaitPanel();">
+																<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+																	title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+															</apex:commandLink>
+															<apex:image id="idLoadingIcon"
+																value="{!$Resource.Apttus_Config2__Image_Blank}" />
+															</apex:panelGrid>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__OptionSequence__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__OptionSequence__c}"
+																			 />
+														</apex:outputPanel>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																			 rendered="{!option.modifiable}"
+																			 />
+															<!-- <apex:outputText value="{0, number, 0}"
+																			 rendered="{!NOT(option.modifiable)}"
+																			 >
+																 <apex:param value="{!option.lineSO.Apttus_Config2__Quantity__c}"/>
+															</apex:outputText> -->
+															<div class="aptQuantity">
+																<apex:outputField value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																					rendered="{!NOT(option.modifiable)}"/>
+															</div>
+														</apex:outputPanel>
+													</apex:column>
+
+													<apex:column width="40%">
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.Name.Label}</apex:facet>
+														<apex:outputField value="{!option.componentSO.Apttus_Config2__ComponentProductId__c}" />
+														<apex:outputText value="{!option.optionName}"
+															style="font-weight:bold;"
+															rendered="{!(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														<!--{!option.primaryLineNumber}---{!option.parentBundleNumber}-->	
+													</apex:column>
+													<apex:column width="20%" >
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.ProductCode.Label}</apex:facet>
+														<apex:outputText value="{!option.productCode}" />
+														
+													</apex:column>
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionListPrice"
+															value="{0,number,currency}" style="text-align: right;">
+															<apex:param value="{!option.ListPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionListPrice" value="{!option.ListPrice.charge.Apttus_Config2__ListPrice__c}" />
+														</div>
+													</apex:column>
+ 
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionExtendedPrice"
+															value="{0,number,currency}" style="text-align: right;"
+															rendered="{!NOT(option.isNone)}">
+															<apex:param value="{!option.ExtendedPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionExtendedPrice" value="{!option.ExtendedPrice.charge.Apttus_Config2__Cost__c}" rendered="{!NOT(option.isNone)}"/>
+														</div>
+													</apex:column>
+
+													<apex:column width="5%" style="text-align: center;">
+														<apex:facet name="header"><div style="width: 100%; text-align: center;">{!$Label.apttus_config2__producthelp}</div></apex:facet>
+														<apex:commandLink rerender="dummy">
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																onclick="getRemoteProductDetail('{!option.componentProductId}');"
+																rendered="{!NOT(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														</apex:commandLink>	
+													</apex:column>
+
+
+												</apex:dataTable>
+
+												<apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}"
+													rendered="{!groupInfo.optionList.size == 0}" />
+
+											</apex:outputPanel>
+											
+										</div>
+
+									</apex:repeat>
+								</div>
+
+								<div id="idGroup3Tab" style="display:table; width: 97%;">
+
+									<apex:repeat value="{!group3OptionInfos}"
+										var="groupInfo">
+										
+										<div class="aptRoundedDiv">
+											<div class="aptProductListHeader" style="float:none" >
+												<h2>{!groupInfo.groupLineage}</h2>
+											</div>
+											<apex:outputPanel title="{!groupInfo.groupLineage}"  
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}">
+
+												<!-- Start Error Message Per Group-->
+												<apex:outputPanel id="idOptionGroupErrorMessage"
+													style="width: 100%; padding-bottom: 3px;"
+													styleClass="apt-page-error"
+													rendered="{!groupInfo.hasError}">
+													<div
+														style="width: 100%; border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+													<table border="0" cellspacing="0" cellpadding="0"
+														width="100%">
+														<tr>
+															<td width="1%" style="background-color: #F75D59;"
+																rowspan="1" valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+															<td width="98%" style="background-color: #F75D59;"><span
+																style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+															<td width="1%" valign="top"
+																style="text-align: right; background-color: #F75D59;">
+															&nbsp;</td>
+														</tr>
+														<tr>
+															<td colspan="3"><apex:outputPanel >
+																<apex:dataList value="{!groupInfo.errorMessages}"
+																	var="messageString" id="theRepeat"
+																	style="padding: 1px;">
+																	<apex:outputText value="{!messageString}" id="theValue" />
+																</apex:dataList>
+															</apex:outputPanel></td>
+														</tr>
+													</table>
+													</div>
+													<br />
+												</apex:outputPanel>
+												<!-- End Error Message Per Group-->
+												<apex:dataTable value="{!groupInfo.optionList}"
+													var="option" rules="rows" headerClass="headerClass" rowClasses="oddRow, evenRow"
+													width="100%" columns="7"
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}"
+													>
+													
+													<apex:column width="10%">
+														<apex:facet name="header">{!$Label.apttus_config2__select}</apex:facet>
+														<apex:PanelGrid columns="4">
+															<apex:outputPanel rendered="{!NOT(ISNULL(groupInfo.groupSO.Apttus_Config2__MaxOptions__c)) && groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && option.checked}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked" 
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!groupInfo.groupSO.Id}-{!option.primaryLineNumber}"
+																		name="{!groupInfo.groupSO.Id}" type="radio"
+																		value="{!option.primaryLineNumber}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															<apex:outputPanel rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1)}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && (option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		type="checkbox" value="{!option.primaryLineNumber}"
+																		checked="{!option.checked}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															
+															<apex:outputPanel rendered="{!NOT(option.isBundle) || NOT(option.isSaved)}">
+																<div style="width: 16px;">&nbsp;</div>
+															</apex:outputPanel>
+															
+															<!-- Icon for copy command link -->
+															<apex:commandLink action="{!copyOptionLine}"
+																rendered="{!option.isCopyAllowed}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}"
+																	title="{!$Label.apttus_config2__copy}" alt="{!$Label.apttus_config2__copy}" />
+															</apex:commandLink>
+															<!-- Icon for remove command link -->
+															<apex:commandLink action="{!removeCopiedOption}"
+																rendered="{!option.isCopy}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_RemoveBlack}"
+																	title="{!$Label.apttus_config2__remove}" alt="{!$Label.apttus_config2__remove}" />
+															</apex:commandLink>
+															<!-- Icon for Configure command -->
+															<apex:commandLink rendered="{!option.isBundle}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="return invokeDoConfigureOption('{!option.optionId}', '{!option.groupId}', '{!option.primaryLineNumber}', '{!option.parentBundleNumber}', '{!curTabSelection}');" 
+																oncomplete="hideWaitPanel();">
+																<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+																	title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+															</apex:commandLink>
+															<apex:image id="idLoadingIcon"
+																value="{!$Resource.Apttus_Config2__Image_Blank}" />
+															</apex:panelGrid>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__OptionSequence__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__OptionSequence__c}"
+																			 />
+														</apex:outputPanel>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																			 rendered="{!option.modifiable}"
+																			 />
+															<!-- <apex:outputText value="{0, number, 0}"
+																			 rendered="{!NOT(option.modifiable)}"
+																			 >
+																 <apex:param value="{!option.lineSO.Apttus_Config2__Quantity__c}"/>
+															</apex:outputText> -->
+															<div class="aptQuantity">
+																<apex:outputField value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																					rendered="{!NOT(option.modifiable)}"/>
+															</div>														
+														</apex:outputPanel>
+													</apex:column>
+
+													<apex:column width="40%">
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.Name.Label}</apex:facet>
+														<apex:outputField value="{!option.componentSO.Apttus_Config2__ComponentProductId__c}" />
+														<apex:outputText value="{!option.optionName}"
+															style="font-weight:bold;"
+															rendered="{!(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														<!--{!option.primaryLineNumber}---{!option.parentBundleNumber}-->	
+													</apex:column>
+													<apex:column width="20%" >
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.ProductCode.Label}</apex:facet>
+														<apex:outputText value="{!option.productCode}" />
+														
+													</apex:column>
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionListPrice"
+															value="{0,number,currency}" style="text-align: right;">
+															<apex:param value="{!option.ListPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionListPrice" value="{!option.ListPrice.charge.Apttus_Config2__ListPrice__c}" />
+														</div>
+													</apex:column>
+
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionExtendedPrice"
+															value="{0,number,currency}" style="text-align: right;"
+															rendered="{!NOT(option.isNone)}">
+															<apex:param value="{!option.ExtendedPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionExtendedPrice" value="{!option.ExtendedPrice.charge.Apttus_Config2__Cost__c}" rendered="{!NOT(option.isNone)}"/>
+														</div>
+													</apex:column>
+
+													<apex:column width="5%" style="text-align: center;">
+														<apex:facet name="header"><div style="width: 100%; text-align: center;">{!$Label.apttus_config2__producthelp}</div></apex:facet>
+														<apex:commandLink rerender="dummy">
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																onclick="getRemoteProductDetail('{!option.componentProductId}');"
+																rendered="{!NOT(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														</apex:commandLink>	
+													</apex:column>
+
+
+												</apex:dataTable>
+
+												<apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}"
+													rendered="{!groupInfo.optionList.size == 0}" />
+
+											</apex:outputPanel>
+											
+										</div>
+
+									</apex:repeat>
+								</div>
+
+								<div id="idGroup4Tab" style="display:table; width: 97%;">
+
+									<apex:repeat value="{!group4OptionInfos}"
+										var="groupInfo">
+										<div class="aptRoundedDiv">
+											<div class="aptProductListHeader" style="float:none" >
+												<h2>{!groupInfo.groupLineage}</h2>
+											</div>
+											<apex:outputPanel title="{!groupInfo.groupLineage}"  
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}">
+
+												<!-- Start Error Message Per Group-->
+												<apex:outputPanel id="idOptionGroupErrorMessage"
+													style="width: 100%; padding-bottom: 3px;"
+													styleClass="apt-page-error"
+													rendered="{!groupInfo.hasError}">
+													<div
+														style="width: 100%; border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+													<table border="0" cellspacing="0" cellpadding="0"
+														width="100%">
+														<tr>
+															<td width="1%" style="background-color: #F75D59;"
+																rowspan="1" valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+															<td width="98%" style="background-color: #F75D59;"><span
+																style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+															<td width="1%" valign="top"
+																style="text-align: right; background-color: #F75D59;">
+															&nbsp;</td>
+														</tr>
+														<tr>
+															<td colspan="3"><apex:outputPanel >
+																<apex:dataList value="{!groupInfo.errorMessages}"
+																	var="messageString" id="theRepeat"
+																	style="padding: 1px;">
+																	<apex:outputText value="{!messageString}" id="theValue" />
+																</apex:dataList>
+															</apex:outputPanel></td>
+														</tr>
+													</table>
+													</div>
+													<br />
+												</apex:outputPanel>
+												<!-- End Error Message Per Group-->
+												<apex:dataTable value="{!groupInfo.optionList}"
+													var="option" rules="rows" headerClass="headerClass" rowClasses="oddRow, evenRow"
+													width="100%" columns="7"
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}"
+													>
+													
+													<apex:column width="10%">
+														<apex:facet name="header">{!$Label.apttus_config2__select}</apex:facet>
+														<apex:PanelGrid columns="4">
+															<apex:outputPanel rendered="{!NOT(ISNULL(groupInfo.groupSO.Apttus_Config2__MaxOptions__c)) && groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && option.checked}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked" 
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!groupInfo.groupSO.Id}-{!option.primaryLineNumber}"
+																		name="{!groupInfo.groupSO.Id}" type="radio"
+																		value="{!option.primaryLineNumber}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															<apex:outputPanel rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1)}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && (option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		type="checkbox" value="{!option.primaryLineNumber}"
+																		checked="{!option.checked}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															
+															<apex:outputPanel rendered="{!NOT(option.isBundle) || NOT(option.isSaved)}">
+																<div style="width: 16px;">&nbsp;</div>
+															</apex:outputPanel>
+															
+															<!-- Icon for copy command link -->
+															<apex:commandLink action="{!copyOptionLine}"
+																rendered="{!option.isCopyAllowed}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}"
+																	title="{!$Label.apttus_config2__copy}" alt="{!$Label.apttus_config2__copy}" />
+															</apex:commandLink>
+															<!-- Icon for remove command link -->
+															<apex:commandLink action="{!removeCopiedOption}"
+																rendered="{!option.isCopy}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_RemoveBlack}"
+																	title="{!$Label.apttus_config2__remove}" alt="{!$Label.apttus_config2__remove}" />
+															</apex:commandLink>
+															<!-- Icon for Configure command -->
+															<apex:commandLink rendered="{!option.isBundle}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="return invokeDoConfigureOption('{!option.optionId}', '{!option.groupId}', '{!option.primaryLineNumber}', '{!option.parentBundleNumber}', '{!curTabSelection}');" 
+																oncomplete="hideWaitPanel();">
+																<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+																	title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+															</apex:commandLink>
+															<apex:image id="idLoadingIcon"
+																value="{!$Resource.Apttus_Config2__Image_Blank}" />
+															</apex:panelGrid>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__OptionSequence__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__OptionSequence__c}"
+																			 />
+														</apex:outputPanel>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																			 rendered="{!option.modifiable}"
+																			 />
+															<!-- <apex:outputText value="{0, number, 0}"
+																			 rendered="{!NOT(option.modifiable)}"
+																			 >
+																 <apex:param value="{!option.lineSO.Apttus_Config2__Quantity__c}"/>
+															</apex:outputText> -->
+															<div class="aptQuantity">
+																<apex:outputField value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																					rendered="{!NOT(option.modifiable)}"/>
+															</div>
+														</apex:outputPanel>
+													</apex:column>
+
+													<apex:column width="40%">
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.Name.Label}</apex:facet>
+														<apex:outputField value="{!option.componentSO.Apttus_Config2__ComponentProductId__c}" />
+														<apex:outputText value="{!option.optionName}"
+															style="font-weight:bold;"
+															rendered="{!(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														<!--{!option.primaryLineNumber}---{!option.parentBundleNumber}-->	
+													</apex:column>
+													<apex:column width="20%" >
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.ProductCode.Label}</apex:facet>
+														<apex:outputText value="{!option.productCode}" />
+														
+													</apex:column>
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionListPrice"
+															value="{0,number,currency}" style="text-align: right;">
+															<apex:param value="{!option.ListPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionListPrice" value="{!option.ListPrice.charge.Apttus_Config2__ListPrice__c}" />
+														</div>
+													</apex:column>
+
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionExtendedPrice"
+															value="{0,number,currency}" style="text-align: right;"
+															rendered="{!NOT(option.isNone)}">
+															<apex:param value="{!option.ExtendedPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionExtendedPrice" value="{!option.ExtendedPrice.charge.Apttus_Config2__Cost__c}" rendered="{!NOT(option.isNone)}"/>
+														</div>
+													</apex:column>
+
+													<apex:column width="5%" style="text-align: center;">
+														<apex:facet name="header"><div style="width: 100%; text-align: center;">{!$Label.apttus_config2__producthelp}</div></apex:facet>
+														<apex:commandLink rerender="dummy">
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																onclick="getRemoteProductDetail('{!option.componentProductId}');"
+																rendered="{!NOT(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														</apex:commandLink>	
+													</apex:column>
+
+
+												</apex:dataTable>
+
+												<apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}"
+													rendered="{!groupInfo.optionList.size == 0}" />
+
+											</apex:outputPanel>
+											
+										</div>
+
+									</apex:repeat>
+								</div>
+
+								<div id="idGroup5Tab" style="display:table; width: 97%;">
+
+									<apex:repeat value="{!group5OptionInfos}"
+										var="groupInfo">
+										<div class="aptRoundedDiv">
+											<div class="aptProductListHeader" style="float:none" >
+												<h2>{!groupInfo.groupLineage}</h2>
+											</div>
+											<apex:outputPanel title="{!groupInfo.groupLineage}"  
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}">
+
+												<!-- Start Error Message Per Group-->
+												<apex:outputPanel id="idOptionGroupErrorMessage"
+													style="width: 100%; padding-bottom: 3px;"
+													styleClass="apt-page-error"
+													rendered="{!groupInfo.hasError}">
+													<div
+														style="width: 100%; border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+													<table border="0" cellspacing="0" cellpadding="0"
+														width="100%">
+														<tr>
+															<td width="1%" style="background-color: #F75D59;"
+																rowspan="1" valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+															<td width="98%" style="background-color: #F75D59;"><span
+																style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+															<td width="1%" valign="top"
+																style="text-align: right; background-color: #F75D59;">
+															&nbsp;</td>
+														</tr>
+														<tr>
+															<td colspan="3"><apex:outputPanel >
+																<apex:dataList value="{!groupInfo.errorMessages}"
+																	var="messageString" id="theRepeat"
+																	style="padding: 1px;">
+																	<apex:outputText value="{!messageString}" id="theValue" />
+																</apex:dataList>
+															</apex:outputPanel></td>
+														</tr>
+													</table>
+													</div>
+													<br />
+												</apex:outputPanel>
+												<!-- End Error Message Per Group-->
+												<apex:dataTable value="{!groupInfo.optionList}"
+													var="option" rules="rows" headerClass="headerClass" rowClasses="oddRow, evenRow"
+													width="100%" columns="7"
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}"
+													>
+													
+													<apex:column width="10%">
+														<apex:facet name="header">{!$Label.apttus_config2__select}</apex:facet>
+														<apex:PanelGrid columns="4">
+															<apex:outputPanel rendered="{!NOT(ISNULL(groupInfo.groupSO.Apttus_Config2__MaxOptions__c)) && groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && option.checked}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked" 
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!groupInfo.groupSO.Id}-{!option.primaryLineNumber}"
+																		name="{!groupInfo.groupSO.Id}" type="radio"
+																		value="{!option.primaryLineNumber}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															<apex:outputPanel rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1)}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && (option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		type="checkbox" value="{!option.primaryLineNumber}"
+																		checked="{!option.checked}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															
+															<apex:outputPanel rendered="{!NOT(option.isBundle) || NOT(option.isSaved)}">
+																<div style="width: 16px;">&nbsp;</div>
+															</apex:outputPanel>
+															
+															<!-- Icon for copy command link -->
+															<apex:commandLink action="{!copyOptionLine}"
+																rendered="{!option.isCopyAllowed}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}"
+																	title="{!$Label.apttus_config2__copy}" alt="{!$Label.apttus_config2__copy}" />
+															</apex:commandLink>
+															<!-- Icon for remove command link -->
+															<apex:commandLink action="{!removeCopiedOption}"
+																rendered="{!option.isCopy}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_RemoveBlack}"
+																	title="{!$Label.apttus_config2__remove}" alt="{!$Label.apttus_config2__remove}" />
+															</apex:commandLink>
+															<!-- Icon for Configure command -->
+															<apex:commandLink rendered="{!option.isBundle}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="return invokeDoConfigureOption('{!option.optionId}', '{!option.groupId}', '{!option.primaryLineNumber}', '{!option.parentBundleNumber}', '{!curTabSelection}');" 
+																oncomplete="hideWaitPanel();">
+																<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+																	title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+															</apex:commandLink>
+															<apex:image id="idLoadingIcon"
+																value="{!$Resource.Apttus_Config2__Image_Blank}" />
+															</apex:panelGrid>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__OptionSequence__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__OptionSequence__c}"
+																			 />
+														</apex:outputPanel>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																			 rendered="{!option.modifiable}"
+																			 />
+															<!-- <apex:outputText value="{0, number, 0}"
+																			 rendered="{!NOT(option.modifiable)}"
+																			 >
+																 <apex:param value="{!option.lineSO.Apttus_Config2__Quantity__c}"/>
+															</apex:outputText> -->
+															<div class="aptQuantity">
+																<apex:outputField value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																					rendered="{!NOT(option.modifiable)}"/>
+															</div>
+														</apex:outputPanel>
+													</apex:column>
+
+													<apex:column width="40%">
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.Name.Label}</apex:facet>
+														<apex:outputField value="{!option.componentSO.Apttus_Config2__ComponentProductId__c}" />
+														<apex:outputText value="{!option.optionName}"
+															style="font-weight:bold;"
+															rendered="{!(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														<!--{!option.primaryLineNumber}---{!option.parentBundleNumber}-->	
+													</apex:column>
+													<apex:column width="20%" >
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.ProductCode.Label}</apex:facet>
+														<apex:outputText value="{!option.productCode}" />
+														
+													</apex:column>
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionListPrice"
+															value="{0,number,currency}" style="text-align: right;">
+															<apex:param value="{!option.ListPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionListPrice" value="{!option.ListPrice.charge.Apttus_Config2__ListPrice__c}" />
+														</div>
+													</apex:column>
+
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionExtendedPrice"
+															value="{0,number,currency}" style="text-align: right;"
+															rendered="{!NOT(option.isNone)}">
+															<apex:param value="{!option.ExtendedPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionExtendedPrice" value="{!option.ExtendedPrice.charge.Apttus_Config2__Cost__c}" rendered="{!NOT(option.isNone)}"/>
+														</div>
+														
+													</apex:column>
+
+													<apex:column width="5%" style="text-align: center;">
+														<apex:facet name="header"><div style="width: 100%; text-align: center;">{!$Label.apttus_config2__producthelp}</div></apex:facet>
+														<apex:commandLink rerender="dummy">
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																onclick="getRemoteProductDetail('{!option.componentProductId}');"
+																rendered="{!NOT(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														</apex:commandLink>	
+													</apex:column>
+
+
+												</apex:dataTable>
+
+												<apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}"
+													rendered="{!groupInfo.optionList.size == 0}" />
+
+											</apex:outputPanel>
+											
+										</div>
+
+									</apex:repeat>
+								</div>
+
+								<div id="idGroup6Tab" style="display:table; width: 97%;">
+
+									<apex:repeat value="{!group6OptionInfos}"
+										var="groupInfo">
+										<div class="aptRoundedDiv">
+											<div class="aptProductListHeader" style="float:none" >
+												<h2>{!groupInfo.groupLineage}</h2>
+											</div>
+											<apex:outputPanel title="{!groupInfo.groupLineage}"  
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}">
+
+												<!-- Start Error Message Per Group-->
+												<apex:outputPanel id="idOptionGroupErrorMessage"
+													style="width: 100%; padding-bottom: 3px;"
+													styleClass="apt-page-error"
+													rendered="{!groupInfo.hasError}">
+													<div
+														style="width: 100%; border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+													<table border="0" cellspacing="0" cellpadding="0"
+														width="100%">
+														<tr>
+															<td width="1%" style="background-color: #F75D59;"
+																rowspan="1" valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+															<td width="98%" style="background-color: #F75D59;"><span
+																style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+															<td width="1%" valign="top"
+																style="text-align: right; background-color: #F75D59;">
+															&nbsp;</td>
+														</tr>
+														<tr>
+															<td colspan="3"><apex:outputPanel >
+																<apex:dataList value="{!groupInfo.errorMessages}"
+																	var="messageString" id="theRepeat"
+																	style="padding: 1px;">
+																	<apex:outputText value="{!messageString}" id="theValue" />
+																</apex:dataList>
+															</apex:outputPanel></td>
+														</tr>
+													</table>
+													</div>
+													<br />
+												</apex:outputPanel>
+												<!-- End Error Message Per Group-->
+												<apex:dataTable value="{!groupInfo.optionList}"
+													var="option" rules="rows" headerClass="headerClass" rowClasses="oddRow, evenRow"
+													width="100%" columns="7"
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}"
+													>
+													
+													<apex:column width="10%">
+														<apex:facet name="header">{!$Label.apttus_config2__select}</apex:facet>
+														<apex:PanelGrid columns="4">
+															<apex:outputPanel rendered="{!NOT(ISNULL(groupInfo.groupSO.Apttus_Config2__MaxOptions__c)) && groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && option.checked}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked" 
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!groupInfo.groupSO.Id}-{!option.primaryLineNumber}"
+																		name="{!groupInfo.groupSO.Id}" type="radio"
+																		value="{!option.primaryLineNumber}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															<apex:outputPanel rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1)}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && (option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		type="checkbox" value="{!option.primaryLineNumber}"
+																		checked="{!option.checked}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															
+															<apex:outputPanel rendered="{!NOT(option.isBundle) || NOT(option.isSaved)}">
+																<div style="width: 16px;">&nbsp;</div>
+															</apex:outputPanel>
+															
+															<!-- Icon for copy command link -->
+															<apex:commandLink action="{!copyOptionLine}"
+																rendered="{!option.isCopyAllowed}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}"
+																	title="{!$Label.apttus_config2__copy}" alt="{!$Label.apttus_config2__copy}" />
+															</apex:commandLink>
+															<!-- Icon for remove command link -->
+															<apex:commandLink action="{!removeCopiedOption}"
+																rendered="{!option.isCopy}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_RemoveBlack}"
+																	title="{!$Label.apttus_config2__remove}" alt="{!$Label.apttus_config2__remove}" />
+															</apex:commandLink>
+															<!-- Icon for Configure command -->
+															<apex:commandLink rendered="{!option.isBundle}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="return invokeDoConfigureOption('{!option.optionId}', '{!option.groupId}', '{!option.primaryLineNumber}', '{!option.parentBundleNumber}', '{!curTabSelection}');" 
+																oncomplete="hideWaitPanel();">
+																<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+																	title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+															</apex:commandLink>
+															<apex:image id="idLoadingIcon"
+																value="{!$Resource.Apttus_Config2__Image_Blank}" />
+															</apex:panelGrid>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__OptionSequence__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__OptionSequence__c}"
+																			 />
+														</apex:outputPanel>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																			 rendered="{!option.modifiable}"
+																			 />
+															<!-- <apex:outputText value="{0, number, 0}"
+																			 rendered="{!NOT(option.modifiable)}"
+																			 >
+																 <apex:param value="{!option.lineSO.Apttus_Config2__Quantity__c}"/>
+															</apex:outputText> -->
+															<div class="aptQuantity">
+																<apex:outputField value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																					rendered="{!NOT(option.modifiable)}"/>
+															</div>
+														</apex:outputPanel>
+													</apex:column>
+
+													<apex:column width="40%">
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.Name.Label}</apex:facet>
+														<apex:outputField value="{!option.componentSO.Apttus_Config2__ComponentProductId__c}" />
+														<apex:outputText value="{!option.optionName}"
+															style="font-weight:bold;"
+															rendered="{!(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														<!--{!option.primaryLineNumber}---{!option.parentBundleNumber}-->	
+													</apex:column>
+													<apex:column width="20%" >
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.ProductCode.Label}</apex:facet>
+														<apex:outputText value="{!option.productCode}" />
+														
+													</apex:column>
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionListPrice"
+															value="{0,number,currency}" style="text-align: right;">
+															<apex:param value="{!option.ListPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionListPrice" value="{!option.ListPrice.charge.Apttus_Config2__ListPrice__c}" />
+														</div>
+													</apex:column>
+
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionExtendedPrice"
+															value="{0,number,currency}" style="text-align: right;"
+															rendered="{!NOT(option.isNone)}">
+															<apex:param value="{!option.ExtendedPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionExtendedPrice" value="{!option.ExtendedPrice.charge.Apttus_Config2__Cost__c}" rendered="{!NOT(option.isNone)}"/>
+														</div>
+													</apex:column>
+
+													<apex:column width="5%" style="text-align: center;">
+														<apex:facet name="header"><div style="width: 100%; text-align: center;">{!$Label.apttus_config2__producthelp}</div></apex:facet>
+														<apex:commandLink rerender="dummy">
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																onclick="getRemoteProductDetail('{!option.componentProductId}');"
+																rendered="{!NOT(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														</apex:commandLink>	
+													</apex:column>
+
+
+												</apex:dataTable>
+
+												<apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}"
+													rendered="{!groupInfo.optionList.size == 0}" />
+
+											</apex:outputPanel>
+											
+										</div>
+
+									</apex:repeat>
+								</div>
+
+								<div id="idGroup7Tab" style="display:table; width: 97%;">
+
+									<apex:repeat value="{!group7OptionInfos}"
+										var="groupInfo">
+										<div class="aptRoundedDiv">
+											<div class="aptProductListHeader" style="float:none" >
+												<h2>{!groupInfo.groupLineage}</h2>
+											</div>
+											<apex:outputPanel title="{!groupInfo.groupLineage}"  
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}">
+
+												<!-- Start Error Message Per Group-->
+												<apex:outputPanel id="idOptionGroupErrorMessage"
+													style="width: 100%; padding-bottom: 3px;"
+													styleClass="apt-page-error"
+													rendered="{!groupInfo.hasError}">
+													<div
+														style="width: 100%; border: solid 1px red; background-color: lightyellow; padding-left: 0px;">
+													<table border="0" cellspacing="0" cellpadding="0"
+														width="100%">
+														<tr>
+															<td width="1%" style="background-color: #F75D59;"
+																rowspan="1" valign="top"><apex:image url="{!$Resource.Apttus_Config2__Image_RuleError}" /></td>
+															<td width="98%" style="background-color: #F75D59;"><span
+																style="font-weight: bold; font-size: 1.2em; text-align: left; padding-left: 6px; color: white;">{!$Label.RuleError}</span></td>
+															<td width="1%" valign="top"
+																style="text-align: right; background-color: #F75D59;">
+															&nbsp;</td>
+														</tr>
+														<tr>
+															<td colspan="3"><apex:outputPanel >
+																<apex:dataList value="{!groupInfo.errorMessages}"
+																	var="messageString" id="theRepeat"
+																	style="padding: 1px;">
+																	<apex:outputText value="{!messageString}" id="theValue" />
+																</apex:dataList>
+															</apex:outputPanel></td>
+														</tr>
+													</table>
+													</div>
+													<br />
+												</apex:outputPanel>
+												<!-- End Error Message Per Group-->
+												<apex:dataTable value="{!groupInfo.optionList}"
+													var="option" rules="rows" headerClass="headerClass" rowClasses="oddRow, evenRow"
+													width="100%" columns="7"
+													rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__IsHidden__c == true)}"
+													>
+													
+													<apex:column width="10%">
+														<apex:facet name="header">{!$Label.apttus_config2__select}</apex:facet>
+														<apex:PanelGrid columns="4">
+															<apex:outputPanel rendered="{!NOT(ISNULL(groupInfo.groupSO.Apttus_Config2__MaxOptions__c)) && groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && option.checked}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked" 
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!groupInfo.groupSO.Id}"
+																		name="{!groupInfo.groupSO.Id}" type="radio" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectRadio('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!groupInfo.groupSO.Id}-{!option.primaryLineNumber}"
+																		name="{!groupInfo.groupSO.Id}" type="radio"
+																		value="{!option.primaryLineNumber}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															<apex:outputPanel rendered="{!NOT(groupInfo.groupSO.Apttus_Config2__MaxOptions__c == 1)}">
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && (option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}" checked="checked"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!NOT(option.isCopy) && NOT(option.checked)}">
+																	<input id="{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}" type="checkbox" data-enabled="{!NOT(option.disabled)}"
+																		value="{!option.primaryLineNumber}"
+																		onclick="aptsSelectCheckbox('{!option.primaryLineNumber}', '{!option.groupId}', this);">
+																	</input>
+																</apex:outputPanel>
+																<apex:outputPanel rendered="{!option.isCopy}">
+																	<input
+																		id="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		name="{!option.primaryLineNumber}-{!option.primaryLineNumber}"
+																		type="checkbox" value="{!option.primaryLineNumber}"
+																		checked="{!option.checked}" 
+																		style="visibility: hidden">
+																	</input>
+																</apex:outputPanel>
+															</apex:outputPanel>
+															
+															<apex:outputPanel rendered="{!NOT(option.isBundle) || NOT(option.isSaved)}">
+																<div style="width: 16px;">&nbsp;</div>
+															</apex:outputPanel>
+															
+															<!-- Icon for copy command link -->
+															<apex:commandLink action="{!copyOptionLine}"
+																rendered="{!option.isCopyAllowed}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_CopyLineItem}"
+																	title="{!$Label.apttus_config2__copy}" alt="{!$Label.apttus_config2__copy}" />
+															</apex:commandLink>
+															<!-- Icon for remove command link -->
+															<apex:commandLink action="{!removeCopiedOption}"
+																rendered="{!option.isCopy}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="document.getElementById('{!$Component.idLoadingIcon}').src='{!$Resource.Apttus_Config2__Image_LoadingIcon}';">
+																<apex:param name="param1" assignTo="{!ctxOptionId}"
+																	value="{!option.optionId}" />
+																<apex:param name="param2" assignTo="{!ctxGroupId}"
+																	value="{!option.groupId}" />
+																<apex:param name="param3" assignTo="{!ctxPrimaryLineNumber}"
+																	value="{!option.primaryLineNumber}" />
+																<apex:image url="{!$Resource.Apttus_Config2__Image_RemoveBlack}"
+																	title="{!$Label.apttus_config2__remove}" alt="{!$Label.apttus_config2__remove}" />
+															</apex:commandLink>
+															<!-- Icon for Configure command -->
+															<apex:commandLink rendered="{!option.isBundle}"
+																reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+																onclick="return invokeDoConfigureOption('{!option.optionId}', '{!option.groupId}', '{!option.primaryLineNumber}', '{!option.parentBundleNumber}', '{!curTabSelection}');" 
+																oncomplete="hideWaitPanel();">
+																<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+																	title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+															</apex:commandLink>
+															<apex:image id="idLoadingIcon"
+																value="{!$Resource.Apttus_Config2__Image_Blank}" />
+															</apex:panelGrid>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right; padding: 0px 4px;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__OptionSequence__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__OptionSequence__c}"
+																			 />
+														</apex:outputPanel>
+													</apex:column>
+													<apex:column width="5%" style="text-align: right;">
+														<apex:facet name="header">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__Quantity__c.Label}</apex:facet>
+														<apex:outputPanel rendered="{!NOT(option.isNone)}">
+															<apex:inputField styleClass="aptQuantity" 
+																			 value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																			 rendered="{!option.modifiable}"
+																			 />
+															<!-- <apex:outputText value="{0, number, 0}"
+																			 rendered="{!NOT(option.modifiable)}"
+																			 >
+																 <apex:param value="{!option.lineSO.Apttus_Config2__Quantity__c}"/>
+															</apex:outputText> -->
+															<div class="aptQuantity">
+																<apex:outputField value="{!option.lineSO.Apttus_Config2__Quantity__c}"
+																					rendered="{!NOT(option.modifiable)}"/>
+															</div>
+														</apex:outputPanel>
+													</apex:column>
+
+													<apex:column width="40%">
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.Name.Label}</apex:facet>
+														<apex:outputField value="{!option.componentSO.Apttus_Config2__ComponentProductId__c}" />
+														<apex:outputText value="{!option.optionName}"
+															style="font-weight:bold;"
+															rendered="{!(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														<!--{!option.primaryLineNumber}---{!option.parentBundleNumber}-->	
+													</apex:column>
+													<apex:column width="20%" >
+														<apex:facet name="header">{!$ObjectType.Product2.Fields.ProductCode.Label}</apex:facet>
+														<apex:outputText value="{!option.productCode}" />
+														
+													</apex:column>
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ListPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionListPrice"
+															value="{0,number,currency}" style="text-align: right;">
+															<apex:param value="{!option.ListPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionListPrice" value="{!option.ListPrice.charge.Apttus_Config2__ListPrice__c}" />
+														</div> 
+													</apex:column>
+
+													<apex:column width="10%" style="text-align: right;" rendered="{!NOT(IsHidePriceColumn)}">
+														<apex:facet name="header"><div style="width: 100%; text-align: right;">{!$ObjectType.Apttus_Config2__LineItem__c.Fields.Apttus_Config2__ExtendedPrice__c.Label}</div></apex:facet>
+														<!-- <apex:outputText id="idOptionExtendedPrice"
+															value="{0,number,currency}" style="text-align: right;"
+															rendered="{!NOT(option.isNone)}">
+															<apex:param value="{!option.ExtendedPrice}" />
+														</apex:outputText> -->
+														<div class = "aptCurrency" style="text-align: right;">
+															<apex:outputField id="idOptionExtendedPrice" value="{!option.ExtendedPrice.charge.Apttus_Config2__Cost__c}" rendered="{!NOT(option.isNone)}"/>
+														</div>
+													</apex:column>
+
+													<apex:column width="5%" style="text-align: center;">
+														<apex:facet name="header"><div style="width: 100%; text-align: center;">{!$Label.apttus_config2__producthelp}</div></apex:facet>
+														<apex:commandLink rerender="dummy">
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																onclick="getRemoteProductDetail('{!option.componentProductId}');"
+																rendered="{!NOT(ISNULL(option.componentSO.Apttus_Config2__ComponentProductId__c))}" />
+														</apex:commandLink>	
+													</apex:column>
+
+
+												</apex:dataTable>
+
+												<apex:outputText value="{!$Label.apttus_config2__norecordstodisplay}"
+													rendered="{!groupInfo.optionList.size == 0}" />
+
+											</apex:outputPanel>
+											
+										</div>
+
+									</apex:repeat>
+								</div>
+							</div>
+						
+								<script>
+									j$.APTTUS.formatFields("{!currencyFieldPrecision}", "{!percentageFieldPrecision}", "{!quantityFieldPrecision}");
+								</script>
+								
+							</div>
+							
+						</div>
+
+						<div style="width: {!SelectedOptionsWidth}; float:left;" class="idSelectedProductsBlock">
+							
+							<apex:outputPanel style="margin:5px;" layout="block" id="idLineItemsBlock" rendered="{!NOT(IsRightSideHidden)}">
+							<!-- Selected Components -->
+							<div class="aptRoundedDiv">
+								<div class="aptProductListHeader" style="float:none" >
+									<h2>{!$Label.MyOptions}</h2>
+								</div>
+								<apex:dataTable id="idLineItemsTable" 
+													value="{!SelectedOptionsTree}" 
+													var="item"
+													width="100%"
+													style="font-size: 85%;"
+													columns="2">
+
+									<apex:column colspan="2" rendered="{!item.showLineage}"
+										style="padding-left: {!(item.depth)}em;">
+										<apex:outputPanel rendered="{!item.hasError}">
+											<apex:image url="{!$Resource.Apttus_Config2__Image_ConfigStatusPending}" 
+				                       				title="{!$Label.apttus_config2__configure}"
+				                       				height="10"
+				                       				alt="{!$Label.apttus_config2__configure}" /> 
+										</apex:outputPanel>
+										<apex:commandLink style="font-weight:bold;color:#5487B9;"
+											rendered="{!item.optionInfo.isBundle && NOT(item.optionInfo.isSystem)}"
+											reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+											value="{!item.lineage}" 
+											onclick="return invokeDoConfigureOption('{!item.optionInfo.optionId}', '{!item.optionInfo.groupId}', '{!item.optionInfo.primaryLineNumber}', '{!item.optionInfo.parentBundleNumber}', '{!item.lineageRootId}');" 
+											oncomplete="hideWaitPanel();">
+										</apex:commandLink>
+										<apex:commandLink style="font-weight:bold;color:#5487B9;"
+											rendered="{!item.optionInfo.isSystem}"
+											reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+											value="{!item.lineage}"
+											onclick="return invokeDoConfigureSystem('{!item.optionInfo.primaryLineNumber}', '{!item.lineageRootId}');" 
+											oncomplete="hideWaitPanel();">
+										</apex:commandLink>
+									</apex:column>
+
+									<!-- Option Row -->
+									<apex:column rendered="{!NOT(item.showLineage)}"
+										style="padding-left: {!item.depth}em;">
+										<apex:outputField value="{!item.optionInfo.componentSO.Apttus_Config2__ComponentProductId__c}"
+											rendered="{!false && NOT(item.optionInfo.isSystem)}" />
+										<apex:outputText value="{!item.optionInfo.optionName}"
+											style="font-weight:bold;"
+											rendered="{!(item.optionInfo.isSystem)}" />
+										<apex:outputText value="{!item.optionInfo.optionName}"
+											rendered="{!NOT(item.optionInfo.isSystem)}" />
+									</apex:column>
+
+									<apex:column rendered="{!NOT(item.showLineage)}"
+										style="width: 2em;">
+										<!-- Icon for Configure command -->
+										<apex:commandLink rendered="{!item.optionInfo.isBundle && NOT(item.optionInfo.isSystem)}"
+											reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+											onclick="return invokeDoConfigureOption('{!item.optionInfo.optionId}', '{!item.optionInfo.groupId}', '{!item.optionInfo.primaryLineNumber}', '{!item.optionInfo.parentBundleNumber}', '{!curTabSelection}');" 
+											oncomplete="hideWaitPanel();">
+											<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+												title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+										</apex:commandLink>
+										<apex:outputPanel styleClass="aptSelectedBundle" rendered="{!item.optionInfo.LineSO.Id == parentLineItemSO.Id}">
+										</apex:outputPanel>
+										<apex:commandLink rendered="{!item.optionInfo.isSystem}"
+											reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+											onclick="return invokeDoConfigureSystem('{!item.optionInfo.primaryLineNumber}', '{!curTabSelection}');" 
+											oncomplete="hideWaitPanel();">
+											<apex:image url="{!$Resource.Apttus_Config2__Image_Configure}"
+												title="{!$Label.apttus_config2__configure}" alt="{!$Label.apttus_config2__configure}" />
+										</apex:commandLink>
+										
+									</apex:column>
+
+								</apex:dataTable>
+								<script>
+									var aptHeight = j$(window.top).height() - 200;
+									if(aptHeight < {!(treeLength * 24)}){//average row height is 24 pixel
+										j$(document.getElementById("{!$Component.idLineItemsTable}")).parents('div:eq(0)').css("overflow-y", "scroll").css("height", aptHeight);
+									}
+									j$(".aptSelectedBundle").parent().parent().css('background-color', '#ADF');							
+								</script>
+							</div>
+							
+							<div class="aptRightColumn">   
+								<apex:outputPanel id="idTotalsPanel" layout="block" style="float:left; width:100%; border-radius:4px; margin-top:10px;" 
+								styleClass="aptRoundedDiv" >
+				              		<apex:outputPanel layout="none">
+									<div style="margin:0 auto;">
+										<c:MiniCart id="idMiniCartComponent" configRequestId="{!RequestId}" configId="{!ConfigurationId}"/>
+									</div>
+									</apex:outputPanel>
+								</apex:outputPanel>
+								<!-- End Shopping Cart -->
+							</div>
+
+						</apex:outputPanel> <br />
+
+						</div>
+				<script>
+					if({!NOT(isAssetCancelled)}){
+						if (j$.APTTUS.activeTabId != null) {
+	                        j$('#idTabPanel').tabs({ active: j$.APTTUS.activeTabId });
+	                        
+	                    } else {
+	                        j$('#idTabPanel').tabs({ active: 0 });
+	                        
+	                    }
+	                    
+	                    j$("#idTabPanel").bind("tabsactivate", function (event, ui) {
+	                        if({!HasAttributes && NOT(IsSystem)} ){
+	                            j$.APTTUS.activeTabId = ui.newTab.index();
+	                        } else {
+	                            j$.APTTUS.activeTabId = ui.newTab.index()-1;
+	                            
+	                        }
+	                        
+	                    });
+					}
+					
+					
+				</script>
+			</apex:outputPanel>
+			<div class="clearfix" width="100%"/>
+			<apex:outputPanel style="display:block; text-align:center" styleClass="bottomButtons">
+				<apex:outputPanel id="idBottomLink" layout="inline" styleClass="aptContextSystem" rendered="false">
+					<apex:commandLink value="{!systemLineItemSO.ProductId__r.Name}" 
+						onclick="return invokeConfigureSystem();"/>
+					<apex:commandLink value="{!parentLineItemSO.OptionId__r.Name}" styleClass="aptLeftPadding"
+						onclick="return invokeConfigureSystem();"
+						rendered="{!(systemLineItemSO.Id != parentLineItemSO.Id)}"
+						/>
+				</apex:outputPanel>	
+				<apex:commandButton value="{!$Label.apttus_config2__removeitem}" 
+					onclick="showRemoveConfirmation('{!ContextLineNumber}');return false;"
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__addmoreproducts}"
+					onclick="return invokeDoUpdateBundle('{!MoveToSelect}');"
+					oncomplete="hideWaitPanel();" reRender="idErrorMsg" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__backtodetail}"
+					onclick="return invokeDoUpdateBundle('{!MoveToDetail}');"
+					oncomplete="hideWaitPanel();"
+					rendered="{!backToDetail}"  
+					reRender="idErrorMsg" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__validatebundle}"
+					onclick="return invokeDoUpdateBundle('{!MoveStay}');"
+					oncomplete="hideWaitPanel();" reRender="idErrorMsg" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__gotopricing}"
+					onclick="return invokeDoUpdateBundle('{!MoveToCart}');"
+					oncomplete="hideWaitPanel();" reRender="idErrorMsg"
+					rendered="{!NOT(IsBypassShoppingCart)}" 
+					styleClass="aptListButton"/>
+				<apex:commandButton value="{!$Label.apttus_config2__updateprice}"
+					onclick="doPricePendingLineItems({!LineItemSO.Apttus_Config2__LineNumber__c});return false;"   
+					rendered="{!IsBypassShoppingCart && NOT(IsCartEmpty)}"
+					styleClass="aptListButton"
+					reRender="dummy"/>
+				<!--  print the custom action buttons -->	  
+				<apex:repeat value="{!PageActions}" var="actionInfo">
+                    <apex:outputPanel layout="none" rendered="{!actionInfo.IsDisplay && actionInfo.ActionSO.Apttus_Config2__DisplayAs__c != 'Link'}">
+                             <apex:commandLink value="{!$Label[actionInfo.ActionSO.Apttus_Config2__ActionLabelName__c]}" 
+                                              onclick="{!actionInfo.ActionScript}" 
+                                              styleClass="aptListButton {!actionInfo.ActionSO.Apttus_Config2__ActionStyleClass__c}"
+                                              status="buttonActionStatus"
+                                              html-displayas="{!actionInfo.ActionSO.Apttus_Config2__DisplayAs__c}"
+                                              html-actionarea="{!actionInfo.ActionSO.Apttus_Config2__ActionArea__c}"
+                                              html-aptdisabled="{!actionInfo.IsEnabled == false}"
+                                              reRender="dummy">
+                            </apex:commandLink>
+                            <script>
+                            	j$.APTTUS.ActionUrlMap["{!JSENCODE(actionInfo.ActionSO.ActionName__c)}"] = "{!JSENCODE(actionInfo.DirectUrl)}";
+                          	</script>
+                    </apex:outputPanel>    
+                </apex:repeat>
+					 
+			</apex:outputPanel>
+	
+
+		<!-- This is the product details dialog -->
+		<apex:outputPanel >
+			<div id="productDetailPanel" style="display: none"><apex:outputPanel id="idCtxProductDetail">
+				<div class="bd"><apex:pageBlock >
+					<apex:pageBlockSection columns="1">
+						<apex:pageBlockSectionItem >
+							<apex:outputLabel value="{!$ObjectType.Product2.Fields.Description.Label}"
+								for="ctxProductDescription" />
+							<span id="ctxProductDescription">Hello Description</span>
+						</apex:pageBlockSectionItem>
+					</apex:pageBlockSection>
+				</apex:pageBlock></div>
+			</apex:outputPanel></div>
+		</apex:outputPanel>
+		<!-- This is the content of the confirmation dialog -->
+        <div id="confirmationPanelJQuery" style="display: none">
+            <div><apex:outputText value="{!$Label.apttus_config2__removeproductmessage}" /></div>
+            <br />
+            <div style="text-align: center; padding-left: 4px;">
+                <apex:commandButton value="{!$Label.apttus_config2__yes}" 
+	                onclick="invokeDoDeleteLineItem(j$.APTTUS.LineNumber); j$.APTTUS.hideRemoveConfirmation(); return false;" 
+	                style="width: 50px; height: 30px;" immediate="true"
+                	status="buttonActionStatus"/> 
+                <apex:commandButton value="{!$Label.apttus_config2__no}" 
+	                style="width: 50px; height: 30px;" rerender="dummy"
+	                onclick="j$.APTTUS.hideRemoveConfirmation();return false;" />
+            </div>
+        </div>
+		<div id="dialog"></div>
+		<!-- This is the content of the confirmation dialog -->
+
+		<!--  Javascript functions -->
+		<apex:actionFunction name="invokeDoCustomAction" 
+                             action="{!doCustomAction}"
+                             status="buttonActionStatus"
+                             reRender="idTopNavActions, idOptionsBlock, idLineItemsBlock, idSelectedProductsBlock, idErrorMsg, idRulesBlock"
+                             oncomplete="hideWaitPanel();j$.aptActionFunctionQueue.processNext();">
+            <apex:param name="actionName"
+            			value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="invokeUpdateToShowDialog" 
+                             action="{!doCustomAction}"
+                             status="buttonActionStatus"
+                             reRender="idTopNavActions, idOptionsBlock, idLineItemsBlock, idSelectedProductsBlock, idErrorMsg, idRulesBlock"
+                             oncomplete="hideWaitPanel();openCustomActionDialog();">
+            <apex:param name="actionName"
+            			value="" />
+        </apex:actionFunction>
+		<apex:actionFunction name="sfdcDoDeleteLineItem" 
+							 action="{!doDeleteLineItem}"
+							 rerender="idTopNavActions, idOptionsBlock, idLineItemsBlock, idSelectedProductsBlock, idErrorMsg, idRulesBlock"
+							 oncomplete="hideWaitPanel();">
+			<apex:param name="firstParam" assignTo="{!lineItemLineNbr}" value="" />
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="sfdcDoUpdateBundle"
+			action="{!doUpdateBundle}"
+			reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+			oncomplete="hideWaitPanel();">
+			<apex:param name="param1" assignTo="{!selectedPrimaryNumbers}" value="" />
+			<apex:param name="param2" assignTo="{!removedPrimaryNumbers}" value="" />
+			<apex:param name="param3" assignTo="{!emptyGroupIds}" value="" />
+			<apex:param name="param4" assignTo="{!moveDirection}" value="" />
+		</apex:actionFunction>
+
+		<apex:actionFunction name="sfdcDoUpdateBundle2"
+			action="{!doUpdateBundle}"
+			reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+			oncomplete="hideWaitPanel();openCustomActionDialog();">
+			<apex:param name="param1" assignTo="{!selectedPrimaryNumbers}" value="" />
+			<apex:param name="param2" assignTo="{!removedPrimaryNumbers}" value="" />
+			<apex:param name="param3" assignTo="{!emptyGroupIds}" value="" />
+			<apex:param name="param4" assignTo="{!moveDirection}" value="" />
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="sfdcDoConfigureOption"
+			action="{!doConfigureOption}"
+			reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg, idTopLink, idBottomLink"
+			onbeforedomupdate="j$.APTTUS.activeTabId = null;"
+			oncomplete="hideWaitPanel();">
+			<apex:param name="param1" assignTo="{!selectedPrimaryNumbers}" value="" />
+			<apex:param name="param2" assignTo="{!removedPrimaryNumbers}" value="" />
+			<apex:param name="param3" assignTo="{!ctxOptionId}" value="" />
+			<apex:param name="param4" assignTo="{!ctxGroupId}" value="" />
+			<apex:param name="param5" assignTo="{!ctxPrimaryLineNumber}" value="" />
+			<apex:param name="param6" assignTo="{!ctxBundleNumber}" value="" />
+			<apex:param name="param7" assignTo="{!curTabSelection}" value="" />
+		</apex:actionFunction>
+
+		<apex:actionFunction name="sfdcDoConfigureSystem"
+			action="{!doConfigureSystem}"
+			onbeforedomupdate="j$.APTTUS.activeTabId = null;"
+			reRender="idGroupOptionsPanel, idConfigHeader, idErrorMsg"
+			oncomplete="hideWaitPanel();">
+			<apex:param name="param1" assignTo="{!selectedPrimaryNumbers}" value="" />
+			<apex:param name="param2" assignTo="{!removedPrimaryNumbers}" value="" />
+			<apex:param name="param5" assignTo="{!ctxPrimaryLineNumber}" value="" />
+			<apex:param name="param7" assignTo="{!curTabSelection}" value="" />
+		</apex:actionFunction>
+		
+		<apex:actionFunction name="invokeDoConfigure"
+							action="{!doConfigure}"
+							oncomplete="onActionComplete2();"
+							rerender="dummy">
+			<apex:param name="firstParam" 
+						assignTo="{!proceedLineItemId}"
+						value=""/>			
+		</apex:actionFunction>
+		<apex:actionFunction name="sfdcInvokePageRefresh"
+			status="idLineItemPaginationPanel"
+			reRender="idTotalsPanel, idErrorMsg"
+			oncomplete="j$.APTTUS.hidePricingWaitPanel();">
+		</apex:actionFunction>
+		<apex:actionFunction name="invokeGoToSearchDefault"
+					    action="{!gotoSearchDefault}"
+						oncomplete="onActionComplete2();"
+					    reRender="idTotalsPanel, idErrorMsg, idRulesBlock" >
+		</apex:actionFunction>
+		<apex:actionFunction name="invokeGoToSearch"
+						    action="{!gotoSearchProduct}"
+							oncomplete="onActionComplete2();"
+						    reRender="idTotalsPanel, idErrorMsg, idRulesBlock" >
+				<apex:param name="firstParam" 
+						assignTo="{!selectedProductId}" 
+						value=""/>
+		</apex:actionFunction>
+		
+		<!-- This panel represents the wait dialog that will pop up -->
+		<apex:outputPanel >
+			<div id="waitPanel"
+				title="{!$Label.LoadingPage}">
+				<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>
+			</div>
+		</apex:outputPanel>
+		<!-- Pricing wait panel -->
+        <div id="pricingWaitPanel" style="display: none">
+			<div style="text-align: center; veritical-align: middle; font-weight: bold; margin-bottom: 20px;">{!$Label.UpdatingPricePleaseWait}</div>
+			<div style="text-align: center; veritical-align: middle;">
+				<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>
+			</div>
+		</div>
+		
+		<apex:outputPanel id="idAttributesPanel">
+			<div id="idAttributesDialog" style="display:none">
+				<iframe src="{!ConfigureOptionsURL}" style="border: none;" width="675px" height="550px" scrolling="false" id="idAttributesIframe"/>
+			</div>
+		</apex:outputPanel>
+
+		
+		<!-- This panel represents the delete confirmation dialog that will pop up -->
+		<apex:outputPanel >
+			<div id="confirmationPanel" style="display: none">
+				<div><apex:outputText value="{!$Label.apttus_config2__removeproductmessage}" /></div>
+				<p />
+				<div style="text-align: center; padding-left: 4px;">
+					<apex:commandButton value="{!$Label.apttus_config2__yes}" 
+										onclick="invokeDoDeleteLineItem();return false;"
+										style="width: 50px;" immediate="true"
+										oncomplete="hideRemoveConfirmation();" /> 
+					<apex:commandButton value="{!$Label.apttus_config2__no}" 
+										style="width: 50px;"
+										onclick="hideRemoveConfirmation();return false;" />
+				</div>
+			</div>
+		</apex:outputPanel>
+		
+		<div class="aptAssetCancelledOverlay">
+			&nbsp;
+		</div>
+		
+		
+	</apex:form>
+
+	
+	
+	
+</apex:page>

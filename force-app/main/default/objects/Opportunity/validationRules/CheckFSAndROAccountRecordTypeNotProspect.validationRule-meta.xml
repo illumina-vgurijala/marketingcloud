@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckFSAndROAccountRecordTypeNotProspect</fullName>
+    <active>true</active>
+    <description>Prevents users from saving the Field service/ Reorder opportunity record if Account record type is Prospect.</description>
+    <errorConditionFormula>AND ( 
+        OR ( 
+            RecordType.DeveloperName = $Label.OpportunityRTDirectFieldServices,
+            RecordType.DeveloperName = $Label.IndirectFieldServices,
+            RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder, 
+            RecordType.DeveloperName = $Label.IndirectReOrder 
+        ), 
+        Account.RecordType.DeveloperName = $Label.AccountProspect, 
+        NOT ( 
+            OR ( 
+                TEXT ( StageName ) = $Label.OpportunityStageClosedLost, 
+                TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+                PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedLost, 
+                PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedWon, 
+                PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+                TEXT ( StageName ) = $Label.OpportunityStageClosedWon 
+            ) 
+        ), 
+        TEXT ( Type ) &lt;&gt; $Label.OpportunityTypeCustomProductFirstBuy,   
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+        TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+        CloseDate &gt; TODAY(), 
+        NOT ( 
+            OR ( 
+                ISCHANGED ( Is_Updated_By_System__c ), 
+                Is_Updated_By_System__c = true,
+				$Profile.Name =  $Label.ProfileSystemAdmin,
+				$Profile.Name =  $Label.ProfileDataSteward
+            ) 
+        ) 
+    )</errorConditionFormula>
+    <errorDisplayField>AccountId</errorDisplayField>
+    <errorMessage>Opportunity Account (Sold-To) is a prospect account and cannot be related to a Reorder or Field Service opportunity. Please create a Standard Opportunity for this prospect account or change opportunity Account Name to an existing customer.</errorMessage>
+</ValidationRule>

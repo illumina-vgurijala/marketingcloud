@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckQuoteNameAccessOnCertainQuoteStages</fullName>
+    <active>true</active>
+    <description>Prevents the user to edit the Quote Name when the Quote Stage is Generated ,Presented</description>
+    <errorConditionFormula>AND ( 
+    AND ( 
+        OR ( 
+            CONTAINS(Quote_Type__c , &quot;Direct Reorder and Custom Product&quot;),
+            CONTAINS(Quote_Type__c , &quot;Indirect Reorder and Custom Product&quot;)
+        ), 
+        CONTAINS(Quote_Sub_Type__c , &quot;Custom Product (First-Buy)&quot;) 
+    ),
+    OR ( 
+        TEXT( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStageGenerated, 
+        TEXT( Apttus_Proposal__Approval_Stage__c ) = $Label.QuoteStagePresented
+    ), 
+    NOT ( 
+        OR ( 
+            ISCHANGED ( Is_Updated_By_System__c ), 
+            Is_Updated_By_System__c, 
+            Invalid_Quote__c 
+        ) 
+    ), 
+    OR ( 
+        ISCHANGED ( Apttus_Proposal__Proposal_Name__c)
+    ) 
+)</errorConditionFormula>
+    <errorDisplayField>Apttus_Proposal__Proposal_Name__c</errorDisplayField>
+    <errorMessage>You cannot change the Quote Name when the Quote stage is Generated or Presented.</errorMessage>
+</ValidationRule>

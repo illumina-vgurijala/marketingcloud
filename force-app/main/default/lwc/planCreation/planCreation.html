@@ -1,0 +1,194 @@
+<template>
+  <template if:true={booLoading}>
+    <lightning-spinner
+      alternative-text="Loading"
+      variant="brand"
+    ></lightning-spinner>
+  </template>
+  <!-- modal header start  -->
+  <header class="slds-modal__header">
+    <button
+      class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+      title="Close"
+      onclick={closeModal}
+    >
+      <lightning-icon
+        icon-name="utility:close"
+        alternative-text="close"
+        variant="inverse"
+        size="small"
+      >
+      </lightning-icon>
+      <span class="slds-assistive-text">Close</span>
+    </button>
+    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+      {modalHeader}
+    </h2>
+  </header>
+  <!-- modal body start -->
+  <!--DCP-39621: assign idRecordTypeId-->
+  <lightning-record-edit-form
+    object-api-name={objectApiName}
+    record-type-id={idRecordTypeId}
+    onsuccess={handleSuccess}
+    onsubmit={handleSubmit}
+    oncancel={closeModal}
+    onerror={handleError}
+  >
+    <div 
+      class="slds-modal__content slds-p-around_medium slds-scrollable divblock"
+    >
+      <c-custom-path
+        all-stages={pathStages}
+        last-completed-stage={lastStage}
+      ></c-custom-path>
+      <template if:true={selectionView}>
+        <template if:true={territorySelectView}>
+          <lightning-combobox
+            class="territorySelect"
+            name="TerritorySelect"
+            label="Territory"
+            options={territoryOptions}
+            onchange={territorySelect}
+            required
+            message-when-value-missing={mapUILabels.UI_Territory_Not_Selected}
+          >
+          </lightning-combobox>
+        </template>
+        <!-- DCP-39735 -->
+        <template if:true={channelPartnerSelectView}>
+          <lightning-combobox
+            class="channelPartner"
+            name="channelPartner"
+            label="Channel Partner"
+            options={channelPartnerOption}
+            onchange={channelPartnerSelect}
+            required
+            message-when-value-missing={mapUILabels.UI_CP_Not_Selected}
+          >
+          </lightning-combobox>
+        </template>
+        <template if:true={yearSelectView}>
+          <lightning-combobox
+            class="year"
+            name="YearSelect"
+            label="Year"
+            options={yearOptions}
+            onchange={yearSelect}
+            required
+            message-when-value-missing={mapUILabels.UI_Year_Not_Selected}
+          >
+          </lightning-combobox>
+        </template>
+        <template if:true={roleSelectView}>
+          <lightning-combobox
+            class="role"
+            name="RoleSelect"
+            label="Role"
+            options={roleOptions}
+            onchange={roleSelect}
+            required
+            message-when-value-missing={mapUILabels.UI_Role_Not_Selected}
+          >
+          </lightning-combobox>
+        </template>
+        <template if:true={isMobile}>
+          <br/><br/><br/><br/><br/><br/><br/>
+        </template>
+      </template>
+      <template if:true={createView}>
+        <lightning-accordion
+          allow-multiple-sections-open
+          active-section-name={activeSections}
+        >
+          <template
+            for:each={pageLayoutSection}
+            for:item="section"
+            for:index="indexVar"
+          >
+            <template if:false={section.isSystemColumn}>
+              <lightning-accordion-section
+                key={section.Label}
+                name={section.Label}
+                label={section.Label}
+                title={section.Label}
+              >
+                <div class="slds-grid slds-gutters" key={section.Label}>
+                  <template for:each={section.Columns} for:item="column">
+                    <div class="slds-col" key={section.Label}>
+                      <template for:each={column.Fields} for:item="field">
+                        <lightning-input-field
+                          field-name={field.APIName}
+                          key={field.APIName}
+                          value={field.defaultValue}
+                          disabled={field.isReadOnly}
+                          required={field.isRequired}
+                        >
+                        </lightning-input-field>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </lightning-accordion-section>
+            </template>
+          </template>
+        </lightning-accordion>
+      </template>
+    </div>
+    <template if:true={selectionView}>
+      <footer class="slds-modal__footer">
+        <lightning-button
+          label="Next"
+          variant="brand"
+          onclick={nextScreen}
+        ></lightning-button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <lightning-button label="Cancel" variant="neutral" onclick={closeModal}>
+        </lightning-button>
+      </footer>
+    </template>
+    <template if:true={createView}>
+      <template if:false={isMobile}>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            variant="brand"
+            type="submit"
+            name="Save"
+            label="Save"
+            disabled={booLoading}
+          >
+          </lightning-button>
+          &nbsp;&nbsp;&nbsp;&nbsp;
+          <lightning-button
+            variant="neutral"
+            name="Cancel"
+            label="Cancel"
+            onclick={closeModal}
+          >
+          </lightning-button>
+        </footer>
+      </template>
+      <template if:true={isMobile}>
+        <div class="slds-clearfix">
+          <div class="slds-float_right">
+            <lightning-button
+            variant="brand"
+            type="submit"
+            name="Save"
+            label="Save"
+            disabled={booLoading}
+            >
+            </lightning-button>
+            <lightning-button
+            variant="neutral"
+            name="Cancel"
+            label="Cancel"
+            onclick={closeModal}
+            >
+            </lightning-button>
+          </div>
+        </div>
+      </template>
+    </template>
+  </lightning-record-edit-form>
+</template>

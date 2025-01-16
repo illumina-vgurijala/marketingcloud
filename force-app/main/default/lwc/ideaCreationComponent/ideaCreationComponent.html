@@ -1,0 +1,74 @@
+<!--Author - Rishab
+	Description - [DCP-52334] LWC Component to Create Idea (Innovation Hub) records and show suggestions to users to avoid duplicates.
+-->
+<template>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+		<template if:true={showSpinner}>
+            <lightning-spinner variant="brand" size="medium"></lightning-spinner>
+        </template>
+        <div class="slds-modal__container">
+        <div class="backgroundcolor">
+            <template if:true={showEditForm}>
+                    <header class="slds-modal__header">
+                        <div class="slds-card">
+                            <h3 slot="title" class="backcolor slds-text-heading_medium slds-var-p-top_large">
+                                <lightning-icon icon-name="standard:lightning_component" size="medium"></lightning-icon>
+                                &nbsp; <strong>{label.postIdeaHeading}</strong>
+                            </h3>
+                        </div>
+                    </header>
+            <div class="slds-modal__content slds-var-p-around_x-small" id="modal-content-id-1"></div>
+                <lightning-record-edit-form object-api-name="innohub__Innovation_Idea__c" record-type-id={recordTypeId} 
+                                            onsubmit={handleSubmit} onsuccess={handleSuccess} onerror={handleEditOnError}>
+                    <div class="backgroundcolor slds-scrollable_y">
+                    <div class="heightcomponent slds-scrollable_y">   
+                        <template if:true={showError}>
+                            <p class="errorMessage">{errorMessage}</p>
+                        </template>
+                    <lightning-layout multiple-rows="true" class="slds-var-p-left_medium slds-var-p-right_medium">
+                        <lightning-layout-item size="12">
+                            <lightning-input-field field-name="Name" required onchange={checkDuplicates} ></lightning-input-field>
+                        </lightning-layout-item>
+                        <template if:true={showSuggestions}>
+                            <div class="backgroundcolourcard widthclass">
+                                <lightning-card icon-name="utility:light_bulb">
+                                    <h1 slot="title" class="no-wrap">{label.messageSimilarIdeas} </h1>
+                                    <div class="heightdiv slds-scrollable_y">   
+                                    <lightning-layout multiple-rows="true">
+                                        <template for:each={duplicateList} for:item='row' for:index='index'>
+                                            <lightning-layout-item key={row.Id} size="12" title={row.Name} class="slds-var-p-left_medium" >
+                                                <a href={row.redirectUrl} target="_blank">&nbsp; # {row.Name} </a>
+                                            </lightning-layout-item>
+                                        </template>
+                                    </lightning-layout>
+                                    </div>
+                                </lightning-card>
+                            </div>
+                        </template>
+                        <lightning-layout-item size="12" flexibility="shrink">
+                            <lightning-input-field field-name="Category__c" required={isRequired}  onchange={showSubCat}></lightning-input-field>
+                        </lightning-layout-item>
+                        <template if:true={showDependent}>
+                            <lightning-layout-item size="12" flexibility="shrink">
+                                <lightning-input-field field-name="Sub_Category__c" required={isRequired} ></lightning-input-field>
+                            </lightning-layout-item>
+                        </template>
+                        <lightning-layout-item size="12">
+                                <lightning-input-field field-name="innohub__Description__c" required={isRequired}  ></lightning-input-field>
+                        </lightning-layout-item>
+                    </lightning-layout>
+                    </div>
+                    </div>
+                    <lightning-button-group class="slds-align_absolute-center">
+                        <lightning-button variant="brand" type="submit" name="Save" 
+                                            label="Save" class="slds-var-p-around_medium"></lightning-button>
+                        <lightning-button name="Back" label="Back" onclick={goToListView} 
+                                            class="slds-var-p-around_medium"></lightning-button>
+                    </lightning-button-group>
+                </lightning-record-edit-form>                  
+            </template>
+        </div>
+        </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

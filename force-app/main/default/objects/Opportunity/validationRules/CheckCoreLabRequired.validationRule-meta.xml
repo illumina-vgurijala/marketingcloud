@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCoreLabRequired</fullName>
+    <active>true</active>
+    <description>DCP-31747 Core Lab is mandatory if user selects &quot;Send Out/Core Lab&quot; in Abandon reason.</description>
+    <errorConditionFormula>IF(
+    AND(!$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+        NOT(
+            OR(
+                ISCHANGED(Is_Updated_By_System__c),
+                Is_Updated_By_System__c = true,
+                $Profile.Name = $Label.ProfileSystemAdmin,
+                $Profile.Name = $Label.ProfileDataSteward
+            )
+        ),
+        ISPICKVAL(StageName, &apos;Closed Abandoned&apos;),
+        ISPICKVAL(Abandon_Reason__c, &apos;Send Out/Core Lab&apos;),
+        ISBLANK(Core_Lab__c),
+        ISBLANK( Core_Lab_Other__c )
+    ),
+    true,
+    false
+)</errorConditionFormula>
+    <errorDisplayField>Core_Lab__c</errorDisplayField>
+    <errorMessage>If you selected &apos;Send Out/Core Lab&apos; as an Abandon reason, then you must enter a value in either &apos;Core Lab&apos; or &apos;Core Lab - Other&apos; fields</errorMessage>
+</ValidationRule>

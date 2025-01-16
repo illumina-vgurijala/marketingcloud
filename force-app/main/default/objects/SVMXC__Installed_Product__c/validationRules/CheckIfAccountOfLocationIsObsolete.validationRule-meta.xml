@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckIfAccountOfLocationIsObsolete</fullName>
+    <active>true</active>
+    <description>Validation Rule to check if the Location&apos;s Account Status is obsolete.</description>
+    <errorConditionFormula>AND(
+ NOT($Profile.Name ==$Label.Integration_SAP_Service),
+ NOT($User.FirstName ==$Label.Automated_Process_User),
+ NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+ NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+ NOT($Profile.Name == $Label.System_Administrator),
+ OR(
+	ISCHANGED(SVMXC__Site__c),
+	ISCHANGED(SVMXC__Status__c)
+   ),
+ OR(
+   TEXT( SVMXC__Site__r.SVMXC__Account__r.Account_Status__c) == $Label.AccountStatusObsolete,
+   TEXT( SVMXC__Site__r.Type__c ) == $Label.AccountGroupLegacy
+   ),
+ AND(
+   Service_Product_Type__c == $Label.IPServiceProductTypeInstrument,
+   NOT(TEXT( SVMXC__Status__c) == $Label.InstallProductStatusDeInstalled),
+   NOT(TEXT( SVMXC__Status__c) == $Label.InstalledProductStatusScrapped),
+   NOT(TEXT( SVMXC__Status__c) == $Label.InstalledProductStatusReturned),
+   NOT(TEXT( SVMXC__Status__c) == $Label.InstalledProductStatusDecommissioned)		
+  )
+)</errorConditionFormula>
+    <errorMessage>The Installed Product location cannot be associated to an obsolete legacy account. Please make sure that the location is not a legacy account.</errorMessage>
+</ValidationRule>

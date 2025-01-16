@@ -1,0 +1,1127 @@
+<!--
+    Apttus Config & Pricing
+    IncentiveRollup
+
+    @2015-2016 Apttus Inc. All rights reserved.
+ -->
+ <apex:page standardStylesheets="false"
+    sidebar="false"
+    showHeader="false"
+    docType="html-5.0"
+    standardController="Apttus_Config2__SearchFilter__c"
+    extensions="Apttus_Config2.IncentiveRollupController">
+
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jQueryUIStyle.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/incentives-style.css')}" rel="stylesheet" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jQueryDatePicker.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/jQueryDateTimePicker.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/navigation.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/autoCompleteWidget.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/optionController.js')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/jquery-ui.multipickSearch-1.0.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources,'js/jquery-ui.multipickSearch-1.0.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/angular-1.4.8.min.js')}"/>
+    <apex:include pageName="Apttus_Config2__IncentiveAngularConfig"/>
+    <script>
+        var productAdvancedSearchDialog,
+                nsPrefix = '{!nsPrefix}',
+                $productHiddenCtrl,
+                $groupByParams,
+                groupMultiPicklist,
+                productMultipickList,
+                mController, // handle on main controller allowing components to reference angular $compile
+                // globally instantiate object containing page labels;
+                customLabels = {
+                    lblAvailableItems: "{!$Label.AvailableItems}",
+                    lblSelectedItems: "{!$Label.SelectedItems}",
+                    lblClose: "{!$Label.Close}",
+                    lblNoResultsAvailable: "{!$Label.NoResultsAvailable}",
+                    lblShowAdvancedSearch: "{!$Label.ShowAdvancedSearch}",
+                    lblShowDetails: "{!$Label.ShowDetails}"
+                };
+        function getSelectedProductID(productIDs, products) {
+            // split product IDs on delimiter then add to widget
+            if(productIDs !== '') {
+                for(c = 0; c < products.length; c++) {
+                    productMultipickList.multipickSearch("addSelectedItem", products[c]);
+                }
+                productAdvancedSearchDialog.dialog('close');
+            }
+
+            return false;
+        }
+
+        function esc(myid) {
+           return '#' + myid.replace(/(:|\.)/g,'\\\\$1');
+        }
+
+        function sortSelects(){
+            j$( "select" ).each(function( index ) {
+                var my_options = j$(this).children();
+                var selected = j$(this).val(); /* preserving original selection, step 1 */
+
+                my_options.sort(function(a,b) {
+                    if (a.text > b.text) return 1;
+                    else if (a.text < b.text) return -1;
+                    else return 0
+                })
+
+                j$(this).empty().append( my_options );
+                j$(this).val(selected);
+
+            });
+        }
+
+        function getDateTemplate() {
+            var dateTemplate = '01/23/45';
+            var templateText = Apttus.utils.getOutputFieldText('idDateTemplate');
+            if (!templateText) {
+                return dateTemplate;
+
+            }
+            dateTemplate = templateText;
+            return dateTemplate;
+
+        }
+
+        var builtUserDateSettings,
+                infoScopeCtrlContEl,
+                incentiveScopeCtrl;
+
+        j$(document).ready(function(){
+            mController = angular.element(document.getElementById("divMainAngularAppElement"));
+
+            var e1 = angular.element(document.getElementById("rollupContentCont"));
+
+            // mController is a global variable defined in IncentiveManager.page
+            mController.scope().activateView(e1);
+
+            infoScopeCtrlContEl = angular.element(document.getElementById("rollupScopeCtrlEl"));
+            incentiveScopeCtrl = infoScopeCtrlContEl.scope().incentiveScopeCtrl;
+
+            builtUserDateSettings = Apttus.utils.buildUserDateSettings(getDateTemplate());
+
+            calendarDateFormat = "";
+
+            for(var i = 0; i < builtUserDateSettings.ordering.length; i++){
+                var ymdSymbol = builtUserDateSettings.ordering[i],
+                        symbolIndex = i;
+
+                ymdSymbol = ymdSymbol[0].toLowerCase();
+
+                if (ymdSymbol === 'y') {
+                    calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "Y"
+                } else if (ymdSymbol === 'm') {
+                    calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "m"
+                } else if (ymdSymbol === 'd') {
+                    calendarDateFormat += (calendarDateFormat.length > 0 ? builtUserDateSettings.separator : "") + "d"
+                }
+            }
+
+            rerenderComplete();
+
+            j$('body').on('click', '.save.incentive-save', function(){
+                saveRollupPage();
+            });
+
+            sortSelects();
+            var $hdnGroupByParams = j$(esc('{!$Component.incentiveForm.hdnGroupByParams}')),
+                $ddlRollupBusinessObject = j$(esc('{!$Component.incentiveForm.ddlRollupBusinessObject}')),
+                getRollupGroupParams = function(request, response) {
+                    Visualforce.remoting.Manager.invokeAction(
+                        '{!$RemoteAction.IncentiveRollupController.searchGroupByParameters}',
+                        request.term,
+                        $ddlRollupBusinessObject.val(),
+                        function(result, event){
+                            if(event.type == 'exception') {
+                                alert(event.message);
+                            } else {
+                                result.sort(function(a, b) {
+                                    if (a.label < b.label)
+                                        return -1;
+                                    if (a.label > b.label)
+                                        return 1;
+                                    return 0;
+                                });
+                                response(result);
+                            }
+                    });
+                };
+
+
+            j$("[id$=hdnGroupByParams]").val('');
+
+            $groupByParams = j$("#GroupByParams");
+
+            // multi-pick widget for group by parameter search
+            groupMultiPicklist = $groupByParams.multipickSearch({
+                lblResultsItemsTitle:"{!$Label.AvailableItems}",
+                lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+                lblClose:"{!$Label.Close}",
+                lblNoResults:"{!$Label.NoResultsAvailable}",
+                dataSourceFunction: getRollupGroupParams,
+                defaultResults: function(request, response) {
+                    request.term = '';
+                    getRollupGroupParams(request, response);
+                },
+                onItemSelected: function(settings, item){
+                    onAddSelectedItem($hdnGroupByParams, item.value);
+                },
+                onDelete: function(settings, item){
+                    onDeleteEvent(item.value, "hdnGroupByParams");
+                    if(j$("[id$=hdnGroupByParams]").val() == 'All'){
+                        j$("[id$=hdnGroupByParams]").val('');
+                    }
+                }
+            });
+
+            if('{!JSENCODE(SearchFilter__c.GroupBy__c)}' != ''){
+                var groupByValues = '{!JSENCODE(SearchFilter__c.GroupBy__c)}'.split('; ');
+                for(k = 0; k < groupByValues.length; k++){
+                    groupMultiPicklist.multipickSearch("addSelectedItem", {label:groupByValues[k], value:groupByValues[k]});
+                }
+            }
+
+            j$('body').on('click', '.addGroupBy', function(){
+                addGroupBy();
+
+            });
+
+            j$('body').on('click', '.removeGroupBy', function(){
+                var index = j$(this).closest('tr').index();
+                removeGroupBy(index);
+
+            });
+
+        });
+
+        function displaySpinner(){
+            j$('.rollup-overlay').show();
+            disableScroll();
+        }
+
+        function hideSpinner(){
+            j$('.rollup-overlay').hide();
+            enableScroll();
+        }
+        var keys = {37: 1, 38: 1, 39: 1, 40: 1};
+
+        function preventDefault(e) {
+          e = e || window.event;
+          if (e.preventDefault)
+              e.preventDefault();
+          e.returnValue = false;
+        }
+
+        function preventDefaultForScrollKeys(e) {
+            if (keys[e.keyCode]) {
+                preventDefault(e);
+                return false;
+            }
+        }
+
+        function disableScroll() {
+          if (window.addEventListener) // older FF
+              window.addEventListener('DOMMouseScroll', preventDefault, false);
+          window.onwheel = preventDefault; // modern standard
+          window.onmousewheel = document.onmousewheel = preventDefault; // older browsers, IE
+          window.ontouchmove  = preventDefault; // mobile
+          document.onkeydown  = preventDefaultForScrollKeys;
+        }
+
+        function enableScroll() {
+            if (window.removeEventListener)
+                window.removeEventListener('DOMMouseScroll', preventDefault, false);
+            window.onmousewheel = document.onmousewheel = null;
+            window.onwheel = null;
+            window.ontouchmove = null;
+            document.onkeydown = null;
+        }
+
+        // supporting function for criteria component
+        function criteriaRowChange(rowAdd, isValid) {
+            if(isValid) {
+                // this will attempt to save the criteria component data
+                criteriaComponentRowChange();
+            }
+        }
+
+        function rerenderComplete() {
+            var $dateInputs = j$('.date-input');
+
+            if($dateInputs.length > 0) {
+                $dateInputs.datetimepicker({timepicker: false, format: calendarDateFormat});
+            }
+        }
+    </script>
+    <style>
+
+        .overlay{
+            display:none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1000000px;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.5); /*dim the background*/
+        }
+        .overlay img{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+        }
+        .rollup-overlay {
+            display:none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1000000px;
+            z-index: 10;
+            background-color: rgba(0,0,0,0.5); /*dim the background*/
+        }
+        .rollup-overlay img{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+        }
+
+        .scope > div {
+            float: left;
+        }
+        /*
+        div.content > div:nth-child(4) > div > div > div > div {
+
+        }
+        */
+    </style>
+    <apex:form id="incentiveForm">
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__Sequence__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__Criteria__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupExclusionCriteria__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__Description__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Name}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__Active__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupType__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupBusinessObject__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupMetricType__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupField__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupRecurrenceType__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupRecurrenceFrequency__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupPeriodSource__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__GroupBy__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__GroupByMapTo__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__BusinessObject__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEndDateOffsetType__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEndDateOffsetValue__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEndDateSource__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEndDateSourceObject__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEndDateSourceObjectType__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupStartDateOffsetType__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupStartDateOffsetValue__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupStartDateSource__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupStartDateSourceObject__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupStartDateSourceObjectType__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__ProductFamilyScopeOper__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__ProductFamilyScope__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__ProductScope__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__ProductScopeOper__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RegionScope__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__CountryScope__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__CountryScopeOper__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__AccountTypeScope__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__AccountTypeScopeOper__c}"/>
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RegionScopeOper__c}"/>
+        <apex:inputField value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEffectiveDate__c}" style="display: none;" />
+        <apex:inputField value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupExpirationDate__c}" style="display: none;" />
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupStartDateType__c}" />
+        <apex:inputField value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupStartDate__c}" style="display: none;" />
+        <apex:inputHidden value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEndDateType__c}" />
+        <apex:inputField value="{!Apttus_Config2__SearchFilter__c.Apttus_Config2__RollupEndDate__c}" style="display: none;" />
+        <div class="primary">
+            <div class="back-nav"><a href="{!returnURL}"><i class="fa fa-arrow-left"></i></a></div>
+            <div class="sub-title">
+                <apex:outputPanel id="rollupNoTitle" rendered="{!ISBLANK(searchFilterSO.Id)}">
+                    <h1>{!$Label.apttus_config2__newrolluprule}</h1>
+                    <h3>{!$Label.apttus_config2__draft}</h3>
+                </apex:outputPanel>
+                <apex:outputPanel id="rollupTitle" rendered="{!NOT(ISBLANK(searchFilterSO.Id))}">
+                    <h1>{!searchFilterSO.Name}</h1>
+                    <h3>{!$Label.apttus_config2__draft}</h3>
+                </apex:outputPanel>
+            </div>
+        </div>
+        <div id="divMainAngularAppElement" class="main" ng-app="incentivesApp" ng-controller="mainController">
+            <div id="rollupContentCont" class="main-sub">
+                <span id="rollupScopeCtrlEl" ng-controller="incentiveScopeController as incentiveScopeCtrl">
+                    <apex:outputPanel id="pnlMsgContainer" styleClass="header" layout="block">
+                        <h3>{!$Label.apttus_config2__rolluprules}</h3>
+                        <apex:pageMessages id="pageMessages" />
+                    </apex:outputPanel>
+                    <div class="content">
+                        <div class="section">
+                            <h3 class="collapsible"><i class="fa fa-caret-down"></i> {!$Label.RollupInformation}</h3>
+                            <div class="inner-container inner-container-rollup">
+                                <div class="column-three-grid field">
+                                    <label>{!$ObjectType.SearchFilter__c.Fields.Name.Label}</label>
+                                    <apex:inputField html-placeholder="{!$Label.apttus_config2__entername}" value="{!searchFilterSO.Name}"/>
+                                </div>
+                                <div class="column-three-grid field">
+                                    <label>{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__Description__c.Label}</label>
+                                    <apex:inputTextarea value="{!searchFilterSO.Apttus_Config2__Description__c}"/>
+                                </div>
+                                <div class="column-three-grid field">
+                                    <label>{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__Active__c.Label}</label>
+                                    <div class="radio-option">
+                                        <apex:selectRadio value="{!searchFilterSO.Apttus_Config2__Active__c}" layout="pagedirection" required="true">
+                                            <apex:selectOptions value="{!activeRadioList}"></apex:selectOptions>
+                                        </apex:selectRadio>
+                                    </div>
+                                </div>
+                                <div class="column-three-grid field hideCurrDate">
+                                    <apex:outputLabel for="idEffectiveDate" value="{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupEffectiveDate__c.Label}"></apex:outputLabel>
+                                    <apex:inputField id="idEffectiveDate" styleClass="date-input" value="{!searchFilterSO.Apttus_Config2__RollupEffectiveDate__c}"/>
+                                </div>
+                                <div class="column-three-grid field hideCurrDate">
+                                    <apex:outputLabel for="idEndDate" value="{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupExpirationDate__c.Label}"></apex:outputLabel>
+                                    <apex:inputField id="idEndDate" styleClass="date-input" value="{!searchFilterSO.Apttus_Config2__RollupExpirationDate__c}"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h3 class="collapsible"><i class="fa fa-caret-down"></i> {!$Label.RollupValue}</h3>
+                            <div class="inner-container inner-container-rollup">
+                                <div id="rollupMetricTypeField" class="column-three-grid field">
+                                    <label>{!$ObjectType.SearchFilter__c.Fields.RollupType__c.Label}</label>
+                                    <apex:inputField styleClass="field-input" value="{!searchFilterSO.Apttus_Config2__RollupType__c}"/>
+                                </div>
+                                <div class="column-three-grid field">
+                                    <label>{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__BusinessObject__c.Label}</label>
+                                    <apex:selectList id="ddlRollupBusinessObject" styleClass="ddlRollupBusinessObject field-input" value="{!searchFilterSO.Apttus_Config2__BusinessObject__c}" multiselect="false" size="1">
+                                        <apex:selectOptions value="{!RollupBusinessObjectOptions}"></apex:selectOptions>
+                                        <apex:actionSupport event="onchange"
+                                            action="{!businessObjectChanged}"
+                                            reRender="pnlMsgContainer, GroupByPanel, RollupFieldListPanel, RollupPeriodField, pnlRollupDuration, pnlScopeSection, criteriaComponent, exclusionCC"
+                                            status="loadingStatus"
+                                            oncomplete="rerenderComplete();"/>
+                                    </apex:selectList>
+                                </div>
+                                <div class="column-three-grid field">
+                                    <label>{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupMetricType__c.Label}</label>
+                                    <apex:inputField styleClass="field-input" value="{!searchFilterSO.Apttus_Config2__RollupMetricType__c}">
+                                        <apex:actionSupport event="onchange" reRender="RollupFieldListPanel" status="loadingStatus"/>
+                                    </apex:inputField>
+                                </div>
+                                <div class="column-three-grid field">
+                                    <label>{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupField__c.Label}</label>
+                                    <apex:outputPanel id="RollupFieldListPanel">
+                                    <apex:selectList value="{!searchFilterSO.Apttus_Config2__RollupField__c}" size="1">
+                                        <apex:selectOptions value="{!RollupFieldList}"></apex:selectOptions>
+                                    </apex:selectList>
+                                    </apex:outputPanel>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h3 class="collapsible"><i class="fa fa-caret-down"></i> {!$Label.RollupDuration}</h3>
+                            <apex:outputPanel id="pnlRollupDuration" styleClass="inner-container inner-container-rollup" layout="block">
+                                <div style="overflow: auto">
+                                    <div class="column-three-grid field">
+                                        <label>{!$Label.apttus_config2__rollupfrequency}</label>
+                                        <apex:inputField styleClass="field-input" value="{!searchFilterSO.Apttus_Config2__RollupRecurrenceType__c}">
+                                            <apex:actionSupport event="onchange" reRender="pnlRollupDuration" status="loadingStatus" oncomplete="rerenderComplete()" />
+                                        </apex:inputField>
+                                    </div>
+                                    <apex:outputPanel styleClass="column-three-grid field" layout="block" rendered="{!searchFilterSO.Apttus_Config2__RollupRecurrenceType__c == 'Recurring'}">
+                                        <label>{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupRecurrenceFrequency__c.Label}</label>
+                                        <apex:inputField styleClass="field-input" value="{!searchFilterSO.Apttus_Config2__RollupRecurrenceFrequency__c}"/>
+                                    </apex:outputPanel>
+                                    <div class="column-three-grid field">
+                                        <label>{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupPeriodSource__c.Label}</label>
+                                        <apex:selectList id="RollupPeriodField" styleClass="field-input sort-select" value="{!searchFilterSO.Apttus_Config2__RollupPeriodSource__c}" multiselect="false" size="1">
+                                            <apex:selectOptions value="{!RollupPeriodFieldList}"></apex:selectOptions>
+                                        </apex:selectList>
+                                    </div>
+                                </div>
+                                <apex:outputPanel rendered="{!searchFilterSO.Apttus_Config2__RollupRecurrenceType__c != 'Recurring'}">
+                                    <div class="date-ref-section-cont">
+                                        <div id="startDateReferenceSectionContainer" class="rollup-duration-reference-section">
+                                            <apex:outputPanel id="pnlStartDateReferenceSection" layout="block">
+                                                <div class="mini">
+                                                    <apex:outputLabel for="dllRefStartDateType" value="{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupStartDateType__c.Label}" />
+                                                    <apex:inputField id="dllRefStartDateType" value="{!searchFilterSO.Apttus_Config2__RollupStartDateType__c}">
+                                                        <apex:actionSupport event="onchange" reRender="pnlStartDateReferenceSection" status="loadingStatus" oncomplete="rerenderComplete()" />
+                                                    </apex:inputField>
+                                                </div>
+                                                <apex:outputPanel rendered="{!searchFilterSO.Apttus_Config2__RollupStartDateType__c == 'Constant' || ISBLANK(searchFilterSO.Apttus_Config2__RollupStartDateType__c)}" styleClass="mini">
+                                                    <apex:outputLabel for="dllRefStartDate" value="{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupStartDate__c.Label}" />
+                                                    <div class="hideCurrDate">
+                                                        <apex:inputField id="dllRefStartDate" value="{!searchFilterSO.Apttus_Config2__RollupStartDate__c}" styleClass="date-input" />
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <apex:variable rendered="{!searchFilterSO.Apttus_Config2__RollupStartDateType__c == 'Reference Value Source'}" var="a" value="">
+                                                    <div class="mini">
+                                                        <label>{!$Label.apttus_config2__datasource}</label>
+                                                        <apex:selectList styleClass="rollup-duration-field" value="{!searchFilterSO.Apttus_Config2__RollupStartDateSourceObject__c}" multiselect="false" size="1">
+                                                            <apex:selectOptions value="{!dataSources}"/>
+                                                            <apex:selectOptions value="{!childFilters}"/>
+                                                            <apex:actionSupport event="onchange" reRender="RollupStartDateSource" status="loadingStatus" />
+                                                        </apex:selectList>
+                                                    </div>
+                                                    <apex:outputPanel styleClass="mini" layout="block">
+                                                        <label>{!$Label.apttus_config2__field}</label>
+                                                        <apex:selectList id="RollupStartDateSource" styleClass="rollup-duration-field" value="{!searchFilterSO.Apttus_Config2__RollupStartDateSource__c}" multiselect="false" size="1">
+                                                            <apex:selectOptions value="{!StartFields}"/>
+                                                        </apex:selectList>
+                                                    </apex:outputPanel>
+                                                    <div class="mini">
+                                                        <label>{!$Label.apttus_config2__offsettype}</label>
+                                                        <apex:inputField styleClass="rollup-duration-offsettype" value="{!searchFilterSO.Apttus_Config2__RollupStartDateOffsetType__c}" />
+                                                    </div>
+                                                    <div class="mini">
+                                                        <label>{!$Label.apttus_config2__offsetvalue}</label>
+                                                        <apex:inputField styleClass="rollup-duration-offsetvalue" value="{!searchFilterSO.Apttus_Config2__RollupStartDateOffsetValue__c}" />
+                                                    </div>
+                                                </apex:variable>
+                                            </apex:outputPanel>
+                                        </div>
+                                        <div id="endDateReferenceSectionContainer" class="rollup-duration-reference-section">
+                                            <apex:outputPanel id="pnlEndDateReferenceSection" layout="block">
+                                                <div class="mini">
+                                                    <apex:outputLabel for="ddlRefEndDateType" value="{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupEndDateType__c.Label}" />
+                                                    <apex:inputField id="ddlRefEndDateType" value="{!searchFilterSO.Apttus_Config2__RollupEndDateType__c}">
+                                                        <apex:actionSupport event="onchange" reRender="pnlEndDateReferenceSection" status="loadingStatus" oncomplete="rerenderComplete()" />
+                                                    </apex:inputField>
+                                                </div>
+                                                <apex:outputPanel rendered="{!searchFilterSO.Apttus_Config2__RollupEndDateType__c == 'Constant' || ISBLANK(searchFilterSO.Apttus_Config2__RollupEndDateType__c)}" styleClass="mini">
+                                                    <apex:outputLabel for="txtRefEndDate" value="{!$ObjectType.Apttus_Config2__SearchFilter__c.Fields.Apttus_Config2__RollupEndDate__c.Label}" />
+                                                    <div class="hideCurrDate">
+                                                        <apex:inputField id="txtRefEndDate" value="{!searchFilterSO.Apttus_Config2__RollupEndDate__c}" styleClass="date-input" />
+                                                    </div>
+                                                </apex:outputPanel>
+                                                <apex:variable rendered="{!searchFilterSO.Apttus_Config2__RollupEndDateType__c == 'Reference Value Source'}" var="a" value="">
+                                                    <div class="mini">
+                                                        <label>{!$Label.apttus_config2__datasource}</label>
+                                                        <apex:selectList styleClass="rollup-duration-field" value="{!searchFilterSO.Apttus_Config2__RollupEndDateSourceObject__c}" multiselect="false" size="1">
+                                                            <apex:selectOptions value="{!dataSources}"/>
+                                                            <apex:selectOptions value="{!childFilters}"/>
+                                                            <apex:actionSupport event="onchange" reRender="RollupEndDateSource" status="loadingStatus" />
+                                                        </apex:selectList>
+                                                    </div>
+                                                    <apex:outputPanel styleClass="mini" layout="block">
+                                                        <label>{!$Label.apttus_config2__field}</label>
+                                                        <apex:selectList id="RollupEndDateSource" styleClass="rollup-duration-field" value="{!searchFilterSO.Apttus_Config2__RollupEndDateSource__c}" multiselect="false" size="1">
+                                                            <apex:selectOptions value="{!EndFields}"/>
+                                                        </apex:selectList>
+                                                    </apex:outputPanel>
+                                                    <div class="mini">
+                                                        <label>{!$Label.apttus_config2__offsettype}</label>
+                                                        <apex:inputField styleClass="rollup-duration-offsettype" value="{!searchFilterSO.Apttus_Config2__RollupEndDateOffsetType__c}" />
+                                                    </div>
+                                                    <div class="mini">
+                                                        <label>{!$Label.apttus_config2__offsetvalue}</label>
+                                                        <apex:inputField styleClass="rollup-duration-offsetvalue" value="{!searchFilterSO.Apttus_Config2__RollupEndDateOffsetValue__c}" />
+                                                    </div>
+                                                </apex:variable>
+                                            </apex:outputPanel>
+                                        </div>
+                                    </div>
+                                </apex:outputPanel>
+                            </apex:outputPanel>
+                        </div>
+                        <div class="section">
+                            <h3 class="collapsible"><i class="fa fa-caret-down"></i> {!$Label.RollupGroupByParameters}</h3>
+                            <div class="inner-container-maximize">
+                            <apex:outputPanel id="GroupByPanel">
+                                <script type="text/javascript">
+                                    j$(document).ready(function() {
+                                        if({!ISBLANK(searchFilterSO.BusinessObject__c)} || '{!JSENCODE(searchFilterSO.BusinessObject__c)}' == ' '){
+                                            j$('.rollup-group-by-params input').css({'background-color': '#EBEBE4'});
+                                            j$('.rollup-group-by-params input').closest('.multi-select-widget').css({'background-color': '#EBEBE4'});
+                                            j$('.rollup-group-by-params input').attr('disabled','disabled');
+                                            j$('.simple-data-table .circle-btn').hide();
+                                        }else{
+                                            j$('.rollup-group-by-params input').css({'background-color': '#fff'});
+                                            j$('.rollup-group-by-params input').closest('.multi-select-widget').css({'background-color': '#fff'});
+                                            j$('.rollup-group-by-params input').removeAttr('disabled');
+                                            j$('.simple-data-table .circle-btn').show();
+                                        }
+                                    });
+                                </script>
+                                <table class="simple-data-table rollup-group-by-params">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>{!$Label.GroupByParameter}</th>
+                                            <th>{!$Label.RelatedFieldonRollupData}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <apex:variable value="{!1}" var="rowNum"/>
+                                        <apex:repeat value="{!rollupGroupParameters}" var="rollupGroupParameter">
+                                        <tr>
+                                            <td>{!rowNum}.</td>
+                                            <td>
+                                                <apex:inputText styleClass="GroupByDataSource{!rowNum}" html-placeholder="{!$Label.apttus_config2__search}" value="{!rollupGroupParameter.GroupByParamsDataSourceLabel}" /><br />
+                                                <apex:inputText style="display:none;" styleClass="GroupByDataSourceValue{!rowNum}" value="{!rollupGroupParameter.GroupByParamsDataSourceValue}" />
+                                                <apex:outputPanel rendered="{!NOT(ISBLANK(searchFilterSO.Apttus_Config2__BusinessObject__c)) && searchFilterSO.Apttus_Config2__BusinessObject__c != ' '}">
+                                                <script type="text/javascript">
+                                                    j$(document).ready(function() {
+                                                        var groupByParamsDataSourceSearch = function(request, response) {
+                                                            {!NSPrefix}IncentiveRollupController.searchGroupByParameters(j$('.GroupByDataSource{!rowNum}').val(),
+                                                            j$('.ddlRollupBusinessObject').val(),
+                                                            function(result, event){
+                                                                if(event.type == 'exception') {
+                                                                    alert(event.message);
+                                                                } else {
+                                                                    response(result);
+                                                                }
+                                                            });
+                                                        };
+                                                        var $entryHiddenCtrl = j$(".GroupByDataSourceValue{!rowNum}"),
+                                                            entryProductMultipickList = j$(".GroupByDataSource{!rowNum}").multipickSearch({
+                                                                    lblResultsItemsTitle:"{!$Label.apttus_config2__availableitems}",
+                                                                    lblSelectedItemsTitle:"{!$Label.apttus_config2__selecteditems}",
+                                                                    lblClose:"{!$Label.apttus_config2__close}",
+                                                                    lblNoResults:"{!$Label.apttus_config2__noresultsavailable}",
+                                                                    multipick: false,
+                                                                    dataSourceFunction: groupByParamsDataSourceSearch,
+                                                                    defaultResults: function(request, response) {
+                                                                        request.term = "";
+                                                                        groupByParamsDataSourceSearch(request, response);
+                                                                    },
+                                                                    onItemSelected: function(settings, item){
+                                                                        j$(".GroupByDataSourceValue{!rowNum}").val('','');
+                                                                        onAddSelectedItem($entryHiddenCtrl, item.value);
+                                                                    },
+                                                                    onDelete: function(settings, item){
+                                                                    }
+                                                                });
+                                                    });
+                                                </script>
+                                                </apex:outputPanel>
+                                            </td>
+                                            <td>
+                                                <apex:inputText styleClass="GroupByParamsField{!rowNum}" html-placeholder="{!$Label.apttus_config2__search}" value="{!rollupGroupParameter.GroupByParamsFieldLabel}" /><br />
+                                                <apex:inputText style="display:none;" styleClass="GroupByParamsFieldValue{!rowNum}" value="{!rollupGroupParameter.GroupByParamsField}" />
+                                                <apex:outputPanel rendered="{!NOT(ISBLANK(searchFilterSO.Apttus_Config2__BusinessObject__c)) && searchFilterSO.Apttus_Config2__BusinessObject__c != ' '}">
+                                                <script type="text/javascript">
+                                                    j$(document).ready(function() {
+                                                        var groupByParamsDataSourceSearch = function(request, response) {
+                                                            {!NSPrefix}IncentiveRollupController.searchGroupByMapToParameters(j$('.GroupByParamsField{!rowNum}').val(),
+                                                            '{!$ObjectType.Apttus_Config2__RollupData__c.Name}',
+                                                            function(result, event){
+                                                                if(event.type == 'exception') {
+                                                                    alert(event.message);
+                                                                } else {
+                                                                    response(result);
+                                                                }
+                                                            });
+                                                        };
+                                                        var $entryHiddenCtrl = j$(".GroupByParamsFieldValue{!rowNum}"),
+                                                            entryProductMultipickList = j$(".GroupByParamsField{!rowNum}").multipickSearch({
+                                                                    lblResultsItemsTitle:"{!$Label.apttus_config2__availableitems}",
+                                                                    lblSelectedItemsTitle:"{!$Label.apttus_config2__selecteditems}",
+                                                                    lblClose:"{!$Label.apttus_config2__close}",
+                                                                    lblNoResults:"{!$Label.apttus_config2__noresultsavailable}",
+                                                                    multipick: false,
+                                                                    dataSourceFunction: groupByParamsDataSourceSearch,
+                                                                    defaultResults: function(request, response) {
+                                                                        request.term = "";
+                                                                        groupByParamsDataSourceSearch(request, response);
+                                                                    },
+                                                                    onItemSelected: function(settings, item){
+                                                                        j$(".GroupByParamsFieldValue{!rowNum}").val('','');
+                                                                        onAddSelectedItem($entryHiddenCtrl, item.value);
+                                                                    },
+                                                                    onDelete: function(settings, item){
+                                                                    }
+                                                                });
+                                                    });
+                                                </script>
+                                                </apex:outputPanel>
+                                            </td>
+                                            <td>
+                                                <div class="circle-btn cancel-btn removeGroupBy"><i class="fa fa-times"></i></div>
+                                                <apex:outputPanel rendered="{!rollupGroupParameters.size < 4}">
+                                                    <div class="circle-btn add-btn addGroupBy"><i class="fa fa-plus"></i></div>
+                                                </apex:outputPanel>
+                                            </td>
+                                        </tr>
+                                        <apex:variable var="rowNum" value="{!rowNum + 1}"/>
+                                        </apex:repeat>
+                                    </tbody>
+                                </table>
+                                </apex:outputPanel>
+                            </div>
+                        </div>
+                        <div class="section">
+                            <h3 class="collapsible"><i class="fa fa-caret-down"></i> {!$Label.Scope}</h3>
+                            <apex:outputPanel id="pnlScopeSection" layout="block" styleClass="inner-container">
+                                <!-- PRODUCT AND FAMILY SEARCH -->
+                                <script>
+                                    j$(document).ready(function() {
+                                        $productHiddenCtrl = j$("[id$=productId]");
+
+                                        var productFamilyList,
+                                        $hdnProductFamilyInput = j$(esc('{!$Component.incentiveForm.productFamilyId}')),
+                                        _refreshSelectedProductList = function(productMultipickList) {
+                                            // pass filters to server remoting call
+                                            // server executes query returning only selected products which would still be in the selected list
+                                            {!NSPrefix}IncentiveRemoteActionController.refreshSelectedProductList(
+                                                '',
+                                                '',
+                                                $hdnProductFamilyInput.val(),
+                                                '{!JSENCODE(searchFilterSO.Apttus_Config2__ProductFamilyScopeOper__c)}',
+                                                $productHiddenCtrl.val(),
+                                                function(result, event) {
+                                                    if(event.type == 'exception') {
+                                                        alert(event.message);
+                                                    } else {
+                                                        // update multi-pick widget to reflect updated list of selected products
+                                                        productMultipickList.multipickSearch("setSelectedItems", normalizeData(result, "Name", "Id"));
+                                                    }
+                                                }
+                                            );
+                                        },
+                                        productFamilyRetrievalMethod = function(request, response) {
+                                            {!NSPrefix}IncentiveRemoteActionController.searchProductFamily(request.term,
+                                                function(result, event){
+                                                    if(event.type == 'exception') {
+                                                          alert(event.message);
+                                                    } else {
+                                                         productFamilyList = result;
+                                                         response(productFamilyList);
+                                                    }
+                                            });
+                                        },
+                                        productsRetrievalMethod = function(request, response) {
+                                            {!NSPrefix}IncentiveRemoteActionController.searchProducts(request.term,
+                                                '',
+                                                '',
+                                                $hdnProductFamilyInput.val(),
+                                                '{!JSENCODE(searchFilterSO.Apttus_Config2__ProductFamilyScopeOper__c)}',
+                                                 function(result, event){
+                                                    if(event.type == 'exception') {
+                                                          alert(event.message);
+                                                    } else {
+                                                         response(normalizeData(result, "Name", "Id"));
+                                                    }
+                                                });
+                                        },
+                                        prodFamilyMultipickList = j$(esc('{!$Component.incentiveForm.idproductFamilySearch}')).multipickSearch({
+                                                lblResultsItemsTitle:"{!$Label.apttus_config2__availableitems}",
+                                                lblSelectedItemsTitle:"{!$Label.apttus_config2__selecteditems}",
+                                                lblClose:"{!$Label.apttus_config2__close}",
+                                                lblNoResults:"{!$Label.apttus_config2__noresultsavailable}",
+                                                dataSourceFunction:productFamilyRetrievalMethod,
+                                                defaultResults: function(request, response) {
+                                                    request.term = "";
+                                                    productFamilyRetrievalMethod(request, response);
+                                                },
+                                                onItemSelected: function(settings, item){
+                                                    onAddSelectedItem($hdnProductFamilyInput, item.value);
+                                                    _refreshSelectedProductList(productMultipickList);
+                                                },
+                                                onDelete:function(settings, item) { // remove item from selected list
+                                                    onDeleteEvent(item.value, "productFamilyId");
+                                                    _refreshSelectedProductList(productMultipickList);
+                                                }
+                                            });
+
+                                        var _configureProductQuery = function(query) {
+                                            var productFamilyList = decodeHtml(($hdnProductFamilyInput.length > 0 ? $hdnProductFamilyInput.val() : ""));
+                                            query.productFamilyList = productFamilyList;
+                                        };
+
+                                        var productFamilyScopeOper = "{!JSENCODE(searchFilterSO.Apttus_Config2__ProductFamilyScopeOper__c)}";
+
+                                        productMultipickList = j$(esc('{!$Component.incentiveForm.idproductSearch}')).multipickSearch({
+                                            lblResultsItemsTitle:"{!$Label.apttus_config2__availableitems}",
+                                            lblSelectedItemsTitle:"{!$Label.apttus_config2__selecteditems}",
+                                            lblClose:"{!$Label.apttus_config2__close}",
+                                            lblNoResults:"{!$Label.apttus_config2__noresultsavailable}",
+                                            dataSourceFunction: productsRetrievalMethod,
+                                            defaultResults: function(request, response) {
+                                                request.term = "";
+                                                productsRetrievalMethod(request, response);
+                                            },
+                                            onItemSelected: function(settings, item){
+                                                onAddSelectedItem($productHiddenCtrl, item.value);
+                                                // manually update angular model since it is not aware of changes to the input
+                                                incentiveScopeCtrl.selectedProductsList = $productHiddenCtrl.val();
+                                            },
+                                            onDelete: function(settings, item){
+                                                onDeleteEvent(item.value, "productId");
+                                                // manually update angular model since it is not aware of changes to the input
+                                                incentiveScopeCtrl.selectedProductsList = $productHiddenCtrl.val();
+                                            },
+                                            showHeaderLink: true,
+                                            lblHeaderLink: "{!$Label.apttus_config2__showadvancedsearch}",
+                                            onHeaderLinkClick: function() {
+                                                this.info.$resultsMenuElement.hide();
+                                                _configureProductQuery(incentiveScopeCtrl.productAsSettings.query);
+                                                incentiveScopeCtrl.toggleProductSearch();
+                                            },
+                                            lblShowDetailsLink: "{!$Label.apttus_config2__showdetails}",
+                                            includeShowDetailsLink: true,
+                                            onShowDetailsLink: function() {
+                                                _configureProductQuery(incentiveScopeCtrl.productAsSettings.query);
+                                                incentiveScopeCtrl.showAvailableProducts();
+                                            }
+                                        });
+
+                                        incentiveScopeCtrl.productAsSettings = {
+                                            show: false,
+                                            currentPage: 1,
+                                            isModal: true,
+                                            query: {},
+                                            results: null,
+                                            dataKeyColumn: "Id"
+                                        };
+                                        incentiveScopeCtrl.productAsSettings.columns = {!StandardNameAndIdColumnsJSON};
+                                        incentiveScopeCtrl.productAsSettings.headerTitle = "{!$Label.apttus_config2__productfieldvalue}";
+                                        incentiveScopeCtrl.productAsSettings.query = {
+                                            searchTerm: "",
+                                            priceListVal: "",
+                                            priceListScopeOper: "",
+                                            productFamilyScopeOper: productFamilyScopeOper
+                                        };
+                                        incentiveScopeCtrl.selectedProductsList = "{!JSENCODE(searchFilterSO.Apttus_Config2__ProductScope__c)}";
+                                        incentiveScopeCtrl.valueFieldName = "Id";
+                                        incentiveScopeCtrl.labelFieldName = "Name";
+                                        incentiveScopeCtrl.updateProductWidget = function(valueFieldName,
+                                            labelFieldName,
+                                            selectedRecords) {
+
+                                            var widgetItems = [];
+
+                                            for(var i = 0; i < selectedRecords.length; i++){
+                                                widgetItems.push({
+                                                    label: selectedRecords[i][labelFieldName],
+                                                    value: selectedRecords[i][valueFieldName]
+                                                });
+                                            }
+
+                                            productMultipickList.multipickSearch("setSelectedItems", widgetItems, true);
+
+                                        };
+
+                                        $productHiddenCtrl.val("");
+                                        <apex:repeat value="{!rollupProductList}" var="prod">
+                                            productMultipickList.multipickSearch("addSelectedItem", {label:"{!JSENCODE(prod.Name)}", value:"{!prod.Id}"});
+                                        </apex:repeat>
+
+                                        var productFamilyList = "{!JSENCODE(searchFilterSO.Apttus_Config2__ProductFamilyScope__c)}";
+
+                                        $hdnProductFamilyInput.val("");
+
+                                        if(productFamilyList != 'All' && productFamilyList != '') {
+
+                                            productFamilyList = productFamilyList.replace('; ', ';');
+                                            productFamilyList = productFamilyList.split(';');
+
+                                            for (var index = 0; index < productFamilyList.length; index++) {
+                                                prodFamilyMultipickList.multipickSearch("addSelectedItem", {label:productFamilyList[index], value:productFamilyList[index]});
+                                            }
+                                        }
+                                    });
+                                </script>
+                                <div class="scope-section">
+                                    <div class="scope-section-row">
+                                        <div class="scope-section-field">
+                                            <div class="scope-section-ctrl-cont">
+                                                <apex:outputLabel for="idproductFamilySearch" value="{!$Label.apttus_config2__productfamily}" />
+                                                <apex:inputText id="idproductFamilySearch" html-placeholder="{!$Label.apttus_config2__search}" /><br />
+                                                <apex:inputHidden id="productFamilyId" value="{!searchFilterSO.Apttus_Config2__ProductFamilyScope__c}" />
+                                            </div>
+                                            <fieldset class="scope-section-excld-incl">
+                                                <div class="radio-option">
+                                                    <apex:selectRadio value="{!searchFilterSO.Apttus_Config2__ProductFamilyScopeOper__c}" layout="pagedirection">
+                                                        <apex:selectOptions value="{!operList}"></apex:selectOptions>
+                                                    </apex:selectRadio>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                        <div class="scope-section-field">
+                                            <div class="scope-section-ctrl-cont">
+                                                <apex:outputLabel for="idproductSearch" value="{!$Label.apttus_config2__products}" />
+                                                <apex:inputText id="idproductSearch" html-placeholder="{!$Label.apttus_config2__search}" /><br />
+                                                <apex:inputText id="productId" value="{!searchFilterSO.Apttus_Config2__ProductScope__c}" style="display: none;" html-ng-model="incentiveScopeCtrl.selectedProductsList" />
+                                                <advanced-search settings="incentiveScopeCtrl.productAsSettings"
+                                                     unique-id="scopeProductSearch"
+                                                     on-advanced-search-close="incentiveScopeCtrl.onProductSearchClose()"
+                                                     views="incentiveScopeCtrl.views"></advanced-search>
+                                            </div>
+                                            <fieldset class="scope-section-excld-incl">
+                                                <div class="radio-option">
+                                                    <apex:selectRadio value="{!searchFilterSO.Apttus_Config2__ProductScopeOper__c}" layout="pagedirection">
+                                                        <apex:selectOptions value="{!operList}"></apex:selectOptions>
+                                                    </apex:selectRadio>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                    <div class="scope-section-row">
+                                        <div class="scope-section-field">
+                                            <div class="scope-section-ctrl-cont">
+                                                <apex:outputLabel for="idRegionSearch" value="{!$Label.apttus_config2__regionfieldvalue}" />
+                                                <apex:inputText id="idRegionSearch" html-placeholder="{!$Label.apttus_config2__search}" /><br />
+                                                <apex:inputHidden id="regionId" value="{!searchFilterSO.Apttus_Config2__RegionScope__c}" />
+                                            </div>
+                                            <fieldset class="scope-section-excld-incl">
+                                                <div class="radio-option">
+                                                    <apex:selectRadio value="{!searchFilterSO.Apttus_Config2__RegionScopeOper__c}" layout="pagedirection">
+                                                        <apex:selectOptions value="{!operList}"></apex:selectOptions>
+                                                    </apex:selectRadio>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                        <div class="scope-section-field">
+                                            <div class="scope-section-ctrl-cont">
+                                                <apex:outputLabel for="idCountrySearch" value="{!$Label.apttus_config2__countryfieldvalue}" />
+                                                <apex:inputText id="idCountrySearch" html-placeholder="{!$Label.apttus_config2__search}" /><br />
+                                                <apex:inputHidden id="countryId" value="{!searchFilterSO.Apttus_Config2__CountryScope__c}" />
+                                            </div>
+                                            <fieldset class="scope-section-excld-incl">
+                                                <div class="radio-option">
+                                                    <apex:selectRadio value="{!searchFilterSO.Apttus_Config2__CountryScopeOper__c}" layout="pagedirection">
+                                                        <apex:selectOptions value="{!operList}"></apex:selectOptions>
+                                                    </apex:selectRadio>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                    <div class="scope-section-row">
+                                        <div class="scope-section-field">
+                                            <div class="scope-section-ctrl-cont">
+                                                <apex:outputLabel for="idAccountTypeSearch" value="{!$Label.apttus_config2__accounttypefieldvalue}" />
+                                                <apex:inputText id="idAccountTypeSearch" html-placeholder="{!$Label.apttus_config2__search}" /><br />
+                                                <apex:inputHidden id="accTypeID" value="{!searchFilterSO.Apttus_Config2__AccountTypeScope__c}" />
+                                            </div>
+                                            <fieldset class="scope-section-excld-incl">
+                                                <div class="radio-option">
+                                                    <apex:selectRadio value="{!searchFilterSO.Apttus_Config2__AccountTypeScopeOper__c}" layout="pagedirection">
+                                                        <apex:selectOptions value="{!operList}"></apex:selectOptions>
+                                                    </apex:selectRadio>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- REGION COUNTRY AND ACCOUNT TYPE SEARCH -->
+                                <script>
+                                    j$(document).ready(function(){
+                                        var dimensionPrefix = ('{!JSENCODE(searchFilterSO.BusinessObject__c)}' === 'Order Line Item' ? 'Order ' :
+                                                                    ('{!JSENCODE(searchFilterSO.BusinessObject__c)}' === 'External Order Summary Item' ? 'External Order ': '')
+                                                            ),
+                                            accountTypeDimension = dimensionPrefix + 'Account Type',
+                                            regionDimension = dimensionPrefix + 'Region',
+                                            countryDimension = dimensionPrefix + 'Country';
+
+                                        var j$hdnAccountTypeInput = j$("[id$=accTypeID]"),
+                                        regionRetrievalMethod = function(request, response) {
+                                                    {!NSPrefix}IncentiveRemoteActionController.searchByDimension(
+                                                    request.term,
+                                                    regionDimension,
+                                                    function(result, event) {
+                                                        if(event.type == 'exception') {
+                                                            alert(event.message);
+                                                        } else {
+                                                            regionList = result;
+                                                            response(regionList);
+                                                        }
+                                                    });
+                                        },
+                                        countryRetrievalMethod = function(request, response) {
+                                                    {!NSPrefix}IncentiveRemoteActionController.searchByDimension(
+                                                    request.term,
+                                                    countryDimension,
+                                                    function(result, event) {
+                                                if(event.type == 'exception') {
+                                                    alert(event.message);
+                                                } else {
+                                                    response(result);
+                                                }
+                                            });
+                                        },
+                                        accountTypeRetrievalMethod = function(request, response) {
+                                                    {!NSPrefix}IncentiveRemoteActionController.searchByDimension(
+                                                    request.term,
+                                                    accountTypeDimension,
+                                                    function(result, event){
+                                                    if(event.type == 'exception') {
+                                                        alert(event.message);
+                                                    } else {
+                                                         accountTypeList = result;
+                                                         response(accountTypeList);
+                                                    }
+                                                });
+                                        },
+                                        regionList, // region search
+                                        $regionHiddenCtrl = j$("[id$=regionId]"),
+                                        regionMultipickList = j$("[id$=idRegionSearch]").multipickSearch({
+                                            lblResultsItemsTitle:"{!$Label.AvailableItems}",
+                                            lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+                                            lblClose:"{!$Label.Close}",
+                                            lblNoResults:"{!$Label.NoResultsAvailable}",
+                                            dataSourceFunction: regionRetrievalMethod,
+                                            defaultResults: function(request, response) {
+                                                request.term = "";
+                                                regionRetrievalMethod(request, response);
+                                            },
+                                            onItemSelected: function(settings, item){
+                                                onAddSelectedItem($regionHiddenCtrl, item.value);
+                                            },
+                                            onDelete: function(settings, item){
+                                                onDeleteEvent(item.value, "regionId");
+                                            }
+                                        });
+
+                                        j$("[id$=regionId]").val("");
+
+                                        var regionList = "{!JSENCODE(searchFilterSO.RegionScope__c)}";
+
+                                        if(regionList != 'All' && regionList != ''){
+                                            regionList = regionList.replace('; ', ';');
+                                            regionList = regionList.split(';');
+                                            for (var index = 0; index < regionList.length; index++) {
+                                                regionMultipickList.multipickSearch("addSelectedItem", {label:regionList[index], value:regionList[index]});
+                                            }
+                                        }
+
+                                        var countryList,
+                                            $countryHiddenCtrl = j$("[id$=countryId]"),
+                                            countryMultipickList = j$("[id$=idCountrySearch]").multipickSearch({
+                                                lblResultsItemsTitle:"{!$Label.AvailableItems}",
+                                                lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+                                                lblClose:"{!$Label.Close}",
+                                                lblNoResults:"{!$Label.NoResultsAvailable}",
+                                                dataSourceFunction: countryRetrievalMethod,
+                                                defaultResults: function(request, response) {
+                                                    request.term = "";
+                                                    countryRetrievalMethod(request, response);
+                                                },
+                                                onItemSelected: function(settings, item){
+                                                    onAddSelectedItem($countryHiddenCtrl, item.value);
+                                                },
+                                                onDelete: function(settings, item){
+                                                    onDeleteEvent(item.value, "countryId");
+                                                }
+                                            });
+
+                                        j$("[id$=countryId]").val("");
+
+                                        var countryList = "{!JSENCODE(searchFilterSO.CountryScope__c)}";
+
+                                        if(countryList != 'All' && countryList != ''){
+
+                                            countryList = countryList.replace('; ', ';');
+                                            countryList = countryList.split(';');
+
+                                            for (var index = 0; index < countryList.length; index++) {
+                                                countryMultipickList.multipickSearch("addSelectedItem", {label:countryList[index], value:countryList[index]});
+                                            }
+                                        }
+
+                                        var accountTypeList,
+                                            $accTypeIDHiddenCtrl = j$("[id$=accTypeID]"),
+                                            accountTypeMultipickList = j$("[id$=idAccountTypeSearch]").multipickSearch({
+                                                lblResultsItemsTitle:"{!$Label.AvailableItems}",
+                                                lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+                                                lblClose:"{!$Label.Close}",
+                                                lblNoResults:"{!$Label.NoResultsAvailable}",
+                                                dataSourceFunction: accountTypeRetrievalMethod,
+                                                defaultResults: function(request, response) {
+                                                    request.term = "";
+                                                    accountTypeRetrievalMethod(request, response);
+                                                },
+                                                onItemSelected: function(settings, item){
+                                                    onAddSelectedItem($accTypeIDHiddenCtrl, item.value);
+                                                },
+                                                onDelete: function(settings, item){
+                                                    onDeleteEvent(item.value, "accTypeID");
+                                                }
+                                            });
+
+                                        j$hdnAccountTypeInput.val("");
+
+                                        accountTypeList = "{!JSENCODE(searchFilterSO.AccountTypeScope__c)}";
+
+                                        if(accountTypeList != 'All' && accountTypeList != ''){
+                                            accountTypeList = accountTypeList.replace('; ', ';');
+                                            accountTypeList = accountTypeList.split(';');
+                                            for (var index = 0; index < accountTypeList.length; index++) {
+                                                accountTypeMultipickList.multipickSearch("addSelectedItem", {label:accountTypeList[index], value:accountTypeList[index]});
+                                            }
+                                        }
+
+                                    });
+                                </script>
+                            </apex:outputPanel>
+                        </div>
+                        <div class="section">
+                            <h3 class="collapsible"><i class="fa fa-caret-down"></i> {!$Label.InclusionCriteria}</h3>
+                            <div class="inner-container-maximize">
+                                <div class="section-advanced-criteria">
+                                    <c:Criteria id="criteriaComponent"
+                                                thePageController="{!this}"
+                                                componentKey="criteriaComponent"
+                                                onLoadStart="displaySpinner"
+                                                onLoadComplete="hideSpinner"
+                                                onRowChange="criteriaRowChange"
+                                                theCriteriaInfo="{!inclusionCriteriaInfo}" />
+                                </div>
+                            </div>
+                            <apex:outputPanel rendered="{!showExclusionCriteria}" layout="none">
+                            <h3 class="collapsible"><i class="fa fa-caret-down"></i> {!$Label.ExclusionCriteria}</h3>
+                            <div class="inner-container-maximize">
+                                <div class="section-advanced-criteria">
+                                    <c:Criteria id="exclusionCC"
+                                                thePageController="{!this}"
+                                                componentKey="exclusionCC"
+                                                onLoadStart="displaySpinner"
+                                                onLoadComplete="hideSpinner"
+                                                onRowChange="criteriaRowChange"
+                                                theCriteriaInfo="{!exclusionCriteriaInfo}" />
+                                </div>
+                            </div>
+                            </apex:outputPanel>
+                        </div>
+                    </div>
+                </span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="inner-footer">
+                <div class="primary-commands">
+                    <a class="primary-btn secondary save" href="{!returnURL}">{!$Label.apttus_config2__cancel}</a>
+                    <a class="primary-btn secondary save incentive-save" href="javascript:void(0);">{!$Label.apttus_config2__save}</a>
+                </div>
+            </div>
+        </div>
+        <apex:outputPanel id="dummy"></apex:outputPanel>
+        <apex:actionFunction name="saveRollupPage" action="{!saveRollupPage}" id="saveRollupPage" />
+        <apex:actionFunction name="criteriaComponentRowChange" action="{!criteriaComponentRowChange}" reRender="dummy" />
+        <apex:actionFunction name="addGroupBy" action="{!addGroupBy}" reRender="GroupByPanel" status="loadingStatus"/>
+        <apex:actionFunction name="removeGroupBy" action="{!removeGroupBy}" reRender="GroupByPanel" status="loadingStatus">
+            <apex:param name="rowNumber" value=""/>
+        </apex:actionFunction>
+        <apex:actionStatus id="loadingStatus" onstart="displaySpinner();" onstop="hideSpinner(); sortSelects();"/>
+
+        <div id="idUserSettingsSection" style="display:none;">
+            <div id="idDateTemplate">
+                <apex:outputField value="{!userLocalTemplate.Apttus_Config2__RollupEffectiveDate__c}"/>
+            </div>
+        </div>
+    </apex:form>
+    <div class="rollup-overlay"><img src="/img/loading32.gif" align="loading..." /></div>
+</apex:page>

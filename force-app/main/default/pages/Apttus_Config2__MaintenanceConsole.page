@@ -1,0 +1,585 @@
+<!--
+    Apttus Config & Pricing
+    MaintenanceConsole
+
+    @2014-2015 Apttus Inc. All rights reserved.
+ -->
+
+<apex:page lightningStylesheets="true" standardController="Apttus_Config2__BatchJob__c"
+		   extensions="Apttus_Config2.MaintenanceConsoleController" 
+		   sidebar="{!ShowAdminSidebar}" > 
+
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/js/formee.js')}" />
+	<apex:includeScript value="{!$Resource.Apttus_Config2__JQueryTemplate}" />
+	<apex:includeScript value="{!$Resource.Apttus_Config2__MaintenanceConsoleJS}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__ActionFunctionQueue)}" />
+	<apex:includeScript value="{!$Resource.Apttus_Config2__CPQJSLibrary}" />
+	
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__AdminCSS)}" />
+
+	<script type="text/javascript">
+		Visualforce.remoting.timeout = 120000;
+		var j$ = jQuery.noConflict();
+
+		// labels
+		j$.APTTUS.bundleIsAlreadyScheduledMessage = '{!BundleAlreadyScheduled}';
+		j$.APTTUS.bundleMaintenanceLabel = "{!JSENCODE($Label.BundleMaintenance)}";
+		j$.APTTUS.bundleMaintenancePage = '{!$Page.BundleComponentView}';
+		j$.APTTUS.bundleProductsLabel = "{!JSENCODE($Label.BundleProducts)}";
+		j$.APTTUS.bundleUpdateCompletedMessage = '{!BundleUpdateCompleted}';
+		j$.APTTUS.bundleUpdatingLabel = "{!JSENCODE($Label.BundleUpdating)}";
+		j$.APTTUS.ClickHere = "{!JSENCODE($Label.ClickHere)}";
+		j$.APTTUS.constraintCritFieldMaintenanceLabel = "{!JSENCODE($Label.ConstraintCriteriaFieldMaintenance)}";
+		j$.APTTUS.constraintRuleIsInActiveMessage = '{!ConstraintRuleInactive}';
+		j$.APTTUS.constraintRuleMaintenanceLabel = "{!JSENCODE($Label.ConstraintRuleMaintenance)}";
+		j$.APTTUS.constraintRulesLabel = "{!JSENCODE($Label.ConstraintRules)}";
+		j$.APTTUS.constraintRulesMaintenancePage = '{!$Page.ProductConstraintView}';
+		j$.APTTUS.constraintRuleUpdateCompleteMessage = '{!ConstraintRuleUpdateComplete}';
+		j$.APTTUS.constraintRuleUpdateFailedMessage = '{!ConstraintRuleUpdateFailed}';
+		j$.APTTUS.criteriaUpdateLabel = "{!JSENCODE($Label.CriteriaUpdate)}";
+		j$.APTTUS.criteriaUpdatePage = '{!$Page.CriteriaUpdate}';
+		j$.APTTUS.fastModeStartTextLabel = "{!JSENCODE($Label.FastModeStartText)}";
+		j$.APTTUS.goLabel = "{!JSENCODE($Label.Go)}";
+		j$.APTTUS.haveInvalidFieldsLabel = "{!JSENCODE($Label.HaveInvalidFields)}";
+		j$.APTTUS.noInvalidFieldsLabel = "{!JSENCODE($Label.NoInvalidFields)}";
+		j$.APTTUS.noRecordsToUpdateLabel = "{!JSENCODE($Label.NoRecordsToUpdate)}";
+		j$.APTTUS.Or = "{!JSENCODE($Label.OR)}";
+		j$.APTTUS.pageLabel = "{!JSENCODE($Label.Page)}";
+		j$.APTTUS.pendingRecordsToUpdate = "{!JSENCODE($Label.PendingRecordsToUpdate)}"; 
+		j$.APTTUS.pricingCriteriaFieldMaintenanceLabel = "{!JSENCODE($Label.PricingCriteriaFieldMaintenance)}";
+		j$.APTTUS.productFilterMaintenanceLabel = '{!JSENCODE($Label.ProductFilterMaintenance)}';
+		j$.APTTUS.productFiltersUpdatePage = '{!$Page.ProductFilterMaintenance}';
+		j$.APTTUS.ruleUpdatingLabel = "{!JSENCODE($Label.RuleUpdating)}";
+		j$.APTTUS.toLabel = "{!JSENCODE($Label.To)}";
+		j$.APTTUS.tooManyRecordsToUpdateLabel = "{!JSENCODE($Label.TooManyRecordsToUpdate)}";
+		j$.APTTUS.updateAllLabel = '{!JSENCODE($Label.updateAll)}'
+		j$.APTTUS.updateComplete = "{!JSENCODE($Label.UpdateComplete)}";
+		j$.APTTUS.updateConstraintFieldsLabel = "{!JSENCODE($Label.UpdateConstraintFields)}";
+		j$.APTTUS.UpdateInBatchMode = "{!JSENCODE($Label.UpdateInBatchMode)}";
+		j$.APTTUS.UpdateInFastMode = "{!JSENCODE($Label.UpdateInFastMode)}";
+		j$.APTTUS.updatePricingFieldsLabel = "{!JSENCODE($Label.UpdatePricingFields)}";
+		j$.APTTUS.updateProductFiltersLabel = "{!JSENCODE($Label.UpdateProductFilters)}";
+		j$.APTTUS.accountHierarchyUpdateRunningLabel = '{!AccountHierarchyUpdateRunning}';
+
+		// remote functions
+		j$.APTTUS.RemoteController = {};
+		j$.APTTUS.RemoteController.doFindPendingBundles = '{!$RemoteAction.MaintenanceConsoleController.doFindPendingBundles}';
+		j$.APTTUS.RemoteController.doFindPendingConstraintRules = '{!$RemoteAction.MaintenanceConsoleController.doFindPendingConstraintRules}';
+		j$.APTTUS.RemoteController.doVerifyFieldExpressions = '{!$RemoteAction.MaintenanceConsoleController.doVerifyFieldExpressions}';
+		j$.APTTUS.RemoteController.isConstraintCriteriaUpToDate = '{!$RemoteAction.MaintenanceConsoleController.isConstraintCriteriaUpToDate}';
+		j$.APTTUS.RemoteController.isPricingCriteriaUpToDate = '{!$RemoteAction.MaintenanceConsoleController.isPricingCriteriaUpToDate}';
+		j$.APTTUS.RemoteController.isProductFiltersUpToDate = '{!$RemoteAction.MaintenanceConsoleController.isProductFiltersUpToDate}';
+		j$.APTTUS.RemoteController.refreshFieldMetadata = '{!$RemoteAction.MaintenanceConsoleController.refreshFieldMetadata}';
+		j$.APTTUS.RemoteController.updateBundle = '{!$RemoteAction.MaintenanceConsoleController.updateBundle}';
+		j$.APTTUS.RemoteController.updateConstraintConditionCriteria = '{!$RemoteAction.MaintenanceConsoleController.updateConstraintConditionCriteria}';
+		j$.APTTUS.RemoteController.updateConstraintRule = '{!$RemoteAction.MaintenanceConsoleController.updateConstraintRule}';
+		j$.APTTUS.RemoteController.updateInclusionCriteria = '{!$RemoteAction.MaintenanceConsoleController.updateInclusionCriteria}';
+		j$.APTTUS.RemoteController.updateAttributeRuleActions = '{!$RemoteAction.MaintenanceConsoleController.updateAttributeRuleActions}';
+		j$.APTTUS.RemoteController.updatePricingCriteria = '{!$RemoteAction.MaintenanceConsoleController.updatePricingCriteria}';
+		j$.APTTUS.RemoteController.updateProductFiltersInFastMode = '{!$RemoteAction.MaintenanceConsoleController.updateProductFiltersInFastMode}';
+		j$.APTTUS.RemoteController.updatePriceListItemSequence = '{!$RemoteAction.MaintenanceConsoleController.updatePriceListItemSequence}';
+		j$.APTTUS.RemoteController.updateAccountHierarchy = '{!$RemoteAction.MaintenanceConsoleController.updateAccountHierarchy}';
+		j$.APTTUS.RemoteController.isAccountHierarchyJobRunning = '{!$RemoteAction.MaintenanceConsoleController.isAccountHierarchyJobRunning}';
+		j$.APTTUS.RemoteController.getRulesWithFormulaFields = '{!$RemoteAction.MaintenanceConsoleController.getRulesWithFormulaFields}';
+
+		j$(document).ready(function() {
+			j$("#idProductResults").hide();
+			j$("#idConstraintRuleResults").hide();
+			j$("#idConstraintRulesFormulaFieldsPanel").hide();
+			j$('#idFieldMetadataPanel').hide();
+			j$('#idInclusionCriteriaPanel').hide();
+			j$('#idFieldExpressionResults').hide();
+			j$('#idConfigValidationPanel').hide();
+			j$('#idAttributeRuleActionPanel').hide();
+			j$('#priceListItemSequenceUpdatePanel').hide();
+			j$('#idAccountHierarchyUpdatePanel').hide();
+			j$('#idAccountHierarchyUpdateMessage').hide();
+			j$('#idStaticResourceUpdatePanel').hide();
+			invokeDoFindPendingBundles();
+			invokeDoFindPendingConstraintRules();
+			invokeGetRulesWithFormulaFields();
+			invokeIsConCriteriaUpToDate();
+			invokeIsPricingCriteriaUpToDate();
+			invokeDoVerifyFieldExpressions();
+			invokeIsProductFiltersUpToDate();
+			invokeIsAccountHierarchyJobRunning();
+			definePromises();
+
+		});
+			
+	</script>
+
+	<script id="bundleResultTemplate" type="text/x-jquery-tmpl">
+		<tr>
+			<td width="180px" style="padding-left: 1%; padding-bottom: 2%; padding-top: 1%;">${Name}</td>      
+			<td width="20px"> 
+				<div style="float: left; padding-right: 10px;">
+					<button onclick="UpdateBundleQueue(this, '${Id}');this.disabled = true; return false;" class="aptButton">Update</button> 
+    			</div>
+				<div class="bundle-spinner ${Id}" style="float: left; padding-right: 10px;">
+				</div>
+				<div class="bundle-message ${Id}">
+				</div>
+			</td> 
+		</tr>          
+	</script>
+ 
+	<script id="constraintViewResultTemplate" type="text/x-jquery-tmpl">
+		<tr>
+    		<td width="180px" style="padding-left: 1%; padding-bottom: 2%; padding-top: 1%;">${Name}</td>     
+			<td width="20px"> 
+				<div style="float: left; padding-right: 10px;">
+					<button onclick="updateConstraintRule(this, '${Id}');this.disabled=true; return false;" class="aptButton">Update</button> 
+    			</div>
+				<div class="constraint-spinner ${Id}" style="float: left; padding-right: 10px;">
+				</div>
+				<div class="constraint-message ${Id}">
+				</div>
+			</td>	
+		</tr>          
+	</script>
+
+	<script id="constraintWithFormulaFieldsTemplate" type="text/x-jquery-tmpl">
+		<tr>
+			<td width="80px" style="padding-left: 1%; padding-bottom: 2%; padding-top: 1%;">${Name}</td>
+			<td width="180px" style="padding-left: 1%; padding-bottom: 2%; padding-top: 1%;">
+				<a href="/${Id}">${Id}</a>
+			</td>
+		</tr>
+	</script>
+
+	<script id="fieldExpressionResultTemplate" type="text/x-jquery-tmpl">
+		<tr>
+    		<td width="160px" style="padding-left: 1%; padding-bottom: 2%; padding-top: 1%;"><a href="/${Id}">${Id}</a></td>
+    		<td width="20px">${ExpressionType__c}</td>     
+			<td width="20px">${Expression__c}</td>	
+		</tr>          
+	</script>
+
+	<apex:form id="idForm">
+		<div id="idUpdateAll" style="padding-right: 10px;" align="right">
+			<span class="updateAllStatusPanel" style="display:none">
+				<span id="idUpdateAllRecordCounts">
+				</span>
+				<span id="idCurrentMaintenanceJob">
+				</span>
+			</span>
+			<span class="updateAllSpinnerPanel" style="display:none">
+				<img id="theImage" src="/img/loading.gif" width="20" height="20" style="margin-bottom: -5px;" />
+			</span>
+			<span>
+				<button onclick="updateAll(); return false;" class="aptButton">{!$Label.UpdateAll}</button> 
+			</span>
+		</div>
+		<div>			
+			
+			<div class="console-panel" style="float: left">
+				<div>
+					<div class="console-top-line">
+						<table  style="width:100%;">
+							<tbody>
+								<tr>
+									<td>
+										<h2>{!$Label.ConstraintRuleMaintenance}</h2>
+									</td>
+									<td>
+										<input type="button"  onclick="refreshPendingConstraintRules();" class="console-refresh-button" title="{!$Label.Refresh}" />
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+			
+					<div class="console-content">
+						<div class="console-panel-content">
+							<div class="console-panel-item">
+								<div>
+									<div class="console-text" id="idPendingConstraintRuleMessage"> 
+									</div>
+								</div>
+									
+								<table cellspacing="0" cellpadding="0" id="idConstraintRuleResults" class="console-list ">
+									<colgroup span="2"></colgroup> 
+										<thead>
+											<tr>
+												<th colspan="1" scope="col" >{!$Label.ConstraintRules}</th>
+												<th colspan="1" scope="col" >{!$Label.Action}</th>
+											</tr>
+										</thead>
+										<!-- table body left empty for populating via row template using jquery -->
+										<tbody />
+								</table>
+								
+								<div class="idConstraintSpinnerPanel">
+									<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+								</div>
+							</div>
+
+							<!-- Displays list of Constraint Rules with Formula fields if ConstraintRuleExecutionMode__c == 'Client' -->
+							<div class="console-panel-item" id="idConstraintRulesFormulaFieldsPanel">
+								<div>
+									<div class="console-text">
+										{!$Label.ConstraintRulesWithFormulaCriteriaFields}
+									</div>
+								</div>
+								<br/>
+								<table cellspacing="0" cellpadding="0" id="idConstraintRulesFormulaResults" class="console-list ">
+									<colgroup span="2"></colgroup> 
+										<thead>
+											<tr>
+												<th colspan="1" scope="col" >{!$ObjectType.ConstraintRule__c.fields.Name.Label}</th>
+												<th colspan="1" scope="col" >{!$ObjectType.ConstraintRule__c.fields.Id.Label}</th>
+											</tr>
+										</thead>
+										<!-- table body populated via row template using jquery (Constraint Rule Name & Rule Id (URL)) -->
+										<tbody />
+								</table>
+							</div>
+						</div>
+						<div id="idRulesWithFormulaFieldsSpinnerPanel">
+							<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+						</div>
+					</div>
+				
+					<div style="padding-top: 10px;">
+						<div class="console-top-line">
+							<table  style="width:100%;">
+								<tbody>
+									<tr>
+										<td>
+											<h2>{!$Label.PricingCriteriaFieldMaintenance}</h2>
+										</td>
+										<td>
+											<input type="button"  onclick="refreshPendingPricingMaintenance();" class="console-refresh-button" title="{!$Label.Refresh}" />
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+				
+						<div class="console-content">
+							<div class="console-panel-content">
+								<div class="console-panel-item">	
+									<div class="idPricingCriteriaFieldPanel">
+										<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+									</div>
+							
+									<div class="console-text" id="idPricingCriteriaToUpdate">
+									</div>
+							
+									<div class="console-text" id="idNoPricingCriteriaToUpdate">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+						<!-- Field Expression Checking Section -->
+					<div style="padding-top: 10px;">
+						<div class="console-top-line">
+							<table  style="width:100%;">
+								<tbody>
+									<tr>
+										<td>
+											<h2>{!$Label.FieldExpression}</h2>
+										</td>
+										<td>
+											<input type="button"  onclick="refreshFieldExpressions();" class="console-refresh-button" title="{!$Label.Refresh}" />
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						
+						<div class="console-content">
+							<div class="console-panel-content">
+								<div class="console-panel-item">
+									<div>
+										<div class="console-text" id="idFieldExpressionMessage"> 
+										</div>
+									</div>
+										
+									<table cellspacing="0" cellpadding="0" id="idFieldExpressionResults" class="console-list ">
+										<colgroup span="2"></colgroup> 
+											<thead>
+												<tr>
+													<th colspan="1" scope="col" >{!$Label.ExpressionId}</th>
+													<th colspan="1" scope="col" >{!$Label.ExpressionType}</th>
+													<th colspan="1" scope="col" >{!$Label.Expression}</th>
+													
+												</tr>
+											</thead>
+											<!-- table body left empty for populating via row template using jquery -->
+											<tbody />
+									</table>
+									<div class="idFieldSpinnerPanel">
+										<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>	
+					<!-- Field Expression Check End-->
+					
+					<!-- Product Filters Section start -->
+					<div style="padding-top: 10px;"> 
+						<div class="console-top-line"> 
+							<table style="width:100%;">
+								<tbody>
+									<tr>
+										<td> 
+											<h2>{!$Label.ProductFilterMaintenance}</h2>
+										</td>
+										<td>
+											<input type="button" onclick="refreshPendingProductFiltersMaintenance();" class="console-refresh-button" title="{!$Label.Refresh}" />
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<div class="console-content">
+							<div class="console-panel-content">
+								<div class="console-panel-item">
+									<div id="idProductFiltersPanel">
+										<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display:block; margin-left: auto; margin-right: auto;" />
+									</div>									
+									<div class="console-text" id="idProductFiltersText">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Product Filters Section end -->
+
+					<!-- PriceListItemSequence Update Section start -->
+					<div style="padding-top: 10px;">
+						<div class="console-top-line">
+							<table  style="width:100%; padding-top: 5px;">
+								<tbody>
+									<tr>
+										<td>
+											<h2>{!$Label.PriceListItemSequenceUpdate}</h2>
+										</td>
+									</tr>
+								</tbody>
+					 		</table>
+						</div>
+			
+						<div class="console-content">
+							<div class="console-panel-content">
+								<div class="console-panel-item">	
+									<div id="priceListItemSequenceUpdatePanel">
+										<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+									</div>
+
+							
+									<div class="console-text" id="priceListItemSequenceUpdateMessage">
+										<button onclick="invokeRefreshPricelistItemSequence(this); return false;" class="aptButton">{!$Label.PriceListItemSequenceUpdate}</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- PriceListItemSequence Update Section end -->					
+				</div>
+			</div>
+
+			<div class="console-panel" style="display: inline-table; margin-left:1%;">
+				<div>
+					<div class="console-top-line">
+						<table  style="width:100%;">
+							<tbody>
+								<tr>
+									<td>
+										<h2>{!$Label.BundleMaintenance}</h2>
+									</td>
+									<td>
+										<input type="button"  onclick="refreshPendingBundles();" class="console-refresh-button" title="{!$Label.Refresh}" />
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				
+					<div class="console-content">
+						<div class="console-panel-content">
+							<div class="console-panel-item">
+								<div>
+									<div class="console-text" id="idPendingBundlesMessage"> 
+									</div>
+								</div>
+							
+								<table cellspacing="0" cellpadding="0" id="idProductResults" class="console-list">
+									<colgroup span="2"></colgroup>
+										<thead>
+											<tr>
+												<th colspan="1" scope="col" >{!$Label.Products}</th>
+												<th colspan="1" scope="col"	>{!$Label.Action}</th>
+											</tr>
+										</thead>
+										<!-- table body left empty for populating via row template using jquery -->
+										<tbody />
+								</table>
+
+								<div class="bundleSpinnerPanel">
+									<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+								</div>		
+							</div>
+						</div>
+					</div>
+				</div>
+			
+				<div style="padding-top: 10px;">
+					<div class="console-top-line">
+						<table  style="width:100%;">
+							<tbody>
+								<tr>
+									<td>
+										<h2>{!$Label.ConstraintCriteriaFieldMaintenance}</h2>
+									</td>
+									<td>
+										<input type="button"  onclick="refreshPendingConCriteriaFields();" class="console-refresh-button" title="Refresh" />
+									</td>
+								</tr>
+							</tbody>
+				 		</table>
+					</div>
+			
+					<div class="console-content">
+						<div class="console-panel-content">
+							<div class="console-panel-item">	
+								<div class="idConstraintConditionCriteriaFieldPanel">
+									<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+								</div>
+						
+								<div class="console-text" id="idCriteriaFieldsToUpdate">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div style="padding-top: 10px;">
+					<div class="console-top-line">
+						<table  style="width:100%; padding-top: 5px;">
+							<tbody>
+								<tr>
+									<td>
+										<h2>{!$Label.QueryFieldMetadata}</h2>
+									</td>
+								</tr>
+							</tbody>
+				 		</table>
+					</div>
+			
+					<div class="console-content">
+						<div class="console-panel-content">
+							<div class="console-panel-item">	
+								<div id="idFieldMetadataPanel">
+									<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+								</div>
+
+						
+								<div class="console-text" id="idFieldMetadataMessage">
+									<button onclick="refreshFieldMetadata(this); return false;" class="aptButton">{!$Label.RefreshFieldMetadata}</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div style="padding-top: 10px;">
+					<div class="console-top-line">
+						<table  style="width:100%; padding-top: 5px;">
+							<tbody>
+								<tr>
+									<td>
+										<h2>{!$Label.InclusionCriteriaFields}</h2>
+									</td>
+								</tr>
+							</tbody>
+				 		</table>
+					</div>
+			
+					<div class="console-content">
+						<div class="console-panel-content">
+							<div class="console-panel-item">	
+								<div id="idInclusionCriteriaPanel">
+									<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+								</div>
+
+						
+								<div class="console-text" id="idInclusionCriteriaMessage">
+									<button onclick="updateInclusionCriteria(this); return false;" class="aptButton">{!$Label.UpdateInclusionCriteria}</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div style="padding-top: 10px;">
+					<div class="console-top-line">
+						<table  style="width:100%; padding-top: 5px;">
+							<tbody>
+								<tr>
+									<td>
+										<h2>{!$Label.Attribute} {!$Label.Rule} {!$Label.Actions}</h2>
+									</td>
+								</tr>
+							</tbody>
+				 		</table>
+					</div>
+			
+					<div class="console-content">
+						<div class="console-panel-content">
+							<div class="console-panel-item">	
+								<div id="idAttributeRuleActionPanel">
+									<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+								</div>
+
+						
+								<div class="console-text" id="idAttributeRuleActionMessage">
+									<button onclick="updateAttributeRuleActions(this); return false;" class="aptButton">{!$Label.Update} {!$Label.Attribute} {!$Label.Rule} {!$Label.Actions}</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>	
+				<!-- Account Hierarchy Update Section start -->
+				<div style="padding-top: 10px;">
+					<div class="console-top-line">
+						<table  style="width:100%; padding-top: 5px;">
+							<tbody>
+								<tr>
+									<td>
+										<h2>{!$Label.AssetAccount} {!$Label.Hierarchy}</h2>
+									</td>
+								</tr>
+							</tbody>
+				 		</table>
+					</div>
+			
+					<div class="console-content">
+						<div class="console-panel-content">
+							<div class="console-panel-item">	
+								<div id="idAccountHierarchyUpdatePanel">
+									<img id="theImage" src="/img/loading.gif" width="20" height="20" style="display: block; margin-left: auto; margin-right: auto;" />
+								</div>
+								<div class="console-text" id="idAccountHierarchyUpdateMessage">
+									<button onclick="updateAccountHierarchy(this); return false;" class="aptButton">{!$Label.Update} {!$Label.AssetAccount} {!$Label.Hierarchy}</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- Account Hierarchy Update Section end -->
+			</div>
+		</div>
+	</apex:form>
+</apex:page>

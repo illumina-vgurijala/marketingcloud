@@ -1,0 +1,1411 @@
+<!--    
+        Apttus Config & Pricing
+        ApttusAdmin
+        @2015-2016 Apttus Inc. All rights reserved.
+ -->
+<apex:page controller="Apttus_Config2.RemoteCPQAdminController"
+                        extensions="Apttus_CPQAdmin.RemoteAdminController"
+                        title="Apttus Admin" 
+                        docType="html-5.0"
+                        showHeader="false" 
+                        sidebar="false"
+                        standardStylesheets="false">
+
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <title>Apttus Admin</title>
+        <apex:slds />
+        <apex:stylesheet value="{!URLFOR($Resource.Apttus_CPQAdmin__ApttusAdmin, '/vendor.css')}"/>
+    </head>
+    
+    <Apttus_Base2:UsageDataComponent2 ProdName="{!PackageInfo['packageName']}" ProdVersion="{!PackageInfo['packageVersion']}"></Apttus_Base2:UsageDataComponent2>
+    
+    <body ng-app="cpqAdmin">
+        <div class="browser-compatibility-message" id="browser-compatibility-message"></div>
+        <div class="slds-scope">
+            <!-- Header Directive -->
+            <admin-header class="admin-header navbar-fixed-top"></admin-header> 
+            <loading-indicator></loading-indicator>
+            <!-- Menu Specific Content -->
+            <div class="page-container" id="page-container">
+                <div ui-view="pageContent" class="full-height"></div>
+            </div>
+        </div>
+
+        <apex:includeScript value="{!URLFOR($Resource.Apttus_CPQAdmin__ApttusAdmin, '/vendor.js')}"/>
+
+
+        <script type="text/javascript">
+        /**
+         * Anonymous blocks for configuring the different modules.
+         * These config blocks need to be defined within the page to take
+         *  advantage of visualforce binding for initializing the app with
+         *  constant pieces of data.
+         */
+
+            //Function to overide the Lightning CSS which added dynamically when we switch on the lightning mode
+            window.addEventListener(
+            'load',
+                function load()
+                {
+                window.removeEventListener('load', load, false);
+                document.body.classList.remove('sfdcBody');
+            },
+            false);
+            
+            //Create System Properties constant
+            var baseUrl = formatSFDCUrl("{!URLFOR($Resource.Apttus_CPQAdmin__ApttusAdmin, '/app')}");
+            var baseFileUrl = '';
+            
+            //Special visualforce condition for when there is no icon id
+            <apex:outputPanel layout="none" rendered="{!SystemSettings['defaultIconId'] != 'none'}">
+                baseFileUrl = formatSFDCUrl("{!URLFOR($Action.Attachment.Download, SystemSettings['defaultIconId'])}");
+            </apex:outputPanel>
+            //End VF conditionally rendered code.
+
+            function IeVersion() {
+                //Set defaults
+                var value = {
+                    IsIE: false,
+                    TrueVersion: 0,
+                    ActingVersion: 0,
+                    CompatibilityMode: false
+                };
+
+                //Try to find the Trident version number
+                var trident = navigator.userAgent.match(/Trident\/(\d+)/);
+                if (trident) {
+                    value.IsIE = true;
+                    //Convert from the Trident version number to the IE version number
+                    value.TrueVersion = parseInt(trident[1], 10) + 4;
+                }
+
+                //Try to find the MSIE number
+                var msie = navigator.userAgent.match(/MSIE (\d+)/);
+                if (msie) {
+                    value.IsIE = true;
+                    //Find the IE version number from the user agent string
+                    value.ActingVersion = parseInt(msie[1]);
+                } else {
+                    //Must be IE 11 in "edge" mode
+                    value.ActingVersion = value.TrueVersion;
+                }
+
+                //If we have both a Trident and MSIE version number, see if they're different
+                if (value.IsIE && value.TrueVersion > 0 && value.ActingVersion > 0) {
+                    //In compatibility mode if the trident number doesn't match up with the MSIE number
+                    value.CompatibilityMode = value.TrueVersion != value.ActingVersion;
+                }
+                return value;
+            }
+
+            function createUserNotificationArea(){
+                var body = document.getElementsByTagName('body')[0],
+                    userMessageDiv = document.getElementById('browser-compatibility-message'),
+                    mainContainer  = document.getElementById('page-container'),
+                    header = document.getElementsByTagName('admin-header')[0];
+                
+                body.removeChild(header);
+                body.removeChild(mainContainer);
+               
+                userMessageDiv.setAttribute("style", "display:block;");
+                userMessageDiv.innerHTML = "{!JSENCODE($Label.apttus_cpqadmin__ienotcompatible)}" +' '+"{!JSENCODE($Label.apttus_cpqadmin__latestbrowsers)}";
+
+            }
+
+            function removeUserNotificationArea(){
+                var body = document.getElementsByTagName('body')[0],
+                    userMessageDiv = document.getElementById('browser-compatibility-message');
+                
+                body.removeChild(userMessageDiv);
+            }
+            var ie = IeVersion();
+
+            if(ie.IsIE && (ie.ActingVersion < 10)){
+               createUserNotificationArea();
+            }else{
+                removeUserNotificationArea();
+            }
+            var systemConstants = {
+                "baseUrl": baseUrl,
+                "baseFileUrl": baseFileUrl,
+                "salesforceUrl": "{!SystemSettings['salesforceUrl']}",
+                "sitePrefix": "{!$Site.Prefix}",
+                "nsPrefix": "{!SystemSettings['namespacePrefix']}",
+                "isFieldExpressionsEnabled":"{!SystemSettings['isFieldExpressionsEnabled']}",
+                "msecPerDay": 86400000
+            };
+           
+
+            //Format the base url of app static resource
+            function formatSFDCUrl(sfdcString) {
+                var formatExp = /^(?:.*)(\{\!URLFOR|resource|servlet)(?:.*)(\}|\/|file=\w*)$/;
+                var matches = (sfdcString ? sfdcString.match(formatExp) : false); 
+                if (matches) {
+                    var matchTerm = matches[1];
+                    if (matchTerm === '\{\!URLFOR') {
+                        sfdcString = '.';
+
+                    } else if (matchTerm === 'resource') { 
+                        //Will only match if last char is a '/' that needs to be removed
+                        sfdcString = sfdcString.slice(0, -1);
+
+                    } else if (matchTerm === 'servlet') {
+                        var param = 'file=';
+                        var edge = sfdcString.indexOf(param) + param.length;
+                        sfdcString = sfdcString.slice(0, edge);
+
+                    }
+
+                }
+                return sfdcString;
+                
+            }
+
+            // Overriding the SFDC navigateToUrl for this page as we need custom action to be performed on the click of the button. ( ctrl/cmd + click - should open the link in new tab)
+            navigateToUrl = function (url) {
+                var event = window.event || navigateToUrl.caller.arguments[0]; // window.event will not be returning the event object in mozilla so getting it from the callee arguments
+                if (event.ctrlKey || event.metaKey) {
+                    window.open(url, '_blank');
+                } else {
+                    window.location = url;
+                }
+            }
+
+           
+            function baseConfig(RemoteService,i18nService) {
+                // Extracting user locale preference from visualforce.
+                
+                var userSettings = {};
+                try {
+                    userSettings = getUserSettings();
+                    // If any properties are undefined, the provider will use en_US defaults. 
+                    i18nService.setDateTemplate(userSettings.dateTemplate);
+                    i18nService.setCurrencyTemplate(userSettings.currencyTemplate);
+                    i18nService.setQuantityTemplate(userSettings.quantityTemplate);
+                    i18nService.setPrecision(userSettings.precisionMap);
+                    i18nService.setLocale(userSettings.locale);
+                    i18nService.setDateFormat(userSettings.dateFormat);
+                
+                } catch (ex) {
+                    if (console && typeof console.info === 'function') {
+                        console.info('Could not extract user locale settings. Defaulting to en_US');
+                    
+                    }
+
+                }
+
+                /**
+                 * Resolve VF remote names and configure their behavior.
+                 * Each key in this object is used to reference a VF remote aciton.
+                 * Each can be:
+                 *  - String: the resolved name of the remote action;
+                 *  - Object with properties:
+                 *          actionName: the resolved name of the remote action,
+                 *          skipLoader: if true, action does affect progress-indicator. Default false.
+                 * 
+                 */
+                var remoteActions = {
+                    getAllProducts: '{!$RemoteAction.RemoteCPQAdminController.getAllProducts}',
+                    getAllPriceLists: '{!$RemoteAction.RemoteCPQAdminController.getAllPriceLists}',
+                    getProductDetails: '{!$RemoteAction.RemoteCPQAdminController.getProductDetails}',
+                    createProducts: '{!$RemoteAction.RemoteCPQAdminController.createProducts}',
+                    updateProducts: '{!$RemoteAction.RemoteCPQAdminController.updateProducts}',
+                    getFullCatalogHierarchy: '{!$RemoteAction.RemoteCPQAdminController.getFullCatalogHierarchy}',
+                    getAllCategories: '{!$RemoteAction.RemoteCPQAdminController.getAllCategories}',
+                    getPriceListItemPicklistMetadata: '{!$RemoteAction.RemoteCPQAdminController.getPriceListItemPicklistMetadata}',
+                    getPriceListItems: '{!$RemoteAction.RemoteCPQAdminController.getPriceListItems}',
+                    associateCategories: '{!$RemoteAction.RemoteCPQAdminController.associateProductToCategory}',
+                    getAllAttributeGroups: '{!$RemoteAction.RemoteCPQAdminController.getAllAttributeGroups}',
+                    associateAttributeGroup: '{!$RemoteAction.RemoteCPQAdminController.associateAttributeGroup}',
+                    removeAttributeGroup: '{!$RemoteAction.RemoteCPQAdminController.removeAttributeGroup}',
+                    getProductStructure: '{!$RemoteAction.RemoteCPQAdminController.getProductStructure}',
+                    buildHierarchy: '{!$RemoteAction.RemoteCPQAdminController.buildHierarchy}',
+                    getAssociatedCategories: '{!$RemoteAction.RemoteCPQAdminController.getAssociatedCategories}',
+                    getProductGroupsForProduct: '{!$RemoteAction.RemoteCPQAdminController.getProductGroupsForProduct}',
+                    uploadAttachments: '{!$RemoteAction.RemoteCPQAdminController.uploadAttachments}',
+                    getAssociatedAttributes: '{!$RemoteAction.RemoteCPQAdminController.getAssociatedAttributes}',
+                    getAttributeGroupsForProduct: '{!$RemoteAction.RemoteCPQAdminController.getAttributeGroupsForProduct}',
+                    getAttributesForAttributeGroup: '{!$RemoteAction.RemoteCPQAdminController.getAttributesForAttributeGroup}',
+                    createPriceListItems: '{!$RemoteAction.RemoteCPQAdminController.createPriceListItems}',
+                    getAttachmentsByParentId: '{!$RemoteAction.RemoteCPQAdminController.getAttachmentsByParentId}',
+                    removeAttachments: '{!$RemoteAction.RemoteCPQAdminController.removeAttachments}',
+                    removeProductFromCategory :'{!$RemoteAction.RemoteCPQAdminController.removeProductFromCategory}',
+                    updatePriceListItems: '{!$RemoteAction.RemoteCPQAdminController.updatePriceListItems}',
+                    getOptionGroupDetails: '{!$RemoteAction.RemoteCPQAdminController.getOptionGroupDetails}',
+                    setOptionGroupDetails: '{!$RemoteAction.RemoteCPQAdminController.setOptionGroupDetails}',
+                    getProductsAssociatedToCategory: '{!$RemoteAction.RemoteCPQAdminController.getProductsAssociatedToCategory}',
+                    getProductsForCategory: '{!$RemoteAction.RemoteCPQAdminController.getProductsForCategory}',
+                    getAllOptionGroups: '{!$RemoteAction.RemoteCPQAdminController.getAllOptionGroups}',
+                    removeProductsFromOptionGroups:'{!$RemoteAction.RemoteCPQAdminController.removeProductsFromOptionGroups}',
+                    deletePriceListItems:'{!$RemoteAction.RemoteCPQAdminController.deletePriceListItems}',
+                    removeOptionGroupsFromProduct:'{!$RemoteAction.RemoteCPQAdminController.removeOptionGroupsFromProduct}',
+                    getAllConstraintRules:'{!$RemoteAction.RemoteCPQAdminController.getAllConstraintRules}',
+                    getAllAssociatedConstraintRules:'{!$RemoteAction.RemoteCPQAdminController.getAllAssociatedConstraintRules}',
+                    getConstraintRuleDetails: '{!$RemoteAction.RemoteCPQAdminController.getConstraintRuleDetails}',
+                    createConstraintRule:'{!$RemoteAction.RemoteCPQAdminController.createConstraintRule}',
+                    updateConstraintRule:'{!$RemoteAction.RemoteCPQAdminController.updateConstraintRule}',
+                    getAllProductAttributeRules:'{!$RemoteAction.RemoteCPQAdminController.getAllProductAttributeRules}',
+                    getAllAssociatedProductAttributeRules:'{!$RemoteAction.RemoteCPQAdminController.getAllAssociatedProductAttributeRules}',
+                    getProductAttributeRuleDetails:'{!$RemoteAction.RemoteCPQAdminController.getProductAttributeRuleDetails}',
+                    createProductAttributeRule : '{!$RemoteAction.RemoteCPQAdminController.createProductAttributeRule}',
+                    updateProductAttributeRule:'{!$RemoteAction.RemoteCPQAdminController.updateProductAttributeRule}',
+                    removeConstraintRules: '{!$RemoteAction.RemoteCPQAdminController.removeConstraintRules}',
+                    removeConstraintRuleConditions: '{!$RemoteAction.RemoteCPQAdminController.removeConstraintRuleConditions}',
+                    removeConstraintRuleActions: '{!$RemoteAction.RemoteCPQAdminController.removeConstraintRuleActions}',
+                    removeConstraintRuleActionExpressions: '{!$RemoteAction.RemoteCPQAdminController.removeConstraintRuleActionExpressions}',
+                    removeProductAttributeRules: '{!$RemoteAction.RemoteCPQAdminController.removeProductAttributeRules}',
+                    removeProductAttributeRuleActions: '{!$RemoteAction.RemoteCPQAdminController.removeProductAttributeRuleActions}',
+                    searchProductFamily: '{!$RemoteAction.RemoteCPQAdminController.searchProductFamily}',
+                    searchProductGroups: '{!$RemoteAction.RemoteCPQAdminController.searchProductGroups}',
+                    searchTargetAttributes: '{!$RemoteAction.RemoteCPQAdminController.searchTargetAttributes}',
+                    getLabelFromValue: '{!$RemoteAction.RemoteCPQAdminController.getLabelFromValue}',
+                    getSObjectPicklistFields: '{!$RemoteAction.RemoteCPQAdminController.getSObjectPicklistFields}',
+                    updateConstraintRuleJob: '{!$RemoteAction.RemoteCPQAdminController.updateConstraintRuleJob}',
+                    getAllProductGroups: '{!$RemoteAction.RemoteCPQAdminController.getAllProductGroups}',
+                    createCategories:'{!$RemoteAction.RemoteCPQAdminController.createCategories}',
+                    reorderCategories:'{!$RemoteAction.RemoteCPQAdminController.reorderCategories}',
+                    cloneProduct:'{!$RemoteAction.RemoteCPQAdminController.cloneProduct}',
+                    getUniqueRequiredFieldsForSObject:'{!$RemoteAction.RemoteCPQAdminController.getUniqueRequiredFieldsForSObject}',
+                    createChildProductOptionGroup:'{!$RemoteAction.RemoteCPQAdminController.createChildProductOptionGroup}',
+                    getProductInformation:'{!$RemoteAction.RemoteCPQAdminController.getProductInformation}',
+                    createProductInformation:'{!$RemoteAction.RemoteCPQAdminController.createProductInformation}',
+                    updateProductInformation:'{!$RemoteAction.RemoteCPQAdminController.updateProductInformation}',
+                    removeProductInformation:'{!$RemoteAction.RemoteCPQAdminController.removeProductInformation}',
+                    createProductFootnotes:'{!$RemoteAction.RemoteCPQAdminController.createProductFootnotes2}',
+                    updateProductFootnotes2:'{!$RemoteAction.RemoteCPQAdminController.updateProductFootnotes2}',
+                    removeProductFootnotes:'{!$RemoteAction.RemoteCPQAdminController.removeProductFootnotes}',
+                    getProductFootnotes2:'{!$RemoteAction.RemoteCPQAdminController.getProductFootnotes2}',
+                    updateProductAttributeGroups:'{!$RemoteAction.RemoteCPQAdminController.updateProductAttributeGroups}',
+                    getPriceListsAssociatedToCategory:'{!$RemoteAction.RemoteCPQAdminController.getPriceListsAssociatedToCategory}',
+                    getProductInformation2:'{!$RemoteAction.RemoteCPQAdminController.getProductInformation2}',
+                    getSObjectPicklistFields:'{!$RemoteAction.RemoteCPQAdminController.getSObjectPicklistFields}',
+                    updateBundleJob:'{!$RemoteAction.RemoteCPQAdminController.updateBundleJob}',
+                    updateAttachments:'{!$RemoteAction.RemoteCPQAdminController.updateAttachments}',
+                    associateCategoryToPriceList:'{!$RemoteAction.RemoteCPQAdminController.associateCategoryToPriceList}',
+                    removeCategoryFromPriceList:'{!$RemoteAction.RemoteCPQAdminController.removeCategoryFromPriceList}',
+                    getCategoryDetails:'{!$RemoteAction.RemoteCPQAdminController.getCategoryDetails}',
+                    updateCategoryHierarchies:'{!$RemoteAction.RemoteCPQAdminController.updateCategoryHierarchies}',
+                    removeCategoryHierarchies:'{!$RemoteAction.RemoteCPQAdminController.removeCategoryHierarchies}',
+                    getAttributeValueMatrixDetails2 : '{!$RemoteAction.RemoteCPQAdminController.getAttributeValueMatrixDetails2}',
+                    searchAccountLocations : '{!$RemoteAction.RemoteCPQAdminController.searchAccountLocations}',
+                    createAttributeValueMatrix : '{!$RemoteAction.RemoteCPQAdminController.createAttributeValueMatrix}',
+                    getAllAssociatedAttributeValueMatrices : '{!$RemoteAction.RemoteCPQAdminController.getAllAssociatedAttributeValueMatrices}',
+                    getAllAttributeValueMatrices : '{!$RemoteAction.RemoteCPQAdminController.getAllAttributeValueMatrices}',
+                    updateAttributeValueMatrix : '{!$RemoteAction.RemoteCPQAdminController.updateAttributeValueMatrix}',
+                    searchMatrixEntryAttributes : '{!$RemoteAction.RemoteCPQAdminController.searchMatrixEntryAttributes}',
+                    getAllRules : '{!$RemoteAction.RemoteCPQAdminController.getAllRules}',
+                    getAllRulesForProduct : '{!$RemoteAction.RemoteCPQAdminController.getAllRulesForProduct}',
+                    createProductAttributeGroup:'{!$RemoteAction.RemoteCPQAdminController.createProductAttributeGroup}',
+                    getFieldDescribeTypeAhead:'{!$RemoteAction.RemoteCPQAdminController.getFieldDescribeTypeAhead}',
+                    validateExpressions:'{!$RemoteAction.RemoteCPQAdminController.validateExpressions}',
+                    getProductGroupDetails: '{!$RemoteAction.RemoteCPQAdminController.getProductGroupDetails}',
+                    createProductGroup: '{!$RemoteAction.RemoteCPQAdminController.createProductGroup}',
+                    updateProductGroup: '{!$RemoteAction.RemoteCPQAdminController.updateProductGroup}',
+                    addProductsToProductGroup: '{!$RemoteAction.RemoteCPQAdminController.addProductsToProductGroup}',
+                    removeProductsFromProductGroup: '{!$RemoteAction.RemoteCPQAdminController.removeProductsFromProductGroup}',
+                    getProductsForProductGroup: '{!$RemoteAction.RemoteCPQAdminController.getProductsForProductGroup}',
+                    getRulesForProductGroup: '{!$RemoteAction.RemoteCPQAdminController.getRulesForProductGroup}',
+                    deleteAttributeGroup:'{!$RemoteAction.RemoteCPQAdminController.deleteAttributeGroup}',
+                    createPriceList:'{!$RemoteAction.RemoteCPQAdminController.createPriceList}',
+                    updatePriceList:'{!$RemoteAction.RemoteCPQAdminController.updatePriceList}',
+                    getPriceListItemsForPriceList:'{!$RemoteAction.RemoteCPQAdminController.getPriceListItemsForPriceList}',
+                    updatePriceListItem:'{!$RemoteAction.RemoteCPQAdminController.updatePriceListItem}',
+                    createPriceListItem:'{!$RemoteAction.RemoteCPQAdminController.createPriceListItem}',
+                    getPriceListDetails:'{!$RemoteAction.RemoteCPQAdminController.getPriceListDetails}',
+                    deleteAttributeValueMatrices:'{!$RemoteAction.RemoteCPQAdminController.deleteAttributeValueMatrices}',
+                    deleteAttributeGroup:'{!$RemoteAction.RemoteCPQAdminController.deleteAttributeGroup}',
+                    getProductOptionPrice:'{!$RemoteAction.RemoteCPQAdminController.getProductOptionPrice}',
+                    getPriceMatrix:'{!$RemoteAction.RemoteCPQAdminController.getPriceMatrix}',
+                    getPriceListItemDetails:'{!$RemoteAction.RemoteCPQAdminController.getPriceListItemDetails}',
+                    getProductOptionPrice:'{!$RemoteAction.RemoteCPQAdminController.getProductOptionPrice}',
+                    deletePricingData:'{!$RemoteAction.RemoteCPQAdminController.deletePricingData}',
+                    deleteAttributeValueMatrixEntries:'{!$RemoteAction.RemoteCPQAdminController.deleteAttributeValueMatrixEntries}',
+                    getPriceDimensions:'{!$RemoteAction.RemoteCPQAdminController.getPriceDimensions}',
+                    createProductOptionPrice:'{!$RemoteAction.RemoteCPQAdminController.createProductOptionPrice}',
+                    updateProductOptionPrice:'{!$RemoteAction.RemoteCPQAdminController.updateProductOptionPrice}',
+                    cloneConstraintRule:'{!$RemoteAction.RemoteCPQAdminController.cloneConstraintRule}',
+                    getAllSavedSearchForContext:'{!$RemoteAction.RemoteCPQAdminController.getAllSavedSearchForContext}',
+                    updateSavedSearch:'{!$RemoteAction.RemoteCPQAdminController.updateSavedSearch}',
+                    createSavedSearch:'{!$RemoteAction.RemoteCPQAdminController.createSavedSearch}',
+                    getSavedSearch:'{!$RemoteAction.RemoteCPQAdminController.getSavedSearch}',
+                    loadDefaultSettings:'{!$RemoteAction.RemoteCPQAdminController.loadDefaultSettings}',
+                    getApplicationSettings:'{!$RemoteAction.RemoteCPQAdminController.getApplicationSettings}',
+                    getApplicationSettingsByGroups:'{!$RemoteAction.RemoteCPQAdminController.getApplicationSettingsByGroups}',
+                    updateApplicationSettingsAndGroups2:'{!$RemoteAction.RemoteCPQAdminController.updateApplicationSettingsAndGroups2}',
+                    getApplicationFlows:'{!$RemoteAction.RemoteCPQAdminController.getApplicationFlows}',
+                    createApplicationFlows:'{!$RemoteAction.RemoteCPQAdminController.createApplicationFlows}',
+                    updateApplicationFlows2:'{!$RemoteAction.RemoteCPQAdminController.updateApplicationFlows2}',
+                    deleteApplicationFlow2:'{!$RemoteAction.RemoteCPQAdminController.deleteApplicationFlow2}',
+                    searchSObjectRecords:'{!$RemoteAction.RemoteCPQAdminController.searchSObjectRecords}',
+                    getFullHierarchyForCategory:'{!$RemoteAction.RemoteCPQAdminController.getFullHierarchyForCategory}',
+                    getDefaultPriceFieldItems:'{!$RemoteAction.RemoteCPQAdminController.getDefaultPriceFieldItems}',
+                    getDefaultQuantityFieldItems:'{!$RemoteAction.RemoteCPQAdminController.getDefaultQuantityFieldItems}',
+                    deleteSavedSearch:'{!$RemoteAction.RemoteCPQAdminController.deleteSavedSearch}',
+                    reorderProductOptionGroups:'{!$RemoteAction.RemoteCPQAdminController.reorderProductOptionGroups}',
+                    getConditionCriteriaFields:'{!$RemoteAction.RemoteCPQAdminController.getConditionCriteriaFields}',
+                    getPriceRulesetDetails:'{!$RemoteAction.RemoteCPQAdminController.getPriceRulesetDetails}',
+                    getAllPriceRulesets:'{!$RemoteAction.RemoteCPQAdminController.getAllPriceRulesets}',
+                    createPriceRuleset:'{!$RemoteAction.RemoteCPQAdminController.createPriceRuleset}',
+                    updatePriceRuleset:'{!$RemoteAction.RemoteCPQAdminController.updatePriceRuleset}',
+                    getPriceRule:'{!$RemoteAction.RemoteCPQAdminController.getPriceRule}',
+                    deletePriceRulesetData:'{!$RemoteAction.RemoteCPQAdminController.deletePriceRulesetData}',
+                    getAllCategoriesForPriceList:'{!$RemoteAction.RemoteCPQAdminController.getAllCategoriesForPriceList}',
+                    activateSmartSearch:'{!$RemoteAction.RemoteCPQAdminController.activateSmartSearch}',
+                    deactivateSmartSearch:'{!$RemoteAction.RemoteCPQAdminController.deactivateSmartSearch}',
+                    resyncSmartSearch:'{!$RemoteAction.RemoteCPQAdminController.resyncSmartSearch}',
+                    getDisplayColumnsForType:'{!$RemoteAction.RemoteCPQAdminController.getDisplayColumnsForType}',
+                    getAllDetailsForConfigSmartSearchSettings:'{!$RemoteAction.RemoteCPQAdminController.getAllDetailsForConfigSmartSearchSettings}',
+                    getLatestActivityStatus:'{!$RemoteAction.RemoteCPQAdminController.getLatestActivityStatus}',
+                    saveDisplayColumns:'{!$RemoteAction.RemoteCPQAdminController.saveDisplayColumns}',
+                    saveSearchConnectionSettings:'{!$RemoteAction.RemoteCPQAdminController.saveSearchConnectionSettings}',
+                    getAllObjectSummarySettings:'{!$RemoteAction.RemoteCPQAdminController.getAllObjectSummarySettings}',
+                    deleteObjectSummarySettings:'{!$RemoteAction.RemoteCPQAdminController.deleteObjectSummarySettings}',
+                    saveObjectSummarySettings:'{!$RemoteAction.RemoteCPQAdminController.saveObjectSummarySettings}',
+                    getFieldDescribe:'{!$RemoteAction.RemoteCPQAdminController.getFieldDescribe}', 
+                    getFavoriteConfigurationSettings:'{!$RemoteAction.RemoteCPQAdminController.getFavoriteConfigurationSettings}',
+                    saveFavoriteConfigurationSettings:'{!$RemoteAction.RemoteCPQAdminController.saveFavoriteConfigurationSettings}',
+                    getAllLookupFieldSettings:'{!$RemoteAction.RemoteCPQAdminController.getAllLookupFieldSettings}',
+                    saveLookupFieldSettings:'{!$RemoteAction.RemoteCPQAdminController.saveLookupFieldSettings}', 
+                    deleteLookupFieldSettings:'{!$RemoteAction.RemoteCPQAdminController.deleteLookupFieldSettings}',
+                    getFieldsForSObjectName:'{!$RemoteAction.RemoteCPQAdminController.getFieldsForSObjectName}',
+                    createPriceDimensions:'{!$RemoteAction.RemoteCPQAdminController.createPriceDimensions}',
+                    updatePriceDimensions:'{!$RemoteAction.RemoteCPQAdminController.updatePriceDimensions}',
+                    getCategoriesAssociatedToPriceList:'{!$RemoteAction.RemoteCPQAdminController.getCategoriesAssociatedToPriceList}',
+                    getFlows:'{!$RemoteAction.RemoteCPQAdminController.getFlows}',
+                    getAllCartViews:'{!$RemoteAction.RemoteCPQAdminController.getAllCartViews}',
+                    getCartViewGroupByFields:'{!$RemoteAction.RemoteCPQAdminController.getCartViewGroupByFields}',
+                    getCartViewColumnsForFlow:'{!$RemoteAction.RemoteCPQAdminController.getCartViewColumnsForFlow}',
+                    createCartViewSettings:'{!$RemoteAction.RemoteCPQAdminController.createCartViewSettings}',
+                    deleteCartView :'{!$RemoteAction.RemoteCPQAdminController.deleteCartView }',
+                    updateCartViewSettings :'{!$RemoteAction.RemoteCPQAdminController.updateCartViewSettings }',
+                    isAdminProfile :'{!$RemoteAction.RemoteCPQAdminController.isAdminProfile}',
+                    getSearchFilterItems :'{!$RemoteAction.RemoteCPQAdminController.getSearchFilterItems}',
+                    getSearchFilterSOs :'{!$RemoteAction.RemoteCPQAdminController.getSearchFilterSOs}',
+                    getCriteriaFieldItems :'{!$RemoteAction.RemoteCPQAdminController.getCriteriaFieldItems}',
+                    getSearchFilterDetails :'{!$RemoteAction.RemoteCPQAdminController.getSearchFilterDetails}',
+                    upsertSearchFilter :'{!$RemoteAction.RemoteCPQAdminController.upsertSearchFilter}',
+                    deleteSearchFilter :'{!$RemoteAction.RemoteCPQAdminController.deleteSearchFilter}',
+                    getProductGraph:'{!$RemoteAction.RemoteCPQAdminController.getProductGraph}',
+                    getAssetViewColumnsForFlow:'{!$RemoteAction.RemoteCPQAdminController.getAssetViewColumnsForFlow}',
+                    getAllAssetViews:'{!$RemoteAction.RemoteCPQAdminController.getAllAssetViews}',
+                    createAssetViewSettings:'{!$RemoteAction.RemoteCPQAdminController.createAssetViewSettings}',
+                    updateAssetViewSettings:'{!$RemoteAction.RemoteCPQAdminController.updateAssetViewSettings}',
+                    deleteAssetView:'{!$RemoteAction.RemoteCPQAdminController.deleteAssetView}',
+                    getIncentiveExclusions:'{!$RemoteAction.RemoteCPQAdminController.getIncentiveExclusions}',
+                    getIncentiveExclusionDetails: '{!$RemoteAction.RemoteCPQAdminController.getIncentiveExclusionDetails}',
+                    createIncentiveExclusions: '{!$RemoteAction.RemoteCPQAdminController.createIncentiveExclusions}',
+                    updateIncentiveExclusions: '{!$RemoteAction.RemoteCPQAdminController.updateIncentiveExclusions}',
+                    getAllFormulaFields: '{!$RemoteAction.RemoteCPQAdminController.getAllFormulaFields}',
+                    createFormulaFields: '{!$RemoteAction.RemoteCPQAdminController.createFormulaFields}',
+                    updateFormulaFields: '{!$RemoteAction.RemoteCPQAdminController.updateFormulaFields}',
+                    getAllFieldExpressions: '{!$RemoteAction.RemoteCPQAdminController.getAllFieldExpressions}',
+                    getFieldExpressionDetails : '{!$RemoteAction.RemoteCPQAdminController.getFieldExpressionDetails}',
+                    createFieldExpressions : '{!$RemoteAction.RemoteCPQAdminController.createFieldExpressions}',
+                    updateFieldExpressions : '{!$RemoteAction.RemoteCPQAdminController.updateFieldExpressions}',
+                    updateExpressionCriteriaFields : '{!$RemoteAction.RemoteCPQAdminController.updateExpressionCriteriaFields}',
+                    updateDatedExchangeRates: '{!$RemoteAction.RemoteCPQAdminController.updateDatedExchangeRates}',
+                    deleteDatedExchangeRates: '{!$RemoteAction.RemoteCPQAdminController.deleteDatedExchangeRates}',
+                    getAllPricePipelines: '{!$RemoteAction.RemoteCPQAdminController.getAllPricePipelines}',
+                    getPricePipelineDetails: '{!$RemoteAction.RemoteCPQAdminController.getPricePipelineDetails}',
+                    createPricePipeline: '{!$RemoteAction.RemoteCPQAdminController.createPricePipeline}',
+                    updatePricePipeline: '{!$RemoteAction.RemoteCPQAdminController.updatePricePipeline}'
+                };
+                
+                RemoteService.setRemoteActions(remoteActions);
+                // Need retURL or other url for redirect. Default is to redirect to '/'.
+                var redirectUrl = '{!JSENCODE($CurrentPage.parameters.retURL)}',
+                    regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/,
+                    isUrl =  regexp.test(redirectUrl); 
+                if(isUrl){
+                    RemoteService.setRedirectLocation(redirectUrl);
+                }
+                // Set flag true to overrides skipLoader flags of RemoteActions and show loader all remoteServiceCalls.     
+                RemoteService.setTrackAllRemoteCalls(false);
+            }
+
+            /**
+             * Extract VF-resolved date and currency formatting according to user preference
+             * @return {Object}
+             */
+            function getUserSettings() {
+                var userSettings = {
+                    currencyTemplate: getCurrencyTemplate(),
+                    quantityTemplate: getQuantityTemplate(),
+                    dateTemplate: getDateTemplate(),
+                    precisionMap: getPrecisionMap()
+                };
+                if (typeof UserContext !== 'undefined') {
+                    userSettings.locale = UserContext.locale;
+                    userSettings.dateFormat = UserContext.dateFormat;
+
+                }
+                return userSettings;
+
+                //Helper function to get text from output field by id.
+                function getOutputFieldText(fieldId) {
+                    var fieldElement = document.querySelector('#' + fieldId + ' span');
+                    if (fieldElement) {
+                        return fieldElement.textContent;
+                    }
+                    return void 0;
+
+                }
+
+                function getCurrencyTemplate () {
+                    var currencyTemplate = '$1,234.56';
+                    var templateText = getOutputFieldText('idCurrencyTemplate');
+                    if (!templateText) {
+                        return currencyTemplate;
+
+                    }
+                    // Isolate multi-currency section: SFDC uses "USD 1.23 (OTH 4.56)" format,
+                    // use regex to break that into ["USD 1.23 (OTH 4.56)", "USD 1.23", "OTH 4.56"]
+                    var multiMatch = templateText.match(/([^\(]*)\(?([^\)]*)\)?/);
+                    if (multiMatch && multiMatch[1]) {
+                        templateText = multiMatch[1];
+
+                    }
+                    //Check if formatted text is a valid template
+                    if (templateText.length > 2) {
+                        currencyTemplate = templateText;
+                            
+                    }
+                    return currencyTemplate;
+
+                }
+
+                function getQuantityTemplate() {
+                    var quantityTemplate = '1,234.56';
+                    var templateText = getOutputFieldText('idQuantityTemplate');
+                    if (!templateText) {
+                        return quantityTemplate;
+
+                    }
+                    //Check if formatted text is a valid template
+                    if (templateText.length > 2) {
+                        quantityTemplate = templateText;
+                            
+                    }
+                    return quantityTemplate;
+
+                }
+
+                function getDateTemplate() {
+                    var dateTemplate = '01/23/45';
+                    var templateText = getOutputFieldText('idDateTemplate');
+                    if (!templateText) {
+                        return dateTemplate;
+
+                    }
+                    dateTemplate = templateText;
+                    return dateTemplate;
+
+                }
+
+                function getPrecisionMap() {
+                    var quantity = Number(getOutputFieldText('idQuantityPrecision')),
+                            currency = Number(getOutputFieldText('idCurrencyPrecision'));
+                    var precision = {
+                        quantity: quantity,
+                        currency: currency
+                    };
+                    return precision;
+
+                }
+
+            }
+            
+            <apex:includeScript value="{!URLFOR($Resource.Apttus_CPQAdmin__ApttusAdmin, '/adminService.js')}"/>
+
+            var CPQAdminApp = angular.module('CPQAdminSetting',['cpqAdmin.adminServices']);
+
+            baseConfig.$inject = ['remoteServiceProvider','i18nServiceProvider'];
+            
+            CPQAdminApp.constant('baseUrl', baseUrl)
+            .constant('systemConstants', systemConstants)
+            .config(baseConfig);
+
+            <apex:includeScript value="{!URLFOR($Resource.Apttus_CPQAdmin__ApttusAdmin, '/app.js')}"/>
+              var translation = {}; //for testing purposes
+              // var isWorkbench = {!CONTAINS(LOWER($CurrentPage.NAME), 'remotecpq')};
+
+              var CustomLabel = {};
+              /* header */
+
+              CustomLabel.ManageProducts = "{!JSENCODE($Label.ManageProducts)}";
+              CustomLabel.ManageProductGroups = "{!JSENCODE($Label.ManageProductGroups)}";
+              CustomLabel.ManageRules = "{!JSENCODE($Label.ManageRules)}";
+              CustomLabel.BackToSalesforceHome = "{!JSENCODE($Label.BackToSalesforceHome)}";
+              CustomLabel.Details = "{!JSENCODE($Label.Details)}";
+              CustomLabel.Categories = "{!JSENCODE($Label.Categories)}";
+              CustomLabel.Associations = "{!JSENCODE($Label.Associations)}";
+              CustomLabel.Pricing = "{!JSENCODE($Label.Pricing)}";
+              CustomLabel.Options = "{!JSENCODE($Label.Options)}";
+              CustomLabel.Structure = "{!JSENCODE($Label.Structure)}";
+              CustomLabel.Attributes = "{!JSENCODE($Label.Attributes)}";
+              CustomLabel.Rules = "{!JSENCODE($Label.Rules)}";
+              CustomLabel.Collateral = "{!JSENCODE($Label.Collateral)}";
+              CustomLabel.ProductSaveButton = "{!JSENCODE($Label.ProductSaveButton)}";
+              CustomLabel.ProductCancelButton = "{!JSENCODE($Label.ProductCancelButton)}";
+              CustomLabel.Graph = "{!JSENCODE($Label.Graph)}";
+              CustomLabel.SearchAssociatedProducts = "{!JSENCODE($Label.SearchAssociatedProducts)}";
+
+              /* list page */
+              CustomLabel.Products = "{!JSENCODE($Label.Products)}";
+              CustomLabel.DefaultView = "{!JSENCODE($Label.DefaultView)}";
+              CustomLabel.RecentlyModifiedProducts = "{!JSENCODE($Label.RecentlyModifiedProducts)}";
+              CustomLabel.AllBundles = "{!JSENCODE($Label.AllBundles)}";
+              CustomLabel.AllStandaloneProducts = "{!JSENCODE($Label.AllStandaloneProducts)}";
+              CustomLabel.AllOptions = "{!JSENCODE($Label.AllOptions)}";
+              CustomLabel.MaxSQLSizeExceed = "{!JSENCODE($Label.MaxSQLSizeExceed)}";
+              CustomLabel.MaxSQLSizeExceedMessage = "{!JSENCODE($Label.MaxSQLSizeExceedMessage)}";
+              CustomLabel.NewProductButton = "{!JSENCODE($Label.NewProductButton)}";
+              CustomLabel.RecordsPerPage = "{!JSENCODE($Label.RecordsPerPage)}";
+              CustomLabel.NoMatchingRecords = "{!JSENCODE($Label.NoMatchingRecords)}";
+              CustomLabel.Yes = "{!JSENCODE($Label.Yes)}";
+              CustomLabel.No = "{!JSENCODE($Label.No)}";
+              CustomLabel.GoToDetailsPage = "{!JSENCODE($Label.GoToDetailsPage)}"; 
+              CustomLabel.GoToDetailsPageMessageBody = "{!JSENCODE($Label.GoToDetailsPageMessageBody)}";
+              CustomLabel.LoadingText = "{!JSENCODE($Label.LoadingText)}";
+              CustomLabel.ListView = "{!JSENCODE($Label.ListView)}";
+              CustomLabel.CloneProductButton = "{!JSENCODE($Label.CloneProductButton)}";
+              CustomLabel.DetailsViewButton = "{!JSENCODE($Label.DetailsViewButton)}";
+              
+              /*Saved Search*/
+              CustomLabel.Field = "{!JSENCODE($Label.Field)}";
+              CustomLabel.And = "{!JSENCODE($Label.And)}";
+              CustomLabel.Or = "{!JSENCODE($Label.Or)}";
+              CustomLabel.AddFilter = "{!JSENCODE($Label.AddFilter)}";
+              CustomLabel.Public = "{!JSENCODE($Label.Public)}";
+              CustomLabel.Private = "{!JSENCODE($Label.Private)}";
+              CustomLabel.ViewAll = "{!JSENCODE($Label.ViewAll)}";
+              CustomLabel.NewSearch = "{!JSENCODE($Label.NewSearch)}";
+              CustomLabel.EditView = "{!JSENCODE($Label.EditView)}";
+              CustomLabel.SaveViewAs = "{!JSENCODE($Label.SaveViewAs)}";
+              CustomLabel.RemoveView = "{!JSENCODE($Label.RemoveView)}";
+              CustomLabel.SaveSearchValidation = "{!JSENCODE($Label.SaveSearchValidation)}";
+              CustomLabel.SaveAs = "{!JSENCODE($Label.SaveAs)}";
+              CustomLabel.AdvancedFilterCondition = "{!JSENCODE($Label.AdvancedFilterCondition)}";
+
+              /* Details Page */
+              CustomLabel.Required = "{!JSENCODE($Label.Required)}";
+              CustomLabel.Images = "{!JSENCODE($Label.Images)}";
+              CustomLabel.UploadButton = "{!JSENCODE($Label.UploadButton)}";
+              CustomLabel.ImageSizeExceeded = "{!JSENCODE($Label.ImageSizeExceeded)}";
+              CustomLabel.FieldsNotChanged = "{!JSENCODE($Label.FieldsNotChanged)}";
+              CustomLabel.ProductSaveError = "{!JSENCODE($Label.ProductSaveError)}";
+              CustomLabel.ProductSaveSuccess = "{!JSENCODE($Label.ProductSaveSuccess)}";
+              CustomLabel.BundleStructureChanged = "{!JSENCODE($Label.BundleStructureChanged)}";
+              CustomLabel.DateRangeValidation = "{!JSENCODE($Label.DateRangeValidation)}";
+
+              /* Categories page */
+              CustomLabel.NoMatchingCategories = "{!JSENCODE($Label.NoMatchingCategories)}";
+              CustomLabel.Action = "{!JSENCODE($Label.Action)}";
+              CustomLabel.CatalogHierarchy = "{!JSENCODE($Label.CatalogHierarchy)}";
+              CustomLabel.CatalogImage = "{!JSENCODE($Label.CatalogImage)}";
+              CustomLabel.AllCategories = "{!JSENCODE($Label.AllCategories)}";
+              CustomLabel.AssociatedCategories = "{!JSENCODE($Label.AssociatedCategories)}";
+
+              /* Association page */
+              CustomLabel.NewProductGroup = "{!JSENCODE($Label.NewProductGroup)}";
+              CustomLabel.Offering = "{!JSENCODE($Label.Offering)}";
+              CustomLabel.NoMatchingProductGroups = "{!JSENCODE($Label.NoMatchingProductGroups)}";
+              
+              /* Pricing page */
+              CustomLabel.NoMatchingPL = "{!JSENCODE($Label.NoMatchingPL)}";
+              CustomLabel.PriceList = "{!JSENCODE($Label.PriceList)}";
+              CustomLabel.ChargeType = "{!JSENCODE($Label.ChargeType)}";
+              CustomLabel.Sequence = "{!JSENCODE($Label.Sequence)}";
+              CustomLabel.ListPrice = "{!JSENCODE($Label.ListPrice)}";
+              CustomLabel.PriceType = "{!JSENCODE($Label.PriceType)}";
+              CustomLabel.Frequency = "{!JSENCODE($Label.Frequency)}";
+              CustomLabel.PriceDimension = "{!JSENCODE($Label.PriceDimension)}";
+              CustomLabel.PriceMethod = "{!JSENCODE($Label.PriceMethod)}";
+              CustomLabel.EffectiveDate = "{!JSENCODE($Label.EffectiveDate)}";
+              CustomLabel.ExpirationDate = "{!JSENCODE($Label.ExpirationDate)}";
+              CustomLabel.Active = "{!JSENCODE($Label.Active)}";
+              CustomLabel.AddNewButton = "{!JSENCODE($Label.AddNewButton)}";
+              CustomLabel.Remove = "{!JSENCODE($Label.Remove)}";
+              CustomLabel.Add = "{!JSENCODE($Label.Add)}";
+              CustomLabel.Advanced = "{!JSENCODE($Label.Advanced)}";
+              CustomLabel.SaveSuccess = "{!JSENCODE($Label.SaveSuccess)}";
+              CustomLabel.SaveError = "{!JSENCODE($Label.SaveError)}";
+              CustomLabel.NoPricelist = "{!JSENCODE($Label.NoPricelist)}";
+              CustomLabel.SelectPricelist = "{!JSENCODE($Label.SelectPricelist)}";
+              CustomLabel.NoChargeType = "{!JSENCODE($Label.NoChargeType)}";
+              CustomLabel.NoFrequency = "{!JSENCODE($Label.NoFrequency)}";
+              CustomLabel.DeleteMessageTitle = "{!JSENCODE($Label.DeleteMessageTitle)}";
+              CustomLabel.DeleteMessageBody = "{!JSENCODE($Label.DeleteMessageBody)}";
+              CustomLabel.DeleteMessageNote = "{!JSENCODE($Label.DeleteMessageNote)}";
+              CustomLabel.AllPriceLists = "{!JSENCODE($Label.AllPriceLists)}";
+              CustomLabel.PriceListName = "{!JSENCODE($Label.PriceListName)}";
+              CustomLabel.ShortDescription = "{!JSENCODE($Label.ShortDescription)}";
+              CustomLabel.Currency = "{!JSENCODE($Label.Currency)}";
+              CustomLabel.BasedOnPriceList = "{!JSENCODE($Label.BasedOnPriceList)}";
+              CustomLabel.BasedOnAdjustmentAmount = "{!JSENCODE($Label.BasedOnAdjustmentAmount)}";
+              CustomLabel.LongDescription = "{!JSENCODE($Label.LongDescription)}";
+              CustomLabel.CancelButton = "{!JSENCODE($Label.CancelButton)}";
+              CustomLabel.SaveButton = "{!JSENCODE($Label.SaveButton)}";
+              CustomLabel.ChargeTypes = "{!JSENCODE($Label.ChargeTypes)}";
+              CustomLabel.Cost = "{!JSENCODE($Label.Cost)}";
+              CustomLabel.UOM = "{!JSENCODE($Label.UOM)}";
+              CustomLabel.OptionGroup = "{!JSENCODE($Label.OptionGroup)}";
+
+               /* Options page */
+
+              CustomLabel.NoMatchingOptions = "{!JSENCODE($Label.NoMatchingOptions)}";
+              CustomLabel.OptionGroups = "{!JSENCODE($Label.OptionGroups)}";
+              CustomLabel.OptionHierarchy = "{!JSENCODE($Label.OptionHierarchy)}";
+              CustomLabel.OptionBundle = "{!JSENCODE($Label.OptionBundle)}";
+              CustomLabel.OptionGroupName = "{!JSENCODE($Label.OptionGroupName)}";
+              CustomLabel.MinOptions = "{!JSENCODE($Label.MinOptions)}";
+              CustomLabel.MaxOptions = "{!JSENCODE($Label.MaxOptions)}";
+              CustomLabel.MinTotalQty = "{!JSENCODE($Label.MinTotalQty)}";
+              CustomLabel.MaxTotalQty = "{!JSENCODE($Label.MaxTotalQty)}";
+              CustomLabel.IsHidden = "{!JSENCODE($Label.IsHidden)}";
+              CustomLabel.IsPicklist = "{!JSENCODE($Label.IsPicklist)}";
+              CustomLabel.ComponentProduct = "{!JSENCODE($Label.ComponentProduct)}";
+              CustomLabel.MinQty = "{!JSENCODE($Label.MinQty)}";
+              CustomLabel.MaxQty = "{!JSENCODE($Label.MaxQty)}";
+              CustomLabel.DefaultQty = "{!JSENCODE($Label.DefaultQty)}";
+              CustomLabel.Default = "{!JSENCODE($Label.Default)}";
+              CustomLabel.QtyModifiable = "{!JSENCODE($Label.QtyModifiable)}";
+              CustomLabel.AllowCloning = "{!JSENCODE($Label.AllowCloning)}";
+              CustomLabel.RequiredText = "{!JSENCODE($Label.RequiredText)}";
+              CustomLabel.AutoUpdateQty = "{!JSENCODE($Label.AutoUpdateQty)}";
+              CustomLabel.NewOptionGroup = "{!JSENCODE($Label.NewOptionGroup)}";
+              CustomLabel.NewStandaloneOptionGroup = "{!JSENCODE($Label.NewStandaloneOptionGroup)}";
+              CustomLabel.NewSharedOptionGroup = "{!JSENCODE($Label.NewSharedOptionGroup)}";
+              CustomLabel.RequiredText = "{!JSENCODE($Label.RequiredText)}";
+              CustomLabel.AutoUpdateQty = "{!JSENCODE($Label.AutoUpdateQty)}";
+              CustomLabel.ModifiableType = "{!JSENCODE($Label.ModifiableType)}";
+              CustomLabel.ConfigType = "{!JSENCODE($Label.ConfigType)}";
+              CustomLabel.ErrorMaxOptions = "{!JSENCODE($Label.ErrorMaxOptions)}";
+			  CustomLabel.ContentType = "{!JSENCODE($Label.ContentType)}";
+              CustomLabel.DetailPage = "{!JSENCODE($Label.DetailPage)}";
+              CustomLabel.Confirmation = "{!JSENCODE($Label.Confirmation)}";
+              CustomLabel.GlobalOGWarningMsg = "{!JSENCODE($Label.GlobalOGWarningMsg)}";
+              CustomLabel.ProductCount = "{!JSENCODE($Label.ProductCount)}";
+              CustomLabel.ParentOptionGroup = "{!JSENCODE($Label.ParentOptionGroup)}";
+              CustomLabel.SearchOptionGroup = "{!JSENCODE($Label.SearchOptionGroup)}";
+              CustomLabel.OptionGroupHierarchy = "{!JSENCODE($Label.OptionGroupHierarchy)}";
+              CustomLabel.SearchCategory = "{!JSENCODE($Label.SearchCategory)}";
+              
+              /* Attributes page */
+              CustomLabel.NoMatchingAttributes = "{!JSENCODE($Label.NoMatchingAttributes)}";
+              CustomLabel.AttributeGroups = "{!JSENCODE($Label.AttributeGroups)}";
+              CustomLabel.Information = "{!JSENCODE($Label.Information)}";
+              CustomLabel.GroupName = "{!JSENCODE($Label.GroupName)}";
+              CustomLabel.Description = "{!JSENCODE($Label.Description)}";
+              CustomLabel.TwoColumnAttributesDisplay = "{!JSENCODE($Label.TwoColumnAttributesDisplay)}";
+              CustomLabel.ThreeColumnAttributesDisplay = "{!JSENCODE($Label.ThreeColumnAttributesDisplay)}";
+              CustomLabel.ProductAttributes = "{!JSENCODE($Label.ProductAttributes)}";
+              CustomLabel.IsReadOnly = "{!JSENCODE($Label.IsReadOnly)}";
+              CustomLabel.IsPrimary = "{!JSENCODE($Label.IsPrimary)}";
+              CustomLabel.AttributeGroup = "{!JSENCODE($Label.AttributeGroup)}";
+              CustomLabel.AttributeLabel = "{!JSENCODE($Label.AttributeLabel)}";
+              CustomLabel.Expression = "{!JSENCODE($Label.Expression)}";
+              CustomLabel.NewAttributeButton = "{!JSENCODE($Label.NewAttributeButton)}";
+              CustomLabel.AttributeValidationMessage = "{!JSENCODE($Label.AttributeValidationMessage)}";
+
+              /* Product Clone Modal */
+              CustomLabel.CloneProduct = "{!JSENCODE($Label.CloneProduct)}";
+              CustomLabel.NewProductName = "{!JSENCODE($Label.NewProductName)}";
+              CustomLabel.ErrorRequiredProductName = "{!JSENCODE($Label.ErrorRequiredProductName)}";
+              CustomLabel.ProductToClone = "{!JSENCODE($Label.ProductToClone)}";
+              CustomLabel.ProductToClonePlaceholder = "{!JSENCODE($Label.ProductToClonePlaceholder)}";
+              CustomLabel.ErrorProductToClone = "{!JSENCODE($Label.ErrorProductToClone)}";
+              CustomLabel.NoResults = "{!JSENCODE($Label.NoResults)}";
+              CustomLabel.EntireProduct = "{!JSENCODE($Label.EntireProduct)}";
+              CustomLabel.ProductDetails = "{!JSENCODE($Label.ProductDetails)}";
+              CustomLabel.chkCategories = "{!JSENCODE($Label.chkCategories)}";
+              CustomLabel.chkPricing = "{!JSENCODE($Label.chkPricing)}";
+              CustomLabel.chkOptions = "{!JSENCODE($Label.chkOptions)}";
+              CustomLabel.chkAttributes = "{!JSENCODE($Label.chkAttributes)}";
+              CustomLabel.chkRules = "{!JSENCODE($Label.chkRules)}";
+              CustomLabel.RequiredFields = "{!JSENCODE($Label.RequiredFields)}";
+              CustomLabel.chkCollateral = "{!JSENCODE($Label.chkCollateral)}";
+              CustomLabel.chkProductGroup = "{!JSENCODE($Label.chkProductGroup)}";
+              CustomLabel.DialogCancelButton = "{!JSENCODE($Label.DialogCancelButton)}";
+              CustomLabel.DialogSaveButton = "{!JSENCODE($Label.DialogSaveButton)}";
+              CustomLabel.CloneButton = "{!JSENCODE($Label.CloneButton)}";
+              CustomLabel.AllProducts = "{!JSENCODE($Label.AllProducts)}";
+              CustomLabel.CreateNewCategory = "{!JSENCODE($Label.CreateNewCategory)}";
+              CustomLabel.SelectParentCategory = "{!JSENCODE($Label.SelectParentCategory)}";
+              CustomLabel.SearchParentCategory = "{!JSENCODE($Label.SearchParentCategory)}";
+              CustomLabel.ParentCategory = "{!JSENCODE($Label.ParentCategory)}";
+              CustomLabel.Browse = "{!JSENCODE($Label.Browse)}";
+              CustomLabel.Apply = "{!JSENCODE($Label.Apply)}";
+              CustomLabel.Reset = "{!JSENCODE($Label.Reset)}";
+              CustomLabel.Filters = "{!JSENCODE($Label.Filters)}";
+              CustomLabel.ProductType = "{!JSENCODE($Label.ProductType)}";
+              CustomLabel.LabelText = "{!JSENCODE($Label.LabelText)}";
+              CustomLabel.Name = "{!JSENCODE($Label.Name)}";
+              CustomLabel.Type = "{!JSENCODE($Label.Type)}";
+              CustomLabel.DefaultSearchCategory = "{!JSENCODE($Label.DefaultSearchCategory)}";
+              CustomLabel.ExpandedByDefault = "{!JSENCODE($Label.ExpandedByDefault)}";
+              CustomLabel.HideAllSearchFilters = "{!JSENCODE($Label.HideAllSearchFilters)}";
+              CustomLabel.IncludeInTotalsView = "{!JSENCODE($Label.IncludeInTotalsView)}";
+              CustomLabel.LongDescription = "{!JSENCODE($Label.LongDescription)}";
+              CustomLabel.UploadImage = "{!JSENCODE($Label.UploadImage)}";
+              CustomLabel.CreateNewOG = "{!JSENCODE($Label.CreateNewOG)}";
+              CustomLabel.SelectParentOG = "{!JSENCODE($Label.SelectParentOG)}";
+              CustomLabel.ParentOGs = "{!JSENCODE($Label.ParentOGs)}";
+              CustomLabel.SearchParentOG = "{!JSENCODE($Label.SearchParentOG)}";
+              CustomLabel.NoParent = "{!JSENCODE($Label.NoParent)}";
+
+                 /* Rules Page */
+              CustomLabel.RulesApplied = "{!JSENCODE($Label.RulesApplied)}";
+              CustomLabel.ConstraintRule = "{!JSENCODE($Label.ConstraintRule)}";
+              CustomLabel.NewConstraintRule = "{!JSENCODE($Label.NewConstraintRule)}";
+              CustomLabel.ProductAttributeRule = "{!JSENCODE($Label.ProductAttributeRule)}";
+              CustomLabel.NewProductAttributeRule = "{!JSENCODE($Label.NewProductAttributeRule)}";
+              CustomLabel.NewAttributeValueMatrix = "{!JSENCODE($Label.NewAttributeValueMatrix)}";
+              CustomLabel.Conditions = "{!JSENCODE($Label.Conditions)}";
+              CustomLabel.Statements = "{!JSENCODE($Label.Statements)}";
+              CustomLabel.RuleName = "{!JSENCODE($Label.RuleName)}";
+              CustomLabel.RuleNameExceedsLimit = "{!JSENCODE($Label.RuleNameExceedsLimit)}";
+              CustomLabel.Sequence = "{!JSENCODE($Label.Sequence)}";
+              CustomLabel.Context = "{!JSENCODE($Label.Context)}";
+              CustomLabel.Rules = "{!JSENCODE($Label.Rules)}";
+              CustomLabel.IfScope = "{!JSENCODE($Label.IfScope)}";
+              CustomLabel.ThenStatement = "{!JSENCODE($Label.ThenStatement)}";
+              CustomLabel.Scope = "{!JSENCODE($Label.Scope)}";
+              CustomLabel.Operator = "{!JSENCODE($Label.Operator)}";
+              CustomLabel.ActionType = "{!JSENCODE($Label.ActionType)}";
+              CustomLabel.ActionIntent = "{!JSENCODE($Label.ActionIntent)}";
+              CustomLabel.TargetField = "{!JSENCODE($Label.TargetField)}";
+              CustomLabel.ValueExpression = "{!JSENCODE($Label.ValueExpression)}";
+              CustomLabel.Value = "{!JSENCODE($Label.Value)}";
+              CustomLabel.ProductField = "{!JSENCODE($Label.ProductField)}";
+              CustomLabel.IsActive = "{!JSENCODE($Label.IsActive)}";
+              CustomLabel.CreatedBy = "{!JSENCODE($Label.CreatedBy)}";
+              CustomLabel.LastModifiedBy = "{!JSENCODE($Label.LastModifiedBy)}";
+              CustomLabel.ShortDescription = "{!JSENCODE($Label.ShortDescription)}";
+              CustomLabel.ConditionName = "{!JSENCODE($Label.ConditionName)}";
+              CustomLabel.ConditionNo = "{!JSENCODE($Label.ConditionNo)}";
+              CustomLabel.StatementName = "{!JSENCODE($Label.StatementName)}";
+              CustomLabel.MatchPrimaryLines = "{!JSENCODE($Label.MatchPrimaryLines)}";
+              CustomLabel.MatchInOptions = "{!JSENCODE($Label.MatchInOptions)}";
+              CustomLabel.MatchInAsset = "{!JSENCODE($Label.MatchInAsset)}";
+              CustomLabel.MatchInCartOptions = "{!JSENCODE($Label.MatchInCartOptions)}";
+              CustomLabel.MatchInLocation = "{!JSENCODE($Label.MatchInLocation)}";
+              CustomLabel.MatchInRelatedLines = "{!JSENCODE($Label.MatchInRelatedLines)}";
+              CustomLabel.IncludeMessaging = "{!JSENCODE($Label.IncludeMessaging)}";
+              CustomLabel.MessagingType = "{!JSENCODE($Label.MessagingType)}";
+              CustomLabel.MessageDetails = "{!JSENCODE($Label.MessageDetails)}";
+              CustomLabel.Ok = "{!JSENCODE($Label.Ok)}";
+              CustomLabel.Cancel = "{!JSENCODE($Label.Cancel)}";
+              CustomLabel.NoMatchingRule = "{!JSENCODE($Label.NoMatchingRule)}";
+              CustomLabel.MinMaxMatchingRule = "{!JSENCODE($Label.MinMaxMatchingRule)}";
+              CustomLabel.MatchRule = "{!JSENCODE($Label.MatchRule)}";
+              CustomLabel.RepeatInclusion= "{!JSENCODE($Label.RepeatInclusion)}";
+              CustomLabel.DuplicateCSConditions = "{!JSENCODE($Label.DuplicateCSConditions)}";
+              CustomLabel.EditActionCriteria = "{!JSENCODE($Label.EditActionCriteria)}";
+              CustomLabel.ErrorWhileLoadingRule = "{!JSENCODE($Label.ErrorWhileLoadingRule)}";
+              CustomLabel.AddColumn = "{!JSENCODE($Label.AddColumn)}";
+              CustomLabel.AddRow = "{!JSENCODE($Label.AddRow)}";
+              CustomLabel.Criteria = "{!JSENCODE($Label.Criteria)}";
+              CustomLabel.RuleCriteriaMessage = "{!JSENCODE($Label.RuleCriteriaMessage)}";
+              CustomLabel.ActionNo = "{!JSENCODE($Label.ActionNo)}";
+              CustomLabel.InputMaxLimit80 = "{!JSENCODE($Label.InputMaxLimit80)}";
+              CustomLabel.RuleNameTooLong = "{!JSENCODE($Label.RuleNameTooLong)}";
+                  
+                /* Collateral Page */
+              CustomLabel.MultimediaName = "{!JSENCODE($Label.MultimediaName)}";
+              CustomLabel.MultimediaIsPrimary = "{!JSENCODE($Label.IsPrimary)}";
+              CustomLabel.MultimediaType = "{!JSENCODE($Label.Type)}";
+              CustomLabel.MultimediaLastModifiedBy = "{!JSENCODE($Label.LastModifiedBy)}";
+              CustomLabel.MultimediaLastModified = "{!JSENCODE($Label.LastModified)}";
+              CustomLabel.MultimediaFormMsg = "{!JSENCODE($Label.MultimediaFormMsg)}"; 
+              CustomLabel.MultimediaChangeName = "{!JSENCODE($Label.MultimediaChangeName)}"; 
+              CustomLabel.MultimediaNameField = "{!JSENCODE($Label.MultimediaNameField)}";
+              CustomLabel.MultimediaIsMandatory  = "{!JSENCODE($Label.MultimediaIsMandatory)}";
+              CustomLabel.MultimediaDescription = "{!JSENCODE($Label.MultimediaDescription)}";
+              CustomLabel.MultimediaUnknownMsg = "{!JSENCODE($Label.MultimediaUnknownMsg)}";
+              CustomLabel.MultimediaUploadFile = "{!JSENCODE($Label.MultimediaUploadFile)}";
+              CustomLabel.MultimediaURLAddress = "{!JSENCODE($Label.MultimediaURLAddress)}";
+              CustomLabel.MultimediaEmbedCode = "{!JSENCODE($Label.MultimediaEmbedCode)}";
+              CustomLabel.MultimediaUploadFileMsg = "{!JSENCODE($Label.MultimediaUploadFileMsg)}";
+              CustomLabel.MultimediaUploadFileMaxSize = "{!JSENCODE($Label.MultimediaUploadFileMaxSize)}";
+              CustomLabel.MultimediaDragFile = "{!JSENCODE($Label.MultimediaDragFile)}";
+              CustomLabel.MultimediaNoUploadFile = "{!JSENCODE($Label.MultimediaNoUploadFile)}";
+              CustomLabel.MultimediaHelpText = "{!JSENCODE($Label.MultimediaHelpText)}";
+              CustomLabel.MultimediaURL = "{!JSENCODE($Label.MultimediaURL)}";
+              CustomLabel.MultimediaGetURLAddressMsg = "{!JSENCODE($Label.MultimediaGetURLAddressMsg)}"; 
+              CustomLabel.MultimediaNoURLAddress = "{!JSENCODE($Label.MultimediaNoURLAddress)}";
+              CustomLabel.MultimediaURLAddressMsg = "{!JSENCODE($Label.MultimediaURLAddressMsg)}"; 
+              CustomLabel.MultimediaEmbedCodeMsg = "{!JSENCODE($Label.MultimediaEmbedCodeMsg)}";
+              CustomLabel.MultimediaGetEmbedCodeMsg = "{!JSENCODE($Label.MultimediaGetEmbedCodeMsg)}"; 
+              CustomLabel.MultimediaNoEmbedCode = "{!JSENCODE($Label.MultimediaNoEmbedCode)}";
+              CustomLabel.MultimediaValidEmbedCode = "{!JSENCODE($Label.MultimediaValidEmbedCode)}";
+              CustomLabel.MultimediaEmbedCodeField = "{!JSENCODE($Label.MultimediaEmbedCodeField)}";  
+              CustomLabel.MultimediaNoMultimedia = "{!JSENCODE($Label.MultimediaNoMultimedia)}";                         
+              CustomLabel.MultimediaReplaceMediaButton = "{!JSENCODE($Label.MultimediaReplaceMediaButton)}";
+              CustomLabel.MultimediaSelectFileButton = "{!JSENCODE($Label.MultimediaSelectFileButton)}";
+              CustomLabel.MultimediaSaveButton = "{!JSENCODE($Label.MultimediaSaveButton)}";
+              CustomLabel.MultimediaCancelButton = "{!JSENCODE($Label.MultimediaCancelButton)}";
+              CustomLabel.FootnotesCollateralName = "{!JSENCODE($Label.FootnotesCollateralName)}";
+              CustomLabel.FootnotesType = "{!JSENCODE($Label.FootnotesType)}";
+              CustomLabel.FootnotesSequence = "{!JSENCODE($Label.FootnotesSequence)}";
+              CustomLabel.FootnotesLastModifiedBy = "{!JSENCODE($Label.FootnotesLastModifiedBy)}";
+              CustomLabel.FootnotesLastModified = "{!JSENCODE($Label.FootnotesLastModified)}";
+              CustomLabel.FootnotesNameField = "{!JSENCODE($Label.FootnotesNameField)}";
+              CustomLabel.FootnotesTypeField = "{!JSENCODE($Label.FootnotesTypeField)}";
+              CustomLabel.FootnotesSequenceField = "{!JSENCODE($Label.FootnotesSequenceField)}";
+              CustomLabel.FootnotesBody = "{!JSENCODE($Label.FootnotesBody)}";
+              CustomLabel.FootnotesIsMandatory  = "{!JSENCODE($Label.FootnotesIsMandatory)}";
+              CustomLabel.FootnotesNoFootnotes  = "{!JSENCODE($Label.FootnotesNoFootnotes)}";
+              CustomLabel.NewMultimedia  = "{!JSENCODE($Label.NewMultimedia)}";
+              CustomLabel.NewFootnote  = "{!JSENCODE($Label.NewFootnote)}";
+
+              /*Main Header Page*/
+              CustomLabel.Catalog = "{!JSENCODE($Label.Catalog)}";
+              CustomLabel.PriceLists = "{!JSENCODE($Label.PriceLists)}";
+              CustomLabel.AddNewProduct = "{!JSENCODE($Label.AddNewProduct)}";
+              CustomLabel.ManageAttributes = "{!JSENCODE($Label.ManageAttributes)}";
+              CustomLabel.AddNewAttribute = "{!JSENCODE($Label.AddNewAttribute)}";
+              CustomLabel.ProductGroups = "{!JSENCODE($Label.ProductGroups)}";
+              CustomLabel.ManageCategories = "{!JSENCODE($Label.ManageCategories)}";
+              CustomLabel.AddNewCategories = "{!JSENCODE($Label.AddNewCategories)}";
+              CustomLabel.NewCategoryButton = "{!JSENCODE($Label.NewCategoryButton)}";
+              CustomLabel.EditCategoryButton = "{!JSENCODE($Label.EditCategoryButton)}";
+              CustomLabel.EditProductGroupButton = "{!JSENCODE($Label.EditProductGroupButton)}";
+              CustomLabel.ManagePriceLists = "{!JSENCODE($Label.ManagePriceLists)}";
+              CustomLabel.AddNewPriceLists = "{!JSENCODE($Label.AddNewPriceLists)}";
+              CustomLabel.ManagePriceListItems = "{!JSENCODE($Label.ManagePriceListItems)}";
+              CustomLabel.AddNewPriceListItem = "{!JSENCODE($Label.AddNewPriceListItem)}";
+              CustomLabel.CategoryMaintenance = "{!JSENCODE($Label.CategoryMaintenance)}";
+              CustomLabel.CriteriaMaintenance = "{!JSENCODE($Label.CriteriaMaintenance)}";
+
+              /* Catalog*/
+              CustomLabel.AssociatedProduct = "{!JSENCODE($Label.AssociatedProduct)}";
+              CustomLabel.AssociatedPriceList = "{!JSENCODE($Label.AssociatedPriceList)}";
+              CustomLabel.AssociatedCategory = "{!JSENCODE($Label.AssociatedCategory)}";
+              CustomLabel.CatalogSaveButton = "{!JSENCODE($Label.CatalogSaveButton)}";
+              CustomLabel.NoMatchingCategories = "{!JSENCODE($Label.NoMatchingCategories)}";
+              CustomLabel.ManageCatalog = "{!JSENCODE($Label.ManageCatalog)}";
+              CustomLabel.ManageOptionGroups = "{!JSENCODE($Label.ManageOptionGroups)}";
+              
+              /*Catalog Details Page*/
+              CustomLabel.uploadCatalogImage = "{!JSENCODE($Label.uploadCatalogImage)}";
+              CustomLabel.CategoryHierarchy = "{!JSENCODE($Label.CategoryHierarchy)}";
+
+              /*Associated Product Page*/
+            
+              CustomLabel.ProductName = "{!JSENCODE($Label.ProductName)}";
+              CustomLabel.ProductCode = "{!JSENCODE($Label.ProductCode)}";
+              CustomLabel.ConfigurationType = "{!JSENCODE($Label.ConfigurationType)}";
+              CustomLabel.SavedSuccessfully = "{!JSENCODE($Label.SavedSuccessfully)}";
+              
+              /*Expression Builder Modal*/
+              CustomLabel.BuildExpression = "{!JSENCODE($Label.BuildExpression)}";
+              CustomLabel.InsertField = "{!JSENCODE($Label.InsertField)}";
+              CustomLabel.InsertOperator = "{!JSENCODE($Label.InsertOperator)}";
+              CustomLabel.InsertFunction = "{!JSENCODE($Label.InsertFunction)}";
+              CustomLabel.Drag_Drop = "{!JSENCODE($Label.DragDrop)}";
+              CustomLabel.EBErrorMessage = "{!JSENCODE($Label.EBErrorMessage)}";
+              
+              CustomLabel.Expand = "{!JSENCODE($Label.Expand)}";
+              CustomLabel.Collapse = "{!JSENCODE($Label.Collapse)}";
+            
+              /* Pricing Admin */
+              CustomLabel.PricingMenuName = "{!JSENCODE($Label.PricingMenuName)}";
+              CustomLabel.PricingManagePriceLists = "{!JSENCODE($Label.PricingManagePriceLists)}";
+              CustomLabel.PricingManagePriceRules = "{!JSENCODE($Label.PricingManagePriceRules)}";
+              CustomLabel.NewPriceList = "{!JSENCODE($Label.NewPriceList)}";
+              CustomLabel.NewPriceListItem = "{!JSENCODE($Label.NewPriceListItem)}";
+              CustomLabel.PriceListItems = "{!JSENCODE($Label.PriceListItems)}";
+              CustomLabel.PricingAllPriceLists = "{!JSENCODE($Label.PricingAllPriceLists)}";
+              CustomLabel.AssociatedPriceListItems = "{!JSENCODE($Label.AssociatedPriceListItems)}";
+              CustomLabel.CategoryAssociations = "{!JSENCODE($Label.CategoryAssociations)}";
+              CustomLabel.NumberofPLI = "{!JSENCODE($Label.NumberofPLI)}";
+              CustomLabel.BasedOnAdjustmentType = "{!JSENCODE($Label.BasedOnAdjustmentType)}";
+              CustomLabel.Product = "{!JSENCODE($Label.Product)}";
+              CustomLabel.Relate = "{!JSENCODE($Label.Relate)}";
+              CustomLabel.RelatedAdjustmentAmount = "{!JSENCODE($Label.RelatedAdjustmentAmount)}";
+              CustomLabel.RelatedAdjustmentType = "{!JSENCODE($Label.RelatedAdjustmentType)}";
+              CustomLabel.RelatedAdjustmentAppliesTo = "{!JSENCODE($Label.RelatedAdjustmentAppliesTo)}";
+              CustomLabel.EnablePriceRamps = "{!JSENCODE($Label.EnablePriceRamps)}";
+              CustomLabel.EnableDefaults = "{!JSENCODE($Label.EnableDefaults)}";
+              CustomLabel.IsPriceModifiable = "{!JSENCODE($Label.IsPriceModifiable)}";
+              CustomLabel.AllowManualAdjustments = "{!JSENCODE($Label.AllowManualAdjustments)}";
+              CustomLabel.AllocateGroupAdjustment = "{!JSENCODE($Label.AllocateGroupAdjustment)}";
+              CustomLabel.AllowProration = "{!JSENCODE($Label.AllowProration)}";
+              CustomLabel.AutoUpdateQuantity = "{!JSENCODE($Label.AutoUpdateQuantity)}";
+              CustomLabel.ChargeTypeCriteria = "{!JSENCODE($Label.ChargeTypeCriteria)}";
+              CustomLabel.RelationTo = "{!JSENCODE($Label.RelationTo)}";
+              CustomLabel.RelatedItem = "{!JSENCODE($Label.RelatedItem)}";
+              CustomLabel.AdjustmentAmount = "{!JSENCODE($Label.AdjustmentAmount)}";
+              CustomLabel.AdjustmentType = "{!JSENCODE($Label.AdjustmentType)}";
+              CustomLabel.RelatedCustomGroup = "{!JSENCODE($Label.RelatedCustomGroup)}";
+              CustomLabel.Custom = "{!JSENCODE($Label.Custom)}";
+              CustomLabel.StopProcessingMoreMatrices = "{!JSENCODE($Label.StopProcessingMoreMatrices)}";
+              CustomLabel.MatrixType = "{!JSENCODE($Label.MatrixType)}";
+              CustomLabel.Dimension = "{!JSENCODE($Label.Dimension)}";
+              CustomLabel.DimensionValueType = "{!JSENCODE($Label.DimensionValueType)}";
+              CustomLabel.MatchMinProducts = "{!JSENCODE($Label.MatchMinProducts)}";
+              CustomLabel.MatchMaxProducts = "{!JSENCODE($Label.MatchMaxProducts)}";
+              CustomLabel.MinProducts = "{!JSENCODE($Label.MinProducts)}";
+              CustomLabel.MaxProducts = "{!JSENCODE($Label.MaxProducts)}";
+              CustomLabel.AutoCascadeQuantity = "{!JSENCODE($Label.AutoCascadeQuantity)}";
+              CustomLabel.IsQuantityReadOnly = "{!JSENCODE($Label.IsQuantityReadOnly)}";
+              CustomLabel.IsSellingTermReadOnly = "{!JSENCODE($Label.IsSellingTermReadOnly)}";
+              CustomLabel.DefaultQuantity = "{!JSENCODE($Label.DefaultQuantity)}";
+              CustomLabel.DefaultSellingTerm = "{!JSENCODE($Label.DefaultSellingTerm)}";
+              CustomLabel.priceListType = "{!JSENCODE($Label.priceListType)}";
+              CustomLabel.NoUsageAndRelatedPrice = "{!JSENCODE($Label.NoUsageAndRelatedPrice)}";
+              CustomLabel.MandatoryRelatedPriceField = "{!JSENCODE($Label.MandatoryRelatedPriceField)}";
+              CustomLabel.MandatoryField = "{!JSENCODE($Label.MandatoryField)}";
+              CustomLabel.EqualTo = "{!JSENCODE($Label.EqualTo)}";
+              CustomLabel.NotEqualTo = "{!JSENCODE($Label.NotEqualTo)}";
+              CustomLabel.StartsWith = "{!JSENCODE($Label.StartsWith)}";
+              CustomLabel.Contains = "{!JSENCODE($Label.Contains)}";
+              CustomLabel.DoesNotContain = "{!JSENCODE($Label.DoesNotContain)}";
+              CustomLabel.LessThan = "{!JSENCODE($Label.LessThan)}";
+              CustomLabel.GreaterThan = "{!JSENCODE($Label.GreaterThan)}";
+              CustomLabel.LessThanOrEqualTo = "{!JSENCODE($Label.LessThanOrEqualTo)}";
+              CustomLabel.GreaterThanOrEqualTo = "{!JSENCODE($Label.GreaterThanOrEqualTo)}";
+              CustomLabel.In = "{!JSENCODE($Label.In)}";
+              CustomLabel.NotIn = "{!JSENCODE($Label.NotIn)}";
+              CustomLabel.LineItem = "{!JSENCODE($Label.LineItem)}";
+              CustomLabel.LineItems = "{!JSENCODE($Label.LineItems)}";
+              CustomLabel.ProductAttributeValue = "{!JSENCODE($Label.ProductAttributeValue)}";
+              CustomLabel.ConfirmDelete = "{!JSENCODE($Label.ConfirmDelete)}";
+              CustomLabel.ConfirmPLIDelete = "{!JSENCODE($Label.ConfirmPLIDelete)}";
+              CustomLabel.ConfirmMatrixDelete = "{!JSENCODE($Label.ConfirmMatrixDelete)}";
+              CustomLabel.ConfirmMatrixEntryDelete = "{!JSENCODE($Label.ConfirmMatrixEntryDelete)}";
+              CustomLabel.ConfirmRelatedPricingDelete = "{!JSENCODE($Label.ConfirmRelatedPricingDelete)}";
+              CustomLabel.NoMatchingPriceLists = "{!JSENCODE($Label.NoMatchingPriceLists)}";
+              CustomLabel.SelectValidAttribute = "{!JSENCODE($Label.SelectValidAttribute)}";
+              CustomLabel.AVMLoadingError = "{!JSENCODE($Label.AVMLoadingError)}";
+              CustomLabel.FillAllFields = "{!JSENCODE($Label.FillAllFields)}";
+              CustomLabel.CustomConditionMisMatch = "{!JSENCODE($Label.CustomConditionMisMatch)}";
+              CustomLabel.ScopeAlreadyPresent = "{!JSENCODE($Label.ScopeAlreadyPresent)}";
+              CustomLabel.DeleteSuccessful = "{!JSENCODE($Label.DeleteSuccessful)}";
+              CustomLabel.ActionTypeRequired = "{!JSENCODE($Label.ActionTypeRequired)}";
+              CustomLabel.DuplicateDimensions = "{!JSENCODE($Label.DuplicateDimensions)}";
+              CustomLabel.RollupMethod = "{!JSENCODE($Label.RollupMethod)}";
+              CustomLabel.AdditionalOptions = "{!JSENCODE($Label.AdditionalOptions)}";
+              CustomLabel.NoMatchingPriceListItems = "{!JSENCODE($Label.NoMatchingPriceListItems)}";
+              CustomLabel.MatrixName = "{!JSENCODE($Label.MatrixName)}";
+              CustomLabel.MandatoryField = "{!JSENCODE($Label.MandatoryField)}";
+              CustomLabel.RulesMissingFieldUserMessage = "{!JSENCODE($Label.RulesMissingFieldUserMessage)}";
+              CustomLabel.RuleNameMissing = "{!JSENCODE($Label.RuleNameMissing)}";
+              CustomLabel.MinProductCannotExceedMaxProducts = "{!JSENCODE($Label.MinProductCannotExceedMaxProducts)}";
+              CustomLabel.InvalidLIChargeTypeCondition = "{!JSENCODE($Label.InvalidLIChargeTypeCondition)}";
+              CustomLabel.InvalidPAChargeTypeCondition = "{!JSENCODE($Label.InvalidPAChargeTypeCondition)}";
+              CustomLabel.NoOfMatrixEntryExceeded = "{!JSENCODE($Label.NoOfMatrixEntryExceeded)}";
+              CustomLabel.RuleCloningHeader = "{!JSENCODE($Label.RuleCloningHeader)}";
+              CustomLabel.RuleCloningBody = "{!JSENCODE($Label.RuleCloningBody)}";
+              CustomLabel.RuleCloningNameMandatory = "{!JSENCODE($Label.RuleCloningNameMandatory)}";
+              CustomLabel.EndDatePreferencesForCotermination = "{!JSENCODE($Label.EndDatePreferencesForCotermination)}";
+
+              /* Data Migration */
+              CustomLabel.OrgDetails = "{!JSENCODE($Label.OrgDetails)}";
+              CustomLabel.MetaDataProccessMessage = "{!JSENCODE($Label.MetaDataProccessMessage)}";
+              CustomLabel.TargetOrgDetails = "{!JSENCODE($Label.TargetOrgDetails)}";
+              CustomLabel.TargetOrgUrl = "{!JSENCODE($Label.TargetOrgUrl)}";
+              CustomLabel.TargetOrgUsername = "{!JSENCODE($Label.TargetOrgUsername)}";
+              CustomLabel.TargetOrgPassword = "{!JSENCODE($Label.TargetOrgPassword)}";
+
+              CustomLabel.SourceOrgDetails = "{!JSENCODE($Label.SourceOrgDetails)}";
+              CustomLabel.SourceOrgUrl = "{!JSENCODE($Label.SourceOrgUrl)}";
+              CustomLabel.SourceOrgUsername = "{!JSENCODE($Label.SourceOrgUsername)}";
+              CustomLabel.SourceOrgPassword = "{!JSENCODE($Label.SourceOrgPassword)}";
+              CustomLabel.TargetCompletionEmail = "{!JSENCODE($Label.TargetCompletionEmail)}";
+              CustomLabel.ItemsToMigrate = "{!JSENCODE($Label.ItemsToMigrate)}";
+              CustomLabel.SyncDeleted = "{!JSENCODE($Label.SyncDeleted)}";
+              CustomLabel.LogType = "{!JSENCODE($Label.LogType)}";
+              CustomLabel.ExternalID = "{!JSENCODE($Label.ExternalID)}";
+              CustomLabel.DataMigrationHeader = "{!JSENCODE($Label.DataMigrationHeader)}";
+              CustomLabel.CacheMetaData = "{!JSENCODE($Label.CacheMetaData)}";
+              CustomLabel.DataMigrationSelectProduct = "{!JSENCODE($Label.DataMigrationSelectProduct)}";
+              CustomLabel.ApiEndpoint = "{!JSENCODE($Label.ApiEndpoint)}";
+              CustomLabel.MigrationCompletionNotificationMsg = "{!JSENCODE($Label.MigrationCompletionNotificationMsg)}";
+              CustomLabel.ProceedButton = "{!JSENCODE($Label.ProceedButton)}";
+              CustomLabel.PreCheck = "{!JSENCODE($Label.PreCheck)}";
+              CustomLabel.Migrate = "{!JSENCODE($Label.Migrate)}";
+              CustomLabel.DataMigrationWarning = "{!JSENCODE($Label.DataMigrationWarning)}";
+
+              /* Application Management */ 
+              CustomLabel.ApplicationManagement = "{!JSENCODE($Label.ApplicationManagement)}";
+              CustomLabel.QuickStart = "{!JSENCODE($Label.QuickStart)}";
+              CustomLabel.ActionLabelName = "{!JSENCODE($Label.ActionLabelName)}";
+              CustomLabel.DisplayAs = "{!JSENCODE($Label.DisplayAs)}";
+              CustomLabel.ActionArea = "{!JSENCODE($Label.ActionArea)}";
+              CustomLabel.ActionStyleClass = "{!JSENCODE($Label.ActionStyleClass)}";
+              CustomLabel.StyleClass = "{!JSENCODE($Label.StyleClass)}";
+              CustomLabel.ActionParam = "{!JSENCODE($Label.ActionParam)}";
+              CustomLabel.IsEnabled = "{!JSENCODE($Label.IsEnabled)}";
+              CustomLabel.AlwaysDisplay = "{!JSENCODE($Label.AlwaysDisplay)}";
+              CustomLabel.Behavior = "{!JSENCODE($Label.Behavior)}";
+              CustomLabel.ActionPage = "{!JSENCODE($Label.ActionPage)}";
+              CustomLabel.InstalledProducts = "{!JSENCODE($Label.InstalledProducts)}";
+              CustomLabel.GotoPricing = "{!JSENCODE($Label.GotoPricing)}";
+              CustomLabel.NewTask = "{!JSENCODE($Label.NewTask)}";
+              CustomLabel.NewAction = "{!JSENCODE($Label.NewAction)}";
+              CustomLabel.FlowName = "{!JSENCODE($Label.FlowName)}";
+              CustomLabel.AssetsPage = "{!JSENCODE($Label.AssetsPage)}";
+              CustomLabel.CartPage = "{!JSENCODE($Label.CartPage)}";
+              CustomLabel.CatalogPage = "{!JSENCODE($Label.CatalogPage)}";
+              CustomLabel.OptionsPage = "{!JSENCODE($Label.OptionsPage)}";
+              CustomLabel.ProductAttributeDetailPage = "{!JSENCODE($Label.ProductAttributeDetailPage)}";
+              CustomLabel.Navigation = "{!JSENCODE($Label.Navigation)}";
+              CustomLabel.ApplicationManagementSecurityQuestion = "{!JSENCODE($Label.ApplicationManagementSecurityQuestion)}";
+              CustomLabel.Flow = "{!JSENCODE($Label.Flow)}";
+              CustomLabel.DisplayType = "{!JSENCODE($Label.DisplayType)}";
+              CustomLabel.FieldName = "{!JSENCODE($Label.FieldName)}";
+              CustomLabel.IsSortable = "{!JSENCODE($Label.IsSortable)}";
+              CustomLabel.IsEditable = "{!JSENCODE($Label.IsEditable)}";
+              CustomLabel.IsPricePoint = "{!JSENCODE($Label.IsPricePoint)}";
+              CustomLabel.Style = "{!JSENCODE($Label.Style)}";
+              CustomLabel.HeaderStyle = "{!JSENCODE($Label.HeaderStyle)}";
+              CustomLabel.NoRecordsToDisplay = "{!JSENCODE($Label.NoRecordsToDisplay)}";
+              CustomLabel.DeleteMessageBodyApplicationManagement = "{!JSENCODE($Label.DeleteMessageBodyApplicationManagement)}";
+              CustomLabel.LoadDefaults = "{!JSENCODE($Label.LoadDefaults)}";
+              CustomLabel.NameMustBeEntered = "{!JSENCODE($Label.NameMustBeEntered)}";
+              CustomLabel.NameMustBeUnique = "{!JSENCODE($Label.NameMustBeUnique)}";
+              CustomLabel.ActionLabelMustBeEntered = "{!JSENCODE($Label.ActionLabelMustBeEntered)}";
+              CustomLabel.FieldNameMustBeEntered = "{!JSENCODE($Label.FieldNameMustBeEntered)}";
+
+              /* Smart Search Settings */
+              CustomLabel.SmartSearchSettings = "{!JSENCODE($Label.SmartSearchSettings)}";
+              CustomLabel.SearchConnectionSettings = "{!JSENCODE($Label.SearchConnectionSettings)}";
+              CustomLabel.ProductFieldWeightage = "{!JSENCODE($Label.ProductFieldWeightage)}";
+              CustomLabel.SearchDataSync = "{!JSENCODE($Label.SearchDataSync)}";
+              CustomLabel.EnhancedSearchURL = "{!JSENCODE($Label.EnhancedSearchURL)}";
+              CustomLabel.ApiUserKey = "{!JSENCODE($Label.ApiUserKey)}";
+              CustomLabel.Activate = "{!JSENCODE($Label.Activate)}";
+              CustomLabel.RefreshMetadata = "{!JSENCODE($Label.RefreshMetadata)}";
+              CustomLabel.Refresh = "{!JSENCODE($Label.Refresh)}";
+              CustomLabel.SmartSearchActivateMessage = "{!JSENCODE($Label.SmartSearchActivateMessage)}";
+              CustomLabel.SmartSearchDeactivateMessage = "{!JSENCODE($Label.SmartSearchDeactivateMessage)}";
+              CustomLabel.SmartSearchRefreshMessage = "{!JSENCODE($Label.SmartSearchRefreshMessage)}";
+              CustomLabel.Weightage = "{!JSENCODE($Label.Weightage)}";
+              CustomLabel.Message = "{!JSENCODE($Label.Message)}";
+              CustomLabel.StatusCode = "{!JSENCODE($Label.StatusCode)}";
+              CustomLabel.LastAttemptedSync = "{!JSENCODE($Label.LastAttemptedSync)}";
+              CustomLabel.LastSuccessfulSync = "{!JSENCODE($Label.LastSuccessfulSync)}";
+              CustomLabel.Typeahead = "{!JSENCODE($Label.Typeahead)}";
+              CustomLabel.FieldNameMustBeUnique = "{!JSENCODE($Label.FieldNameMustBeUnique)}";
+              CustomLabel.WeightageMustBeHundred = "{!JSENCODE($Label.WeightageMustBeHundred)}";
+              CustomLabel.TypeaheadMustBeChecked = "{!JSENCODE($Label.TypeaheadMustBeChecked)}";
+
+              /* Object Summary Settings */
+              CustomLabel.ObjectSummarySettings = "{!JSENCODE($Label.ObjectSummarySettings)}";
+              CustomLabel.ObjectName = "{!JSENCODE($Label.ObjectName)}";
+              CustomLabel.DisplayFields = "{!JSENCODE($Label.DisplayFields)}";
+              CustomLabel.ObjectNameMustBeUnique = "{!JSENCODE($Label.ObjectNameMustBeUnique)}";
+              CustomLabel.ObjectNameMustBeEntered = "{!JSENCODE($Label.ObjectNameMustBeEntered)}";
+              CustomLabel.FavoriteConfiguration = "{!JSENCODE($Label.FavoriteConfiguration)}";
+              CustomLabel.Proposal = "{!JSENCODE($Label.Proposal)}";
+              CustomLabel.Product2 = "{!JSENCODE($Label.Product2)}";
+         
+              /* Price List Item */ 
+            CustomLabel.IsTaxable = "{!JSENCODE($Label.IsTaxable)}";
+            CustomLabel.BillingRule = "{!JSENCODE($Label.BillingRule)}";
+            CustomLabel.IsTaxInclusive = "{!JSENCODE($Label.IsTaxInclusive)}";
+            CustomLabel.BillingFrequency = "{!JSENCODE($Label.BillingFrequency)}";
+            CustomLabel.MinUsageQuantity = "{!JSENCODE($Label.MinUsageQuantity)}";
+            CustomLabel.MaxUsageQuantity = "{!JSENCODE($Label.MaxUsageQuantity)}";
+            CustomLabel.PriceIncludedInBundle = "{!JSENCODE($Label.PriceIncludedInBundle)}";
+            CustomLabel.EnableCommitment = "{!JSENCODE($Label.EnableCommitment)}";
+            CustomLabel.IsUsageTierModifiable = "{!JSENCODE($Label.IsUsageTierModifiable)}";
+            CustomLabel.DisableSyncWithOpportunity = "{!JSENCODE($Label.DisableSyncWithOpportunity)}";
+            CustomLabel.DisableAssetIntegration = "{!JSENCODE($Label.DisableAssetIntegration)}";
+            CustomLabel.NoMatricesAvailable = "{!JSENCODE($Label.NoMatricesAvailable)}";
+            CustomLabel.ARAccount = "{!JSENCODE($Label.ARAccount)}";
+            CustomLabel.RevenueRecognitionPolicy = "{!JSENCODE($Label.RevenueRecognitionPolicy)}";
+            CustomLabel.DeferredRevenueAccount = "{!JSENCODE($Label.DeferredRevenueAccount)}";
+            CustomLabel.RevenueSplitPolicy = "{!JSENCODE($Label.RevenueSplitPolicy)}";
+            CustomLabel.RecognizedRevenueAccount = "{!JSENCODE($Label.RecognizedRevenueAccount)}";
+            CustomLabel.UnbilledARAccount = "{!JSENCODE($Label.UnbilledARAccount)}";
+            CustomLabel.UnbilledDeferredAccount = "{!JSENCODE($Label.UnbilledDeferredAccount)}";
+            CustomLabel.DefaultPriceFrom = "{!JSENCODE($Label.DefaultPriceFrom)}";
+            CustomLabel.DefaultQuantityFrom = "{!JSENCODE($Label.DefaultQuantityFrom)}";
+            CustomLabel.DefaultPriceField = "{!JSENCODE($Label.DefaultPriceField)}";
+            CustomLabel.DefaultQuantityField = "{!JSENCODE($Label.DefaultQuantityField)}";
+            CustomLabel.DefaultSellingTerm = "{!JSENCODE($Label.DefaultSellingTerm)}";
+            CustomLabel.AutoUpdateQuantity = "{!JSENCODE($Label.AutoUpdateQuantity)}";
+            CustomLabel.AutoCascadeSellingTerm = "{!JSENCODE($Label.AutoCascadeSellingTerm)}";
+            CustomLabel.AutoRenew = "{!JSENCODE($Label.AutoRenew)}";
+            CustomLabel.AutoRenewalType = "{!JSENCODE($Label.AutoRenewalType)}";
+            CustomLabel.AutoRenewalTerm = "{!JSENCODE($Label.AutoRenewalTerm)}";
+            CustomLabel.RowNum = "{!JSENCODE($Label.RowNum)}";
+            CustomLabel.Field = "{!JSENCODE($Label.Field)}";
+            CustomLabel.PercentAppliesTo = "{!JSENCODE($Label.PercentAppliesTo)}";
+            CustomLabel.Percent = "{!JSENCODE($Label.Percent)}";
+            CustomLabel.RelatedAdjustmentAmountSource = "{!JSENCODE($Label.RelatedAdjustmentAmountSource)}";
+            CustomLabel.AdjustmentAmountSource = "{!JSENCODE($Label.AdjustmentAmountSource)}";
+            CustomLabel.RelatedPriceListItems = "{!JSENCODE($Label.RelatedPriceListItems)}";
+            CustomLabel.EnableDateRange = "{!JSENCODE($Label.EnableDateRange)}";
+            CustomLabel.StartDate = "{!JSENCODE($Label.StartDate)}";
+            CustomLabel.EndDate = "{!JSENCODE($Label.EndDate)}";
+            CustomLabel.Account = "{!JSENCODE($Label.Account)}";
+            CustomLabel.CostModel = "{!JSENCODE($Label.CostModel)}";
+            CustomLabel.NoneAsPickListValue = "{!JSENCODE($Label.NoneAsPickListValue)}";
+            CustomLabel.StandardPrice = "{!JSENCODE($Label.StandardPrice)}";
+            CustomLabel.OneTime = "{!JSENCODE($Label.OneTime)}";
+            CustomLabel.PerUnit = "{!JSENCODE($Label.PerUnit)}";
+            CustomLabel.Recurring = "{!JSENCODE($Label.Recurring)}";
+            CustomLabel.Usage = "{!JSENCODE($Label.Usage)}";
+            CustomLabel.PriceUom = "{!JSENCODE($Label.PriceUom)}";
+            CustomLabel.MinMaxPriceAppliesTo = "{!JSENCODE($Label.MinMaxPriceAppliesTo)}";
+            CustomLabel.MinPrice = "{!JSENCODE($Label.MinPrice)}";
+            CustomLabel.MaxPrice = "{!JSENCODE($Label.MaxPrice)}";
+            CustomLabel.SubType = "{!JSENCODE($Label.SubType)}";
+            CustomLabel.RuleInclusionDefaultMessage = "{!JSENCODE($Label.RuleInclusionDefaultMessage)}";
+            CustomLabel.RuleExclusionDefaultMessage = "{!JSENCODE($Label.RuleExclusionDefaultMessage)}";
+            CustomLabel.RuleReplacementDefaultMessage = "{!JSENCODE($Label.RuleReplacementDefaultMessage)}";
+            CustomLabel.RuleRecommendationDefaultMessage = "{!JSENCODE($Label.RuleRecommendationDefaultMessage)}";
+            CustomLabel.RuleValidationErrorDefaultMessage = "{!JSENCODE($Label.RuleValidationErrorDefaultMessage)}";
+            CustomLabel.RuleValidationWarningDefaultMessage = "{!JSENCODE($Label.RuleValidationWarningDefaultMessage)}";
+            CustomLabel.Warning = "{!JSENCODE($Label.Warning)}";
+            CustomLabel.RTEExceedsLimitBody = "{!JSENCODE($Label.RTEExceedsLimitBody)}";
+            CustomLabel.RTEExceedsLimitNote = "{!JSENCODE($Label.RTEExceedsLimitNote)}";
+            CustomLabel.SearchFilterFields = "{!JSENCODE($Label.SearchFilterFields)}";
+            CustomLabel.NewPriceRuleset = "{!JSENCODE($Label.NewPriceRuleset)}";
+            CustomLabel.NoMatchingPriceRuleset = "{!JSENCODE($Label.NoMatchingPriceRuleset)}";
+            CustomLabel.ApplicationLevel = "{!JSENCODE($Label.ApplicationLevel)}";
+            CustomLabel.ApplicationMethod = "{!JSENCODE($Label.ApplicationMethod)}";
+            CustomLabel.AllPriceRuleSets = "{!JSENCODE($Label.AllPriceRuleSets)}";
+            CustomLabel.NoMatchingPriceRuleSets = "{!JSENCODE($Label.NoMatchingPriceRuleSets)}";
+            CustomLabel.PriceRuleSetName = "{!JSENCODE($Label.PriceRuleSetName)}";
+            CustomLabel.PriceRuleSet = "{!JSENCODE($Label.PriceRuleSet)}";
+            CustomLabel.StopProcessingMoreRules = "{!JSENCODE($Label.StopProcessingMoreRules)}";
+            CustomLabel.EnableCurrency = "{!JSENCODE($Label.EnableCurrency)}";
+            CustomLabel.ProductFamily = "{!JSENCODE($Label.ProductFamily)}";
+            CustomLabel.ProductCategory = "{!JSENCODE($Label.ProductCategory)}";
+            CustomLabel.ProductGroup = "{!JSENCODE($Label.ProductGroup)}";
+            CustomLabel.RulesetCriteria = "{!JSENCODE($Label.RulesetCriteria)}";
+            CustomLabel.AdjustmentAppliesTo = "{!JSENCODE($Label.AdjustmentAppliesTo)}";
+            CustomLabel.AllowableAction = "{!JSENCODE($Label.AllowableAction)}";
+            CustomLabel.RuleType = "{!JSENCODE($Label.RuleType)}";
+            CustomLabel.AdjustmentChargeType = "{!JSENCODE($Label.AdjustmentChargeType)}";
+            CustomLabel.AllowRemovalOfAdjustment = "{!JSENCODE($Label.AllowRemovalOfAdjustment)}";
+            CustomLabel.InclusionMethod = "{!JSENCODE($Label.InclusionMethod)}";
+            CustomLabel.MinQuantity = "{!JSENCODE($Label.MinQuantity)}";
+            CustomLabel.MaxQuantity = "{!JSENCODE($Label.MaxQuantity)}";
+            CustomLabel.PriceRules = "{!JSENCODE($Label.PriceRules)}";
+            CustomLabel.NewPriceRule = "{!JSENCODE($Label.NewPriceRule)}";
+            CustomLabel.NoPriceRulesAvailable = "{!JSENCODE($Label.NoPriceRulesAvailable)}";
+            CustomLabel.ConditionPriceRuleRequired = "{!JSENCODE($Label.ConditionPriceRuleRequired)}";
+            CustomLabel.PricingManagePriceRuleset = "{!JSENCODE($Label.PricingManagePriceRuleset)}";
+            CustomLabel.ShowRulesForOptions = "{!JSENCODE($Label.ShowRulesForOptions)}";
+            CustomLabel.SecurityQuestion = "{!JSENCODE($Label.SecurityQuestion)}";
+            CustomLabel.WrongPassword = "{!JSENCODE($Label.WrongPassword)}";
+            CustomLabel.DMSecurityQuestion = "{!JSENCODE($Label.DMSecurityQuestion)}";
+            CustomLabel.Owner = "{!JSENCODE($Label.Owner)}";
+            CustomLabel.GuidePage = "{!JSENCODE($Label.GuidePage)}";
+            CustomLabel.ContractNumber = "{!JSENCODE($Label.ContractNumber)}";
+            CustomLabel.ProductMigration = "{!JSENCODE($Label.ProductMigration)}";
+            CustomLabel.CacheMetaDataSuccessMsg = "{!JSENCODE($Label.CacheMetaDataSuccessMsg)}";
+            CustomLabel.Error = "{!JSENCODE($Label.Error)}";
+            CustomLabel.ErrInsecureResponse = "{!JSENCODE($Label.ErrInsecureResponse)}";
+            CustomLabel.ErrInsecureResponseMsg = "{!JSENCODE($Label.ErrInsecureResponseMsg)}";
+            CustomLabel.Category = "{!JSENCODE($Label.Category)}";
+            CustomLabel.NoOfPriceRuleEntryExceeded = "{!JSENCODE($Label.NoOfPriceRuleEntryExceeded)}";
+            CustomLabel.ProductConstraintRuleError = "{!JSENCODE($Label.ProductConstraintRuleError)}";
+            CustomLabel.FormDescriptionMaxCharError = "{!JSENCODE($Label.FormDescriptionMaxCharError)}";
+            CustomLabel.FinanceAndRevenue = "{!JSENCODE($Label.FinanceAndRevenue)}";
+            CustomLabel.Matrices = "{!JSENCODE($Label.Matrices)}";
+            CustomLabel.Defaults = "{!JSENCODE($Label.Defaults)}";
+            CustomLabel.TaxAndBilling = "{!JSENCODE($Label.TaxAndBilling)}";
+            CustomLabel.Miscellaneous = "{!JSENCODE($Label.Miscellaneous)}";
+            
+            /* Favourite Settings */
+            CustomLabel.FavoritesSettings = "{!JSENCODE($Label.FavoritesSettings)}";
+            CustomLabel.IsFavSettingsActive = "{!JSENCODE($Label.IsFavSettingsActive)}";
+            CustomLabel.FavSettingsCategoryImage = "{!JSENCODE($Label.FavSettingsCategoryImage)}";
+            CustomLabel.FavSettingsConnfigCol1 = "{!JSENCODE($Label.FavSettingsConnfigCol1)}";
+            CustomLabel.FavSettingsConnfigCol2 = "{!JSENCODE($Label.FavSettingsConnfigCol2)}";
+            CustomLabel.FavSettingsDialogColumns = "{!JSENCODE($Label.FavSettingsDialogColumns)}";
+            CustomLabel.FavoriteFilterFields = "{!JSENCODE($Label.FavoriteFilterFields)}";
+            CustomLabel.FavSettingsSaveSuccess = "{!JSENCODE($Label.FavSettingsSaveSuccess)}";
+            CustomLabel.FieldLengthErrorMessage = "{!JSENCODE($Label.FieldLengthErrorMessage)}";
+            CustomLabel.DeleteImage = "{!JSENCODE($Label.DeleteImage)}";
+
+            /* Lookup Field Settings */
+            CustomLabel.LookupFieldSettings = "{!JSENCODE($Label.LookupFieldSettings)}";
+            CustomLabel.NewLookupField = "{!JSENCODE($Label.NewLookupField)}";
+            CustomLabel.ProductAttribute = "{!JSENCODE($Label.ProductAttribute)}";
+            CustomLabel.LookupFieldName = "{!JSENCODE($Label.LookupFieldName)}";
+            CustomLabel.FilterCriteria = "{!JSENCODE($Label.FilterCriteria)}";
+            CustomLabel.LookupDisplayColumns = "{!JSENCODE($Label.LookupDisplayColumns)}";
+            CustomLabel.CollaborationRequest = "{!JSENCODE($Label.CollaborationRequest)}";
+            CustomLabel.LookupRecordLimit = "{!JSENCODE($Label.LookupRecordLimit)}";
+            CustomLabel.JunctionDefaultFlag = "{!JSENCODE($Label.JunctionDefaultFlag)}";
+            CustomLabel.JunctionObjectName = "{!JSENCODE($Label.JunctionObjectName)}";
+            CustomLabel.JunctionFieldName = "{!JSENCODE($Label.JunctionFieldName)}";
+            CustomLabel.AddNewCriteria = "{!JSENCODE($Label.AddNewCriteria)}";
+            CustomLabel.AdvancedOptions = "{!JSENCODE($Label.AdvancedOptions)}";
+            CustomLabel.ClearAdvancedOptions = "{!JSENCODE($Label.ClearAdvancedOptions)}";
+
+            /* Price Dimension */
+            CustomLabel.ContextType = "{!JSENCODE($Label.ContextType)}";
+            CustomLabel.BusinessObject = "{!JSENCODE($Label.BusinessObject)}";
+            CustomLabel.RelationType = "{!JSENCODE($Label.RelationType)}";
+            CustomLabel.ManagePriceDimension = "{!JSENCODE($Label.ManagePriceDimension)}";
+            CustomLabel.NewPriceDimension = "{!JSENCODE($Label.NewPriceDimension)}";
+            CustomLabel.AllPriceDimensions = "{!JSENCODE($Label.AllPriceDimensions)}";
+            CustomLabel.NoMatchingPriceDimensions = "{!JSENCODE($Label.NoMatchingPriceDimensions)}";
+            CustomLabel.CumulativeDimension = "{!JSENCODE($Label.CumulativeDimension)}";
+            CustomLabel.FormulaField = "{!JSENCODE($Label.FormulaField)}";
+            CustomLabel.YouHaveSelected = "{!JSENCODE($Label.YouHaveSelected)}";
+            CustomLabel.APIName = "{!JSENCODE($Label.APIName)}";
+
+            /* Price Pipeline */
+            CustomLabel.ManagePricePipeline = "{!JSENCODE($Label.ManagePricePipeline)}";
+            CustomLabel.NewPricePipeline = "{!JSENCODE($Label.NewPricePipeline)}";
+            CustomLabel.NoMatchingPricePipelines = "{!JSENCODE($Label.NoMatchingPricePipelines)}";
+            CustomLabel.DefinePricePoints = "{!JSENCODE($Label.DefinePricePoints)}";
+            CustomLabel.PipelineCriteria = "{!JSENCODE($Label.PipelineCriteria)}";
+            CustomLabel.AdjustmentGrouping = "{!JSENCODE($Label.AdjustmentGrouping)}";
+            CustomLabel.WaterfallSetup = "{!JSENCODE($Label.WaterfallSetup)}";
+            
+            /* Price Pipeline Ruleset */
+            CustomLabel.ManagePricePipelineRuleset = "{!JSENCODE($Label.ManagePricePipelineRuleset)}";
+            CustomLabel.NewPricePipelineRuleset = "{!JSENCODE($Label.NewPricePipelineRuleset)}";
+            CustomLabel.NewPricePipelineRule = "{!JSENCODE($Label.NewPricePipelineRule)}";
+            CustomLabel.NoMatchingPricePipelineRuleset = "{!JSENCODE($Label.NoMatchingPricePipelineRuleset)}";
+            CustomLabel.AllPricePipelineRuleSets = "{!JSENCODE($Label.AllPricePipelineRuleSets)}";
+            CustomLabel.PricePipelineRules = "{!JSENCODE($Label.PricePipelineRules)}";
+            CustomLabel.PricePointSource = "{!JSENCODE($Label.PricePointSource)}";
+            CustomLabel.TargetPricePoints = "{!JSENCODE($Label.TargetPricePoints)}";
+
+            /* Price Points */
+            CustomLabel.NewPricePoint = "{!JSENCODE($Label.NewPricePoint)}";
+            CustomLabel.NoMatchingPricePoints = "{!JSENCODE($Label.NoMatchingPricePoints)}";
+
+            /* Cart Views */
+            CustomLabel.View = "{!JSENCODE($Label.View)}";
+            CustomLabel.GroupBy = "{!JSENCODE($Label.GroupBy)}";
+            CustomLabel.MakePublic = "{!JSENCODE($Label.MakePublic)}";
+            CustomLabel.UserTypes = "{!JSENCODE($Label.UserTypes)}";
+            CustomLabel.Users = "{!JSENCODE($Label.Users)}";
+            CustomLabel.UserProfiles = "{!JSENCODE($Label.UserProfiles)}";
+            CustomLabel.UserRoles = "{!JSENCODE($Label.UserRoles)}";
+            CustomLabel.AvailableUsers = "{!JSENCODE($Label.AvailableUsers)}";
+            CustomLabel.SelectedUsers = "{!JSENCODE($Label.SelectedUsers)}";
+            CustomLabel.AvailableUserProfiles = "{!JSENCODE($Label.AvailableUserProfiles)}";
+            CustomLabel.SelectedUserProfiles = "{!JSENCODE($Label.SelectedUserProfiles)}";
+            CustomLabel.AvailableUserRoles = "{!JSENCODE($Label.AvailableUserRoles)}";
+            CustomLabel.SelectedUserRoles = "{!JSENCODE($Label.SelectedUserRoles)}";
+            CustomLabel.CartColumn = "{!JSENCODE($Label.CartColumn)}";
+            CustomLabel.New = "{!JSENCODE($Label.New)}";
+            CustomLabel.PleaseSelectUser = "{!JSENCODE($Label.PleaseSelectUser)}";
+            CustomLabel.PleaseSelectUserProfile = "{!JSENCODE($Label.PleaseSelectUserProfile)}";
+            CustomLabel.PleaseSelectUserRole = "{!JSENCODE($Label.PleaseSelectUserRole)}";
+            CustomLabel.DeleteView = "{!JSENCODE($Label.DeleteView)}";
+            CustomLabel.Left = "{!JSENCODE($Label.Left)}";
+            CustomLabel.Middle = "{!JSENCODE($Label.Middle)}";
+            CustomLabel.Right = "{!JSENCODE($Label.Right)}";
+            CustomLabel.PleaseSelectColumnField = "{!JSENCODE($Label.PleaseSelectColumnField)}";
+            CustomLabel.MandatoryFieldsWarning = "{!JSENCODE($Label.MandatoryFieldsWarning)}";
+
+            /* Visibility Rules */
+            CustomLabel.ManageVisibilityRules = "{!JSENCODE($Label.ManageVisibilityRules)}";
+            CustomLabel.FilterType = "{!JSENCODE($Label.FilterType)}";
+            CustomLabel.ValueObject = "{!JSENCODE($Label.ValueObject)}";
+            CustomLabel.InclusionCriteria = "{!JSENCODE($Label.InclusionCriteria)}";
+            CustomLabel.SearchVisibilityRules = "{!JSENCODE($Label.SearchVisibilityRules)}";
+            CustomLabel.NewVisibilityRule = "{!JSENCODE($Label.NewVisibilityRule)}";
+            CustomLabel.AllVisibilityRules = "{!JSENCODE($Label.AllVisibilityRules)}";
+            CustomLabel.NoMatchingVisibilityRules = "{!JSENCODE($Label.NoMatchingVisibilityRules)}";
+            CustomLabel.MapTo = "{!JSENCODE($Label.MapTo)}";
+            CustomLabel.SelectBusinessObject = "{!JSENCODE($Label.SelectBusinessObject)}";
+
+            /* Product Graph Page */
+            CustomLabel.Option = "{!JSENCODE($Label.Option)}";
+            CustomLabel.Root = "{!JSENCODE($Label.Root)}";
+
+            /* Promotions */
+            CustomLabel.Promotions = "{!JSENCODE($Label.Promotions)}";
+            CustomLabel.ManageExclusionLists = "{!JSENCODE($Label.ManageExclusionLists)}";
+            CustomLabel.NoMatchingPromotionsExclusionList = "{!JSENCODE($Label.NoMatchingPromotionsExclusionList)}";
+            CustomLabel.NewExclusionList = "{!JSENCODE($Label.NewExclusionList)}";
+            CustomLabel.ProductScope = "{!JSENCODE($Label.ProductScope)}";
+            CustomLabel.ProductGroupScope = "{!JSENCODE($Label.ProductGroupScope)}";
+            CustomLabel.ApplicationType = "{!JSENCODE($Label.ApplicationType)}";
+            CustomLabel.AllPromotionExclusionLists = "{!JSENCODE($Label.AllPromotionExclusionLists)}";
+
+            /* Formula Fields */
+            CustomLabel.ManageCPQFormulaFields = "{!JSENCODE($Label.ManageCPQFormulaFields)}";
+            CustomLabel.NewFormulaField = "{!JSENCODE($Label.NewFormulaField)}";
+            CustomLabel.NoMatchingFormulaField = "{!JSENCODE($Label.NoMatchingFormulaField)}";
+            CustomLabel.UseType = "{!JSENCODE($Label.UseType)}";
+            CustomLabel.Formula = "{!JSENCODE($Label.Formula)}";
+            CustomLabel.BusinessObject = "{!JSENCODE($Label.BusinessObject)}";
+            
+            /*Field Expressions */
+            CustomLabel.ManageFieldExpressions = "{!JSENCODE($Label.ManageFieldExpressions)}";
+            CustomLabel.NewFieldExpression = "{!JSENCODE($Label.NewFieldExpression)}";
+            CustomLabel.SearchFieldExpressions = "{!JSENCODE($Label.SearchFieldExpressions)}";
+            CustomLabel.UpdateField = "{!JSENCODE($Label.UpdateField)}";
+            CustomLabel.IsModifiable = "{!JSENCODE($Label.IsModifiable)}";
+            CustomLabel.ExpressionType = "{!JSENCODE($Label.ExpressionType)}";
+            CustomLabel.ExpressionContext = "{!JSENCODE($Label.ExpressionContext)}";
+            CustomLabel.SourceObject = "{!JSENCODE($Label.SourceObject)}";
+            CustomLabel.FilterExpression = "{!JSENCODE($Label.FilterExpression)}";
+            CustomLabel.UpdateObject = "{!JSENCODE($Label.UpdateObject)}";
+            CustomLabel.FieldUpdate = "{!JSENCODE($Label.FieldUpdate)}";
+            CustomLabel.RecordUpdate = "{!JSENCODE($Label.RecordUpdate)}";
+            CustomLabel.HeaderLevel = "{!JSENCODE($Label.HeaderLevel)}";
+            CustomLabel.UpdateFieldExpressionCriteriaFields = "{!JSENCODE($Label.UpdateFieldExpressionCriteriaFields)}"; 
+            CustomLabel.Processing = "{!JSENCODE($Label.Processing)}";           
+            CustomLabel.Completed = "{!JSENCODE($Label.Completed)}";       
+            CustomLabel.NoMatchingFieldExpressions = "{!JSENCODE($Label.NoMatchingFieldExpressions)}";       
+            CustomLabel.NetPrice = "{!JSENCODE($Label.NetPrice)}";
+            CustomLabel.CustomSettingsMaintenance = "{!JSENCODE($Label.CustomSettingsMaintenance)}";       
+            
+             /* Roll Ups */
+            CustomLabel.ManageRollups = "{!JSENCODE($Label.ManageRollups)}";
+            CustomLabel.SearchRollups = "{!JSENCODE($Label.SearchRollups)}";
+            CustomLabel.NewRollup = "{!JSENCODE($Label.NewRollup)}";
+            CustomLabel.RollupName = "{!JSENCODE($Label.RollupName)}";
+            CustomLabel.Rollup = "{!JSENCODE($Label.Rollup)}";
+            CustomLabel.LineItemRollup = "{!JSENCODE($Label.LineItemRollup)}";
+            CustomLabel.SUM = "{!JSENCODE($Label.SUM)}";
+            CustomLabel.MIN = "{!JSENCODE($Label.MIN)}";
+            CustomLabel.MAX = "{!JSENCODE($Label.MAX)}";
+            CustomLabel.AVG = "{!JSENCODE($Label.AVG)}";
+            CustomLabel.NoMatchingRollupExpressions = "{!JSENCODE($Label.NoMatchingRollupExpressions)}";
+            CustomLabel.Search = "{!JSENCODE($Label.Search)}";
+            CustomLabel.AllFieldExpressions = "{!JSENCODE($Label.AllFieldExpressions)}";
+            CustomLabel.AllRollups = "{!JSENCODE($Label.AllRollups)}";
+            CustomLabel.ManageCurrencyConversion = "{!JSENCODE($Label.ManageCurrencyConversion)}";
+            CustomLabel.RowRequiredFieldsMessage = "{!JSENCODE($Label.RowRequiredFieldsMessage)}";
+            CustomLabel.DatedCurrencyExchangeRates = "{!JSENCODE($Label.DatedCurrencyExchangeRates)}";
+            CustomLabel.AddNewConversion = "{!JSENCODE($Label.AddNewConversion)}";
+            CustomLabel.CurrencyFrom = "{!JSENCODE($Label.CurrencyFrom)}";
+            CustomLabel.CurrencyTo = "{!JSENCODE($Label.CurrencyTo)}";
+            CustomLabel.ExchangeRate = "{!JSENCODE($Label.ExchangeRate)}";
+            CustomLabel.RateType = "{!JSENCODE($Label.RateType)}";
+            CustomLabel.ClickHere = "{!JSENCODE($Label.ClickHere)}";
+            CustomLabel.CustomSettingsMaintenanceJob = "{!JSENCODE($Label.CustomSettingsMaintenanceJob)}";
+
+            CustomLabel.OfferingAndOptionGroup = "{!JSENCODE($Label.OfferingANDOptionGroup)}";
+            CustomLabel.OptionGroupAndOffering = "{!JSENCODE($Label.OptionGroupANDOffering)}";
+            CustomLabel.LookupObjectFields = "{!JSENCODE($Label.LookupObjectFields)}";
+            CustomLabel.EnableQuickView = "{!JSENCODE($Label.EnableQuickView)}";
+
+            var CustomField = {};
+
+              translation["CustomLabel"] = CustomLabel;
+              translation["CustomField"] = CustomField;
+
+              if (typeof angular !== "undefined") {
+                  var labelConfig = function (i18nServiceProvider) {
+                  i18nServiceProvider.setCustomLabel(CustomLabel);
+                  i18nServiceProvider.setCustomField(CustomField);
+                };
+                labelConfig.$inject = ['i18nServiceProvider'];
+                CPQAdminApp.config(labelConfig);
+
+              }
+        </script>
+        </body>
+</apex:page>

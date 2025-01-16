@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Validate_Illumina_Review_ActivityClosure</fullName>
+    <active>true</active>
+    <description>Validate if the logged in user has the necessary permissions to close the Illumina review activities.</description>
+    <errorConditionFormula>AND( 
+    /*bypass-start*/
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    NOT($Profile.Name ==$Label.Integration_SAP_Service), 
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($Profile.Name ==$Label.Profile_Commercial_and_Revenue_Operations),
+    NOT($Profile.Name ==$Label.ProfileFieldService),
+    /*custom permissions for CS Field Service Ops Perm Set Group. 
+				if it has below all permissions, then only bypass the validation.*/
+    NOT(AND(
+        $Permission.Parts_Order_Line_Lock,
+        $Permission.SL_Allow_Agreement_Tableau_Report,
+        $Permission.SS_Edit_Tool_Replenishment_Cost_Center,
+        $Permission.SS_Pre_Sales_Work_Order,
+        $Permission.SS_Service_Ops_Edit_Custom_Perm,
+        $Permission.SS_Stock_Transfer,
+        $Permission.SS_ByPass_Case_Lock,
+        $Permission.SS_Bypass_Work_Order_Lock,
+        $Permission.SS_Edit_Onsite_Response_Due_Date
+        )
+    ),
+    /*bypass-end*/
+
+    NOT( ISNEW() ),
+    TEXT( SVMXC__Activity_Type__c) == $Label.WorkDetailActivityIlluminaReview,
+    ISCHANGED(SVMXC__Line_Status__c),
+    TEXT(SVMXC__Line_Status__c) == $Label.Closed
+)</errorConditionFormula>
+    <errorMessage>You don&apos;t have necessary permissions to close this Illumina Review Activity.</errorMessage>
+</ValidationRule>

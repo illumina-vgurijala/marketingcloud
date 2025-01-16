@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckBIWithoutSONoPONoTrackNoDelivery</fullName>
+    <active>true</active>
+    <description>Prevent user to close the Business Issue cases if SO,PO,Track, Delivery is not populated for  Sub-type = General Issues and Category = Logistics / Supply Chain.</description>
+    <errorConditionFormula>AND(
+   NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+	ISCHANGED(Status),
+    OR(
+        TEXT(Status) = $Label.CaseStatusCompleted,
+        TEXT(Status) = $Label.CaseStatusPendingQAReview,
+        TEXT(Status) = $Label.CaseStatusPendingLogisticsReview,
+        TEXT(Status) = $Label.CaseStatusClosed
+      ),
+	TEXT(Sub_Type__c) == $Label.CaseSubTypeGeneralIssue,
+	TEXT(Category__c) == $Label.CaseCategoryLogistics,
+	RecordType.Name == $Label.CaseRecordTypeBusinessIssue,
+    AND(
+        ISBLANK(Original_Sales_Order_Number__c),
+        ISBLANK(Customer_Purchase_Order_Number__c),
+        ISBLANK(Shipment_Tracking_Number__c),
+        ISBLANK(Delivery_Number__c)
+    )
+)</errorConditionFormula>
+    <errorMessage>General Issue cases with the category &quot;Shipping/Logistics&quot; require a link to the order. Fill in either the Original Sales Order Number OR Customer Purchase Order Number OR Shipment Tracking Number OR Delivery Number.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

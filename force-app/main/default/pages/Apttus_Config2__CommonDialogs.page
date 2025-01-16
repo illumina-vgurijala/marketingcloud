@@ -1,0 +1,101 @@
+<!-- 
+    Apttus Config & Pricing
+    CommonDialogs
+     
+    @2012-2013 Apttus Inc. All rights reserved.
+ -->
+<apex:page lightningStylesheets="true">
+	<script>
+		j$.APTTUS.LoadingPageLabel = '{!JSINHTMLENCODE($Label.LoadingPage)}';
+		j$.APTTUS.abandonConfirmationLabel = "{!JSINHTMLENCODE($Label.AbandonConfirmation)}";
+		
+		j$("body").on(".aptRemoveItemDialog", "click", function(e){
+			e.stopPropagation();
+		});
+		
+		function aptCommonDeleteLineItem(){
+			j$('.aptActionStatus-'+j$.APTTUS.lineItemNumber).show(); j$('.aptRemoveLineItemSpinner').show(); 
+			invokeDoDeleteLineItem();			
+		}
+	</script>
+	<apex:form >
+		<!-- Product Details Dialog -->
+		<div id="productDetailPanel" style="display: none">
+			<apex:outputLabel style="font-weight: bold;font-size: 91%;" value="{!$ObjectType.Product2.Fields.Description.Label} : " for="ctxProductDescription"/>
+			<span id="ctxProductDescription">Hello Description</span>
+		</div>
+		<!-- Product Removal Confirmation Dialog-->
+		<div id="confirmationPanelJQuery" class="aptRemoveItemDialog" style="display: none">
+			<div><apex:outputText value="{!$Label.apttus_config2__removeproductmessage}" /></div>
+			<br />
+			<div style="text-align: center; padding-left: 4px;">
+				<span style="padding: 2px;">
+                	<img class="aptRemoveLineItemSpinner" style="display:none;" src="/img/loading.gif"/>
+                </span>
+				<apex:commandButton value="{!$Label.apttus_config2__yes}" 
+				                    onclick="aptCommonDeleteLineItem(); return false;"           
+									immediate="true"                                        
+									style="width: 50px; height: 30px;"
+									status="buttonActionStatus"/> 
+	
+				<apex:commandButton value="{!$Label.apttus_config2__no}"                                        
+				                    onclick="j$.APTTUS.hideRemoveConfirmation();j$('.aptActionStatus-'+j$.APTTUS.LineNumber).hide(); j$('#RemoveItem img').remove();return false;" 
+									style="width: 50px; height: 30px;"/>
+
+			</div>
+		</div>
+		<!-- Pricing Wait Dialog -->
+		<div id="pricingWaitPanel" style="display: none">
+			<div style="text-align: center; veritical-align: middle; font-weight: bold; margin-bottom: 20px;">{!$Label.UpdatingPricePleaseWait}</div>
+			<div style="text-align: center; veritical-align: middle;">
+				<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>
+			</div>
+        </div>
+		<!-- Abandon Cart Confirmation Dialog -->
+		<div id="abandonConfirmationPanel" style="display: none">
+			<div><apex:outputText value="{!$Label.apttus_config2__abandoncartmessage}" /></div>
+			<br />
+			<div style="text-align: center; padding-left: 4px;">
+				<apex:commandButton value="{!$Label.apttus_config2__yes}" 
+				                   	onclick="invokeDoAbandon(); return false;"           
+									immediate="true"                                        
+									style="width: 50px; height: 30px;"
+					                status="buttonActionStatus"/> 
+					                
+					                
+				<apex:commandButton value="{!$Label.apttus_config2__no}"                                        
+									onclick="j$.APTTUS.hideAbandonConfirmationDialog();j$('#Abandon img').remove();"
+									immediate="true"                                        
+									style="width: 50px; height: 30px;"
+					                status="buttonActionStatus"/>
+					                
+				<apex:actionFunction name="refreshButtons" rerender="idCommands, cartTopContainer"/>
+			</div>
+		</div>
+		<!-- Loading Wait Panel -->
+		<div id="loadingWaitPanel" style="display: none">
+			<div style="text-align: center; veritical-align: middle; font-weight: bold; margin-bottom: 20px;">{!$Label.LoadingPage}</div>
+			<div style="text-align: center; veritical-align: middle;">
+				<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>
+			</div>
+		</div>
+		
+	</apex:form>
+	<!--  display time line, this is a hidden developer tool, avoid custom label -->
+	<div id="timeLine" style="position: absolute; left: 70%; top: 5%; padding: 5px; border: 1px solid lightblue; background: white; visibility: hidden;">
+		<table>
+			<thead style="background: lightyellow"><tr><td style="text-align: center;">Function</td><td>EndTime</td><td>TimeTaken</td></tr></thead>
+			<tbody id="timeRows"></tbody>
+			<tr>
+				<td style="width: 80px;">
+					<input type="button" value="Clear" onclick="j$.TIME_TRACKER = [];document.getElementById('timeRows').innerHTML='';" style="font-size: 8px;"/>
+				</td>
+				<td id="averageTime" style="width: 40px; border-top: 2px; text-align: right; color: red;">
+				</td>
+				<td style="width: 30px; border-top: 2px; text-align: right; color: red;">
+				</td>
+			</tr>
+		</table>
+	</div>
+	
+</apex:page>

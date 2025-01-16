@@ -1,0 +1,328 @@
+<apex:page lightningStylesheets="true" showHeader="false" 
+    sidebar="false" 
+    applyBodyTag="false" 
+    applyHtmlTag="false" 
+    standardStylesheets="false"
+    controller="Apttus_Config2.IncentiveRemoteActionController">
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/paginator/paginatorDirective.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'js/apttusUtils-1.0.js')}"/>
+
+    <!--Main application setup/routes-->
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/js/ng-lodash.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/directives/apt-dropdown.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/aptBase.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/aptPrototypes.js')}" />
+
+    <!-- Utility Services -->
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/services/actionQueueService.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/services/i18nService.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/services/utilService.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/services/objectConstantsService.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/numberToCurrencyFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/currencyToNumberFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/numberToQuantityFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/quantityToNumberFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/numberToPercentFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/dateToStringFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/stringToDateFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/filters/truncateTextFilter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/services/queueWrapperService.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, '/aptBase/services/remoteService.js')}"/>
+
+    <script type="text/javascript">
+        (function (angular) {
+
+            angular.module('incentivesApp', ['sharedWidgetsApp', 'aptBase']);
+
+            // register dirPagination and AppConfig for usage in widgets
+            angular.module('sharedWidgetsApp', ['AppConfig','angularUtils.directives.dirPagination']);
+
+            angular.module('incentivesApp').controller('mainController', ['$scope', '$compile', function($scope, $compile) {
+                $scope.activateView = function(ele) {
+                    $compile(ele.contents())($scope);
+                };
+            }]);
+
+            //Configure Modules
+            baseConfig.$inject = ['aptBase.RemoteServiceProvider', 'aptBase.i18nServiceProvider'];
+            angular.module('aptBase').config(baseConfig);
+
+            function baseConfig(RemoteServiceProvider, i18nServiceProvider) {
+                // Extracting user locale preference from visualforce.
+                var userSettings = {};
+                try {
+                    userSettings = getUserSettings();
+                    // If any properties are undefined, the provider will use en_US defaults. 
+                    i18nServiceProvider.setDateTemplate(userSettings.dateTemplate);
+                    i18nServiceProvider.setCurrencyTemplate(userSettings.currencyTemplate);
+                    i18nServiceProvider.setQuantityTemplate(userSettings.quantityTemplate);
+                    i18nServiceProvider.setPrecision(userSettings.precisionMap);
+                    i18nServiceProvider.setLocale(userSettings.locale);
+                    i18nServiceProvider.setDateFormat(userSettings.dateFormat);
+                
+                } catch (ex) {
+                    if (console && typeof console.info === 'function') {
+                        console.info('Could not extract user locale settings. Defaulting to en_US');
+                    
+                    }
+
+                }
+
+                /**
+                 * Resolve VF remote names and configure their behavior.
+                 * Each key in this object is used to reference a VF remote aciton.
+                 * Each can be:
+                 *  - String: the resolved name of the remote action;
+                 *  - Object with properties:
+                 *          actionName: the resolved name of the remote action,
+                 *          skipLoader: if true, action does affect progress-indicator. Default false.
+                 * 
+                 */
+                var remoteActions = {
+                    searchMilestones: '{!$RemoteAction.IncentiveRemoteActionController.advancedSearchMilestones}',
+                    advancedSearch: '{!$RemoteAction.IncentiveRemoteActionController.doAdvancedSearch}',
+                    getIncentiveInfo: '{!$RemoteAction.IncentiveRemoteActionController.getIncentiveInfo}',
+                    getIncentiveLimits: '{!$RemoteAction.IncentiveRemoteActionController.getIncentiveLimits}',
+                    getIncentiveScope: '{!$RemoteAction.IncentiveRemoteActionController.getIncentiveScope}',
+                    searchProducts: '{!$RemoteAction.IncentiveRemoteActionController.searchProducts}',
+                    searchAccounts: '{!$RemoteAction.IncentiveRemoteActionController.searchAccounts}'
+                };
+
+                RemoteServiceProvider.setRemoteActions(remoteActions);
+                // Need retURL or other url for redirect. Default is to redirect to '/'. 
+                RemoteServiceProvider.setRedirectLocation('{!JSENCODE($CurrentPage.parameters.retURL)}');
+                // Set flag true to overrides skipLoader flags of RemoteActions and show loader all remoteServiceCalls.     
+                RemoteServiceProvider.setTrackAllRemoteCalls(false);
+            }
+
+            /**
+             * Extract VF-resolved date and currency formatting according to user preference
+             * @return {Object}
+             */
+            function getUserSettings() {
+                var userSettings = {
+                    currencyTemplate: getCurrencyTemplate(),
+                    quantityTemplate: getQuantityTemplate(),
+                    dateTemplate: getDateTemplate(),
+                    precisionMap: getPrecisionMap()
+                };
+                if (typeof UserContext !== 'undefined') {
+                    userSettings.locale = UserContext.locale;
+                    userSettings.dateFormat = UserContext.dateFormat;
+
+                }
+                return userSettings;
+
+                //Helper function to get text from output field by id.
+                function getOutputFieldText(fieldId) {
+                    var fieldElement = document.querySelector('#' + fieldId + ' span');
+                    if (fieldElement) {
+                        return fieldElement.textContent;
+                    }
+                    return void 0;
+
+                }
+
+                function getCurrencyTemplate () {
+                    var currencyTemplate = '$1,234.56';
+                    var templateText = getOutputFieldText('idCurrencyTemplate');
+                    if (!templateText) {
+                        return currencyTemplate;
+
+                    }
+                    // Isolate multi-currency section: SFDC uses "USD 1.23 (OTH 4.56)" format,
+                    // use regex to break that into ["USD 1.23 (OTH 4.56)", "USD 1.23", "OTH 4.56"]
+                    var multiMatch = templateText.match(/([^\(]*)\(?([^\)]*)\)?/);
+                    if (multiMatch && multiMatch[1]) {
+                        templateText = multiMatch[1];
+
+                    }
+                    //Check if formatted text is a valid template
+                    if (templateText.length > 2) {
+                        currencyTemplate = templateText;
+                            
+                    }
+                    return currencyTemplate;
+
+                }
+
+                function getQuantityTemplate() {
+                    var quantityTemplate = '1,234.56';
+                    var templateText = getOutputFieldText('idQuantityTemplate');
+                    if (!templateText) {
+                        return quantityTemplate;
+
+                    }
+                    //Check if formatted text is a valid template
+                    if (templateText.length > 2) {
+                        quantityTemplate = templateText;
+                            
+                    }
+                    return quantityTemplate;
+
+                }
+
+                function getDateTemplate() {
+                    var dateTemplate = '01/23/45';
+                    var templateText = getOutputFieldText('idDateTemplate');
+                    if (!templateText) {
+                        return dateTemplate;
+
+                    }
+                    dateTemplate = templateText;
+                    return dateTemplate;
+
+                }
+
+                function getPrecisionMap() {
+                    var quantity = Number(getOutputFieldText('idQuantityPrecision')),
+                            currency = Number(getOutputFieldText('idCurrencyPrecision'));
+                    var precision = {
+                        quantity: quantity,
+                        currency: currency
+                    };
+                    return precision;
+
+                }
+
+            }
+
+            // create a config object to that values from the Apex controller can
+            // be injected into our Angular app.
+            angular.module('AppConfig', [])
+                .provider('appConfig', function () {
+                    var config = {
+                        searchResults: {},
+                        labels: {
+                            additionalData: '{!$Label.AdditionalData}',
+                            applyFilter: '{!$Label.ApplyFilter}',
+                            ascending: '{!$Label.Ascending}',
+                            available: '{!$Label.Available}',
+                            benefits: '{!$Label.Benefits}',
+                            cancel: '{!$Label.Cancel}',
+                            clear: '{!$Label.Clear}',
+                            coupons: '{!$Label.Coupons}',
+                            criteria: '{!$Label.Criteria}',
+                            deductions: '{!$Label.Deductions}',
+                            descending: '{!$Label.Descending}',
+                            filter: '{!$Label.Filter}',
+                            items: '{!$Label.Items}',
+                            name: '{!$Label.Name}',
+                            next: '{!$Label.Next}',
+                            limits: '{!$Label.Limits}',
+                            picklistValueNone: '{!$Label.PicklistValueNone}',
+                            previous: '{!$Label.Previous}',
+                            search: '{!$Label.Search}',
+                            select: '{!$Label.Select}',
+                            selectAll: '{!$Label.SelectAll}',
+                            selected: '{!$Label.Selected}',
+                            sort: '{!$Label.Sort}',
+                            viewAll: '{!$Label.ViewAll}',
+                            information: '{!$Label.Information}',
+                            scope: '{!$Label.Scope}',
+                            allOptionsIncluded: '{!$Label.AllOptionsIncluded}',
+                            includeAND: '{!$Label.IncludeAND}'
+                        },
+                        nsPrefix: nsPrefix
+                    };
+
+                    return {
+                        set: function (settings) {
+                            config = settings;
+                        },
+                        $get: function () {
+                            return config;
+                        }
+                    };
+                })
+                .provider('resourceUrls', function() {
+                    var config = {
+                        salesforceBase: '{!URLFOR("/")}',
+                        templateBase: '{!URLFOR($Resource.IncentivesPageResources, "app/shared")}'
+                    };
+                    return {
+                        set: function (settings) {
+                            config = settings;
+                        },
+                        $get: function () {
+                            return config;
+                        }
+                    };
+                }).constant("INCENTIVE", {
+                    LIMITS: {
+                        RECURRENCYTYPES: {
+                            RECURRING: "Recurring"
+                        }
+                    }
+                }).constant("SFDATATYPES", {
+                    DATE: "DATE",
+                    DATETIME: "DATETIME",
+                    BOOLEAN: "BOOLEAN",
+                    PICKLIST: "PICKLIST",
+                    REFERENCE: "REFERENCE",
+                    MULTIPICKLIST: "MULTIPICKLIST",
+                    CURRENCY: "CURRENCY",
+                    DOUBLE: "DOUBLE",
+                    RADIOPICKLIST: "RADIOPICKLIST",
+                    STRING: "STRING",
+                    URL: "URL",
+                    EMAIL: "EMAIL",
+                    PHONE: "PHONE",
+                    PERCENT: "PERCENT",
+                    TEXTAREA: "TEXTAREA",
+                    ENCRYPTEDSTRING: "ENCRYPTEDSTRING"
+                }).constant("INCENTIVESTEPCODES", {
+                    INFORMATION: "I",
+                    SCOPE: "S",
+                    CRITERIA: "C",
+                    BENEFITS: "B",
+                    POINTACCRUAL: "A",
+                    TIER: "T",
+                    DEDUCTIONS: "D",
+                    LIMITS: "L",
+                    COUPONS: "P",
+                    SUMMARY: "U"
+                }).constant("USETYPES", {
+                    MILESTONE: "Milestone Incentive",
+                    REBATE: "Rebate"
+                }).constant("CUSTOMFIELDNAMES", {
+                    MAXLIMITVALUETYPEFIELDNAME: "MaxLimitValueType"
+                });
+        })(angular);
+    </script>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'app/shared/css/directives-common.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'app/shared/sort-filter-menu/sortFilterMenuStyle.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'app/shared/advanced-search/advancedSearchStyle.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'app/shared/incentive-information/incentiveInformationStyle.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'app/shared/incentive-scope/incentiveScopeStyle.css')}"/>
+
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/services/advancedSearchService.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/services/incentiveLimitsService.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/services/incentiveScopeService.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/services/commonMethodsService.js')}"/>
+
+    
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/components/incentive-information/incentiveInformationController.js')}"></script>
+
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/incentive-field/incentiveFieldDirective.js')}"></script>
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'app/shared/incentive-limits/incentiveLimitsStyle.css')}" />
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/incentive-limits/incentiveLimitsDirective.js')}"></script>
+
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/components/incentive-summary/incentiveSummaryController.js')}"></script>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/services/incentiveInformationService.js')}"></script>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/incentive-information/incentiveInformationDirective.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/incentive-scope/incentiveScopeDirective.js')}"/>
+
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/slideable/slideable.js')}"/>
+
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/components/incentive-milestone-benefits/incentiveMilestoneBenefitsService.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/components/incentive-milestone-benefits/incentiveMilestoneBenefitsController.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/components/incentive-benefits/incentiveBenefitsController.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/components/incentive-criteria/incentiveCriteriaController.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/components/incentive-scope/incentiveScopeController.js')}"></script>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/sort-filter-menu/sortFilterMenuDirective.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/advanced-search/advancedSearchDirective.js')}"/>
+    <script src="{!URLFOR($Resource.IncentivesPageResources, 'app/shared/controls/picklist/picklistDirective.js')}"/>
+
+</apex:page>

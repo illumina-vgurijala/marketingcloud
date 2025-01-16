@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>54.0</apiVersion>
+    <assignments>
+        <name>Remove_Hard_Copy_Sales_Role</name>
+        <label>Remove Hard Copy Sales Role</label>
+        <locationX>895</locationX>
+        <locationY>1079</locationY>
+        <assignmentItems>
+            <assignToReference>VarT_Role_Without_Hardcopy_Sales_Value</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Role_Field_Formula_To_Remove_HardCopy_Sales</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Remove_Hard_Copy_Service_Role</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Remove_Hard_Copy_Service_Role</name>
+        <label>Remove Hard Copy Service Role</label>
+        <locationX>703</locationX>
+        <locationY>1079</locationY>
+        <assignmentItems>
+            <assignToReference>VarT_Role_Without_Hardcopy_Service_Value</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Role_Field_Formula_To_Remove_HardCopy_Service</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Update_records_vair</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <description>Assign role field values from the loop to a Variable .</description>
+        <name>Set_Role_Field</name>
+        <label>Set Role Field</label>
+        <locationX>895</locationX>
+        <locationY>923</locationY>
+        <assignmentItems>
+            <assignToReference>VarT_Loop_Roles_Value</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Loop_Through_All_ACR_Records.Roles</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Remove_Hard_Copy_Sales_Role</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <description>Assigning the Role value returned from Formula variable after removing R/Q</description>
+        <name>Set_Role_Field_Values_from_Formula</name>
+        <label>Set Role Field Values from Formula</label>
+        <locationX>528</locationX>
+        <locationY>923</locationY>
+        <assignmentItems>
+            <assignToReference>varR_ACR_Records_To_Update</assignToReference>
+            <operator>Add</operator>
+            <value>
+                <elementReference>VarR_Loop_ACR_Record</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>varB_Contact_Active</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_Through_All_ACR_Records</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Update_records_vair</name>
+        <label>Update records vair</label>
+        <locationX>703</locationX>
+        <locationY>923</locationY>
+        <assignmentItems>
+            <assignToReference>VarR_Loop_ACR_Record.Roles</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Role_Field_Formula</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>VarR_Loop_ACR_Record.Product_Notifications_Categories__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue></stringValue>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>VarR_Loop_ACR_Record.IsActive</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>VarR_Loop_ACR_Record.Id</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Loop_Through_All_ACR_Records.Id</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Set_Role_Field_Values_from_Formula</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <description>Adding flag to bypass Flows.</description>
+        <name>BypassFlow</name>
+        <label>BypassFlow</label>
+        <locationX>522</locationX>
+        <locationY>467</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>FlowBypass</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Setup.cs_Apex_Settings__c.Bypass_All_Flows__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_ACR_Records</targetReference>
+            </connector>
+            <label>FlowBypass</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>Check if the triggered contact record is changed to inactive.</description>
+        <name>Check_Contact_IsActive_Field_is_Changed</name>
+        <label>Check Contact  IsActive Field is Changed?</label>
+        <locationX>873</locationX>
+        <locationY>777</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Is_Active_Value_Changed</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Is_Active__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record__Prior.Is_Active__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Role_Field</targetReference>
+            </connector>
+            <label>Is Active Value Changed</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>Check the Contact is Inactive variable if it true then update the ACR fields</description>
+        <name>Check_if_the_Contact_Record_is_InActive</name>
+        <label>Check if the Contact Record is InActive</label>
+        <locationX>263</locationX>
+        <locationY>787</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Contact_is_Inactive</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>varB_Contact_Active</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_ACR_Fields</targetReference>
+            </connector>
+            <label>Contact is Inactive</label>
+        </rules>
+    </decisions>
+    <description>Flows gets trigger when Contact gets inactive and Updates the respective fields of ACR-- version update - to remove Hard Copy Roles when R/Q role is removed.</description>
+    <environments>Default</environments>
+    <formulas>
+        <description>Formula returns the Role field value by removing  Regulatory/Quality.</description>
+        <name>Role_Field_Formula</name>
+        <dataType>String</dataType>
+        <expression>SUBSTITUTE({!VarT_Role_Without_Hardcopy_Service_Value},&quot;Regulatory/Quality&quot;,&quot;&quot;)</expression>
+    </formulas>
+    <formulas>
+        <description>Formula field to remove Hardcopy Sales role from the Role field.</description>
+        <name>Role_Field_Formula_To_Remove_HardCopy_Sales</name>
+        <dataType>String</dataType>
+        <expression>SUBSTITUTE({!VarT_Loop_Roles_Value}, &quot;Hard Copy RQ Sales&quot;, &quot;&quot;)</expression>
+    </formulas>
+    <formulas>
+        <description>Formula field to remove Hardcopy Service role from the Role field.</description>
+        <name>Role_Field_Formula_To_Remove_HardCopy_Service</name>
+        <dataType>String</dataType>
+        <expression>SUBSTITUTE({!VarT_Role_Without_Hardcopy_Sales_Value}, &quot;Hard Copy RQ Service&quot;, &quot;&quot;)</expression>
+    </formulas>
+    <interviewLabel>Contact : After Update-Check Is_Active {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Contact : After Update-Check Is_Active</label>
+    <loops>
+        <description>Loop all the Acr Records</description>
+        <name>Loop_Through_All_ACR_Records</name>
+        <label>Loop Through All ACR Records</label>
+        <locationX>519</locationX>
+        <locationY>770</locationY>
+        <collectionReference>Get_ACR_Records</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Check_Contact_IsActive_Field_is_Changed</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Check_if_the_Contact_Record_is_InActive</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <description>Get all Acr records which is related with the contact triggered</description>
+        <name>Get_ACR_Records</name>
+        <label>Get ACR Records</label>
+        <locationX>526</locationX>
+        <locationY>650</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Loop_Through_All_ACR_Records</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>ContactId</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>AccountContactRelation</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates>
+        <description>Update the following fields whenever the Related contact is inactive</description>
+        <name>Update_ACR_Fields</name>
+        <label>Update ACR Fields</label>
+        <locationX>270</locationX>
+        <locationY>1018</locationY>
+        <inputReference>varR_ACR_Records_To_Update</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>404</locationX>
+        <locationY>153</locationY>
+        <connector>
+            <targetReference>BypassFlow</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Is_Active__c</field>
+            <operator>IsChanged</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </filters>
+        <object>Contact</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <variables>
+        <description>Varaible is assigned to true if the contact is not Active.</description>
+        <name>varB_Contact_Active</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <booleanValue>false</booleanValue>
+        </value>
+    </variables>
+    <variables>
+        <description>Stores the ACR Fields which needs to updated with id.</description>
+        <name>varR_ACR_Records_To_Update</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>AccountContactRelation</objectType>
+    </variables>
+    <variables>
+        <description>Assign the Values to the Acr Fields to record variable</description>
+        <name>VarR_Loop_ACR_Record</name>
+        <dataType>SObject</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>AccountContactRelation</objectType>
+    </variables>
+    <variables>
+        <description>Variable stores the Roles values from Loop</description>
+        <name>VarT_Loop_Roles_Value</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <description>Variable to store the roles after removing Hardcopy Sales role.</description>
+        <name>VarT_Role_Without_Hardcopy_Sales_Value</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <description>Variable to store the roles after removing Hardcopy Service role.</description>
+        <name>VarT_Role_Without_Hardcopy_Service_Value</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <description>Variable stores the Role Value after removing the R/Q from formula field</description>
+        <name>varT_Role_Without_RQ_Value</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

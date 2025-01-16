@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCaseStatusChange</fullName>
+    <active>true</active>
+    <description>To prevent non SPAM and non notification Case Closure when Case is owned by a Queue and not Marked as Spam.
+Updated to bypass by super user and QA Profiles.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    ISCHANGED( Status ),
+    $Permission.SS_ByPass_Case_Lock = FALSE,
+    $Profile.Name &lt;&gt; $Label.ProfileSystemAdmin,
+    $Profile.Name &lt;&gt; $Label.ProfileQualityAssurance,
+    TEXT(PRIORVALUE(Status)) &lt;&gt; $Label.CaseStatusClosed,
+    AND(
+        NOT(TEXT(Category__c) == $Label.Spam),
+        NOT(TEXT(Category__c) == $Label.Notification),        
+        BEGINS( OwnerId , &apos;00G&apos;),
+        TEXT(Status) != $Label.Initiated,
+        TEXT(Status) != $Label.CaseStatusInProgress
+    )
+)</errorConditionFormula>
+    <errorMessage>Cases owned by a Queue can’t be updated to this status. Take ownership before changing the status.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

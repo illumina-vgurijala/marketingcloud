@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckManQuoteNumberECWithManualQuote</fullName>
+    <active>true</active>
+    <description>Validation rule to Check Manual Quote Number is Populated for a Manual Quote to move to Negotiate and Resolve or Finalize from Prove.</description>
+    <errorConditionFormula>AND(
+    OR (
+        AND ( 
+         /*Check for Relevant Record Types*/
+            OR (
+	        $RecordType.DeveloperName = $Label.OpportunityRTDirectReOrder,
+	        $RecordType.DeveloperName = $Label.FieldServices,
+	        $RecordType.DeveloperName = $Label.IndirectFieldServices,
+	        $RecordType.DeveloperName = $Label.IndirectReOrder
+	    ), 
+        /*Check for Exit Stages*/
+	    NOT (
+	        OR ( 
+		    TEXT ( StageName ) = $Label.OpportunityStageClosedLost, 
+                    PRIORVALUE ( StageName )= $Label.OpportunityStageClosedLost, 
+                    PRIORVALUE ( StageName )= $Label.OpportunityStageClosedWon, 
+                    TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+                    PRIORVALUE ( StageName )= $Label.OpportunityStageClosedAbandoned, 
+                    TEXT ( StageName ) = $Label.OpportunityStageDevelop,
+                    TEXT ( StageName ) = $Label.OpportunityStageCreate,
+                    TEXT ( StageName ) = $Label.OpportunityStageQualify,
+                    TEXT ( StageName ) = $Label.OpportunityStageProve,
+                    TEXT ( StageName ) = $Label.OpportunityStageNegotiateResolve
+	        )
+            )
+        ),
+        AND ( 
+        /*Check for Relevant Record Types*/
+            OR (   
+	        RecordType.DeveloperName = $Label.OpportunityRTDirectStandard,  
+	        RecordType.DeveloperName = $Label.OpportunityRTIndirectStandard
+	    ), 
+            /*Check for Exit Stages*/ 
+	    NOT (
+	        OR ( 
+		    TEXT ( StageName ) = $Label.OpportunityStageClosedLost, 
+                    PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedLost, 
+                    TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+                    PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedAbandoned, 
+                    PRIORVALUE ( StageName ) = $Label.OpportunityStageClosedWon, 
+                    TEXT ( StageName ) = $Label.OpportunityStageCreate, 
+                    TEXT ( StageName ) = $Label.OpportunityStageQualify, 
+                    TEXT ( StageName ) = $Label.OpportunityStageDevelop, 
+                    TEXT ( StageName ) = $Label.OpportunityStageProve 
+                )
+	    )
+        )
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    /*Check if Manual Quote Number is populated*/
+    NOT ( ISBLANK ( Manual_Quote_Reason__c ) ),
+    ISBLANK ( Manual_Quote_Number__c ),
+    NOT (
+        OR (     
+            ISCHANGED ( Is_Updated_By_System__c ),
+            Is_Updated_By_System__c = true,
+            TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+            $Profile.Name =  $Label.ProfileSystemAdmin,
+            $Profile.Name =  $Label.ProfileDataSteward
+        )
+    )
+)</errorConditionFormula>
+    <errorMessage>If Quote is manual, please indicate Manual Quote # (Quote &amp; Order Information section).</errorMessage>
+</ValidationRule>

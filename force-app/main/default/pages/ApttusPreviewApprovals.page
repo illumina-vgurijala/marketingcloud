@@ -1,0 +1,134 @@
+<apex:page sidebar="false" showHeader="false" controller="ApttusPreviewApprovalsController" lightningStylesheets="true">
+    <apex:slds /> 
+    <style type="text/css">
+        .alignCenter{
+        text-align:center !important;
+        }
+        th{
+        padding: 10px !important;
+        }
+        .hierarchy{
+        font-size: initial;
+        color: white;
+        font-weight:bold;
+        background: linear-gradient(#69BAD5,#2898BD) !important;
+        }
+        .header{
+        font-weight:bold !important;
+        }
+        .slds-table tr td{
+        word-break: break-word;
+        white-space: normal !important;
+        }
+        .previewApproval{
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        margin-top: 1%;
+        margin-right: 1%;
+        margin-left: 1%;
+        }
+        td{
+        padding: 1% !important;
+        }
+        .approvalNameCol{
+        width:25%;
+        }
+        .warningMessage{
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+        width: 96%;
+        margin-top: 3%;
+        color: whitesmoke;
+        background-color: #ff9800;
+        }
+    </style>
+    <apex:form id="TheForm"> 
+        <apex:actionFunction name="loadData" action="{!previewApprovals}" rerender="TheForm" status="pageStatus"/>
+        <apex:actionStatus id="pageStatus">
+            <apex:facet name="start">
+                <apex:outputPanel >
+                    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.25; z-index: 1000; background-color: black;">
+                        &nbsp;
+                    </div>
+                    <div style="position: fixed; left: 0; top: 0; bottom: 0; right: 0; z-index: 1001; margin: 15% 50%">
+                        <div style="display: inline-block; padding: 2px; background-color: #fff; width: 125px;">
+                            <img src="/img/loading32.gif" width="25" height="25" alt="Loading..."/>
+                            <apex:outputLabel value="Please Wait..."/>
+                        </div>
+                    </div>
+                </apex:outputPanel>            
+            </apex:facet>
+        </apex:actionStatus>
+        <div class="previewApproval">
+            <apex:outputPanel rendered="{!boolPreview}">
+                <apex:outputPanel rendered="{!IF(lstApprovalRequest.size > 0 && lstProposalLineItem.size > 0,true,false)}">
+                    <div class="warningMessage">
+                        <apex:outputPanel rendered="{!boolShowApprovalMessage}">
+                            <p>
+                            <apex:image url="{!$Resource.Warning_Image}" width="10" height="10" style="margin-bottom:2px;"/>
+                            <apex:outputText value="{!approvalMessage}" escape="false"/>
+                            </p>
+                        </apex:outputPanel>
+                    </div>
+                    <div class="slds-box alignCenter hierarchy">{!$Label.UI_Text_Approval_Hierarchy}</div>
+                    <table class="slds-table slds-table--bordered slds-table--resizable-cols slds-table--fixed-layout slds-table--col-bordered" role="grid">
+                        <thead>
+                            <tr class="slds-hint-parent alignCenter">
+                                <th class="alignCenter header applyBold">{!$Label.UI_Text_Step}</th>
+                                <th class="alignCenter header approvalNameCol">{!$Label.UI_Text_Approval_Name}</th>
+                                <th class="alignCenter header">{!$Label.UI_Text_Region}</th>
+                                <th class="alignCenter header">{!$Label.UI_Text_Approver_Level}</th>
+                                <th class="alignCenter header">{!$Label.UI_Text_Approver_Details}</th>
+                            </tr>
+                        </thead>
+                        <tbody> 
+                            <apex:repeat value="{!lstApprovalRequestWrapper}" var="approval">
+                                <tr class="slds-hint-parent">
+                                    <td class="alignCenter applyBold">{!approval.intStepSequence}</td>
+                                    <td class="alignCenter">{!approval.strApprovalName}</td>
+                                    <td class="alignCenter">
+                                    <apex:outputPanel rendered="{!approval.lstApprovalStepName[0]!='GC Deals Approvals'}">
+                                         <div class="alignCenter">{!approval.strApprovalRequestRegion}</div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!approval.lstApprovalStepName[0]=='GC Deals Approvals'}">
+                                        <apex:outputPanel rendered="{!approval.strApprovalRequestRegion == 'China'}">
+                                            <div class="alignCenter">{!$Label.UI_TEXT_GC}</div>
+                                        </apex:outputPanel>
+                                    </apex:outputPanel>
+                                    </td>
+                                    <td class="alignCenter">
+                                        <apex:repeat value="{!approval.lstApprovalLabel}" var="approvalLabel" 
+                                        rendered="{!OR(approval.lstApprovalStepName[0]=='CPQ Sales Approval Rule' , approval.lstApprovalStepName[0]=='GC Deals Approvals') }">
+                                            {!approvalLabel}<br/>
+                                        </apex:repeat>
+                                        <apex:repeat value="{!approval.lstApprovalSequence}" var="approverLevel" 
+                                        rendered="{!AND(approval.lstApprovalStepName[0]!='CPQ Sales Approval Rule' , approval.lstApprovalStepName[0]!='GC Deals Approvals')}">
+                                            {!$Label.UI_Text_Level} {!approverLevel} <br/>
+                                        </apex:repeat> 
+                                    </td>
+                                    <td>
+                                        <apex:repeat value="{!approval.lstApproverName}" var="approverName">
+                                           - {!approverName} <br/>
+                                        </apex:repeat>
+                                    </td>
+                                </tr>
+                            </apex:repeat>
+                        </tbody>
+                    </table>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!IF(lstApprovalRequest.size == 0 && lstProposalLineItem.size > 0 && ISBLANK(objQuotation.Sales_Discretionary_Approval_Error__c),true,false)}">
+                    <div class="slds-box alignCenter">{!$Label.UI_Text_No_Approval_Needed}</div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!IF(lstApprovalRequest.size == 0 && lstProposalLineItem.size > 0 && NOT(ISBLANK(objQuotation.Sales_Discretionary_Approval_Error__c)),true,false)}">
+                    <div class="slds-box alignCenter">{!objQuotation.Sales_Discretionary_Approval_Error__c}</div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!IF(lstProposalLineItem.size == 0,true,false)}">
+                    <div class="slds-box alignCenter">{!$Label.UI_Text_No_Line_Items}</div>
+                </apex:outputPanel>
+            </apex:outputPanel>
+        </div>
+    </apex:form>
+    <script>
+    loadData();
+    </script>
+</apex:page>

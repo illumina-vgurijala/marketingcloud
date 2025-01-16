@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckDSAndISECForCreateStageContactRole</fullName>
+    <active>true</active>
+    <description>Is Primary Contact Role Identified (set when a primary contact is added) is required to progress past Create. Standard Direct and Standard Indirect Opportunity only.</description>
+    <errorConditionFormula>AND (
+    OR (
+        RecordType.DeveloperName == $Label.OpportunityRTDirectStandard,
+        RecordType.DeveloperName == $Label.OpportunityRTIndirectStandard
+    ),
+    Is_Contact_Role_Identified__c = false,
+    NOT (
+        OR (
+           TEXT ( StageName ) = $Label.OpportunityStageClosedLost,
+           TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedLost,
+           TEXT ( StageName ) = $Label.OpportunityStageClosedAbandoned,
+           TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedAbandoned,
+           TEXT ( PRIORVALUE ( StageName ) ) = $Label.OpportunityStageClosedWon,
+           TEXT ( StageName ) = $Label.OpportunityStageCreate,
+           TEXT ( StageName ) = $Label.OpportunityStageClosedWon,
+           $Profile.Name =  $Label.ProfileSystemAdmin,
+           $Profile.Name =  $Label.ProfileDataSteward,
+           CONTAINS($Label.Bypassed_Sales_Integration_Profiles_Id,$Profile.Id),
+           $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+           ISCHANGED ( Is_Updated_By_System__c ), 
+           Is_Updated_By_System__c = true,
+           /* Bypassing update of below fields since they are updated by the system*/
+           ISCHANGED ( Is_Customer_Readiness_Section_1_Complete__c ),
+           ISCHANGED ( Is_Customer_Readiness_Section_2_Complete__c ),
+           ISCHANGED ( Is_Customer_Readiness_Section_3_Complete__c ),
+           ISCHANGED ( Desired_Shipment_Install_Timelines_CRF__c ),
+           ISCHANGED ( Amount ),
+           ISCHANGED ( Proposal_Sent_On__c ),
+           ISCHANGED ( Are_Products_Added__c ),
+           ISCHANGED ( First_Proposal_Id__c ),
+           ISCHANGED ( Created_Proposal__c ),
+           ISCHANGED ( Quote_Generated_Qualify_or_Develop__c ),
+           ISCHANGED ( check_First_Proposal__c ),
+           ISCHANGED ( Clinical_Type__c ),
+           ISCHANGED ( Market_Segment__c ),
+           ISCHANGED ( ByPass_LockSentProposalDate__c ),
+           ISCHANGED ( Product_Type__c ),
+           ISCHANGED ( Product_Interest__c),
+           ISCHANGED ( Are_Products_Added_by_Channel_Partner__c ),
+           ISCHANGED ( TotalOpportunityQuantity ),
+           AND (
+               ISCHANGED ( Number_Of_Opportunity_Line_Items__c ),
+               RecordType.DeveloperName == $Label.OpportunityRTIndirectStandard
+           )
+        )
+    ),
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Account.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Ultimate_Consignee__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Distributor__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusObsolete, 
+    TEXT ( Lessor_Customer__r.Account_Status__c ) &lt;&gt; $Label.AccountStatusPendingObsolete	
+)</errorConditionFormula>
+    <errorDisplayField>Is_Contact_Role_Identified__c</errorDisplayField>
+    <errorMessage>Please add at least one Contact Role (click Related then Manage Contact Roles).</errorMessage>
+</ValidationRule>

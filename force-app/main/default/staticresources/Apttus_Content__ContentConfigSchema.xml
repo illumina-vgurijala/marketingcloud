@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2010 rel. 2 (x64) (http://www.altova.com) by Nathan Krishnan (private) -->
+<!--
+ Copyright 2009-2010 Apttus Inc. All Rights Reserved.    
+$Id: //Apttus/Develop/dev/schemas/ContentConfig.xsd $
+$DateTime: 2010/05/18 19:02:26 $
+This software is the proprietary information of Apttus, Inc.
+Use is subject to license terms.
+
+Author : Nathan Krishnan
+    
+Version: $Revision: #4 $
+
+Description:
+    Defines schema ContentConfig
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified" attributeFormDefault="unqualified">
+	<xs:element name="ContentConfig" type="ContentConfigType">
+		<xs:annotation>
+			<xs:documentation>Content Integration Configuration</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="ContentConfigType">
+		<xs:sequence>
+			<xs:element name="AgreementSpec" type="AgreementSpecType">
+				<xs:annotation>
+					<xs:documentation>The agreement spec</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- agreement spec -->
+	<xs:complexType name="AgreementSpecType">
+		<xs:sequence>
+			<xs:element name="Description" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>The element description.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="FieldMappings" type="FieldMappingCollType">
+				<xs:annotation>
+					<xs:documentation>The id of the externally stored clause</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- field mapping collection -->
+	<xs:complexType name="FieldMappingCollType">
+		<xs:sequence>
+			<xs:element name="Description" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>The element description.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="FieldMapping" type="FieldMappingType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The content field mapping</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- field mapping -->
+	<xs:complexType name="FieldMappingType">
+		<xs:sequence>
+			<xs:element name="FromField" type="FieldSpecType">
+				<xs:annotation>
+					<xs:documentation>The from field</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ToField" type="FieldSpecType">
+				<xs:annotation>
+					<xs:documentation>The to field</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- tag field collection -->
+	<!-- field spec type -->
+	<xs:complexType name="FieldSpecType">
+		<xs:sequence>
+			<xs:element name="Name" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Field name</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

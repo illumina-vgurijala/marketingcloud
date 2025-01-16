@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckAwaitingResponseReasonOnStatus</fullName>
+    <active>true</active>
+    <description>Validate that Awaiting Response Reason should not be blank when user changes the status to Awaiting Response - Customer or Awaiting Response - Internal</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    OR(
+        ISCHANGED(Status),
+        ISCHANGED(Awaiting_Response_Reason__c)
+    ),
+    OR(
+        TEXT(Status) = $Label.CaseStatusAwaitingResponseCustomer,
+        TEXT(Status) = $Label.CaseStatusAwaitingResponseInternal
+    ),
+    ISBLANK(TEXT(Awaiting_Response_Reason__c))
+)</errorConditionFormula>
+    <errorMessage>A reason is required when changing to an Awaiting Response Status. Select an Awaiting Response Reason to proceed.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

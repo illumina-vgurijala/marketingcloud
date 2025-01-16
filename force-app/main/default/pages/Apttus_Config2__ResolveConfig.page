@@ -1,0 +1,1032 @@
+<!-- 
+    Apttus Config & Pricing
+    ResolveConfig
+     
+    @2014-2015 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_Config2__ProductConfiguration__c"
+           extensions="Apttus_Config2.ResolveConfigController,Apttus_Config2.RemoteActionController,Apttus_Config2.RemoteCartController" 
+           showHeader="{!ShowHeader}" 
+           sidebar="true"
+           standardStylesheets="true" 
+           cache="false" 
+           tabstyle="Product2">
+    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/container/container-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/dragdrop/dragdrop-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/animation/animation-min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/treeview/treeview-min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/menu/menu-min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/yahoo/yahoo-min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__ConfigJSLib}"/>
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQJSLibrary}"/> 
+    <apex:includeScript value="{!$Resource.Apttus_Config2__CPQPricingJSLib}"/>
+     
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/assets/skins/sam/skin.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/treeview/assets/skins/sam/treeview.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/examples/treeview/assets/css/menu/tree.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/menu/assets/skins/sam/menu.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__YUILibrary, '/yui/build/container/assets/skins/sam/container.css')}" />
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+    
+    <script type="text/javascript" src="/soap/ajax/30.0/connection.js"></script>
+    <script type="text/javascript" src="/soap/ajax/30.0/apex.js"></script>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__ActionFunctionQueue)}"/>
+    
+    <!-- 
+    <apex:includeScript value="{!$Resource.ConfigPromptJSLib}"/>
+    <apex:includeScript value="{!$Resource.ConfigSelectJSLib}"/>
+     -->
+    <script type="text/javascript">
+    	j$.APTTUS.deletingLineItemLabel = "{!JSINHTMLENCODE($Label.DeletingLineItem)}";
+    	j$.APTTUS.removeConfirmationLabel = "{!JSINHTMLENCODE($Label.RemoveConfirmation)}";
+		j$.APTTUS.updatingPriceLabel = "{!JSINHTMLENCODE($Label.UpdatingPrice)}";
+		j$.APTTUS.constraintRuleAlertLabel = "{!JSINHTMLENCODE($Label.ConstraintRuleAlert)}";
+		j$.APTTUS.loadingPageLabel = "{!JSINHTMLENCODE($Label.LoadingPage)}";
+		j$.APTTUS.refreshingDataLabel = "{!JSINHTMLENCODE($Label.RefreshingData)}";
+		j$.APTTUS.abandonConfirmationLabel = "{!JSINHTMLENCODE($Label.AbandonConfirmation)}";
+		
+		j$.APTTUS.ImageLoadingPageURL = "{!URLFOR($Resource.Image_LoadingPage)}";
+		j$.APTTUS.sessionID = "{!JSENCODE($Api.Session_ID)}";
+		j$.APTTUS.deferPricingUntilCart = "{!DeferPricingUntilCart}";
+		j$.APTTUS.configurationId = "{!JSENCODE(configurationId)}";
+		j$.APTTUS.classificationId = "{!JSENCODE(classificationId)}";
+		j$.APTTUS.showShoppingCartIcon = {!showShoppingCartIcon};
+		j$.APTTUS.isFixedButtonBar = {!IsFixedButtonBar};
+		
+		j$.APTTUS.RemoteController = {};
+		j$.APTTUS.RemoteController.getProductDescription = '{!$RemoteAction.RemoteActionController.getProductDescription}';
+		j$.APTTUS.RemoteController.doComputeBasePriceForItemColl = '{!$RemoteAction.RemoteCartController.doComputeBasePriceForItemColl}';
+		j$.APTTUS.RemoteController.doComputeNetPriceForItemColl = '{!$RemoteAction.RemoteCartController.doComputeNetPriceForItemColl}';
+		j$.APTTUS.RemoteController.doComputeTotalPriceForCart = '{!$RemoteAction.RemoteCartController.doComputeTotalPriceForCart}';
+		j$.APTTUS.RemoteController.doUpdatePriceForCart = '{!$RemoteAction.RemoteCartController.doUpdatePriceForCart}';
+		
+		j$.APTTUS.enableQueuedPricing = true;
+		j$.APTTUS.ApplyAutomaticPricing = !{!DeferPricingUntilCart};
+        //set the title and progress bar icon
+        var aptLoadingPageHeader = "{!JSINHTMLENCODE($Label.LoadingPage)}";
+        var aptRuleAlertHeader = "{!JSINHTMLENCODE($Label.ConstraintRuleAlert)}";
+        var aptDialogBody = '<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>';
+        
+        YAHOO.namespace("force.com");
+        // detail panel
+        YAHOO.force.com.globalCtx = new Object();
+        YAHOO.force.com.clsNodes = new Array();
+        YAHOO.force.com.selectedNode = new Object();
+                
+        //for IE load the script into DOM
+        function loadJSFile(filename){
+            var fileref = document.createElement('script');
+            if (typeof fileref != "undefined"){
+                fileref.setAttribute("type","text/javascript");
+                fileref.setAttribute("src", filename);
+                document.getElementsByTagName("head")[0].appendChild(fileref);
+            }
+        }
+        //load the JavaScript file. This is necessary for IE
+        loadJSFile("{!$Resource.ConfigPromptJSLib}");
+        loadJSFile("{!$Resource.ConfigSelectJSLib}");
+        
+    </script>
+
+    <script type="text/javascript">
+        j$(document).ready(function(){
+        	initCall();
+        	j$.aptActionFunctionQueue.setOnQueueEmpty(sfdcInvokePageRefresh);
+        
+        })
+        
+        /**
+         * Get product information and display in popup panel
+         * using JavaScript remoting
+         */
+        function getRemoteProductDetail(productId){
+            invokeGetProductDetail(j$.APTTUS.RemoteController.getProductDescription, productId);
+        }
+        
+        
+        /**
+		* Get product information and display in popup panel
+		* using JavaScript remoting
+		* @param removeFunction name of the remote function with complete namespace
+		* @param productId id of the product 
+		*/
+		function invokeGetProductDetail(remoteFunction, productId){
+		    document.getElementById('ctxProductDescription').innerHTML = '';
+		        
+			Visualforce.remoting.Manager.invokeAction(remoteFunction, productId, function(result, event){
+				    if (event.status) {
+				    	j$('.productDetailDialog .ui-dialog-title').html(result.Name);
+				        if(result.Description != undefined){
+				        	document.getElementById('ctxProductDescription').innerHTML = !JSINHTMLENCODE(result.Description);
+						} else {
+							document.getElementById('ctxProductDescription').innerHTML = "";
+						}
+					} else {
+				    	document.getElementById('ctxProductDescription').innerHTML = !JSINHTMLENCODE(event.message);
+					}
+		       	}, {buffer:false, escape:true});
+			
+			showProductDetailDialog();
+		}
+        
+        /** 
+         * show error message
+         * uses product description dialog
+         */
+        function aptShowMessage(msg){
+            document.getElementById('ctxRuleMessage').innerHTML = !JSINHTMLENCODE(msg);
+            // show the modal panel
+            //document.getElementById("ruleMessagePanel").style.display = "block";              
+            //YAHOO.force.com.ruleMessagePanel.show();
+            
+            j$( "#ruleMessagePanel" ).dialog({
+            	modal:true,
+            	title:"{!$Label.RuleMessage}",
+            	maxWidth:800,
+            	width:600,
+            	minHeight:30,
+            	height:"auto"
+            });
+            
+        }
+        
+        function showProductDetailDialog(){
+        	j$( "#productDetailDialog" ).dialog({
+            	modal:true,
+		    	title:j$.APTTUS.LoadingPageLabel,
+		    	maxWidth:1000,
+		    	minWidth:500,
+		    	minHeight:110,
+		    	autoOpen:true,
+		    	dialogClass:'productDetailDialog',
+		    	height:"auto",
+		    	open : function(){
+		 			j$('.productDetailDialog .ui-widget-header').css({border:"none",background:"none",borderBottom:"1px solid #aaaaaa"});
+		 			j$('.productDetailDialog .ui-widget-header').removeClass("ui-corner-all");
+		 			
+		 		}
+            });
+            
+				
+            
+        
+        }
+        
+        /**
+         * Builds the product detail panel
+         */
+        YAHOO.force.com.buildRuleMessagePanel = function() {
+            YAHOO.force.com.ruleMessagePanel = new YAHOO.widget.Panel(
+                "ruleMessagePanel",  // The id of our dialog container
+                { 
+                    width           :   "600px", // You can play with this until it's right
+                    fixedcenter     :   "contained",
+                    visible         :   false,   // Should be invisible when rendered
+                    draggable       :   true,    // Make the dialog draggable
+                    modal           :   true,    // Make it modal
+                    close           :   true,
+                    zindex          :   5046,      // Make sure it's on top of everything
+                    // This line adds the appear/disapper fade effect
+                    effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25} 
+                }
+             );
+        
+            // Render the dialog to the document.body level of the DOM
+            YAHOO.force.com.ruleMessagePanel.render();
+    
+        }
+        
+        /**
+		 * invokes action function to delete line item
+		 */
+		function doDeleteLineItem(){
+			j$.APTTUS.hideRemoveConfirmation();
+			j$.aptActionFunctionQueue.execute(invokeDoDeleteLineItem, [j$.APTTUS.LineNumber], {disableBuffering:true, loadingLabel:j$.APTTUS.deletingLineItemLabel});
+			
+		}
+		
+		function invokeDoConfigure(proceedLineItemId) {
+			sfdcInvokeDoConfigure(proceedLineItemId);
+			
+		}
+		
+		/**
+		 * Initializes the call to webservices api
+		 */
+		function initCall() {
+			try {
+		    	sforce.connection.sessionId = j$.APTTUS.sessionID; //to avoid session timeout
+		                
+		    } catch(ex) {
+		    	cp_erroralert(cp_cERROR_UNKNOWN,ex);
+		                
+			}
+		}
+		
+		//Implements the view cart function
+		function invokeDoViewCart (){
+			sfdcInvokeDoViewCart();
+		
+		}
+                                
+    </script>
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources,'CPQCommon.css')}" />      
+    <apex:outputPanel layout="none" rendered="{!IsFixedButtonBar}">
+		<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources, 'CPQDelight.css')}"/>	  
+	</apex:outputPanel>	
+    
+    <apex:outputPanel layout="none" rendered="{!isUsingEnhancedCSS}">
+		<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources, 'CPQEnhanced.css')}"/>	  
+	</apex:outputPanel>	
+	
+    <apex:outputPanel rendered="{!NOT(ISNULL(CSSOverride))}">
+        <apex:dynamicComponent componentValue="{!CSSOverrideComponent}"/>
+    </apex:outputPanel>
+    
+    <style>
+        .ygtv-highlight .ygtv-highlight1,.ygtv-highlight .ygtv-highlight1 .ygtvlabel {
+            background-color: #78c7c7;
+            color: white;
+        }
+        
+        
+        
+        li {
+            margin-bottom: 4px;
+        }
+        
+        #pricingField ul li, ol li {
+			margin-left: 0;
+		}
+		
+		#pricingField ul {
+			padding-left: 0;
+			text-align: left;
+		}
+		
+		#idRuleProductInfosTable {
+			border-collapse:collapse;
+			display: inline-table;
+		}
+		
+		#idRuleProductInfosTable td {
+			border:none;
+		}
+		
+		#idRuleProductInfosTable tr {
+			color: black;
+			line-height: 1.5em;
+			font-size: 0.8em;
+		}
+		
+		#idRuleProductInfosTable #headerRow {
+			color: black;
+			line-height: 2em;
+			font-size: 1em;
+		}
+		
+		.disabledLink {
+			text-decoration:underline; 
+			color:rgb(162, 156, 156); 
+			cursor: default;
+		}
+		
+		
+    </style>
+    
+    <apex:form id="idForm">
+        
+        <!--  required fields -->
+        <apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Name}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__Description__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__SummaryGroupType__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__PriceListId__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__EffectiveDate__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Config2__ProductConfiguration__c.Apttus_Config2__AccountId__c}" rendered="false" />
+		
+		<apex:outputPanel layout="block" styleClass="clearfix header cartTopContainer" id="cartTopContainer">
+		<!--  Cart Header  -->
+	    <c:CartHeader2 id="idCartHeader" 
+	    			  cartId="{!ConfigurationId}" 
+	    			  requestId="{!RequestId}" />
+	    			  <apex:outputPanel rendered="{!NOT(IsFixedButtonBar)}" id="idCommands2" styleClass="idCommands2"> 
+                                <div style="display:none;" class="apt-button-action-spinner"><img src="/img/loading.gif"/></div>
+                                <ul id="aptTopButtons" style="text-align:center; margin-top:10px; margin-bottom:10px;">
+                                            
+                                </ul>   
+                      </apex:outputPanel>
+	    </apex:outputPanel>			  
+        <div class="apt-page-content">
+			<apex:outputPanel layout="block" id="idBrowsePanel" styleClass="aptBrowsePanel clearfix">
+				<div>
+					<div style="width: {!CategoryTreeWidth}; float:left;">
+						<div  width="100%" style="padding:5px">
+							<div class="apt-product-list-panel">
+								<apex:outputPanel id="idBrowseBlock">
+									<div class="header"  >
+										<h2>{!$Label.BrowseCategories}</h2>
+
+										&nbsp; &nbsp; &nbsp;
+										<apex:actionStatus id="idCategoryChangeStatus">
+											<apex:facet name="start"><img style="display:inline;float: right; margin: 5px;" src="/img/loading.gif"/></apex:facet>
+											<apex:facet name="stop"/>
+										</apex:actionStatus>
+									</div>
+									<apex:dataList value="{!CategoriesToCountMap}"
+												var="categoryListName"
+												type="none">
+										<apex:commandLink action="{!doShowSelectedCategoryProducts}" 
+															value="{!categoryListName}"
+															style="width:150px"
+															rerender="idProductsBlock"
+															status="idCategoryChangeStatus"
+															rendered="{!actionTypeToCountMap[categoryListName] != 0}">  
+											<apex:param name="param1"
+														assignTo="{!categoryName}"
+														value="{!categoryListName}"/>
+										
+										</apex:commandLink>
+										<apex:outputText value="{!categoryListName}"
+														rendered="{!actionTypeToCountMap[categoryListName] == 0}"
+														styleClass="disabledLink"/>
+									</apex:dataList>
+								</apex:outputPanel>
+							</div>
+						</div>
+					</div>
+					<div style="width: {!ListedProductsWidth2}; float:left;">
+						<div  width="100%" style="padding:5px">
+							<div class="aptRoundedDiv">
+								<apex:outputPanel layout="block" id="idProductsBlock">
+									<apex:outputPanel layout="block" id="idErrorMsg">
+										<apex:pageMessages />
+										<div style="padding-left: 1em;">
+											<c:RuleMessageDisplay2 id="idRuleMessageComponent" configId="{!Id}" isHideAll="true" isResolvePage="true"/>
+										</div>
+									</apex:outputPanel>
+									<apex:outputPanel layout="block">
+										<div class="aptRoundedDiv title aptPageTitleBarPanel">
+											<h2 style="padding-left:10px;">{!ListTitle}</h2>
+										</div>
+										<apex:outputPanel id="idResultStatsPanel" 
+											styleClass="aptsPaginator"
+											style="background:#f3f3f5; width: 100%;"
+											layout="block"
+											rendered="{!hasProducts && NOT(showMessageMode)}">
+											<apex:outputPanel id="idNavigationPanel" 
+												layout="inline"
+												style="text-align: right; width: 100%;">
+												<table style="display:inline-table" width="100%">
+													<tr>
+														<td style="text-align: left; vertical-align: middle;">
+															<apex:outputText value="{!pageStartIndex}-{!pageEndIndex} {!$Label.apttus_config2__outof} {!totalRecords}" />
+															&nbsp;&nbsp;
+															<span class="apt-select-wrap">
+																<apex:selectList size="1"
+																	value="{!pageSize}" 
+																	multiselect="false"
+																	onchange="onChangePagesize();"
+																	>
+																	<apex:selectOptions value="{!rowsPerPageList}" />
+																</apex:selectList>
+															</span>
+														</td>
+														<td style="text-align: center; vertical-align: middle; text-color: red;">
+															<apex:actionStatus id="idPageChangeStatus" 
+																startText="{!$Label.apttus_config2__loading}"
+																stopText=""/>
+														</td>
+														<td style="text-align: right; vertical-align: middle;">
+															<apex:image url="{!$Resource.Apttus_Config2__Image_FirstPageGray}"
+																rendered="{!NOT(hasPreviousPage)}"/>
+															<apex:image url="{!$Resource.Apttus_Config2__Image_FirstPage}"
+																rendered="{!hasPreviousPage}">
+																<apex:actionSupport event="onclick" action="{!firstPage}" 
+																	reRender="idProductsBlock" 
+																	status="idPageChangeStatus"/>
+															</apex:image>
+															<apex:image url="{!$Resource.Apttus_Config2__Image_PreviousGray}"
+																rendered="{!NOT(hasPreviousPage)}"/>
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Previous}"
+																rendered="{!hasPreviousPage}">
+																<apex:actionSupport event="onclick" action="{!previousPage}" 
+																	reRender="idProductsBlock" 
+																	status="idPageChangeStatus"/>
+															</apex:image>
+															<apex:outputPanel layout="inline" 
+																style="text-align: right; width: 100%;">
+																<apex:outputText value="{!$Label.apttus_config2__page}" style="vertical-align: top;"/>
+																<apex:inputText id="idCurrentPageNumber" 
+																	value="{!currentPageNumber}" 
+																	styleClass="aptsPageInput"
+																	onkeypress="return aptIgnoreEnterKey(event, invokeLoadPage);"
+																	>
+																	<apex:actionSupport event="onchange" action="{!loadPage}" 
+																		rerender="idProductsBlock" 
+																		status="idPageChangeStatus"/>
+																</apex:inputText>
+																<apex:outputText value="{!$Label.apttus_config2__outof} {!totalPages}" style="vertical-align: top;"/>
+															</apex:outputPanel>
+															<apex:image url="{!$Resource.Apttus_Config2__Image_NextGray}"
+																rendered="{!NOT(hasNextPage)}"/>
+															<apex:image url="{!$Resource.Apttus_Config2__Image_Next}"
+																rendered="{!hasNextPage}">
+																<apex:actionSupport event="onclick" action="{!nextPage}" 
+																	reRender="idProductsBlock" 
+																	status="idPageChangeStatus"/>
+															</apex:image>
+															<apex:image url="{!$Resource.Apttus_Config2__Image_LastPageGray}"
+																rendered="{!NOT(hasNextPage)}"/>
+															<apex:image url="{!$Resource.Apttus_Config2__Image_LastPage}"
+																rendered="{!hasNextPage}">
+																<apex:actionSupport event="onclick" action="{!lastPage}" 
+																	reRender="idProductsBlock" 
+																	status="idPageChangeStatus"/>
+															</apex:image>
+														</td>
+													</tr>
+												</table>
+											</apex:outputPanel>
+										</apex:outputPanel>
+										<apex:outputPanel style="padding:5px;" layout="block">
+											<apex:outputPanel layout="block" rendered="{!hasProducts && NOT(showMessageMode)}">
+												<table id="idRuleProductInfosTable" width="100%">
+													<thead>
+														<tr id="headerRow">
+															<!-- <apex:outputPanel layout="none" rendered="{!isShowAction}"><th>{!$Label.Action}</th></apex:outputPanel> -->
+															<th>{!$ObjectType.Product2.Fields.Name.Label}</th>
+															<th>{!$Label.RuleMessage}</th>
+															<th></th>
+															<apex:outputPanel layout="none" rendered="{!NOT(ProductColumn2Name == null)}">
+																<th>{!ProductColumn2Label}</th>
+															</apex:outputPanel>
+															<apex:outputPanel layout="none" rendered="{!NOT(ProductColumn3Name == null)}">
+																<th>{!ProductColumn3Label}</th>
+															</apex:outputPanel>
+															<apex:outputPanel layout="none" rendered="{!NOT(HideListedProductsPriceColumn)}">
+																<th>{!$Label.apttus_config2__price}</th>
+															</apex:outputPanel>
+														</tr>
+													</thead>
+													<tbody>
+														<apex:repeat value="{!ruleProductInfos}" 
+															var="prd"
+															rendered="{!hasProducts && NOT(showMessageMode)}">
+															<apex:outputPanel layout="none" rendered="{!prd.appliedRuleActionInfo.Apttus_Config2__TargetBundleNumber__c != 0}">
+																<tr class="bundleHeader-{!prdctIdToBundleLineItemSO[prd.productSO.Id].Id}">
+																	<td colspan="5" style="font-weight: bold;">
+																		<apex:commandLink rerender="dummy">
+																			<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																				onclick="getRemoteProductDetail('{!prdctIdToBundleLineItemSO[prd.productSO.Id].ProductId__c}');"/>
+																		</apex:commandLink>
+																		&nbsp;
+																		<apex:outputText value="{!prdctIdToBundleLineItemSO[prd.productSO.Id].ProductId__r.Name}"/>
+																	</td>
+																	<td style="text-align:right">
+																		<apex:actionStatus styleClass="buttonActionStatus" id="configureActionStatus" >
+																	          <apex:facet name="start">
+														                         	<img style="display:inline;" src="/img/loading.gif"/>
+														                      </apex:facet>
+														                      <apex:facet name="stop" />
+																	    </apex:actionStatus>
+																	    &nbsp; &nbsp;
+																		<apex:commandButton value="{!$Label.apttus_config2__configure}"
+																			action="{!doConfigure}"
+																			onclick="j$(this).parent().find('span[id$=\x22start\x22]').show();" 
+																			oncomplete="j$(this).parent().find('span[id$=\x22start\x22]').hide();"
+																			rerender="dummy"
+																			styleClass="aptListButton">
+																			<apex:param name="firstParam"
+																				assignTo="{!proceedLineItemId}"
+																				value="{!prdctIdToBundleLineItemSO[prd.productSO.Id].Id}"/>
+																		</apex:commandButton>
+																	</td>
+																</tr>
+															</apex:outputPanel>
+															<tr class="targetBundleNumber-{!prd.appliedRuleActionInfo.TargetBundleNumber__c}">
+																<td>
+																	<apex:commandLink rerender="dummy">
+																		<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+																			onclick="getRemoteProductDetail('{!prd.productSO.Id}');"/>
+																	</apex:commandLink>
+																	&nbsp;
+																	<apex:outputText value="{!prd.productSO.Name}"
+																		style="font-weight:bold;" />
+																	<apex:outputText rendered="{!prd.checked}">
+																		<br></br>&nbsp;&radic;&nbsp;&nbsp;
+																		<apex:outputText style="color:blue" value="{!$Label.apttus_config2__selected}" />
+																	</apex:outputText>
+																</td>
+																<td style="width: 15em; max-width: 20em;">
+																	<apex:commandLink value="{!prd.shortMessage}"
+																		rerender="dummy"  
+																		onclick="aptShowMessage('{!prd.appliedRuleActionInfo.Apttus_Config2__Message__c}'); return true;">
+																	</apex:commandLink>
+																</td>
+																<td>
+									                                <apex:image value="{!URLFOR($Action.Attachment.Download, prd.imageSrc)}"
+									                                            style="{!prd.iconStyle}"
+									                                            onclick="j$.APTTUS.aptCreatePopup('{!prd.contentUrl}', '{!prd.productSO.Name}', {!prd.isEmbedType}); "
+									                                            rendered="{!(prd.imageSrc != null)}" />
+																</td>
+																<!-- Column2 -->                 
+																<apex:outputPanel layout="none" rendered="{!NOT(ProductColumn2Name == null)}">
+																	<td>
+																		<apex:outputField value="{!prd.productSO[ProductColumn2Name]}" />
+																	</td>
+																</apex:outputPanel>
+																<!-- Column3 -->                 
+																<apex:outputPanel layout="none" rendered="{!NOT(ProductColumn3Name == null)}">
+																	<td>
+																		<apex:outputField value="{!prd.productSO[ProductColumn3Name]}" />
+																	</td>
+																</apex:outputPanel>
+																<apex:outputPanel layout="none" rendered="{!NOT(HideListedProductsPriceColumn)}">
+																	<td id="pricingField">
+																		<apex:dataList value="{!prd.chargeList}"
+																			style="list-style: none; padding-right: 5px;" 
+																			var="price">
+																			<apex:outputPanel >
+																				<apex:outputText value="{0} - ">
+																					<apex:param value="{!price.chargeType}" />
+																				</apex:outputText>
+																				<div style="display:inline;" class="aptCurrency">
+																					<apex:outputField value="{!price.charge.Apttus_Config2__ListPrice__c}" />
+																				</div>
+																			</apex:outputPanel>
+																		</apex:dataList>
+																	</td>
+																</apex:outputPanel>
+																<apex:outputPanel layout="none" rendered="{!isShowAction}">
+																	<apex:outputPanel layout="none" rendered="{!prd.appliedRuleActionInfo.Apttus_Config2__TargetBundleNumber__c == 0 && prd.appliedRuleActionInfo.Apttus_Config2__IsTargetOption__c == false}">
+																		<td style="text-align:right">
+																			<apex:outputPanel rendered="{!NOT(prd.isShowRemove)}">
+																				<div style="display:none;">
+																					<img class="aptProductSpinner" src="/img/loading.gif"/>
+																               	</div>
+
+																				<apex:commandLink value="{!$Label.apttus_config2__addtocart}"
+																					action="{!doReplaceProduct}" 
+																					onclick="startSpinner('.aptProductSpinner', this);startTopSpinner('{!$Label.apttus_config2__addingproduct}');" 
+																					oncomplete="j$('.apt-gen-spinner').remove();onActionComplete();"
+																					rendered="{!prd.isReplacement}"                                         
+																					styleClass="aptListButton"
+																					reRender="idProductsBlock, idSelectedProductsBlock, idBrowseBlock" >
+																					<apex:param name="param1" 
+																						assignTo="{!selectProductId}"
+																						value="{!prd.productSO.Id}" />
+																					<apex:param name="param2" 
+																						assignTo="{!ruleActionId}"
+																						value="{!prd.appliedRuleActionInfo.Apttus_Config2__ConstraintRuleActionId__c}" />
+																				</apex:commandLink>
+																				<apex:commandLink value="{!$Label.apttus_config2__addtocart}"
+																					action="{!doSelectProduct}" 
+																					onclick="startSpinner('.aptProductSpinner', this);startTopSpinner('{!$Label.apttus_config2__addingproduct}');" 
+																					oncomplete="j$('.apt-gen-spinner').remove();"
+																					rendered="{!NOT(prd.isReplacement)}"
+																					styleClass="aptListButton"
+																					reRender="idProductsBlock, idSelectedProductsBlock, idBrowseBlock" >
+																					<apex:param name="param1" 
+																						assignTo="{!selectProductId}"
+																						value="{!prd.productSO.Id}" />
+																					<apex:param name="param2" 
+																						assignTo="{!ruleActionId}"
+																						value="{!prd.appliedRuleActionInfo.Apttus_Config2__ConstraintRuleActionId__c}" />
+																				</apex:commandLink>
+																				<br/>
+																			</apex:outputPanel>
+																			<apex:outputPanel rendered="{!prd.isShowRemove}">
+																				<div style="display:none;">
+																					<img class="aptRemoveProductSpinner" src="/img/loading.gif"/>
+																               	</div>
+																			    &nbsp; &nbsp;
+																				<!-- Exclusion product -->
+																				<apex:commandLink value="{!$Label.apttus_config2__remove}" 
+																					action="{!doRemoveProduct}" 
+																					onclick="startSpinner('.aptRemoveProductSpinner', this); " 
+																					oncomplete="j$.APTTUS.showPricingWaitPanel(); doComputeTotalPrice(); "
+																					styleClass="aptListButton"
+																					reRender="idTopNavActions, idProductsBlock, idSelectedProductsBlock, idBrowsePanel" >
+																					<apex:param name="param1" 
+																						assignTo="{!selectProductId}"
+																						value="{!prd.productSO.Id}" />
+																					<apex:param name="param2" 
+																						assignTo="{!ruleActionId}"
+																						value="{!prd.appliedRuleActionInfo.Apttus_Config2__ConstraintRuleActionId__c}" />
+																				</apex:commandLink>
+																				<br/>
+																			</apex:outputPanel>
+																		</td>
+																	</apex:outputPanel>
+																	<apex:outputPanel layout="none" rendered="{!prd.appliedRuleActionInfo.Apttus_Config2__TargetBundleNumber__c != 0 && prd.appliedRuleActionInfo.Apttus_Config2__IsTargetOption__c == true}">
+																	</apex:outputPanel>
+																</apex:outputPanel>
+															</tr>
+														</apex:repeat>
+													</tbody>
+												</table>
+												<script>
+													var bundleIds = {};
+													var targetBundleNumbers ={};
+													var headerRow = j$('#headerRow');
+													j$('tr[class^=bundleHeader-]').each(function(){
+														bundleIds[j$(this).prop('class').split('-')[1]] = j$(this).prop('class').split('-')[1];
+														 
+													})
+													
+													j$('tr[class^=targetBundleNumber-]').each(function(){
+														targetBundleNumbers[j$(this).prop('class').split('-')[1]] = j$(this).prop('class').split('-')[1];
+														 
+													}) 
+													
+													for(var propt in bundleIds){
+														j$('.bundleHeader-'+propt).not(':first').remove();
+														
+													}
+													
+													for(var propt in targetBundleNumbers){
+														if(propt !== "0"){
+														j$('.targetBundleNumber-'+propt).each(function(){
+																j$(this).find('td:first').css('padding-left','1.5em');
+														
+															})
+															
+														}
+														
+													} 
+													 
+												</script>
+											</apex:outputPanel>
+											<apex:outputPanel layout="block" rendered="{!hasValidationMessages && (showMessageMode)}">
+												<table>
+													<thead>
+														<tr>
+															<th>{!$Label.RuleMessage}</th>
+														</tr>
+													</thead>
+													<tbody>
+														<apex:repeat value="{!ValidationActions}" 
+															var="actionInfo">
+															<tr>
+																<td>
+																	<apex:outputText value="{!actionInfo.Apttus_Config2__Message__c}"/>
+																</td>
+															</tr>
+														</apex:repeat>
+													</tbody>
+												</table>
+											</apex:outputPanel>
+											<script>
+												j$.APTTUS.formatFields("{!currencyFieldPrecision}", "{!percentageFieldPrecision}", "{!quantityFieldPrecision}");
+											</script>
+										</apex:outputPanel>
+										<apex:outputText value="{!$Label.apttus_config2__nomoreproducts}"
+											rendered="{!NOT(hasProducts) && NOT(showMessageMode)}" />
+										<apex:outputText value="{!$Label.apttus_config2__nomoremessages}"
+											rendered="{!NOT(hasValidationMessages) && (showMessageMode)}" />
+									</apex:outputPanel>
+								</apex:outputPanel>
+							</div>
+						</div>
+					</div>
+					<!-- Right hand side of the page -->                    
+					<div style="width: {!SelectedProductsWidth}; float:left;">
+						<div  width="100%" style="padding:5px">
+							<!-- Start Totals -->
+							<apex:outputPanel id="idTotalsPanel" layout="block" >
+								<c:MiniCart id="idMiniCartComponent" configId="{!ConfigurationId}" configRequestId="{!RequestId}"/>
+								
+								<script>						                
+						                if({!showShoppingCartIcon}) {
+						                    // hide totals panel
+						                    if(typeof copyMiniCartToCartHeaderDropdown == 'function') {
+						                            copyMiniCartToCartHeaderDropdown();   
+						                    }
+						                    
+						                    // hide totals panel
+						                    j$(document.getElementById('{!$Component.idTotalsPanel}')).hide();
+						
+						                }
+						          </script>
+							</apex:outputPanel>
+						</div>
+						
+					</div>
+					<!-- End Shopping Cart -->   
+					<apex:outputPanel id="idCommands" layout="block" styleClass="idCommands cleafix apt-page-footer"> 
+	                    <script>
+	                		j$(function(){    
+	                			aptClearButtons();
+	                		});
+	                	</script>
+	                    
+	                    <!-- Start Buttons -->
+	                    <div id="idCommandButtonsSection">
+	                                <!-- Page Tasks -->
+	                                <div style="display:none;" class="apt-button-action-spinner"><img src="/img/loading.gif"/></div>
+	                                
+	                                <apex:actionStatus styleClass="buttonActionStatus" 
+	                                                    id="buttonActionStatus" />
+	                                    <!-- <apex:outputPanel id="idEmptydiv" rendered="{!isLocationEnabled && ((IsCartEmpty) && NOT(isAssetEnabled))}">
+	                                         <div>&nbsp;</div>
+	                                    </apex:outputPanel>  -->
+	                                <ul class="pageButtons leftPageButtons">
+	                                    <li>
+	                                    </li>
+	                                </ul> 
+	                                <ul class="pageButtons centerPageButtons">
+	                                    <li>
+	                                    </li>
+	                                </ul>
+	                                
+	                                <div class="apt-powered-logo"><apex:image url="{!URLFOR($Resource.Apttus_Config2__CPQDelight, 'apt-logo.png')}" title="Powered By Apttus" alt="Powered By Apttus" /></div>
+	                                
+	                                <ul class="pageButtons rightPageButtons">
+	                                    <li>
+	                                    </li>
+	                                </ul>    
+	                                
+	                                <ul class="allButtons" style="display:none;">
+	                                    <!-- action task and help links -->                  
+	                                    <apex:repeat value="{!PageActions}" var="actionInfo">
+	                                        <apex:outputPanel layout="none" rendered="{!actionInfo.IsDisplay && actionInfo.ActionSO.Apttus_Config2__DisplayAs__c != 'Link'}">
+	                                             <li id="{!actionInfo.ActionSO.Apttus_Config2__ActionName__c}">
+	                                                 <apex:commandLink value="{!$Label[actionInfo.ActionSO.Apttus_Config2__ActionLabelName__c]}" 
+	                                                                  onclick="{!actionInfo.ActionScript}" 
+	                                                                  styleClass="aptListButton {!actionInfo.ActionSO.Apttus_Config2__ActionStyleClass__c}"
+	                                                                  status="buttonActionStatus"
+	                                                                  html-displayas="{!actionInfo.ActionSO.Apttus_Config2__DisplayAs__c}"
+	                                                                  html-actionarea="{!actionInfo.ActionSO.Apttus_Config2__ActionArea__c}"
+	                                                                  html-aptdisabled="{!actionInfo.IsEnabled == false}"
+	                                                                  reRender="dummy">
+	                                                </apex:commandLink>
+	                                            </li>
+	                                        </apex:outputPanel>    
+	                                    </apex:repeat>
+	                                    <!-- nav links -->
+	                                    <apex:repeat value="{!NavLinks}" var="actionInfo">
+	                                        <apex:outputPanel layout="none" 
+	                                                        rendered="{!actionInfo.IsEnabled}">
+	                                            <li id="{!actionInfo.ActionSO.Apttus_Config2__ActionName__c}">                  
+	                                                <apex:commandLink value="{!$Label[actionInfo.ActionSO.Apttus_Config2__ActionLabelName__c]}" 
+	                                                                  styleClass="{!actionInfo.ActionSO.Apttus_Config2__ActionStyleClass__c}"
+	                                                                  onclick="{!actionInfo.ActionScript}"  
+	                                                                  status="buttonActionStatus"
+	                                                                  html-displayas="{!actionInfo.ActionSO.Apttus_Config2__DisplayAs__c}"
+	                                                                  html-actionarea="{!actionInfo.ActionSO.Apttus_Config2__ActionArea__c}"
+	                                                                  reRender="idErrorMsg, idCommands, idViewBlock">              
+	                                                </apex:commandLink> 
+	                                            </li>         
+	                                        </apex:outputPanel>
+	                                    </apex:repeat>
+	                                    <apex:outputPanel layout="none" rendered="{!IsActionMoreEnabled}">
+	                                        <li id="aptMoreListItem">
+	                                            <div class="dropdown">
+	                                                <div class="apt-dropdown-toggle" id="apt-MoreBtn" role="button" data-toggle="dropdown">
+	                                                    <apex:commandLink value="{!$Label.apttus_config2__more}" 
+	                                                                  styleClass="aptListButton aptMoreButton"
+	                                                                  onClick="return false;"/> 
+	                                                </div>
+	                                                <ul class="apt-list-dropdown dropdown-menu dropdown-menu-bottom apt-moreDropDown" role="menu" aria-labelledby="apt-moreBtn">
+	                                                </ul>
+	                                            </div>
+	                                        </li>         
+	                                    </apex:outputPanel>
+	                                    <apex:outputPanel layout="none" rendered="{!IsActionAbandonEnabled}">
+	                                        <li id="aptAbandonListItem">
+	                                            <div style="float:right;padding-top:2px;" id="aptAbandonBtn">
+	                                                <apex:outputPanel style="text-align: right; padding-right: 4px;"
+	                                                                  layout="block" 
+	                                                                  id="idTopNavActions">
+	                                                      <apex:commandButton value="{!$Label.apttus_config2__abandon}"
+	                                                                          onclick="j$.APTTUS.showAbandonConfirmationDialog(); return false;"
+	                                                                          immediate="true"
+	                                                                          style="background-color:#657383;background-image:none;color:white;"/>
+	                                                </apex:outputPanel>
+	                                            </div>
+	                                        </li>
+	                                    </apex:outputPanel>
+	                                </ul>
+	                                
+	                                <apex:outputPanel id="customPageScript">
+	                                    <script type="text/javascript">
+	                                        j$(function() {
+	                                        	populatePageButtons({!IsFixedButtonBar});       
+	                                          
+	                                        });
+	                                    </script>             
+	                                </apex:outputPanel>
+	                                
+	                        </div>
+	                </apex:outputPanel>               
+				</div>
+			</apex:outputPanel>
+		</div>
+<div id="dialog"></div>
+<!-- Action Functions -->   
+		<apex:actionFunction name="invokeDoCustomAction" 
+                             action="{!doCustomAction2}"
+                             status="buttonActionStatus"
+                             reRender="idErrorMsg, idCommands, idRulesBlock">
+            <apex:param name="actionName"
+            			value="" />
+        </apex:actionFunction>
+            
+        <apex:actionFunction name="invokeDoAdjustPageSize"
+                             action="{!doAdjustPageSize}"
+                             oncomplete="YAHOO.force.com.waitPanel.hide();"
+                             reRender="idProductsBlock, idProductsBlock" >
+        </apex:actionFunction>
+        <apex:actionFunction name="invokeDoHideMessage"
+                             action="{!doHideMessage}"
+                             reRender="idErrorMsg"
+                             oncomplete="YAHOO.force.com.waitPanel.hide();" >
+            <apex:param name="param" assignTo="{!appliedActionInfoId}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="invokeDoProcessMoreRules" 
+                             action="{!doProcessMoreRules}"
+                             reRender="idTopNavActions, idProductsBlock, idSelectedProductsBlock, idBrowseBlock"
+                             oncomplete="onActionComplete();" />
+        
+        <apex:actionFunction name="invokeDoDeleteLineItem" 
+                             action="{!doDeleteLineItem}"
+                             reRender="idTopNavActions, idProductsBlock, idSelectedProductsBlock, idBrowseBlock" 
+                             oncomplete="doComputeTotalPrice();j$.aptActionFunctionQueue.processNext();"
+                             status="idLineItemPageChangeStatus">
+            <apex:param name="firstParam" assignTo="{!lineItemLineNbr}" value="" />
+        </apex:actionFunction>
+        <apex:actionFunction name="sfdcInvokeRefreshMiniCart"
+			reRender="idTotalsPanel"
+			oncomplete="j$.aptActionFunctionQueue.processNext();">
+		</apex:actionFunction>
+        <apex:actionFunction name="invokeLoadPage" 
+                             action="{!loadPage}"
+                             reRender="idProductsBlock"
+                             status="idPageChangeStatus">
+        </apex:actionFunction>
+        <apex:actionFunction name="sfdcInvokeDoConfigure"
+							action="{!doConfigure}"
+							oncomplete="onActionComplete();"
+							rerender="dummy">
+			<apex:param name="firstParam" 
+						assignTo="{!proceedLineItemId}"
+						value=""/>			
+		</apex:actionFunction>
+		<apex:actionFunction name="invokeGoToSearchDefault"
+					    action="{!gotoSearchDefault}"
+						oncomplete="onActionComplete2();"
+						reRender="idTopNavActions, idProductsBlock, idSelectedProductsBlock">
+		</apex:actionFunction>
+		<apex:actionFunction name="invokeGoToSearch"
+						    action="{!gotoSearchProduct}"
+							oncomplete="onActionComplete2();"
+						    reRender="idTopNavActions, idProductsBlock, idSelectedProductsBlock">
+				<apex:param name="firstParam" 
+						assignTo="{!selectProductId}" 
+						value=""/>
+		</apex:actionFunction>
+		<apex:actionFunction name="sfdcInvokePageRefresh"
+			action="{!doRefreshCart}"
+			reRender="idTotalsPanel"
+			oncomplete="j$.APTTUS.hidePricingWaitPanel();"/>
+
+		<apex:actionFunction name="sfdcInvokeDoViewCart" 
+							action="{!doViewCart}" 
+							oncomplete="document.getElementById('{!$Component.pageButtonStatus}.start').style.display = 'none';"
+							immediate="true"
+						    reRender="idErrorMsg"  />
+		<apex:actionFunction name="invokeDoAbandon" 
+			action="{!doAbandon}" 
+			immediate="true"
+			status="buttonActionStatus"/>  
+	<!-- This is the product details dialog -->
+        <apex:outputPanel >
+            <div id="productDetailDialog" style="display: none">
+				<apex:outputLabel value="{!$ObjectType.Product2.Fields.Description.Label} : " for="ctxProductDescription"/>
+				<span id="ctxProductDescription">Hello Description</span>
+            </div>
+        </apex:outputPanel>                 
+     
+<!-- This is the content of the confirmation dialog -->
+        <apex:outputPanel >
+            <div id="confirmationPanel" style="display: none">
+                <div class="hd">
+                    <apex:outputText value="{!$Label.apttus_config2__removeconfirmation}" />
+                </div> 
+                <div class="bd">
+                    <apex:outputText value="{!$Label.apttus_config2__removeproductmessage}" />
+                </div>
+                <div class="bd">
+                    <apex:actionRegion >
+                        <div style="text-align: center; padding-left: 4px;" >
+                            <apex:commandButton value="{!$Label.apttus_config2__yes}"
+                                                onclick="YAHOO.force.com.remove();"
+                                                style="width: 50px;"   
+                                                immediate="true" 
+                                                oncomplete="YAHOO.force.com.confirmationPanel.hide();" />
+                            <apex:commandButton value="{!$Label.apttus_config2__no}" 
+                                                style="width: 50px;"   
+                                                onclick="YAHOO.force.com.confirmationPanel.hide();return false;" />
+                        </div>
+                    </apex:actionRegion>
+                </div>
+            </div>
+        </apex:outputPanel>  
+        <apex:outputPanel >
+        	<div id="confirmationPanelJQuery" style="display: none">
+				<div><apex:outputText value="{!$Label.apttus_config2__removeproductmessage}" /></div>
+				<br />
+				<div style="text-align: center; padding-left: 4px;">
+					<apex:commandButton value="{!$Label.apttus_config2__yes}" 
+										onclick="j$('.idLineItemPageChangeStatus').css('display','inline'); j$('.start').show(); doDeleteLineItem();return false;" 
+										oncomplete="j$('.idLineItemPageChangeStatus').css('display','none'); j$.APTTUS.hideRemoveConfirmation();"
+										style="width: 50px; height: 30px;" immediate="true"
+										status="idLineItemPageChangeStatus"/> 
+					<apex:commandButton value="{!$Label.apttus_config2__no}" 
+										style="width: 50px; height: 30px;" rerender="dummy"
+										onclick="j$.APTTUS.hideRemoveConfirmation();return false;" />
+				</div>
+			</div>
+        </apex:outputPanel>    
+
+<!-- This is the prevent selection alert dialog -->
+        <apex:outputPanel >
+            <div id="alertPanel" style="display: none">
+                <apex:outputPanel id="idAlertPanel">
+                    <div class="bd" style="text-align: center;">
+                    <apex:pageBlock >
+                        <apex:pageBlockSection columns="1">
+                            <div id="alertBody">Body of Alert
+<!-- Start Body of Alert -->                            
+
+                            
+<!-- End Body of Alert -->                          
+                            </div>                          
+                        </apex:pageBlockSection>
+                    </apex:pageBlock>
+                    </div> 
+                    <div class="bd">
+                    <div style="text-align: center;" >
+                    <input type="button" value="{!$Label.Ok}" style="width: 60px;"
+                        onclick="YAHOO.force.com.alertPanel.hide();"/>
+                    </div>
+                </div> 
+                </apex:outputPanel>   
+            </div>
+        </apex:outputPanel> 
+        
+<!-- This is the rule message dialog -->
+        <apex:outputPanel >
+            <div id="ruleMessagePanel" style="display: none">
+			<apex:outputPanel >
+				<span id="ctxRuleMessage">Hello Description</span>
+			</apex:outputPanel>
+            </div>
+        </apex:outputPanel>   
+        <div id="pricingWaitPanel" style="display: none">
+			<div style="text-align: center; veritical-align: middle; font-weight: bold; margin-bottom: 20px;">{!$Label.UpdatingPricePleaseWait}</div>
+			<div style="text-align: center; veritical-align: middle;">
+				<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>
+			</div>
+		</div> 
+		<!-- Abandon Cart Confirmation Dialog -->
+		<div id="abandonConfirmationPanel" style="display: none">
+			<div><apex:outputText value="{!$Label.apttus_config2__abandoncartmessage}" /></div>
+			<br />
+			<div style="text-align: center; padding-left: 4px;">
+				<apex:commandButton value="{!$Label.apttus_config2__yes}" 
+				                   	onclick="invokeDoAbandon(); return false;"           
+									immediate="true"                                        
+									style="width: 50px; height: 30px;"
+					                 status="buttonActionStatus"/> 
+				<apex:commandButton value="{!$Label.apttus_config2__no}"                                        
+									onclick="j$.APTTUS.hideAbandonConfirmationDialog(); return false;" 
+									style="width: 50px; height: 30px;"/>
+			</div>
+		</div>             
+    </apex:form>
+
+    <script type="text/javascript">
+        var aptsOnload = function(){
+            YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady);
+            YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady2);
+            //when the page is loaded with pending processing of rules
+            if(needMoreProcessing){
+                YAHOO.force.com.waitPanel.show();
+                invokeDoProcessMoreRules();
+            }
+            //YAHOO.force.com.buildRuleMessagePanel(); //only used in this ResolveConfig page
+            
+        }
+        //combine onload functions
+        window.onload = combineFunction(window.onload, aptsOnload);
+
+    </script>
+    
+</apex:page>

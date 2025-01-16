@@ -1,0 +1,187 @@
+<!--
+ *  Apttus Contract Management
+ *  MSTeamsReviewCycle
+ *   
+ *  @2019 Apttus Inc. All rights reserved.
+ -->
+ <apex:page sidebar="false" lightningStylesheets="true"
+ controller="Apttus.MSTeamsReviewCycleController"  >
+ <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+
+ <apex:stylesheet value="{!URLFOR($Resource.Apttus__MSTeamsReviewCycleResources, 'MSTeamsReviewCycleResources/styles/MSTeamsReviewCycleStyles.css')}"/>
+ <apex:outputPanel rendered="{!OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t')}">
+     <apex:slds />
+     <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}"/>
+ </apex:outputPanel>
+
+ <apex:variable var="reviewActionMultipleCancel" value="cancelReviewers" />
+ <apex:variable var="reviewActionCancel" value="cancelReview" />
+ <apex:variable var="reviewActionAdd" value="AddReviewers" />
+ 
+ <apex:outputText value="{!docVersion.Apttus__Title__c}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!docVersion.Apttus__LatestVersionId__c}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!docVersion.AgreementId__r.Name}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!docVersion.LatestVersionId__r.Apttus__ContentId__c}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!docVersion.TemplateId__r.Id}" rendered="false"></apex:outputText>
+ 
+
+ <div class="{!IF(OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t'), 'slds-scope' ,'' )}">
+     <apex:form enctype="multipart/form-data" id="form">
+
+         <!-- loads the page header for classic view -->
+         <apex:outputPanel rendered="{!Not(IsLightningTheme)}">
+             <div class="bPageTitle">
+                 <div class="ptBody">
+                     <div class="content" style="margin-bottom: 8px;">
+                         <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/TeamsReview.png')}" 
+                             alt="Review Cycle" class="pageTitleIcon" title="{!$Label.ReviewCycle}" style="margin-left: 5px;margin-top: 0px;" />
+                         <h1 class="pageType">{!$Label.ReviewCycle} for {!docTitle}</h1>
+                         <h2 class="pageDescription headerFont"> {!agreementname}</h2>
+                         <div class="blank">&nbsp;</div>
+                     </div>
+                     <div style="float:right">
+                         <apex:outputPanel layout="none" id="classicButtons" >
+                            <apex:commandButton action="{!endTeamsReview}" value="{!$Label.apttus__endreview}" disabled="{!disableEndCancel}" reRender="form"/>
+                            <apex:commandButton action="{!cancelTeamsReview}" value="{!$Label.apttus__cancelreview}" disabled="{!disableEndCancel}" reRender="form"/>
+                            <apex:commandButton action="{!loadReviewCycleInfo}" value="{!$Label.apttus__refreshreviewcycle}" disabled="{!disableRefresh}" reRender="form"/>
+                            <apex:commandButton action="{!onExit}" value="{!$Label.apttus__reviewexit}" />
+                         </apex:outputPanel>
+                         <apex:outputPanel id="showAfterEnd" rendered="{!endInProgress}">
+                                <script>
+                                        alert('{!JSENCODE($Label.MSTeamsEndReviewMessage)}');
+                                </script>
+                        </apex:outputPanel>                        
+                     </div>
+                 </div>
+             </div>
+         </apex:outputPanel>
+
+         <!-- loads the page header for lightning view -->
+         <apex:outputPanel rendered="{!IsLightningTheme}">
+             <div class="slds-page-header slds-page-header_record-home" rendered="{!IsLightningTheme}">
+                 <div class="slds-page-header__row">
+                     <div class="slds-page-header__col-title">
+                         <div class="slds-media">
+                             <div class="slds-media__figure">
+                                 <span class="slds-icon_container">
+                                    <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/TeamsReview.png')}" 
+                                    alt="Review Cycle" class="pageTitleIcon" title="{!$Label.ReviewCycle}"
+                                />
+                                 </span>
+                             </div>
+                             <div class="slds-media__body">
+                                 <div class="slds-page-header__name">
+                                     <div class="slds-page-header__name-title">
+                                         <h1>
+                                             <span>{!$Label.ReviewCycle} for {!docTitle}</span>
+                                             <span class="slds-page-header__title slds-truncate" title="{!agreementname}">{!agreementname}</span>
+                                         </h1>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     <apex:outputPanel layout="none" id="lightningButtons">
+
+                     <apex:commandButton action="{!endTeamsReview}"  value="{!$Label.apttus__endreview}" style="margin:3px 3px"
+                                disabled="{!disableEndCancel}" reRender="form"/>
+                     <apex:commandButton action="{!cancelTeamsReview}"  value="{!$Label.apttus__cancelreview}" style="margin:3px 3px"
+                                disabled="{!disableEndCancel}" reRender="form"/>
+                     <apex:commandButton action="{!loadReviewCycleInfo}"  value="{!$Label.apttus__refreshreviewcycle}" style="margin:3px 3px"
+                                disabled="{!disableRefresh}" reRender="form"/>
+                     <apex:commandButton action="{!onExit}" value="{!$Label.apttus__reviewexit}" style="margin:3px 3px"/>
+                     </apex:outputPanel>                     
+                     <apex:outputPanel id="showAfterEndLightning" rendered="{!endInProgress}">
+                                <script>
+                                        alert('{!JSENCODE($Label.MSTeamsEndReviewMessage)}');
+                                </script>
+                     </apex:outputPanel>       
+                 </div>
+             </div>
+         </apex:outputPanel>
+
+         <div class="reviewP">
+            <!-- loads panel for list of review cycles -->
+            <apex:outputPanel id="reviewCyclePanel">
+              <apex:outputPanel layout="block" rendered="{!$User.UIThemeDisplayed != 'Theme4t'}" styleclass="reviewC1">
+                <apex:pageBlock id="pb1" rendered="{!(hasReviewCycles)}">
+                    <apex:repeat value="{!reviewCyclesWrapper}" var="reviewCycleWrapper">
+                        <apex:outputPanel layout="block" id="reviewcyclePanel" styleclass="reviewCycleStyle">
+                        <apex:outputPanel styleClass="{!reviewCycleWrapper.selectedBorder}" >
+                            <apex:commandLink action="{!loadReviewers}" value="{!reviewCycleWrapper.reviewCycle.Name}"  reRender="reviewerpanel,lightningButtons,classicButtons"
+                                styleClass="boldFont" style="color:black">
+                                <apex:param value="{!reviewCycleWrapper.reviewCycle.Id}" name="CycleId" assignTo="{!selectReviewCycleId}" />
+                                <apex:param value="{!reviewCycleWrapper.reviewCycle.Name}" name="CycleName" assignTo="{!selectReviewCycleName}" />
+                                <apex:param value="{!reviewCycleWrapper.reviewCycle.Apttus__ReviewStatus__c}" name="CycleStatus" assignTo="{!selectReviewCycleStatus}" />
+                            </apex:commandLink>&nbsp;&nbsp;&nbsp;
+                            <apex:outputText value="{!reviewCycleWrapper.reviewCycle.Apttus__ReviewStatus__c}" styleClass="{!reviewCycleWrapper.selectedColor}"></apex:outputText><br/>
+                       </apex:outputPanel>
+                            <apex:outputPanel layout="block" styleClass="reviewCycleDetail">
+                                <div style="padding:10px">
+                                  <table>
+                                    <tr>
+                                      <td>
+                                        <span>{!$Label.apttus__initiatedby}</span> <br/> 
+                                        <apex:outputField label="{!$Label.apttus__initiatedby}" value="{!reviewCycleWrapper.reviewCycle.CreatedById}" />
+                                         <br/><br/>
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td style="width:50%">
+                                        <span>{!$Label.apttus__initiatedon}</span><br/>
+                                        <apex:outputField label="{!$Label.apttus__initiatedon}" value="{!reviewCycleWrapper.reviewCycle.createddate}"/>
+                                      </td>
+                                       <td class="marginleftTableCell; width:50%">
+                                           <span>{!$Label.apttus__reviewcycleendedon}</span><br/>                  
+                                           <apex:outputField label="{!$Label.apttus__reviewcycleendedon}" value="{!reviewCycleWrapper.reviewCycle.Apttus__EndedCancelledOn__c}" rendered="{!NOT(ISNULL(reviewCycleWrapper.reviewCycle.Apttus__EndedCancelledOn__c))}"/> 
+                                           <apex:outputText label="{!$Label.apttus__reviewcycleendedonwithdash}" value="{!$Label.apttus__reviewcycleendedonwithdash}" rendered="{!ISNULL(reviewCycleWrapper.reviewCycle.Apttus__EndedCancelledOn__c)}"/> 
+                                       </td>
+                                      </tr>
+                                   </table>
+                                </div>
+                            </apex:outputPanel><br/><br/>
+                        </apex:outputPanel>
+                    </apex:repeat>
+                </apex:pageBlock>
+              </apex:outputPanel>
+            </apex:outputPanel>
+                         <!-- loads panel for list of reviewers for a particular review cycle selected -->
+                         <apex:outputpanel id="reviewerpanel" layout="block" style="width:{!IF($User.UIThemeDisplayed == 'Theme4t', '100%' ,'75%' )};" styleClass="reviewerP slds-brand-band slds-brand-band_cover slds-brand-band_medium">  
+                            <apex:outputPanel id="error" layout="block" rendered="{!hasErrors}">
+                              <apex:pageMessages />
+                            </apex:outputPanel>
+                            <apex:outputpanel layout="block" styleClass="reviewerC" style="margin:{!IF(OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t'), '10px' ,'0px 10px' )};">
+                                <apex:pageBlock id="pb2" mode="maindetail" title="{!selectReviewCycleName}">
+                                    <apex:pageBlockButtons location="top">
+                                        <apex:outputpanel id="button1" styleClass="floatRight" rendered="{!NOT(disableEndCancel)}">
+                                            <apex:commandButton style="margin-left:10px" action="{!addReviewer}" value="{!$Label.apttus__addreviewer}">
+                                                <apex:param value="{!reviewActionAdd}" name="reviewAction" assignTo="{!reviewAction}" />
+                                               </apex:commandButton>
+                                             </apex:outputpanel>
+                                    </apex:pageBlockButtons>
+                                </apex:pageBlock>
+                                <table style="margin:20px 30px;width:auto;" >
+                                    <tr>
+                                      <td style="width:14%">Reviewer(s)</td>
+                                      <td style="width:82%">{!reviewers}</td>
+                                    </tr>
+                                    <tr>
+                                      <td style="width:14%"><br/>Start Date</td>
+                                      <td >
+                                          <br/>
+                                          <apex:outputField label="{!$Label.apttus__initiatedon}" value="{!selectReviewCycle.createdDate}" />
+                                          <span class="marginLeftRight">End Date</span>
+                                          <apex:outputField label="{!$Label.apttus__reviewcycleendedon}" value="{!selectReviewCycle.Apttus__EndedCancelledOn__c}" rendered="{!NOT(ISNULL(selectReviewCycle.Apttus__EndedCancelledOn__c))}"/> 
+                                           <apex:outputText label="{!$Label.apttus__reviewcycleendedonwithdash}" value="{!$Label.apttus__reviewcycleendedonwithdash}" rendered="{!ISNULL(selectReviewCycle.Apttus__EndedCancelledOn__c)}"/> 
+                                        </td>
+                                    </tr>
+                                  </table>
+                                </apex:outputPanel>
+                            </apex:outputpanel>
+          </div>
+            
+        </apex:form>
+ </div>
+ </html>
+</apex:page>

@@ -1,0 +1,177 @@
+<!--
+@author Charket
+@date   29-Mar-2024
+@description: A page opened in WeChat to collect follower information.
+-->
+<apex:page showHeader="false" standardStylesheets="false" controller="CharketCustomerCareController" action="{!init}" id="page" cache="false">
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>微信用户注册</title>
+
+        <link rel="stylesheet" type="text/css" href="https://asset.charket.com.cn/styles/vendor/weui.min.css" />
+        <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.CharketCustomerCare,'CharketCustomerCare/css/custom.css')}" />
+    </head>
+
+    <body class="main-page">
+        <script src="{!URLFOR($Resource.CharketCustomerCare,'CharketCustomerCare/jquery/form.js')}" /> 
+        <apex:form id="form">
+            <apex:outputpanel rendered="{!OR(NOT(isWeChatBrowser), NOT(isValidWeChatUser))}">
+                <article class="slds-card">
+                    <div class="slds-card__body slds-card__body_inner">
+                        <div class="web-content">
+                            <img class="wechat-logo" width="64" height="64" alt="WeChat" src="{!URLFOR($Resource.CharketCustomerCare,'CharketCustomerCare/images/wechat-icon-@2x.png')}"
+                            />
+                            <p class="web-limit">该表单只限在微信内访问</p>
+                        </div>
+                    </div>
+                </article>
+            </apex:outputpanel>
+            <apex:outputpanel rendered="{!AND(isWeChatBrowser, isValidWeChatUser)}">
+                <div class="loading-mask weui-mask_transparent" id="formtast"></div>
+                <div class="loading-toast weui-toast" id="formloading">
+                    <em class="weui-loading weui-icon_toast"></em>
+                    <p class="weui-toast__content">请稍候...</p>
+                </div>
+                <div class="weui-toptips weui-toptips_warn js_tooltips" id="weuiWarn"></div>
+                <apex:outputpanel rendered="{!OR(isContactVerified, isEmailVerified)}">
+                    <div>
+                        <div class="weui-msg">
+                            <div class="weui-msg__icon-area">
+                                <em class="weui-icon-success weui-icon_msg"></em>
+                            </div>
+                            <div class="weui-msg__text-area">
+                                <div class="weui-msg__title">提交成功</div>
+                                <div class="weui-msg__desc">{!displayMessage}</div>
+                            </div>
+                        </div>
+                    </div>
+                </apex:outputpanel>
+                <div class="form-submitted-notify">
+                    <div class="weui-msg">
+                        <div class="weui-msg__icon-area">
+                            <em class="weui-icon-success weui-icon_msg"></em>
+                        </div>
+                        <div class="weui-msg__text-area">
+                            <div class="weui-msg__title">提交成功</div>
+                            <div class="weui-msg__desc">{!formSubmittedMessage}</div>
+                        </div>
+                    </div>
+                </div>
+                <apex:outputpanel rendered="{!AND(NOT(isEmailVerified), NOT(isContactVerified))}">
+                    <apex:outputpanel rendered="{!NOT(isAcceptDataPrivacyPolicy)}">
+                        <div class="js_dialog privacy-box">
+                            <div class="weui-mask privacy-box"></div>
+                            <div class="weui-dialog">
+                                <div class="privacy-box-title">
+                                    <div class="weui-msg__title">温馨提示</div>
+                                </div>
+                                <div class="weui-dialog_bd">
+                                    <div class="weui-msg__text-area">
+                                        <div class="weui-msg__desc privacy-box-content">
+                                            请您务必仔细阅读和充分理解
+                                            <a href="https://www.illumina.com.cn/company/legal/corporate-privacy-policy.html">《因美纳隐私政策》</a>和
+                                            <a href="CharketCustomDataPrivacyConsent?wechatAccountId={!URLENCODE(privacyConsent)}">《因美纳服务请求同意函》</a>，我们将严格按照经您同意的各项条款保存、使用您的个人信息，为您提供服务。
+                                            <br/>如果您同意，请点击'同意'继续提交您的服务需求。
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="privacy-box-button">
+                                    <input type="button" value="同意" class="weui-btn weui-btn_primary accept-btn" onKeyPress="accept(event, '{!JSENCODE(follower.followerId)}')" onclick="update('{!JSENCODE(follower.followerId)}')"></input>
+                                </div>
+                            </div>
+                        </div>
+                    </apex:outputpanel>
+                    <div class="contact-section">
+                        <p class="section-title">联系人信息</p>
+                        <div class="weui-cells section-content">
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">姓
+                                        <span class="required-mark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input lastName" type="text" name="lastName" placeholder="姓"  value="{!follower.lastName}"/>
+                                </div>
+                                <div class="weui-cell__ft cell-warn">
+                                    <em class="weui-icon-warn"></em>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">名
+                                        <span class="required-mark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input firstName" type="text" name="firstName" placeholder="名" value="{!follower.firstName}"/>
+                                </div>
+                                <div class="weui-cell__ft cell-warn">
+                                    <em class="weui-icon-warn"></em>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">单位/公司名称
+                                        <span class="required-mark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input company" type="text" name="company" placeholder="公司名称" value="{!follower.companyName}"/>
+                                </div>
+                                <div class="weui-cell__ft cell-warn">
+                                    <em class="weui-icon-warn"></em>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">电话
+                                        <span class="required-mark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input mobile" type="text" name="mobile" placeholder="请填写11位手机号码"  value="{!follower.mobile}"/>
+                                </div>
+                                <div class="weui-cell__ft cell-warn">
+                                    <em class="weui-icon-warn"></em>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">邮箱
+                                        <span class="required-mark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input email" type="text" id="email" placeholder="邮箱" value="{!follower.email}"/>
+                                </div>
+                                <div class="weui-cell__ft cell-warn">
+                                    <em class="weui-icon-warn"></em>
+                                </div>
+                            </div>
+                            <div class="weui-cell">
+                                <div class="weui-cell__hd">
+                                    <label class="weui-label">邮箱验证码
+                                        <span class="required-mark">*</span>
+                                    </label>
+                                </div>
+                                <div class="weui-cell__bd">
+                                    <input class="weui-input emailCode" type="text" id="emailCode" placeholder="邮箱验证码" />
+                                </div>
+                                <button type="button" class="email-verify-button" onclick="send('{!JSENCODE(follower.followerId)}')" onKeyPress="sendKey(event, '{!JSENCODE(follower.followerId)}')">获取验证码</button>
+                            </div>
+                        </div>
+                        <p class="section-title">请填写与因美纳联系的常用邮箱地址。</p>
+                        <footer class="footer footer-btn">
+                            <button type="button" class="weui-btn weui-btn_primary submit" onclick="submitForm('{!JSENCODE(follower.followerId)}')" onKeyPress="submitKey(event, '{!JSENCODE(follower.followerId)}')">提交</button>
+                        </footer>
+                    </div>
+                </apex:outputpanel>
+            </apex:outputpanel>
+        </apex:form>
+    </body>
+    </html>
+</apex:page>

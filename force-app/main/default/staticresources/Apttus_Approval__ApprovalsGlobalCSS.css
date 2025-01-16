@@ -1,0 +1,424 @@
+	#bodyCell {
+			/*background: #EEE; /*background for table cell where VF page resides in normal salesforce*/
+		}
+		
+		html {
+			/*background: #EEE; /*background for iframe were VF page resides when used in Service Cloud context*/
+			
+		}
+
+		.aptTopButtons {
+	     	display: inline !important;
+	     	list-style-type: !important none;
+
+	     }
+
+	     .aptTopButtons li {
+	     	display: inline !important;
+	     }
+
+	     .aptCartHeader {
+            margin:  0 !important;
+            padding: 0 !important;
+            width:   100% !important;
+        }
+        		
+		.noSidebarCell {
+			 padding: 0px; 
+		}
+
+		.aptsPageInputSize {
+			width:10em;
+		}
+
+		.aptRoundedDiv {
+			padding-bottom: 5px;
+			background-color: white;
+			border: 1px solid #DDD;
+			-webkit-border-radius: 3px; /* Safari 3-4, iOS 1-3.2, Android ≤1.6 */
+          	border-radius: 3px; /* Opera 10.5, IE9+, Safari 5, Chrome, Firefox 4+, iOS 4, Android 2.1+ */
+		  	/* useful if you don't want a bg color from leaking outside the border: */
+			/* -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box; */
+			/*-webkit-box-shadow: 0px 0px 4px 0px #000;  Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+	        /*box-shadow: 0px 0px 4px 0px #000; /* Opera 10.5, IE9+, Firefox 4+, Chrome 6+, iOS 5 */
+			
+			/* IE Stuff */		
+		 	zoom: 1; 
+		 	float:left;
+		 	width:100%;
+	      	filter: 
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=0,strength=2),
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=45,strength=2),
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=90,strength=2),
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=135,strength=2),
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=180,strength=2),
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=225,strength=2),
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=270,strength=2),
+	          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=315,strength=2);
+          
+    	}
+
+    	.aptGroupHeader {
+            background: -moz-linear-gradient(top, rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%);
+            background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0)));
+            background: -webkit-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+            background: -o-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+            background: -ms-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+            background: linear-gradient(to bottom, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6d3d3d3', endColorstr='#00ffffff',GradientType=0 );
+            height: 40px;
+            padding-top: 10px;
+            cursor: pointer;
+        }
+    	
+    	.aptCancelButton{
+			-moz-box-shadow: 0px 1px 0px 0px #ffffff !important;
+			-webkit-box-shadow: 0px 1px 0px 0px #ffffff !important;
+			box-shadow: 0px 1px 0px 0px #ffffff !important;
+			
+			/*
+			background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, rgb(162, 175, 189)), color-stop(1, rgb(114, 114, 114)) ) !important;
+			background: -moz-linear-gradient( center top, #71b2f6 5%, #236fbd 100% ) !important;
+			filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#71b2f6', endColorstr='#236fbd') !important;
+			background-color: #71b2f6 !important;
+			*/
+			background: #a2afbd; /* Old browsers */
+			background: -moz-linear-gradient(top, #a2afbd 5%, #727272 100%) !important; /* FF3.6+ */
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(5%,#a2afbd), color-stop(100%,#727272)) !important; /* Chrome,Safari4+ */
+			background: -webkit-linear-gradient(top, #a2afbd 5%,#727272 100%) !important; /* Chrome10+,Safari5.1+ */
+			background: -o-linear-gradient(top, #a2afbd 5%,#727272 100%) !important; /* Opera 11.10+ */
+			background: -ms-linear-gradient(top, #a2afbd 5%,#727272 100%) !important; /* IE10+ */
+			background: linear-gradient(to bottom, #a2afbd 5%,#727272 100%) !important; /* W3C */
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a2afbd', endColorstr='#727272',GradientType=0 ) !important; /* IE6-9 */
+			
+			-moz-border-radius: 2px !important;
+			-webkit-border-radius: 2px !important;
+			border-radius: 2px !important;
+			display: inline-block !important;
+			color: #ffffff !important;
+			font-family: arial !important;
+			font-size: 12px !important;
+			font-weight: normal !important;
+			padding: 5px 24px !important;
+			text-decoration: none !important;
+			margin-right: 5px !important;
+			
+		}
+    	
+    	.ui-tabs li {
+    		border: none !important;
+    	}
+    	
+    	.ui-widget-content {
+    		border: none;
+    	}
+    	
+    	/* 4485c0 active 737373 inactive  */
+    	.ui-tabs {
+    		margin: 0 !important;
+			padding: 0 !important;
+    	}
+    	
+    	.ui-tabs .ui-tabs-nav {
+			margin: 0 !important;
+			padding: 0 !important;
+			border-radius: 0px !important;
+		}    	
+    	.ui-widget-header {
+    		/* width: 95%; */
+	    	padding: 6px 0px;
+			font-size: 1em;
+			line-height: 1.5em;
+			/* color: #6f6f6f; */
+			-webkit-border-top-left-radius: 2px;
+			-webkit-border-top-right-radius: 2px;
+			-moz-border-radius-topleft: 2px;
+			-moz-border-radius-topright: 2px;
+			border-top-left-radius: 2px;
+			border-top-right-radius: 2px;
+			
+			border:none !important;
+			background: url('img/sprites.png') repeat-x;
+			background-position: 0px 0px;
+    	}
+    	
+
+		.ui-tabs .ui-tabs-nav li.ui-tabs-active {
+			margin-bottom: 0px !important;
+			padding-bottom: 0px !important;
+		}
+		
+		.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+			/* border: 1px solid #aaaaaa; */
+			background: transparent !important;
+			border: none;
+			font-weight: normal;
+			color: #4485c0 !important;
+		}
+		
+		.ui-state-active {
+			color: #4485c0 !important;
+		}
+		
+		.ui-state-active a, .ui-state-active a:link {
+			color: #4485c0 !important;
+		}
+		
+		.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+			/* border: 1px solid #d3d3d3;*/
+			background: transparent !important;
+			font-weight: normal;
+			 color: #737373;
+		}
+		
+		
+		.aptSearchBox {
+			height:1.6em;
+		}
+
+    	div.aptProductListHeader {
+    		cursor: pointer;
+
+	    	width:100%;
+	    	padding: 6px 0px;
+			font-size: 1em;
+			line-height: 1.5em;
+			color: #6f6f6f;
+			-webkit-border-top-left-radius: 2px;
+			-webkit-border-top-right-radius: 2px;
+			-moz-border-radius-topleft: 2px;
+			-moz-border-radius-topright: 2px;
+			border-top-left-radius: 2px;
+			border-top-right-radius: 2px;
+			float: left;
+			background: url('img/sprites.png') repeat-x;
+			background-position: 0px 0px;
+			
+			/* background: -moz-linear-gradient(top,  #022649 30%, #04050c 99%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(30%,#022649), color-stop(99%,#04050c));
+			background: -webkit-linear-gradient(top,  #022649 30%,#04050c 99%);
+			background: -o-linear-gradient(top,  #022649 30%,#04050c 99%);
+			background: -ms-linear-gradient(top,  #022649 30%,#04050c 99%);
+			background: linear-gradient(to bottom,  #022649 30%,#04050c 99%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#022649', endColorstr='#04050c',GradientType=0 ); */
+		}
+
+		.aptProductListHeader h2 {
+			padding-left:1em;
+			font-weight: normal;
+		}
+
+		
+
+		.aptQuantity {
+            text-align: right;
+            width:3em;
+        }
+
+        .aptRecommendedProductsContainer {
+
+        }
+
+        .aptShoppingCartContainer {
+
+        }
+        
+        .evenRowRules {
+        	background-color: white;
+        }
+
+
+        /***************************
+		 *  FIELDS
+		 **************************/
+
+
+        .aptToggleStatus  {
+			border: none 0;
+			background-image: url('img/Image_Toggle.png');
+			background-size: 10px 100px;
+			background-repeat: no-repeat;
+			padding-left: 18px;
+			color: #333;
+			
+		}
+
+		.aptToggleOff  {
+			background-position: 0px -80px;
+		}
+		
+		.aptToggleOn  {
+			background-position: 0px -11px;
+		}
+
+		.aptToggleStatus a {
+			color: #06C;
+		}
+
+
+		.aptShoppingCartTable tr {
+			height: 3em;
+		}
+
+
+		/***************************
+		 *  ICONS and IMAGES
+		 **************************/
+
+		.aptCartLineItemIcon {
+            width:100px;
+        }
+
+
+
+
+        /***************************
+		 *  BUTTONS
+		 **************************/
+		 .aptDoSearchBtn {
+		 	background: url('img/sprites.png') repeat-x !important;
+		 	background-position: 0 -93px !important;
+			background-repeat: repeat-x !important;
+			height: 26px !important;
+			padding:5px 24px;
+			font-family:tahoma,arial !important;
+			font-size:12px !important;
+			border-style: none;
+			border-right: 1px solid #aaa;
+			border-left: 1px solid #aaa;
+			border-radius: 2px;
+			cursor: pointer;
+		 }
+		 
+		 .aptDoSearchBtn:hover {
+		 	background: url('img/sprites.png') repeat-x !important;
+		 	background-position: 0 -120px !important;
+			background-repeat: repeat-x !important;
+			height: 26px !important;
+			padding:5px 24px;
+			font-family:tahoma,arial !important;
+			font-size:12px !important;
+			border-style: none;
+			border-right: 1px solid #aaa;
+			border-left: 1px solid #aaa;
+			border-radius: 2px;
+		 }
+		 
+		 .aptDoSearchBtn:active {
+		 	background: url('img/sprites.png') repeat-x !important;
+		 	background-position: 0 -148px !important;
+			background-repeat: repeat-x !important;
+		 }
+
+		.aptListButton {
+			-moz-box-shadow: 0px 1px 0px 0px #ffffff;   
+			-webkit-box-shadow: 0px 1px 0px 0px #ffffff;
+			box-shadow: 0px 1px 0px 0px #ffffff;
+			background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #71b2f6), color-stop(1, #236fbd) );
+			background:-moz-linear-gradient( center top, #71b2f6 5%, #236fbd 100% );
+			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#71b2f6', endColorstr='#236fbd');
+			background-color:#71b2f6;
+			-moz-border-radius:2px;
+			-webkit-border-radius:2px;
+			border-radius:2px;
+			
+			display:inline-block;
+			color:#ffffff !important;
+			font-family:arial;
+			font-size:12px;
+			font-weight:normal;
+			padding:5px 24px;
+			text-decoration:none;
+			margin-right:5px;
+		}
+		.aptListButton:hover {
+			background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #89bff8), color-stop(1, #4a88c9) );
+			background:-moz-linear-gradient( center top, #89bff8 5%, #4a88c9 100% );
+			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#89bff8', endColorstr='#4a88c9');
+			background-color:#89bff8;
+			text-decoration:none;
+			color:#ffffff;
+		}
+		.aptListButton:active {
+			position:relative;
+			top:1px;
+			background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #507eaf), color-stop(1, #2570be) );
+			background:-moz-linear-gradient( center top, #507eaf 5%, #2570be 100% );
+			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#507eaf', endColorstr='#2570be');
+			background-color:#507eaf;
+		}
+		
+		
+		.aptGoToAnotherPageBtn {
+			background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #b9e066), color-stop(1, #8cbd23) );
+			background:-moz-linear-gradient( center top, #b9e066 5%, #8cbd23 100% );
+			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#b9e066', endColorstr='#8cbd23');
+			background-color:#b9e066;
+			-moz-border-radius:2px;
+			-webkit-border-radius:2px;
+			border-radius:2px;
+			
+			display:inline-block;
+			color:#ffffff;
+			font-family:helvetica;
+			font-size:12px;
+			font-weight:normal;
+			padding:8px 24px;
+			margin:2px;
+			text-decoration:none;
+		}
+		.aptGoToAnotherPageBtn:hover {
+			background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #c5e580), color-stop(1, #a0c949) );
+			background:-moz-linear-gradient( center top, #c5e580 5%, #a0c949 100% );
+			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#c5e580', endColorstr='#a0c949');
+			background-color:#c5e580;
+			text-decoration:none;
+			color:#ffffff;
+		}
+		.aptGoToAnotherPageBtn:active {
+			background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #839f48), color-stop(1, #8dbe24) );
+			background:-moz-linear-gradient( center top, #839f48 5%, #8dbe24 100% );
+			filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#839f48', endColorstr='#8dbe24');
+			background-color:#839f48;
+			position:relative;
+			top:1px;
+		}
+
+		.aptShoppingCartBtn {
+			cursor: pointer;
+			background: url('img/sprites.png');
+		 	background-position: -23px -280px;
+			margin:6px 12px !important;
+			height: 17px;
+			width: 19px;
+		}
+
+		.aptShoppingCartBtn:hover {
+
+		}
+		
+		.aptTrashBin {
+			background: url('img/sprites.png');
+		 	background-position: 0 -280px;
+			height: 21px;
+			width: 21px;
+		}
+		
+		.aptSmallBasket {
+			background: url('img/sprites.png');
+		 	background-position: -23px -280px;
+			height: 17px;
+			width: 19px;
+			margin-left:5px;
+			float:left;
+		}
+
+
+		/***************************
+		 *  MISC
+		 **************************/
+
+
+		.clearfix {
+		    clear:both;
+		}

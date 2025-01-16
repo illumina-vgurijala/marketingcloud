@@ -1,0 +1,108 @@
+<apex:page controller="ApttusCheckPriceDirectUCController" showHeader="false" sidebar="false" standardStylesheets="false">
+	<apex:variable var="cssResourcePath" value="{!URLFOR($Resource.jqueryCarousel,'/bootstrap-3.3.7-dist')}" />
+	<link rel='stylesheet' href='{!cssResourcePath}/css/bootstrap.min.css'/>
+	<link rel='stylesheet' href='{!cssResourcePath}/css/bootstrap-theme.min.css'/>
+
+	<apex:includeScript value="{!URLFOR($Resource.jqueryCarousel,'bootstrap-3.3.7-dist/js/jquery-2.2.4.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jqueryCarousel,'bootstrap-3.3.7-dist/js/bootstrap.min.js')}" />
+
+	<style type="text/css">
+		@-webkit-keyframes rotate {
+		  from {
+		    -webkit-transform: rotate(0deg);
+		  }
+		  to { 
+		    -webkit-transform: rotate(360deg);
+		  }
+		}
+
+		img.rotating
+		{
+		    -webkit-animation-name:             rotate; 
+		    -webkit-animation-duration:         0.5s; 
+		    -webkit-animation-iteration-count:  infinite;
+		    -webkit-animation-timing-function: linear;
+		}
+	</style>
+
+	<apex:form id="myForm">
+	<apex:pageMessages escape="false"/>
+		<apex:actionFunction action="{!redirectToCart}" name="redirectToCart"></apex:actionFunction>
+		<apex:actionFunction action="{!callSAP}" name="callSAP" oncomplete="boolHasError={!boolHasError}; repriceCart()" rerender="myForm"></apex:actionFunction>
+		<apex:actionFunction action="{!repriceCart}" name="callPricing" oncomplete="doRepriceCart({!boolPricingCompleted})"></apex:actionFunction>
+		<script type="text/javascript">
+			function init() {
+				callSAP();
+		    }
+
+		    function repriceCart(){
+		    	if(boolHasError){
+		    		$('#myModal').modal('show');	
+		    	}else{
+		    		console.log('calling pricing 1');
+		    		callPricing();	
+		    	}
+		    }
+
+			function doRepriceCart(isDone){
+		    	if(isDone){
+					console.log('Inside isdone - doRepriceCart');
+					var isBoolWarning = {!boolWarning};
+					var showWarnng = {!boolShowWarningModal};
+					console.log('boolShowWarningModal ---- ' + showWarnng);
+					if(isBoolWarning === true)
+					{
+						showWarningPopUp(showWarnng);
+					}
+					else
+					{
+                        redirectToCart();
+                    }	
+				}	
+				else{
+		    		console.log('calling pricing 2');
+		    		callPricing();	
+		    	}
+			}
+			function showWarningPopUp(showWarnng)
+			{
+			    console.log('boolShowWarningModal function --- ' + showWarnng);
+                $('#ModalWarnings').modal('show');
+			}
+		</script>
+		<body onload="init()">
+			<center><img src="{!URLFOR($Resource.Image_Loading)}" class="rotating" alt="Loading..."/></center>
+			<!-- Modal -->
+			<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+			  <div class="modal-dialog modal-dialog-centered" role="document">
+			    <div class="modal-content">
+			      <div class="modal-header">
+			        <h5 class="modal-title" id="modalLongTitle">{!$Label.UI_Text_SAP_Pricing}</h5>
+			      </div>
+			      <div class="modal-body">
+			        <apex:outputText escape="false" >{!strErrorMsg}</apex:outputText>
+			      </div>
+			      <div class="modal-footer">
+			        <button type="button" class="btn btn-primary" onClick="redirectToCart()">{!$Label.UI_Button_Go_To_Cart}</button>
+			      </div>
+			    </div>
+			  </div>
+			</div>
+			<div class="modal fade" id="ModalWarnings" tabindex="-1" role="dialog" data-backdrop="static" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+				<div class="modal-dialog modal-dialog-centered" role="document">
+				  <div class="modal-content">
+					<div class="modal-header">
+					  <h5 class="modal-title" id="modalLongTitle">{!$Label.UI_Attention_Msg}</h5>
+					</div>
+					<div class="modal-body">
+					  <apex:outputText escape="false" value="{!strWarningMessage}"></apex:outputText>
+					</div>
+                      <div class="modal-footer">
+			        <button type="button" class="btn btn-primary" onClick="redirectToCart()">{!$Label.UI_Okay}</button>
+			      </div>
+				  </div>
+				</div>
+			</div>
+    	</body>
+	</apex:form>	
+</apex:page>

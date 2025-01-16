@@ -1,0 +1,168 @@
+<!-- 
+Apttus Contract Management
+AgreementNew
+
+@2009-2020 Apttus Inc. All rights reserved.
+
+-->
+<apex:page standardController="Apttus__APTS_Agreement__c" 
+           extensions="Apttus.AgreementNewController" >
+    
+	<Apttus_Base2:UsageDataComponent2 ProdName="{!systemSettingforUsageAnalytics['productName']}" ProdVersion="{!systemSettingforUsageAnalytics['productVersion']}"/>
+	
+    <apex:variable var="isLightning" value="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t' || $User.UIThemeDisplayed == 'Theme4u'}" 
+                   rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t' || $User.UIThemeDisplayed == 'Theme4u'}">
+        <apex:stylesheet value="{!URLFOR($Resource.Apttus__LightningResource, 'css/agreement-new-styling.css')}" />
+        <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}" />
+        <style>
+            html body.sfdcBody {
+            padding:0 0 0 0;
+            }
+            .bPageBlock, body #bodyCell .bResource .secondaryPalette, body .secondaryPalette.bPageBlock, body .individualPalette .secondaryPalette.bPageBlock, body .bodyDiv .genericTable, body .genericPageBlockTable, body .bodyDiv .bSubBlock, body .bComponentBlock .bPageBlock, body .bMyDashboard .bPageBlock, body.rlHoverFrame .bPageBlock, body.subjectSelectionPopup div.choicesBox, body.lookupTab .secondaryPalette.bPageBlock, body.popupTab .secondaryPalette.bPageBlock, body.UserTagStatsPage .secondaryPalette.bPageBlock {
+            background-color: #f4f6f9;
+            }
+            .Custom18Tab .tertiaryPalette, .individualPalette .Custom18Block .tertiaryPalette, .layoutEdit .individualPalette .Custom18Block .tertiaryPalette{
+            background-color: #f4f6f9;
+            }
+            .Custom18Tab .secondaryPalette, .individualPalette .Custom18Block .secondaryPalette{
+            background-color: transperent;
+            border-color: #f4f6f9;
+            }
+            .bPageBlock {
+            border-top: 1px solid lightgray;
+            }
+            .fieldcontrol{
+            
+            padding: 1px 1rem 0 .75rem;
+            line-height: 1.875rem;
+            min-height: 1.875rem;
+            }
+            
+        </style>
+    </apex:variable>
+    
+    <script language="Javascript">
+    
+    function SubmitOnClick (objSubmitBtn) {
+        
+        var isFirefox = typeof InstallTrigger !== 'undefined';
+        var isChrome = !!window.chrome && !!window.chrome.webstore;
+        
+        if(isFirefox == true){
+            objSubmitBtn.className = 'btnDisabled';
+        }
+        else if(isChrome == true){
+            objSubmitBtn.disabled = true;
+            objSubmitBtn.className = 'btnDisabled';
+            doSubmit();
+        }
+            else{
+                objSubmitBtn.className = 'btnDisabled';
+            }
+        return true;
+    }
+    
+    </script>
+    
+    <apex:form id="frmId">
+        <apex:outputPanel rendered="{!!($User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t' || $User.UIThemeDisplayed == 'Theme4u')}">
+            <apex:pageBlock rendered="{!NOT(isInitialized) && NOT(hasErrors)}">
+                <apex:pageBlockButtons location="bottom">
+                    <!--<apex:commandButton value="{!$Label.apttus__continue}" onclick="return SubmitOnClick(this);" action="{!onLoad}" />-->
+                    <apex:actionStatus id="continueStatus">
+                        <apex:facet name="stop">
+                            <apex:commandButton value="{!$Label.apttus__continue}"  action="{!onLoad}" rerender="frmId" status="continueStatus"/> 
+                        </apex:facet>
+                        <apex:facet name="start">
+                            <apex:outputPanel >
+                                <apex:commandButton value="{!$Label.apttus__continue}" status="continueStatus" disabled="true"/>
+                            </apex:outputPanel>
+                        </apex:facet>
+                    </apex:actionStatus>
+                    <apex:commandButton value="{!$Label.apttus__cancel}" action="{!doCancel}" immediate="true" />
+                </apex:pageBlockButtons>
+                
+                <apex:pageBlockSection title="{!$Label.apttus__newagreement}" columns="2" collapsible="false">
+                    <apex:repeat value="{!$ObjectType.Apttus__APTS_Agreement__c.FieldSets.Apttus__AgreementNewFieldSet}" var="fieldMember">
+                        <apex:inputField value="{!Apttus__APTS_Agreement__c[fieldMember]}" required="{!fieldMember.Required}" rendered="{!if(fieldMember.FieldPath != StatusCategory, true, false)}"/> 
+                        <apex:outputField value="{!Apttus__APTS_Agreement__c[fieldMember]}" rendered="{!if(fieldMember.FieldPath == StatusCategory, true, false)}"/>   
+                    </apex:repeat>
+                </apex:pageBlockSection>
+            </apex:pageBlock>
+            
+            <apex:pageBlock mode="edit" rendered="{!hasErrors}" >
+                <apex:pageMessages />
+                <apex:pageBlockButtons location="bottom" >
+                    <apex:commandButton action="{!doCancel}" value="{!$Label.apttus__cancel}" immediate="true"/>
+                </apex:pageBlockButtons>
+            </apex:pageBlock>
+            
+            
+        </apex:outputPanel>
+        <apex:outputPanel rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4t' || $User.UIThemeDisplayed == 'Theme4u'}">
+          <apex:includeLightning />
+                <style>
+                    html{
+                        background: white!important;
+                    }
+                    html body.sfdcBody {
+                        overflow : visible !important;
+                    }
+                    body{
+                        background: RGB(244,246,249)!important;
+                    }
+                </style>
+               <div id="editAgreementContainer"/>
+                <script>    
+                    function getSearchParameters() {
+                      var prmstr = window.location.search.substr(1);
+                      return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : "";
+                    }
+                                
+                    function transformToAssocArray( prmstr ) {    
+                        var prmarr = prmstr.split("&");
+                        var lookUpId = "";
+                        for ( var i = 0; i < prmarr.length; i++) {
+                            //serching prmarr to find the lookup field Id and the lookup field Value, eg : CF00N0b00000A4bvw_lkid=0010b00002P2wdv
+                            var tmparr = prmarr[i].split("=");
+                            if(tmparr[0].indexOf('{!$Label.LightningLookupId}') >= 0) {
+                                //This will hold the value of Field Id and Field value
+                                //Removing the fix values from the Field ID parameters
+                                lookUpId = tmparr[0].substr(2).replace('{!$Label.LightningLookupId}','').replace('_','') + ',' + tmparr[1];
+                                break;
+                            }
+                        }
+                        
+                        return lookUpId != null && lookUpId != "" ? lookUpId : "";
+                    }
+            		//Fetching the URL Parameters and spliting in Field Id and Field Value
+            		var urlLookupFieldValues = getSearchParameters().split(",");
+            		var lookupFieldId = "";
+            		var lookupFieldValue = "";        
+                    if(urlLookupFieldValues != undefined && urlLookupFieldValues != "" && urlLookupFieldValues.length >0 ){
+                        lookupFieldId = urlLookupFieldValues[0];
+                        lookupFieldValue = urlLookupFieldValues[1];
+                    }
+            		
+                    $Lightning.use("{!ComponentNamespace}:AgreementEditApp", function() {
+                        $Lightning.createComponent("{!ComponentNamespace}:LightningAggregate",{                 
+                            recordTypeId : '{!RecordTypeId}',
+                            statusCategory : '{!JSENCODE(APTS_Agreement__c.Status_Category__c)}',
+                            recordName : '{!APTS_Agreement__c.Name}',
+                            sObjectName : '{!$ObjectType.APTS_Agreement__c.Name}',
+                            fieldSetName : '{!FieldSetName}',
+                            action : 'New Agreement',
+                            typeofImage : '/images/headericons/Agreement.png',
+                            paramMap : {'{!$Label.ID}' : lookupFieldValue,'{!$Label.RecordType}' : '{!RecordTypeId}','{!$Label.LightningLookupId}' : lookupFieldId}
+                        },
+                        "editAgreementContainer",
+                        function(cmp) {
+                            console.log('Component created');
+                        });
+                    });
+             </script>
+        </apex:outputPanel>
+        <apex:actionFunction name="doSubmit" action="{!onLoad}" />
+    </apex:form>
+    
+</apex:page>

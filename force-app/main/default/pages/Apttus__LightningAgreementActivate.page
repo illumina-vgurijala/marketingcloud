@@ -1,0 +1,407 @@
+<!-- 
+    Apttus Contract Management
+    LightningAgreementActivate
+     
+    @2017-2020 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus__APTS_Agreement__c" 
+           extensions="Apttus.AgreementActivateController" 
+           showHeader="false" sidebar="false" cache="false">
+		   
+	<Apttus_Base2:UsageDataComponent2 ProdName="{!systemSettingforUsageAnalytics['productName']}" ProdVersion="{!systemSettingforUsageAnalytics['productVersion']}"/>
+	
+<html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <head>
+            
+            <apex:slds />
+            <apex:stylesheet value="{!URLFOR($Resource.Apttus__LightningResource, 'css/activate-agreement.css')}" /> 
+            <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" />       
+            <apex:include pageName="Apttus__ComplyJSLibInclude" />
+            
+            <style>
+                html body.sfdcBody {
+                    padding:0 0 0 0;
+                }
+               
+            </style>       
+    </head>
+
+    <body>
+    <apex:form >
+        <!--  required fields -->
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Name}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Version_Number__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Status__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Status_Category__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__FF_Agreement_Number__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Contract_Start_Date__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Contract_End_Date__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Agreement_Number__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Agreement_Category__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Activated_Date__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__Activated_By__c}" rendered="false"/>
+        <apex:outputText value="{!Apttus__APTS_Agreement__c.Apttus__VersionAware__c}" rendered="false" /> 
+
+        <div class="slds">
+            
+            <!-- Spinner Object to Show lightning spinning -->
+            <div class="spinner">
+                    <img class="slds-spinner--medium spinnerImg " src="https://www.lightningdesignsystem.com/assets/images/spinners/slds_spinner_brand.gif" alt="..." />
+            </div>
+                
+            <apex:outputPanel id="idActivatePanel">
+            <apex:outputPanel rendered="{!NOT(isInitialized)}">
+                <script>
+                   // register to invoke the function after the page load
+                    window.onload = function() { 
+                        // initialize the controller
+                        doInit();                        
+                    };                   
+                </script>
+            </apex:outputPanel>
+                
+                <apex:outputPanel layout="block" styleClass="slds-brand-band slds-brand-band_cover slds-brand-band_medium">
+                    <div class="slds-page-header headerStyle">
+                        <div class="slds-page-header__row">
+                            <div class="slds-page-header__col-title">
+                                <div class="slds-media mediastyle">
+                                    <div class="slds-media__figure">
+                                        <span class="slds-icon_container">
+                                            
+                                            <!--image-->
+                                            <img src="{!URLFOR($Resource.LightningResource, 'images/headericons/Activate.svg')}" alt="{!$Label.ActivateAgreement}" class="pageTitleIcon" title="{!$Label.ActivateAgreement}"/>
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- header title -->
+                                    <div class="slds-media__body">
+                                        <div class="slds-page-header__name">
+                                            <div class="slds-page-header__name-title">
+                                                <h1>
+                                                    <span class="slds-page-header__name-meta headerTitle">{!$Label.ActivateAgreement}</span>
+                                                </h1>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- agreement name -->
+                                        <p class="slds-page-header__title slds-truncate agreementTitle">
+                                            <apex:outputText value="{!Apttus__APTS_Agreement__c.Name}"/> 
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- next, previous buttons -->
+                                    <div class="rightButtonsPanel">
+                                        <apex:outputPanel rendered="{!canEditAgreement && isSelectionPage}" >
+	                                        <div class="slds-grid slds-grid_align-end">
+                                                <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                                <div >    
+                                                    &nbsp;<apex:commandButton action="{!doCancel}" value="{!$Label.apttus__cancel}" immediate="true"
+                                                        styleClass="slds-button slds-button--neutral" />
+                                                </div>
+                                                <div>
+                                                    &nbsp;<apex:commandButton action="{!doNext}" value="{!$Label.apttus__next}" 
+                                                        styleClass="slds-button slds-button--brand" />
+                                                </div>
+                                            </div>
+                                        </apex:outputPanel>
+                                        <apex:outputPanel rendered="{!canEditAgreement && isSearchablePage}" >
+                                            <div class="slds-grid slds-grid_align-end">
+                                                <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                                <div>
+                                                    &nbsp;<apex:commandButton styleClass="slds-button slds-button--neutral" action="{!doCancel}" value="{!$Label.apttus__cancel}" immediate="true"/>
+                                                </div>
+                                                <div>
+                                                    &nbsp;<apex:commandButton action="{!doPrevious}" value="{!$Label.apttus__previous}" rendered="{!NOT(isFirstPage)}" styleClass="slds-button slds-button--neutral" />
+                                                </div>
+                                                <div >    
+                                                &nbsp;<apex:commandButton action="{!doNext}" value="{!$Label.apttus__next}" 
+                                                    styleClass="slds-button slds-button--brand" />
+                                                </div>
+                                            </div>
+									    </apex:outputPanel>									
+									
+                                        <apex:outputPanel rendered="{!canEditAgreement && isRemovablePage}" >
+                                            <div class="slds-grid slds-grid_align-end">
+                                                <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                                <div>
+                                                    &nbsp;<apex:commandButton action="{!doCancel}" value="{!$Label.apttus__cancel}" immediate="true" 
+                                                        styleClass="slds-button slds-button--neutral"/>
+                                                </div>
+                                                <div>
+                                                    &nbsp;<apex:commandButton action="{!doPrevious}" value="{!$Label.apttus__previous}"   
+                                                    rendered="{!NOT(isFirstPage)}" styleClass="slds-button slds-button--neutral" />
+                                                </div>
+                                                <div >    
+                                                    &nbsp;<apex:commandButton action="{!doNext}" value="{!$Label.apttus__next}" 
+                                                    styleClass="slds-button slds-button--brand" />
+                                                </div>
+                                            </div>                                        
+                                        </apex:outputPanel>
+
+                                        <apex:outputPanel rendered="{!canEditAgreement && isReviewPage}" >
+                                            <apex:actionStatus id="activateStatus">
+                                                <apex:facet name="stop">
+                                                    <apex:outputPanel >  
+                                                        <div class="slds-grid slds-grid_align-end">
+                                                        <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                                        <div>&nbsp;
+                                                            <apex:commandButton action="{!doCancel}" value="{!$Label.apttus__cancel}"
+                                                            styleClass="slds-button slds-button--neutral" immediate="true"/>
+                                                        </div>
+                                                        <div>
+                                                            &nbsp;<apex:commandButton action="{!doPrevious}" value="{!$Label.apttus__previous}" rendered="{!NOT(isFirstPage)}" styleClass="slds-button slds-button--neutral" />
+                                                        </div>
+                                                        <div >    
+                                                            &nbsp;<apex:commandButton value="{!$Label.apttus__activate}" id="idActivate" action="{!doActivate}" status="activateStatus" rerender="idActivatePanel" styleClass="slds-button slds-button--brand" />
+                                                        </div> 
+                                                        </div>                                                                                                                    
+                                                    </apex:outputPanel>
+                                                </apex:facet>
+                                                <apex:facet name="start">
+                                                    <apex:outputPanel >  
+                                                        <div class="slds-grid slds-grid_align-end">
+                                                        <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                                        <div>
+                                                            &nbsp;
+                                                            <apex:commandButton action="{!doCancel}" value="{!$Label.apttus__cancel}" immediate="true" disabled="true" styleClass="slds-button slds-button--neutral"/>
+                                                        </div>
+                                                        <div>
+                                                            &nbsp;
+                                                            <apex:commandButton action="{!doPrevious}" value="{!$Label.apttus__previous}" rendered="{!NOT(isFirstPage)}" disabled="true" 
+                                                            styleClass="slds-button slds-button--neutral"/>
+                                                        </div>
+                                                        <div >
+                                                            &nbsp;
+                                                            <apex:commandButton value="{!$Label.apttus__activating}" disabled="true"  status="activateStatus" rerender="idActivatePanel" styleClass="slds-button slds-button--brand" />
+                                                        </div>         
+                                                        </div>                                                                                                            
+                                                    </apex:outputPanel>
+                                                </apex:facet>
+                                            </apex:actionStatus>
+								        </apex:outputPanel>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> <!-- end page header -->
+                <!-- body -->
+                
+               
+                    <div class="pageBody bodymargin">
+                <div class="myapp">
+                    
+                     <!---------- new section -------------->
+                     <apex:outputPanel id="timeSheetNav"  layout="none" rendered="{!isError}">
+                        <div class="slds-scoped-notification slds-media slds-media_center slds-theme_warning" style="margin: 15px;" role="status">
+                        <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-utility-error" title="error" style="color:black;">
+                                <img class="slds-icon slds-icon_x-small" src="{!URLFOR($Resource.LightningResource, 'images/warning_60.png')}" alt="{!$Label.ActivateAgreement}" title="{!$Label.ActivateAgreement}"/>                                
+                            <span class="slds-assistive-text">error</span>
+                            </span>
+                        </div>
+                        <div class="slds-media__body">
+                            <p>
+                            {!errorMessage}
+                            </p>
+                        </div>
+                        </div>
+                    </apex:outputPanel>
+                    <!---------- new section --------------> 
+                     
+                    <apex:outputPanel rendered="{!isInitialized}" >
+                        <apex:outputPanel rendered="{!NOT(canEditAgreement)}"  >                        
+                            <fieldset class="slds-box slds-theme--default">
+                                
+                                <apex:outputText value="{!$Label.apttus__insufficientprivileges}" 
+                                                     style="font-size: 12px; font-weight: bold;" />
+                                <apex:outputText value="{!$Label.apttus__insufficientprivilegesdetail}" /><br/>
+                            </fieldset>
+                            <div class="slds-scope">
+                                <fieldset class="slds-box slds-theme--default">
+                                    <div class="slds-grid slds-grid_align-end">
+                                        <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                        <div>    
+                                            <apex:commandButton action="{!doCancel}" value="{!$Label.apttus__return}" immediate="true"
+                                            styleClass="slds-button slds-button--brand slds-m-top--medium" />
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!canEditAgreement && isErrorPage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                                
+                            </fieldset>
+                            <div class="slds-scope">
+                                <fieldset class="slds-box slds-theme--default">
+                                    <div class="slds-grid slds-grid_align-end">
+                                        <div class="slds-col slds-col_bump-left" >&nbsp;</div>
+                                        <div>    
+                                            <apex:commandButton action="{!doCancel}" value="{!$Label.apttus__return}" immediate="true" 
+                                            styleClass="slds-button slds-button--neutral slds-m-top--medium"/>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!canEditAgreement && isSelectionPage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                                <p class="slds-text--label">{!$Label.ExecutedDocumentsSectionLightning}</p>
+                                
+                                <div>
+                                    <apex:outputPanel rendered="{!hasAvailableDocItems}">
+                                        <apex:dataList type="square" value="{!executedDocuments}" var="docInfo" >
+                                            <apex:outputText value="{!docInfo.name}"/>
+                                        </apex:dataList>
+                                    </apex:outputPanel>
+                                </div>
+                            </fieldset>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!canEditAgreement && isSelectionPage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                                 
+                                <p class="slds-text--label">{!TEXT(currentPageNumber) & '. ' & $Label.SelectDocument}</p>
+                                <div>
+                                    <apex:outputPanel id="idSelectedDocs" rendered="{!hasAvailableDocItems}" >
+                                        <apex:outputText value="{!$Label.apttus__activateselectdocument1}" /><br/>
+                                        <apex:outputText value="{!$Label.apttus__activateselectdocument2lightning}" /><p/><p/>
+                                        <apex:selectList value="{!selectedDocs}" multiselect="true" size="6">
+                                            <apex:selectOptions value="{!availableDocItems}"></apex:selectOptions>
+                                        </apex:selectList>
+                                    </apex:outputPanel>
+                                </div>
+                            </fieldset>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!canEditAgreement && isSearchablePage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                              
+                                <p class="slds-text--label">{!$Label.ExecutedDocumentsSectionLightning}</p>
+                                
+                                <div>
+                                    <apex:outputPanel rendered="{!hasSearchableDocItems}">
+                                        <apex:dataList type="square" value="{!executedDocuments}" var="docInfo" >
+                                            <apex:outputText value="{!docInfo.name}"/>
+                                        </apex:dataList>
+                                    </apex:outputPanel>
+                                </div>
+                            </fieldset>
+                        </apex:outputPanel>                        
+                        <apex:outputPanel rendered="{!canEditAgreement && isSearchablePage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                                
+                                <p class="slds-text--label">{!TEXT(currentPageNumber) & '. ' & $Label.EnableContentSearch}</p>
+                                <apex:outputPanel id="idSearchableDocs" rendered="{!hasSearchableDocItems}" >
+                                    <apex:outputText value="{!$Label.apttus__activateselectsearchabledocument2}"/><p/><p/>
+                                    <apex:outputText value="{!$Label.apttus__activateselectsearchabledocument1lightning}" /><br/>
+                                    <apex:selectList value="{!searchableDocs}" multiselect="true" size="6">
+                                        <apex:selectOptions value="{!searchableDocItems}"></apex:selectOptions>
+                                    </apex:selectList>
+                                </apex:outputPanel>
+                            </fieldset>
+                        </apex:outputPanel>
+
+                        <apex:outputPanel rendered="{!canEditAgreement && isRemovablePage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                                <p class="slds-text--label">{!$Label.ExecutedDocumentsSectionLightning}</p>
+                                
+                                <div>
+                                    <apex:outputPanel rendered="{!hasRemovableDocItems}">
+                                        <apex:dataList type="square" value="{!executedDocuments}" var="docInfo" >
+                                            <apex:outputText value="{!docInfo.name}"/>
+                                        </apex:dataList>
+                                    </apex:outputPanel>
+                                </div>
+                            </fieldset>
+                        </apex:outputPanel>                          
+                        <apex:outputPanel rendered="{!canEditAgreement && isRemovablePage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                                
+                                <p class="slds-text--label">{!TEXT(currentPageNumber) & '. ' & $Label.RemoveDraftDocuments}</p>
+                                <apex:outputPanel id="idRemovableDocs" rendered="{!hasRemovableDocItems}" >
+                                        <apex:outputText value="{!$Label.apttus__activateremovedocument1lightning}" /><br/>
+                                        <apex:outputText value="{!$Label.apttus__activateremovedocument2lightning}"/><p/><p/>
+                                        <apex:selectList value="{!removableDocs}" multiselect="true" size="6">
+                                            <apex:selectOptions value="{!removableDocItems}"></apex:selectOptions>
+                                        </apex:selectList>
+                                </apex:outputPanel>
+                            </fieldset>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!canEditAgreement && NOT(OR(isErrorPage,IsReviewPage))}"  >
+                            <fieldset class="slds-box slds-theme--default">
+                            <p class="slds-text--label">{!$Label.Summary}</p>
+                                <apex:outputPanel rendered="{!hasSelectedDocs || hasExecutedDocuments}">
+                                    <apex:outputText value="{!$Label.apttus__documentsselectedforactivation}" /><br/>
+                                    <apex:dataList type="square" value="{!selectedDocInfos}" var="docInfo" >
+                                        <apex:outputText value="{!docInfo.Name}"/>
+                                    </apex:dataList>
+                                </apex:outputPanel>
+                                <p/>
+                                <apex:outputPanel rendered="{!hasSearchableDocs}">
+                                    <apex:outputText value="{!$Label.apttus__documentsselectedforcontentsearch}" /><br/>
+                                    <apex:dataList type="square" value="{!searchableDocInfos}" var="docInfo" >
+                                        <apex:outputText value="{!docInfo.Name}"/>
+                                    </apex:dataList>
+                                   
+                                </apex:outputPanel>
+                                <p/>
+                                <apex:outputPanel rendered="{!hasRemovableDocs}">
+                                    <apex:outputText value="{!$Label.apttus__documentsselectedforremoval}" /><br/>
+                                    <apex:dataList type="square" value="{!removableDocInfos}" var="docInfo" >
+                                        <apex:outputText value="{!docInfo.Name}"/>
+                                    </apex:dataList>
+                                </apex:outputPanel>
+                            </fieldset>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!canEditAgreement && isReviewPage}" >
+                            <fieldset class="slds-box slds-theme--default">
+                                
+                                <p class="slds-text--label">{!TEXT(currentPageNumber) & '. ' & $Label.ReviewAndActivate}</p>
+                                <apex:outputPanel rendered="{!hasSelectedDocs || hasExecutedDocuments}" >
+                                    <p class="slds-text--label">{!$Label.apttus__documentsselectedforactivation}</p>
+                                    <apex:dataList type="square" value="{!selectedDocInfos}" var="docInfo" >
+                                            <apex:outputText value="{!docInfo.Name}"/>
+                                    </apex:dataList>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!hasSearchableDocs}">
+                                    <p class="slds-text--label">{!$Label.apttus__documentsselectedforcontentsearch}</p>
+                                    <apex:dataList type="square" value="{!searchableDocInfos}" var="docInfo" >
+                                            <apex:outputText value="{!docInfo.Name}"/>
+                                    </apex:dataList>
+                                </apex:outputPanel>
+                                <apex:outputPanel rendered="{!hasRemovableDocs}" >
+                                    <p class="slds-text--label">{!$Label.apttus__documentsselectedforremoval}</p>
+                                    <apex:dataList type="square" value="{!removableDocInfos}" var="docInfo" >
+                                            <apex:outputText value="{!docInfo.Name}"/>
+                                    </apex:dataList>
+                                </apex:outputPanel>
+                                
+                            </fieldset>
+                        </apex:outputPanel>
+                    </apex:outputPanel>
+                     
+                
+                        </div>
+                    </div>
+                </apex:outputPanel>
+            </apex:outputPanel>
+                
+            <apex:actionFunction name="doInit" 
+                                 action="{!doInit}" 
+                                 reRender="idActivatePanel" />
+                </div>
+		<apex:outputPanel id="showOnLoad" rendered="{!reviewInProgress}">
+                    <script>
+                            alert('{!$Label.ReviewCyclePendingMessageUponActivate}');
+                            if((typeof sforce != 'undefined') && sforce && sforce.one) {
+                                sforce.one.navigateToURL('{!URLFOR($Action.APTS_Agreement__c.View, agreementId)}');
+                            }
+                            else {      
+                                window.open('{!URLFOR($Action.APTS_Agreement__c.View, agreementId)}', '_self');
+                            }                        
+                    </script>
+           	</apex:outputPanel> 
+         </apex:form>
+        </body>  
+    </html>
+</apex:page>

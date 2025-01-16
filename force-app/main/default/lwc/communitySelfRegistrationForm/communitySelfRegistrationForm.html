@@ -1,0 +1,136 @@
+<!--
+    Title:      LWC - Community Self Registration Form
+    Author:     Sarath Pullanikkatt
+    Date:       12/04/2019
+-->
+<template>
+    <template if:false={blnFormSubmitted}>
+            <lightning-card title="Register" icon-name="standard:portal">
+                <div class="slds-m-bottom_medium">
+                    <!-- Email Address -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                        <lightning-input class="req-field" name="email" type="email" label="E-mail Address" value={strEmail}
+                                         autocomplete="username" onchange={handleChange} required></lightning-input>
+                    </div>
+                    <!-- End of Email Address -->
+                    
+                    <!-- First Name -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                        <lightning-input class="req-field" name="first-name" type="text" label="First Name" value={strFirstName}
+                                         onchange={handleChange} required></lightning-input>
+                    </div>
+                    <!-- End of First Name -->
+
+                    <!-- Last Name -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                        <lightning-input class="req-field" name="last-name" type="text" label="Last Name" value={strLastName}
+                                         onchange={handleChange} required></lightning-input>
+                    </div>
+                    <!-- End of Last Name -->
+
+                    <!-- Title -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                        <lightning-input name="title" type="text" label="Title" value={strTitle} onchange={handleChange}></lightning-input>
+                    </div>
+                    <!-- End of Title -->
+
+                    <!-- Location -->
+                    <template if:true={locations.data}>
+                        <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                            <lightning-combobox name="location" label="Location" value={strLocation} options={locations.data.values} onchange={handleChange}></lightning-combobox>
+                        </div>
+                    </template>
+                    <!-- End of Location -->
+
+                    <!-- Preferred Language -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                        <lightning-combobox name="pref-lang" label="Preferred Language" value={strPreferredLanguage} options={languages} onchange={handleChange}></lightning-combobox>
+                    </div>
+                    <!-- End of Preferred Language -->
+
+                    <!-- Password -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                        <lightning-input class="pw-selector req-field" name="pw" type="password" label="Password" value={strPassword}
+                                         minlength="10" pattern={passwordPattern} autocomplete="new-password" onchange={handleChange} onblur={handlePw}
+                                         message-when-pattern-mismatch="Password should be minimum 10 characters and should contain alpha, numeric and special characters." required></lightning-input>
+                    </div>
+                    <!-- End of Password -->
+
+                    <!-- Confirm Password -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg sign-up-info-block">
+                        <lightning-input class="pw-selector req-field" name="confirm-pw" type="password" label="Confirm Password" value={strConfirmPassword}
+                                         minlength="10" pattern={passwordPattern} autocomplete="new-password" onchange={handleChange} onblur={handlePw}
+                                         message-when-pattern-mismatch="Password should be minimum 10 characters and should contain alpha, numeric and special characters." required></lightning-input>
+                    </div>
+                    <!-- End of Confirm Password -->
+
+                    <!-- Accept Terms of Use -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_small lgc-bg">
+                        <lightning-input class="req-field" name="t-and-c" type="checkbox" label="By checking this checkbox I agree to the" value={blnTandC}
+                                         onchange={handleChange} required></lightning-input>
+                        <span>
+                            <a href="/s/terms-of-use" class="terms-of-use" target="_blank">Terms of Use</a>
+                        </span>
+                    </div>
+                    <!-- End of Accept Terms of Use -->
+
+                    <!-- reCAPTCHA -->
+                    <div class="slds-p-horizontal_medium slds-p-bottom_x-small lgc-bg">
+                        <iframe src={navigateTo} name="captchaFrame" onload={captchaLoaded} width="350" height="500" style="border: 0px;"></iframe>
+                    </div>
+                    <!-- End of reCAPTCHA -->
+
+                    <!-- Register -->
+                    <div class="slds-p-horizontal_medium lgc-bg">
+                        <lightning-button class="submit-selector" type="submit" variant="brand" disabled label="Submit"
+                                          title="Sign-up to join Illumina Customer Community" onclick={handleSubmit}></lightning-button>
+                        <a href="/login" target="_top" class="slds-m-left_x-small">
+                            <lightning-button variant="neutral" label="Cancel" title="Go back to Sign-in page"></lightning-button>
+                        </a>
+                    </div>
+                    <!-- End of Register -->
+                </div>
+                
+            </lightning-card>
+    </template>
+
+    <!-- After Form Submission Show this -->
+    <template if:true={blnFormSubmitted}>
+        <!-- Self Registration Successful -->
+        <template if:true={registrationSuccess}>
+            <lightning-card title="Thank you for signing up!" icon-name="standard:avatar">
+                <p class="slds-p-horizontal_medium slds-p-bottom_small">Dear {strFirstName},</p>
+                <p class="slds-p-horizontal_medium slds-p-bottom_small">Welcome to 
+                    <span class="welcome-msg-leaf">Illumina Customer Community</span>
+                !</p>
+                <p class="slds-p-horizontal_medium slds-p-bottom_small">You may now login to the community using your email as the username and the password you have provided during registration.</p>
+                <div class="slds-p-horizontal_medium slds-p-vertical_small lgc-bg">
+                    <a href="/login" target="_top">
+                        <lightning-button variant="brand" label="Login" title="Go to Sign-in page"></lightning-button>
+                    </a>
+                </div>
+            </lightning-card>
+        </template>
+        <!-- End of Self Registration Successful -->
+
+        <!-- Self Registration Error -->
+        <template if:true={registrationError}>
+            <lightning-card title="Error" icon-name="standard:first_non_empty">
+                <p class="slds-p-horizontal_medium slds-p-bottom_small">Dear {strFirstName},</p>
+                <p class="slds-p-horizontal_medium slds-p-bottom_small">{registrationError.body.message}</p>
+                <p class="slds-p-horizontal_medium slds-p-bottom_small">
+                    Please contact
+                    <a href="mailto:TheCommunity@illumina.com" class="mail-to-link" target="_top">TheCommunity@illumina.com</a>
+                    for further assistance.
+                </p>
+                <div class="slds-p-horizontal_medium slds-p-vertical_small lgc-bg">
+                    <a href="/s/login/SelfRegister" target="_top">
+                        <lightning-button variant="brand" label="Back" title="Go back to Sign-up page"></lightning-button>
+                    </a>
+                </div>
+            </lightning-card>
+        </template>
+        <!-- End of Self Registration Error -->
+    </template>
+    <!-- End of After Form Submission Show this -->
+</template>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckWOCreationForServiceReqBusinessCase</fullName>
+    <active>true</active>
+    <description>To allow creation of work orders for Service Request cases only from SFM Buttons.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    NOT($User.FirstName ==$Label.Automated_Process_User), 
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    OR(
+        ISNEW(),
+        ISCHANGED( RecordTypeId )
+        ),
+    OR(
+        SVMXC__Case__r.RecordType.Name = $Label.CaseRecordTypeServiceRequest,
+        SVMXC__Case__r.RecordType.Name = $Label.CaseTypeBusinessIssue
+        ),
+    NOT(
+        OR(
+            Record_Created_from_SFM__c,
+            Is_Auto_Created__c, 
+ISPICKVAL(SVMXC__Case__r.Origin, &apos;Email - ProActive - TS&apos;)
+            )
+        )    
+    )</errorConditionFormula>
+    <errorMessage>Work Orders for Service Request and Business Issue Cases can only be created from SFM Buttons on the Case.</errorMessage>
+</ValidationRule>

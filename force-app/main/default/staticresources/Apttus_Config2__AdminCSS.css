@@ -1,0 +1,492 @@
+.aptRoundedDiv {
+	padding-bottom: 5px;
+	background-color: white;
+
+	/* IE Stuff */
+	zoom: 1;
+
+}
+
+.actionsColumn a {
+	padding: 3px;
+	
+}
+
+#documentDetailHeader {
+	margin-left: 0.2em;
+	font-size: 24px;
+	font-family: arial;
+	font-weight: normal !important;
+}
+
+.aptGroupHeader {
+    color: #434140;
+    height: 2.5em;
+    font-size: 16px;
+    font-family: arial;
+    vertical-align: middle;
+    line-height: 2.5em;
+}
+
+.aptConsole div.aptConsoleItem {
+	/*box-shadow: none!important; */
+	/*-moz-box-shadow: none!important; */
+	/*-webkit-box-shadow: none!important; */
+	margin: 5px 10px;
+	height: 144px;
+	width: 180px;
+	padding: 5px 0;
+	cursor: pointer;
+	display: inline-block;
+
+}
+
+.aptConsole div.aptConsoleItem div:first-child {
+	height: 85% !important;
+
+}
+.aptConsole div.aptConsoleItem:hover {
+	/*box-shadow: none!important;
+	-moz-box-shadow: none!important;
+	-webkit-box-shadow: none!important;
+	border: solid 1px #bababa;
+	border-radius: 5px!important; */
+}
+
+div.aptConsoleWrapper {
+	color: #666;
+	font-size: 13px;
+	text-align: center;
+	margin: 0 auto;
+
+}
+
+.aptConsole div.aptConsoleItemLabel {
+	color: #1797C0;
+	background: transparent;
+	padding: 0 5px;
+	font-family: arial;
+}
+.aptConsoleImage {
+	width: 122px !important;
+	height: 122px !important;
+	padding-bottom: 1em;
+}
+
+.aptConsole {
+	padding: 100px 0;
+	margin: 0 0 20px;
+	border-bottom: solid 1px;
+	border-bottom-color: #EAEAEA;
+
+}
+
+.questionHeader {
+	color: #1797C0;
+	border: none !important;
+}
+
+.questionContent {
+
+}
+
+.tab {
+	font-family: arial;
+	font-weight: bold;
+	font-size: 1.05em;
+}
+
+.tab-active {
+	color: #1797C0 !important;
+	background: #FFFFFF !important;
+}
+
+.tab-default {
+	color: #000 !important;
+	background: #FFFFFF !important;
+}
+
+.tab-disabled {
+	color: #000 !important;
+	background: #D1D1D1 !important;
+}
+
+.ui-widget-content {
+	border: 0;
+}
+
+.ui-widget-header {
+	border-color: #d3d3d3 !important;
+}
+
+.ui-tabs-anchor {
+	background: #FFFFFF;
+}
+
+.group { 
+  /* Needed for IE sortable grouping */
+  zoom: 1;
+}
+
+ul {
+	list-style-type:none;
+}
+
+li {
+	margin-left: 1.5 em;
+	padding-left: 0;
+	padding-bottom: 7px;
+}
+
+.draggable {
+  /*Rounding*/
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  /*Shadow*/
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.4), inset 0 1px 0 #FFF;
+  margin: 0 -5px;
+  padding: 8px 10px;
+  width: 280px;
+}
+
+.draggable.available {
+  /*Browser-compatible gradients*/
+  background: -o-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+  background: -ms-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+  background: -moz-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+  background: -webkit-linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+  background: linear-gradient(top, #ECECEC 50%, #D1D1D1 100%);
+  text-shadow: 0 1px #FFF;
+  cursor: pointer;
+}
+
+.draggable.associated {
+  /*Browser-compatible gradients*/
+  background: -o-linear-gradient(top, #ABABAB 50%, #888888 100%);
+  background: -ms-linear-gradient(top, #ABABAB 50%, #888888 100%);
+  background: -moz-linear-gradient(top, #ABABAB 50%, #888888 100%);
+  background: -webkit-linear-gradient(top, #ABABAB 50%, #888888 100%);
+  background: linear-gradient(top, #ABABAB 50%, #888888 100%);
+  color: #FFF;
+}
+
+.drop-content-product {
+  background: #ECECEC;
+  height: 30px;
+  padding-top: 10px; 
+  text-align: center;
+  border-style: dashed;
+  border-width: 1px;
+  border-radius: 6px;
+}
+
+.drop-content-option {
+    height: auto; 
+    min-height: 200px; 
+    text-align: center;
+    padding-bottom: 20px;
+    border-style: dashed;
+    border-width: 1px;
+    border-radius: 6px;
+}
+
+.drop-content-option {
+  background: none;
+  background-color: #D1D1D1;
+}
+
+.ui-accordion-content.ui-widget-content {
+  background: transparent;
+}
+
+.ui-accordion-header {
+  margin: 0px 26px;
+  height: 25px;
+  background: #FFF;
+  color: #1797C0;
+  font-weight: bold; 
+}
+
+.ui-accordion-header-active {
+  background: #1797C0;
+  color: #FFF;
+}
+
+.ui-accordion-header > .option-name {
+  float: left;
+  padding-top: 5px;
+  font-size: 1.1em;
+}
+
+.ui-accordion-header > .option-buttons {
+  float: right;
+}
+
+.floatingContent {
+  position:fixed;
+  width:230px;
+  height: 400px;
+  overflow: auto;
+}
+
+.tab-link {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+
+.highlight {
+    border-style: outset;
+    border-width: 5px;
+    border-color: #1797C0;
+}
+  
+.ui-dialog-titlebar {
+  color: #FFF;
+  background: #1797C0;
+}
+
+.ui-dialog {
+  background: -o-linear-gradient(top, #D1D1D1 50%, #ABABAB 100%);
+  background: -ms-linear-gradient(top, #D1D1D1 50%, #ABABAB 100%);
+  background: -moz-linear-gradient(top, #D1D1D1 50%, #ABABAB 100%);
+  background: -webkit-linear-gradient(top, #D1D1D1 50%, #ABABAB 100%);
+  background: linear-gradient(top, #D1D1D1 50%, #ABABAB 100%);
+  text-align: left;
+}
+
+.dialog-loading .ui-dialog-titlebar-close {
+  display: none;
+}
+
+.dialog-loading .loading-image {
+  margin: 5px 10px;
+}
+
+.dialog-loading .loading-message {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+.search-panel {
+  width: 300px;
+  min-height: 500px;
+  vertical-align: top;
+  background: #FFF;
+  padding: 10px;
+  box-shadow: -2px -1px 10px #888888;
+  border-right: 2px ridge #1797C0;
+  border-bottom: 2px ridge #1797C0;
+  border-radius: 6px;
+}
+
+.input-text-search {
+  width: 240px;
+  margin-bottom: 3px; 
+}
+
+
+/* GRID CODE */
+
+/*  SECTIONS  */
+.section {
+  clear: both;
+  padding: 0px;
+  margin: 0px;
+}
+
+/*  COLUMN SETUP  */
+.col {
+  display: block;
+  float:left;
+  margin: 0% 0 0% 0%;
+}
+.col:first-child { margin-left: 0; }
+
+/*  GROUPING  */
+.group:before,
+.group:after { content:""; display:table; }
+.group:after { clear:both;}
+.group { zoom:1; /* For IE 6/7 */ }
+/*  GRID OF SIX  */
+.span_6_of_6 {
+  width: 100%;
+}
+
+.span_5_of_6 {
+    width: 83.16%;
+}
+
+.span_4_of_6 {
+    width: 66.33%;
+}
+
+.span_3_of_6 {
+    width: 49.5%;
+}
+
+.span_2_of_6 {
+    width: 32.66%;
+}
+
+.span_1_of_6 {
+    width: 15.83%;
+}
+
+.col-label {
+  text-align: right;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 1%;
+}
+
+.col-field {
+  text-align: left;
+}
+
+.col-field > input {
+  width: 80%;
+}
+
+/*  GO FULL WIDTH BELOW 480 PIXELS */
+@media only screen and (max-width: 480px) {
+  .col {  margin: 1% 0 1% 0%; }
+  .span_1_of_6, .span_2_of_6, .span_3_of_6, .span_4_of_6, .span_5_of_6, .span_6_of_6 { width: 100%; }
+}
+
+/* Maintenance Console */
+
+.aptButton {
+	border-radius: 2px !important;
+	display: inline-block !important;
+	font-family: arial !important;
+	font-size: 12px !important;
+	font-weight: normal !important;
+	padding: 1px 12px !important;
+	text-decoration: none !important;
+		
+}
+
+.console-text {
+	color: #666;
+	display: block;
+	font-family: Verdana;
+	word-spacing: Normal;
+	letter-spacing: 1px;
+	text-indent: 15px;
+	line-height: 16px;
+	font-size: 11px;
+	font-weight: bold;
+		
+}
+
+.console-list {
+	table-layout: fixed;
+	width: 98%;
+	font-family: Arial, Helvetica, sans-serif;
+	color: #666;
+	font-size: 12px;
+	border: #ccc 1px solid;	
+	border-radius: 3px;
+	margin-left: Auto;
+	margin-right: Auto;
+	
+}
+
+.console-refresh {
+	isplay: block;
+	margin-left: Auto;
+	position: absolute;
+	right: 5px; /* This is the shift */
+	bottom: 0px;
+	background-image: url(...);
+	background-position: right center;
+	background-repeat: no-repeat;
+		
+}
+
+.console-panel {
+	width: 49%;
+	margin: 20px 0 10px 0;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	overflow: visible;
+	background-color: #fff;
+		
+}
+
+.console-top-line {
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+	background-color: #dedede;
+	border: 1px solid #ccc;
+	height: 32px;
+	width: 100%;
+		
+}
+
+
+.console-content {
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+	overflow: inherit;
+	border-left: 1px solid #ccc;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+	width: 100%
+		
+}
+
+.console-panel-content {
+	width: 100%;
+	background-color: #fff;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;	
+		
+}
+
+.console-panel-item {
+	min-height: 60px;
+	padding-bottom: 10px;
+	position: relative;
+	overflow: visible;
+	padding-top: 2%;
+	padding-bottom: 2%;
+		
+}
+
+.console-list thead {
+	background:#eaebec;
+		
+}
+
+.console-refresh-icon {
+	display:block;
+	margin-left:Auto;
+		
+}
+
+.console-refresh-button {
+	display:block;
+	margin-left: Auto;
+	background: url('/img/alohaSkin/sync.png') top left no-repeat;
+	width: 25px;
+	height: 25px;
+	background-position: 3px 3px;
+	vertical-align: bottom;
+	border: 1px solid rgba(0, 0, 0, 0.3);
+	cursor: pointer;
+	box-sizing: border-box;
+	border-radius: 25%;
+		
+}
+
+.console-refresh-button:hover {
+	background-position: 3px -19px;
+		
+}

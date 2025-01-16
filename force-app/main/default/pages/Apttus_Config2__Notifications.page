@@ -1,0 +1,39 @@
+<apex:page controller="Apttus_Config2.NotificationsController" showHeader="false" sidebar="false" standardStylesheets="true">
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__notificationStyles, '/notifications.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__Cometd, 'cometd.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__Cometd, 'jquery_cometd.js')}"/>
+    <script type="text/javascript">
+    var nsPrefix = '{!JSENCODE(nsPrefix)}';
+    (function($){
+        $(document).ready(function() {
+            // Connect to the CometD endpoint
+            $.cometd.init({
+               url: window.location.protocol+'//'+window.location.hostname+'/cometd/24.0/',
+               requestHeaders: { Authorization: 'OAuth {!$Api.Session_ID}'}
+           });
+
+           // Subscribe to a topic. JSON-encoded update will be returned
+           // in the callback
+           $.cometd.subscribe('/topic/Notifications', function(message) {
+               $('#content').append('<div class="notification-card">' +
+                                        '<p class="notification-title">' + 
+                                            '<span class="title-header">' + message.data.sobject[nsPrefix+"NotificationHeader__c"] + '</span>' +
+                                            ' (' + message.data.sobject[nsPrefix+"NotificationType__c"] + ')' +
+                                        '</p>' + 
+                                        '<p class="notification-detail">' + 
+                                            message.data.sobject[nsPrefix+"NotificationMessage__c"] +
+                                        '</p>'+
+                                    '</div>');
+            });
+        });
+   })(jQuery)
+   function disconnect() {
+       $.cometd.disconnect();
+   }
+   window.onbeforeunload = disconnect;
+   </script>
+<body>
+    <div id="content"> </div>
+    </body>
+</apex:page>

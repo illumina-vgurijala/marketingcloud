@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckRelocationWorkOrder</fullName>
+    <active>true</active>
+    <description>Channel Partner User should be restricted from creating Relocation Work Order</description>
+    <errorConditionFormula>AND(
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+IF(ISNULL(SVMXC__Case__c),true,IF(NOT(ISPICKVAL(SVMXC__Case__r.GTS_Status__c,&apos;Request Initiated&apos;)),true,false)),
+$Setup.Channel_Partner_Profile_Settings__c.Is_Channel_Partner__c,
+OR(AND(ISNEW(),ISPICKVAL(SVMXC__Order_Type__c,&apos;Relocation&apos;)),AND(ISCHANGED(SVMXC__Order_Type__c),ISPICKVAL(SVMXC__Order_Type__c,&apos;Relocation&apos;)))
+)</errorConditionFormula>
+    <errorMessage>Channel Partner Relocation Work Order creation must be requested from a Service Request Case</errorMessage>
+</ValidationRule>

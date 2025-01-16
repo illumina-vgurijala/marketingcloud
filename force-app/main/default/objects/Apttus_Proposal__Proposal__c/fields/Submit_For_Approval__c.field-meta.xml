@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Submit_For_Approval__c</fullName>
+    <description>Button To Submit Approvals</description>
+    <externalId>false</externalId>
+    <formula>IF(
+    AND (
+      Invalid_Quote__c == false,
+      LEN ( Apttus_QPConfig__PriceListId__c ) &gt; 0,
+      TEXT(Apttus_Proposal__Approval_Stage__c) == $Label.QuoteStageApprovalRequired
+    ),
+    CASE(1,
+        IF (
+            AND(
+                (ISPICKVAL(Open_Offer_Discount_Exception_Request__c,&quot;&quot;)), 
+                OR( 
+                    (TEXT( Open_Offer_Discount_Violation_Type__c)= $Label.DiscountExceededByFifteen),
+                    (TEXT( Open_Offer_Discount_Violation_Type__c)= $Label.DiscountExceeded)
+                ),
+                Quote_For_Open_Offer_Customer__c, 
+                Quote_Has_Open_Offer_Product__c, 
+                NOT( Open_Offer_Product_Type__c = $Label.ProductMaterialClassServices)
+            ),
+            1,0
+        ), $Label.UI_Text_Open_Offer_Discount_Exception_Request_Error_Message,
+
+        IF( NOT( ISBLANK( Submit_For_Approval_Error__c )), 1, 0), Submit_For_Approval_Error__c,
+
+        IF( ISBLANK ( Ship_To__c ), 1, 0), $Label.UI_Button_BlankShipToMsgSubmitForApproval,
+
+        IF( NOT(ISBLANK(Informatics_Product_Line_Item_Numbers__c)), 1, 0), $Label.UI_ErrorMessage_InformaticsProducts &amp;&apos; &apos;&amp; Informatics_Product_Line_Item_Numbers__c,
+
+        IF( ISBLANK ( SAP_Quote__c ), 1, 0), $Label.UI_Error_Message_SAP_Quote_Number_Is_Missing,
+
+        IF( AND((NOT(ISBLANK(Submit_For_Approval_Check__c))), Submit_For_Approval_Check__c &gt; 0), 1, 0), $Label.UI_ErrorMessage_ApprovalCheck,
+
+        IF( AND((Acknowledgement_of_Category_Usage__c = false),(Is_100_Percent_DD__c&gt;0)), 1, 0), $Label.UI_ErrorMessage_NCSO_Reasons,
+
+        IF( AND((ISPICKVAL(No_Charge_Product_Category__c,&quot;&quot;)),(Is_100_Percent_DD__c&gt;0)), 1, 0), $Label.UI_ErrorMessage_NCSO_Reasons,
+
+        IF( AND(Num_qtLines_as_trade_In__c &gt; 0, NOT(NumTrade_Ins__c &gt; 0)), 1, 0), $Label.UI_ErrorMessage_Quotation_Submit_TradeIn,
+
+IF( AND( ISPICKVAL(Apttus_Proposal__Opportunity__r.Type,&quot;Tender&quot;),   Apttus_Proposal__Opportunity__r.Ultimate_Consignee__r.Territory_Region__c =&quot;China&quot;, AND(NOT(ISPICKVAL( Apttus_Proposal__Opportunity__r.Ultimate_Consignee__r.BillingCountryCode ,&quot;TW&quot;)),NOT(ISPICKVAL(Apttus_Proposal__Opportunity__r.Ultimate_Consignee__r.BillingCountryCode,&quot;HK&quot;)),NOT(ISPICKVAL(Apttus_Proposal__Opportunity__r.Ultimate_Consignee__r.BillingCountryCode,&quot;MO&quot;))), Apttus_Proposal__Opportunity__r.Is_Tender_Reviewed__c = false),1,0),$Label.UI_ErrorMessage_Quotation_Is_Tender_Reviewed,
+
+        HYPERLINK ( &quot;/apex/ApttusSubmitForApprovalPage?sObjectType=Apttus_Proposal__Proposal__c&amp;sObjectId=&quot;&amp;Id, IMAGE ( &quot;/resource/Apttus_Proposal__Button_SubmitForApproval&quot;, &quot;Submit For Approval&quot; ),&quot;_self&quot; ) 
+    ),
+    NULL
+)</formula>
+    <inlineHelpText>Click to submit for any required approvals.</inlineHelpText>
+    <label>Submit For Approval</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

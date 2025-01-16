@@ -1,0 +1,805 @@
+<!-- 
+    Apttus Config & Pricing
+    RollupAdmin
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Product2"
+		   extensions="Apttus_Config2.RollupAdminController" 			
+			tabStyle="CPQConsole__tab"
+			sidebar="false"
+			standardStylesheets="false">
+
+			<!-- Latest compiled and minified CSS -->
+			
+
+
+  			<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+    		<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+    		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+    		<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+			<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+  			<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+    		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>						
+    		<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__CPQPageResources,'CPQCommon.css')}" />
+    		<script>
+    			j$ = jQuery.noConflict();
+    			j$(function() {
+
+    				j$('.searchResults > .list-group-item').draggable({revert:'invalid'});    				
+    				j$('#idSearchBox').keyup(function() {     					
+    					if(j$('#idSearchBy').val() != '') {
+    						doSearch(j$(this).val(), j$('#idSearchBy').val());
+
+    					}
+
+    				});
+
+    				j$('#idSearchBy').change(function() {
+    					doSearch(j$('#idSearchBox').val(), j$(this).val());
+
+    				});
+
+    			});
+
+    			function initDragHere() {
+    				j$('#dropHereToAdd').droppable({activeClass: 'highlight',
+    												drop:doAttachRollupToProduct});
+
+    			}
+
+    			function doSearch(searchString, searchBy) {
+    				var searchRequest = {
+    					searchBy : searchBy,
+    					searchString: searchString
+
+    				};
+
+    				Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.RollupAdminController.doSearch}', 
+										    				  searchRequest,
+    					 function(result, event) {
+    					 	if(event.status) {
+    					 		var searchResults = '';
+    					 		j$.each(result, function() {
+    					 			searchResults += '<li class="list-group-item';
+    					 			if(this.isGroupScope == true) {
+    					 				searchResults += ' list-group-item-info';
+
+    					 			}
+
+    					 			searchResults += '" expressionId="' + this.fieldExpressionSOId + '" style="margin-left: 0px; left: 0px; top: 0px;">';
+    					 			searchResults += '<span class="glyphicon glyphicon-align-justify" style="float: right;font-size: 15px;opacity: 0.8;"></span>';
+    					 			searchResults += this.fieldExpressionName + '</li>';
+
+    					 		});
+
+    					 		j$('ul.searchResults').html(j$(searchResults));
+    					 		j$('.searchResults > .list-group-item').draggable({revert:'invalid'});
+
+
+    					 	}
+
+    					 });
+    			}
+
+    			function doAttachRollupToProduct(event, ui) {
+    				j$(dropHereToAdd).html(j$('.waitSpinner').clone().show());
+    				j$(ui.draggable).hide();    				
+    				doAttachProductRollup(j$(ui.draggable).attr('expressionId'));
+
+    			}
+
+
+    			function bindMatchExplanation(matchInfo) {
+    				var matchOutput = '';
+
+    				//check conditions
+    				matchOutput += '<div class="pointer"><i/></div>';
+    				matchOutput += '<div class="pointerLabel">';
+    				matchOutput += 'Gather all cart lines which can be matched by the below expression:</div><br/>';
+    				matchOutput += '<div class="matchExpression">';
+    				if(j$(matchInfo.conditionExpression).val() == '') {
+    					matchOutput += 'No condition expression specified';
+    				} else {
+    					matchOutput += j$(matchInfo.conditionExpression).val();
+    				}
+    				matchOutput += '</div><br/>';
+
+    				//aggregate values
+    				if(j$(matchInfo.operationField).val() != '') {
+    					matchOutput += '<div class="pointer"><i/></div>';
+	    				matchOutput += '<div class="pointerLabel"><span style="font-weight: bold;">';
+	    				matchOutput += j$(matchInfo.operationField).val() + '</span>';
+	    				matchOutput +=  ' the below expression against the matched lines:</div>';
+	    				matchOutput += '<div class="valueExpression">';
+	    				if(j$(matchInfo.valueExpression).val() == '') {
+	    					matchOutput += 'No aggregate expression specified';
+	    				} else {
+	    					matchOutput += j$(matchInfo.valueExpression).val();
+	    				}
+	    				matchOutput += '</div><br/>';    				
+
+	    				//stpre on summary field
+	    				matchOutput += '<div class="pointer"><i/></div>';
+	    				matchOutput += '<div class="pointerLabel">Store this value on summary field, ';
+	    				matchOutput += '<span style="font-weight: bold;">';
+	    				matchOutput +=  j$(matchInfo.summaryField).children('option:selected').text() + '</span></div><br/>';
+
+	    				//attach to product
+	    				matchOutput += '<div class="pointer"><i/></div>';
+	    				matchOutput += '<div class="pointerLabel">';
+	    				matchOutput += 'Attach the roll-up record to ';
+	    				if(typeof(matchInfo.attachToField) !== 'undefined') {	//bold input value    					
+	    					matchOutput += matchInfo.attachTo;
+	    					matchOutput += ' <span style="font-weight: bold;">' + j$(matchInfo.attachToField).val();
+	    				} else {
+	    					matchOutput += ' <span style="font-weight: bold;">'
+	    					matchOutput += matchInfo.attachTo;
+
+	    				}
+	    				matchOutput += '</span></div><br/>';
+    				}
+
+    				j$(matchInfo.matchDiv).html(matchOutput).addClass('matchInfo');
+    				j$(matchInfo.conditionExpression).change(function() { bindMatchExplanation(matchInfo); });
+    				j$(matchInfo.operationField).change(function() { bindMatchExplanation(matchInfo); });
+    				j$(matchInfo.valueExpression).change(function() { bindMatchExplanation(matchInfo); });
+    				j$(matchInfo.summaryField).change(function() { bindMatchExplanation(matchInfo); });
+    				if(typeof(matchInfo.attachToField) !== 'undefined') {
+    					j$(matchInfo.attachToField).change(function() { bindMatchExplanation(matchInfo); });
+
+    				}
+
+    			}
+
+
+
+    			function showExpressionDialog(inputField) {       
+			        j$("#idExpressionPopup").dialog({
+			          autoOpen: true,
+			          title: 'Edit Expression',          
+			          modal: true,
+			          resizable:true,          
+			          width:440,          
+			          open: function( event, ui ) {
+
+			            // set calculated formula value to focus field
+			            j$('.CalculatedFormula').val(j$(inputField).val());
+			          },
+			          close: function( event, ui ) {
+			             // update focus field value
+			            j$(inputField).val(j$('.CalculatedFormula').val());
+
+			          },
+			          buttons: {
+			            'Ok' : function() {
+			              j$( this ).dialog( "close" );
+
+			            }
+			          }         
+			        });
+		      	}
+
+		      	function toggleDiv(toggle, body) {
+		      		if(!j$(body).is(':visible')) {//basically add panel primary on click
+	      				j$(toggle).parent().addClass('expanded');
+	      			}
+
+		      		j$(body).slideToggle(function() {
+		      			if(!j$(body).is(':visible')) {//remove after toggle completion
+		      				j$(toggle).parent().removeClass('expanded');
+		      			}
+		      		});
+		      	}
+    		</script>
+    		<style>
+
+	    		* {
+					box-sizing: border-box;
+				}
+
+    			.rollup-list-group {
+    				border-radius: 4px;
+				    padding-left: 0;
+				    margin-bottom: 20px;
+
+    			}
+
+    			.rollup-list-group .aptPageTitleBarPanel {
+    				  background-color: #fff;
+    				  color: black;
+    			}
+
+    			.rollup-list-group > .rollup-list-group-item {
+    				position: relative;
+  					display: block;  					
+  					border: 1px solid #ddd;
+  					padding: 0;
+
+    			}
+
+    			.rollup-list-group-item {
+    				margin-left:0;
+
+    			}
+
+    			.rollup-list-group-item .arrow {
+    				display: inline-block;
+					border-top: 8px solid transparent;
+					border-bottom: 10px solid transparent;
+					border-left: 10px solid black;
+					margin-left: 0;
+					top: 1px;
+					position: relative;
+    			}
+
+    			.expanded .aptPageTitleBarPanel {
+    				background: #428BCA;
+    				color: white;
+    			}
+
+    			.expanded .aptPageTitleBarPanel > .arrow {
+    				border-top: 9px solid transparent;
+    				border-left: 10px solid white;
+					transform: rotate(90deg);
+    			}
+
+    			.rollup-list-group-item.expanded {
+    				  border-left: 0;
+  					  border-right: 0;
+  					  border-bottom:0;
+    			}
+
+    			.ui-droppable.highlight {
+    				background: #BAC0D7;
+    			}
+
+    			.matchInfo > .pointer {
+    				width: 16px;margin: 2px 0 0 -16px;    				
+    				text-align: center;
+
+    			}
+
+    			.matchInfo > .pointer > i {
+    				display: inline-block;
+    				border-top: 5px solid transparent;
+    				border-bottom: 5px solid transparent;
+    				border-left: 5px solid black;
+    				transform: rotate(26deg);
+    			}
+
+    			.matchInfo > .pointerLabel {
+    				margin-top: -10px;
+    				margin-left: 1px;
+
+    			}
+
+    			.matchInfo > .matchExpression {
+    				font-weight: bold;
+    				padding: 4px;
+    				background-color: #fff9e3;
+    				border-left: 2px solid #ffeb8e;
+    				font-size: 11px;
+    				word-wrap:break-word;
+    			}
+
+    			.matchInfo > .valueExpression {
+    				font-weight: bold;
+    				padding: 4px;
+    				background-color: #E3E5FF;
+    				border-left: 2px solid #8ED1FF;
+    				font-size: 11px;
+    				word-wrap:break-word;
+
+    			}
+
+    			.input-group {
+				  position: relative;
+				  display: table;
+				  border-collapse: separate;
+				}
+
+				.input-group-addon:first-child {
+				  border-right: 0;
+				  border-top-right-radius: 0;
+  				  border-bottom-right-radius: 0;
+				}
+
+				.input-group-addon {
+				  padding: 6px 12px;
+				  font-size: 14px;
+				  font-weight: 400;
+				  line-height: 1;
+				  color: #555;
+				  text-align: center;
+				  background-color: #eee;
+				  border: 1px solid #ccc;
+				  border-radius: 4px;
+				  width: 1%;
+				  white-space: nowrap;
+				  vertical-align: middle;
+
+				}
+
+				.rollUpItem {
+					padding: 0;
+  					border-top: 1px solid #ddd;
+  					margin-bottom: 0;
+					border-bottom-right-radius: 4px;
+					border-bottom-left-radius: 4px;
+					border-top-left-radius: 4px;
+  					border-top-right-radius: 4px;
+  					position: relative;
+  					display: block;
+  					margin-left: 0;
+				}
+
+				.rollupBody {
+					overflow: hidden;
+				    display: block;
+				    padding: 15px;
+				}
+
+				.panelBody {
+					padding: 15px;
+					padding-left: 25px;
+				}
+
+				.aptPageTitleBar {
+					box-sizing: border-box;
+				}
+
+				.dropHereWell {
+					text-align: center;
+					margin-left: 20px;
+					margin-right: 20px;
+					height: 100px;
+					margin-top: 10px;
+					line-height: 50px;
+					padding: 24px;
+					border-radius: 6px;
+					background-image: linear-gradient(to bottom,#e8e8e8 0,#f5f5f5 100%);
+					box-shadow: inset 0 1px 3px rgba(0,0,0,.05),0 1px 0 rgba(255,255,255,.1);
+					border: 1px solid #e3e3e3;
+					margin-bottom: 20px;
+
+				}
+
+				.CalculatedFormula {
+					top: 12px;
+				    position: relative;
+				    max-height: 95%;
+				}
+
+				#insertOperator {
+					top: 4px;
+				}
+
+				#insertOperatorButton {
+					min-height: 25px;
+					min-width: 90px;
+				}
+
+				#insertOperatorLabel {
+
+					white-space: normal;
+					position: absolute;
+				    top: 15px !important;
+				    left: 5px !important;
+				}
+
+    			
+    		</style>
+    		<div>
+    			<apex:form >
+    				<div class="formee" style="margin-left:{!IF(IsProductMode, '10', '20')}px;margin-top: 5px;">
+		    			<apex:commandButton value="{!$Label.apttus_config2__back}" 
+											action="{!doCancel}" 
+											immediate="true"
+											styleClass="aptListButton"/>
+					</div>
+					<apex:outputPanel styleClass="aptRoundedDiv" style="float:left; width: 24%;margin-top: 10px;margin-left: 10px;padding-right: 0;margin-bottom:20px;" rendered="{!IsProductMode}" layout="block">
+					  <div class="aptPageTitleBarPanel" style="height: 35px;">
+					    <div class="title">{!$Label.RollupFields}</div>
+					  </div>
+					  <div style="padding: 15px;">
+					    <div class="input-group">
+						  <span class="input-group-addon" id="basic-addon1"><span aria-hidden="true" class="glyphicon glyphicon-search"></span></span>
+						  <input id="idSearchBox" aria-describedby="basic-addon1" class="form-control" placeholder="Search" type="text"/>
+						</div>
+						<div class="formee" style="margin-top:25px;">
+							<select size="1" id="idSearchBy">
+								<option value="">--{!$Label.Select}--</option>
+								<option value="Name">{!$Label.ByRollupName}</option>
+								<option value="{!nsPrefix}ProductId__r.Name">{!$Label.ByProductName}</option>
+								<option value="{!nsPrefix}ProductGroup__r.Name">{!$Label.ByProductGroup}</option>
+							</select>
+						</div>
+						<br/><br/>
+						<h4>{!$Label.SearchResults}</h4>
+						<ul class="list-group searchResults" />
+					  </div>
+					</apex:outputPanel>
+				
+					<div style="float:left; width:{!IF(IsProductMode, '75','100')}%; margin-top:10px;">					
+						<apex:outputPanel styleClass="aptRoundedDiv " style="margin-left: 20px;margin-right: 20px;float: none; width: 96%;margin-bottom: 20px;" rendered="{!IsProductMode}" layout="block">
+							<div class="aptProductListHeader" style="padding-top: 5px;height:35px;font-size: 15px; margin-bottom: 20px;">
+								<h2 style="font-size: 15px;margin-top: 0;margin-bottom: 0; float:left;">{!$Label.ProductRollupsFor}&nbsp;<span style="font-weight: bold;">{!Product2.Name}</span></h2>
+								<span class="glyphicon glyphicon-floppy-disk" id="idSaveIcon_prodRollup" onclick="j$('#idAddStatus_prodRollup').show(); j$(this).hide(); doSaveProductRollups();" style="float: right; font-size: 15px; opacity: 0.8; cursor: pointer; display: block; padding-left: 10px; padding-top: 5px; padding-right: 10px;"></span>
+								<span id="idAddIcon_prodRollup" class="glyphicon glyphicon-plus" style="float: right;font-size: 15px;opacity: 0.8;cursor:pointer;   padding-top: 3px;" onclick="j$('#idAddStatus_prodRollup').show(); j$(this).hide(); doAddProductRollup();"></span>
+								<div id="idAddStatus_prodRollup" style="float:right; display:none; height: 20px; width: 20px;">
+									<apex:image url="{!$Resource.Apttus_Config2__Image_LoadingPage}" style="height:100%; width100%;"/>
+								</div>								
+							</div>							
+							<apex:outputPanel id="productRollups" styleClass="panelBody" style="padding-left: 0;padding-right: 0;padding-bottom: 0;">
+								<apex:pageMessages />
+								<div class="well well-lg ui-droppable" id="dropHereToAdd" style="text-align: center;margin-left: 20px;margin-right: 20px;height: 100px;margin-top: 10px;line-height: 50px;">
+									{!$Label.DragRollups}
+								</div>
+								<script>
+									initDragHere();
+								</script>
+								<apex:outputPanel style="border: none;margin: 0;">
+								  <ul  class="rollup-list-group" style="padding: 0;">								  
+								    <apex:repeat var="rollupInfo" value="{!ProductRollups}">
+									    <li class="list-group-item rollup-list-group-item ui-draggable" style="padding: 0;border-top:1px solid #ddd">
+									    	<div class="aptPageTitleBarPanel" style="border: none;border-radius: 0;height: 35px;padding: 10px 15px;padding-top: 5px;" onclick="toggleDiv(this, j$(this).siblings('.rollupBody'));">
+									    		<div class="arrow"/>
+									    		<div style="display: inline-block;top: -3px;position:relative;">								    			
+									    			<div class="title" style="margin-left: 10px;">{!BLANKVALUE(rollupInfo.fieldExpressionSO.Name, 'Untitled')}</div>
+									    		</div>									    		
+									 		</div>
+									 		<div class="rollupBody" style="display:none;">
+										  		<div class="formee" style="float: left;">
+										  			<div style="position: relative;top: -6px;left: -7px;font-size: 13px;cursor:pointer;" 
+										  				 class="glyphicon glyphicon-trash" onclick="doRemoveRollup('{!rollupInfo.position}');"/>
+										  			<div class="input-row">
+														<div class="input-label">
+															<label style="margin-bottom: 0;margin-left: 7px;">{!$Label.RollupDescription}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField value="{!rollupInfo.fieldExpressionSO.Name}" style="width: 300px;"/>														
+														</div>
+														<div class="clear"></div>
+													</div>
+													<div class="input-row">
+														<div class="input-label">
+															<label style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">{!$Label.MatchCondition}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idConditionExpression" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__ConditionExpression__c}" style="margin: 0px; width: 458px; height: 75px; border: 1px solid rgb(255, 235, 142); background-color: rgb(255, 249, 227);" onclick="showExpressionDialog(this);"/>
+														</div>
+														<div class="clear"></div>
+													</div>
+													<div class="input-row">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.RollupOperation}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idOperation" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__Operation__c}"/>
+														</div>
+														<div class="clear"></div>
+													</div>											
+													<div class="input-row" style="margin-top: 20px;">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.AggregateExpression}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idValueExpression" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__Expression__c}" style="margin: 0px; width: 458px; height: 75px; border: 1px solid rgb(142, 209, 255); background-color: rgb(227, 229, 255);" onclick="showExpressionDialog(this);"/>
+														</div>
+														<div class="clear"></div>
+													</div>											
+													<div class="input-row">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.RollupSummaryField}</label>
+														</div>
+														<div class="input-field grid-7-12">														
+															<apex:selectList size="1" id="idSummaryField" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__UpdateField__c}">
+																<apex:selectOptions value="{!LineItemRollupFields}"></apex:selectOptions>
+															</apex:selectList>															
+														</div>
+														<div class="clear"></div>
+													</div>
+												</div>
+												<div class="aptRoundedDiv" style="float: right;width: 40%;margin-top: 18px;">
+										  			<div class="aptProductListHeader"><div class="title">{!$Label.MatchInformation}</div></div>
+										  			<div class="panelBody">
+										  				<apex:outputPanel style="font-size: 12px;background: white;border: none;" id="matchDiv" />
+													</div>
+										   		</div>
+
+										   		<script>
+										   			var matchInfo  = {														
+														operationField : j$(document.getElementById('{!$Component.idOperation}')),
+														valueExpression : j$(document.getElementById('{!$Component.idValueExpression}')),
+														conditionExpression : j$(document.getElementById('{!$Component.idConditionExpression}')),
+														summaryField : j$(document.getElementById('{!$Component.idSummaryField}')),
+														matchDiv: j$(document.getElementById('{!$Component.matchDiv}')),
+														attachTo: '{!Product2.Name}'
+
+													};
+
+													bindMatchExplanation(matchInfo);
+										   		</script>
+
+									  		</div>
+									  	</li>										
+									</apex:repeat>								  	
+								  </ul>
+								</apex:outputPanel>
+							</apex:outputPanel>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="aptRoundedDiv " style="margin-left: 20px;margin-right: 20px;float: none; width: 96%;margin-bottom: 20px;" rendered="{!NOT(IsProductMode)}" layout="block">
+							<div class="aptProductListHeader" style="padding-top: 5px;height:35px;font-size: 15px; margin-bottom: 20px;">
+								<h2 style="font-size: 15px;margin-top: 0;margin-bottom: 0; float:left;">{!$Label.Quote}&nbsp;{!$Label.Rollups}</h2>
+								<span class="glyphicon glyphicon-floppy-disk" id="idSaveIcon_header" onclick="j$('#idAddStatus_header').show(); j$(this).hide(); doSaveHeaderRollups();" style="float: right; font-size: 15px; opacity: 0.8; cursor: pointer; display: block; padding-left: 10px; padding-top: 5px; padding-right: 10px;"></span>
+								<span id="idAddIcon_header" class="glyphicon glyphicon-plus" style="float: right;font-size: 15px;opacity: 0.8;cursor:pointer;   padding-top: 3px;" onclick="j$('#idAddStatus_header').show(); j$(this).hide(); doAddHeaderRollup();"></span>
+								<div id="idAddStatus_header" style="float:right; display:none; height: 20px; width: 20px;">
+									<apex:image url="{!$Resource.Apttus_Config2__Image_LoadingPage}" style="height:100%; width100%;"/>
+								</div>								
+							</div>							
+							<apex:outputPanel id="headerRollups" styleClass="panelBody" style="padding-left: 0;padding-right: 0;padding-bottom: 0;">
+								<apex:pageMessages />								
+								<apex:outputPanel style="border: none;margin: 0;">
+								  <ul  class="rollup-list-group" style="padding: 0;">								  
+								    <apex:repeat var="rollupInfo" value="{!HeaderRollups}">
+									    <li class="list-group-item rollup-list-group-item ui-draggable" style="padding: 0;border-top:1px solid #ddd">
+									    	<div class="aptPageTitleBarPanel" style="border: none;border-radius: 0;height: 35px;padding: 10px 15px;padding-top: 5px;" onclick="toggleDiv(this, j$(this).siblings('.rollupBody'));">
+									    		<div class="arrow"/>
+									    		<div style="display: inline-block;top: -3px;position:relative;">								    			
+									    			<div class="title" style="margin-left: 10px;">{!BLANKVALUE(rollupInfo.fieldExpressionSO.Name, 'Untitled')}</div>
+									    		</div>									    		
+									 		</div>
+									 		<div class="rollupBody" style="display:none;">
+										  		<div class="formee" style="float: left;">
+										  			<div style="position: relative;top: -6px;left: -7px;font-size: 13px;cursor:pointer;" 
+										  				 class="glyphicon glyphicon-trash" onclick="doRemoveHeaderRollup('{!rollupInfo.position}');"/>
+										  			<div class="input-row">
+														<div class="input-label">
+															<label style="margin-bottom: 0;margin-left: 7px;">{!$Label.RollupDescription}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField value="{!rollupInfo.fieldExpressionSO.Name}" style="width: 300px;"/>														
+														</div>
+														<div class="clear"></div>
+													</div>
+													<div class="input-row">
+														<div class="input-label">
+															<label style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">{!$Label.MatchCondition}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idConditionExpression" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__ConditionExpression__c}" style="margin: 0px; width: 458px; height: 75px; border: 1px solid rgb(255, 235, 142); background-color: rgb(255, 249, 227);" onclick="showExpressionDialog(this);"/>
+														</div>
+														<div class="clear"></div>
+													</div>
+													<div class="input-row">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.RollupOperation}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idOperation" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__Operation__c}"/>
+														</div>
+														<div class="clear"></div>
+													</div>											
+													<div class="input-row" style="margin-top: 20px;">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.AggregateExpression}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idValueExpression" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__Expression__c}" style="margin: 0px; width: 458px; height: 75px; border: 1px solid rgb(142, 209, 255); background-color: rgb(227, 229, 255);" onclick="showExpressionDialog(this);"/>
+														</div>
+														<div class="clear"></div>
+													</div>											
+													<div class="input-row">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.RollupSummaryField}</label>
+														</div>
+														<div class="input-field grid-7-12">														
+															<apex:selectList size="1" id="idSummaryField" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__UpdateField__c}">
+																<apex:selectOptions value="{!LineItemRollupFields}"></apex:selectOptions>
+															</apex:selectList>															
+														</div>
+														<div class="clear"></div>
+													</div>
+												</div>
+												<div class="aptRoundedDiv" style="float: right;width: 40%;margin-top: 18px;">
+										  			<div class="aptProductListHeader"><div class="title">{!$Label.MatchInformation}</div></div>
+										  			<div class="panelBody">
+										  				<apex:outputPanel style="font-size: 12px;background: white;border: none;" id="matchDiv" />
+													</div>
+										   		</div>
+
+										   		<script>
+										   			var matchInfo  = {														
+														operationField : j$(document.getElementById('{!$Component.idOperation}')),
+														valueExpression : j$(document.getElementById('{!$Component.idValueExpression}')),
+														conditionExpression : j$(document.getElementById('{!$Component.idConditionExpression}')),
+														summaryField : j$(document.getElementById('{!$Component.idSummaryField}')),
+														matchDiv: j$(document.getElementById('{!$Component.matchDiv}')),
+														attachTo: '{!$Label.TheQuote}'
+
+													};
+
+													bindMatchExplanation(matchInfo);
+										   		</script>
+
+									  		</div>
+									  	</li>										
+									</apex:repeat>								  	
+								  </ul>
+								</apex:outputPanel>
+							</apex:outputPanel>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="aptRoundedDiv" style="margin-left: 20px;margin-right: 20px;float: none; width: 96%;margin-bottom: 20px;" rendered="{!NOT(IsProductMode)}" layout="block">
+							<div class="aptProductListHeader" style="padding-top: 5px;height:35px;font-size: 15px; margin-bottom: 20px;">
+								<h2 style="font-size: 15px;margin-top: 0;margin-bottom: 0; float:left;">{!$Label.ProductGroup}&nbsp;{!$Label.Rollups}</h2>
+								<span class="glyphicon glyphicon-floppy-disk" id="idSaveIcon_group" onclick="j$('#idAddStatus_group').show(); j$(this).hide(); doSaveGroupRollups();" style="float: right; font-size: 15px; opacity: 0.8; cursor: pointer; display: block; padding-left: 10px; padding-top: 5px; padding-right: 10px;"></span>
+								<span id="idAddIcon_group" class="glyphicon glyphicon-plus" style="float: right;font-size: 15px;opacity: 0.8;cursor:pointer;   padding-top: 3px;" onclick="j$('#idAddStatus_group').show(); j$(this).hide(); doAddGroupRollup();"></span>
+								<div id="idAddStatus_group" style="float:right; display:none; height: 20px; width: 20px;">
+									<apex:image url="{!$Resource.Apttus_Config2__Image_LoadingPage}" style="height:100%; width100%;"/>
+								</div>								
+							</div>							
+							<apex:outputPanel id="groupRollups" styleClass="panelBody" style="padding-left: 0;padding-right: 0;padding-bottom: 0;">
+								<apex:pageMessages />								
+								<apex:outputPanel style="border: none;margin: 0;">
+								  <ul  class="rollup-list-group" style="padding: 0;">								  
+								    <apex:repeat var="rollupInfo" value="{!GroupRollups}">
+									    <li class="list-group-item rollup-list-group-item ui-draggable" style="padding: 0;border-top:1px solid #ddd">
+									    	<div class="aptPageTitleBarPanel" style="border: none;border-radius: 0;height: 35px;padding: 10px 15px;padding-top: 5px;" onclick="toggleDiv(this, j$(this).siblings('.rollupBody'));">
+									    		<div class="arrow"/>
+									    		<div style="display: inline-block;top: -3px;position:relative;">								    			
+									    			<div class="title" style="margin-left: 10px;">{!BLANKVALUE(rollupInfo.fieldExpressionSO.Name, 'Untitled')}</div>
+									    		</div>									    		
+									 		</div>
+									 		<div class="rollupBody" style="display:none;">
+										  		<div class="formee" style="float: left;">
+										  			<div style="position: relative;top: -6px;left: -7px;font-size: 13px;cursor:pointer;" 
+										  				 class="glyphicon glyphicon-trash" onclick="doRemoveGroupRollup('{!rollupInfo.position}');"/>
+										  			<div class="input-row">
+														<div class="input-label">
+															<label style="margin-bottom: 0;margin-left: 7px;">{!$Label.RollupDescription}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField value="{!rollupInfo.fieldExpressionSO.Name}" style="width: 300px;"/>														
+														</div>
+														<div class="clear"></div>
+													</div>
+													<div class="input-row">
+														<div class="input-label">
+															<label style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">{!$Label.MatchCondition}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idConditionExpression" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__ConditionExpression__c}" style="margin: 0px; width: 458px; height: 75px; border: 1px solid rgb(255, 235, 142); background-color: rgb(255, 249, 227);" onclick="showExpressionDialog(this);"/>
+														</div>
+														<div class="clear"></div>
+													</div>
+													<div class="input-row">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.RollupOperation}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idOperation" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__Operation__c}"/>
+														</div>
+														<div class="clear"></div>
+													</div>											
+													<div class="input-row" style="margin-top: 20px;">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.AggregateExpression}</label>
+														</div>
+														<div class="input-field grid-7-12">
+															<apex:inputField id="idValueExpression" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__Expression__c}" style="margin: 0px; width: 458px; height: 75px; border: 1px solid rgb(142, 209, 255); background-color: rgb(227, 229, 255);" onclick="showExpressionDialog(this);"/>
+														</div>
+														<div class="clear"></div>
+													</div>											
+													<div class="input-row">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">{!$Label.RollupSummaryField}</label>
+														</div>
+														<div class="input-field grid-7-12">														
+															<apex:selectList size="1" id="idSummaryField" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__UpdateField__c}">
+																<apex:selectOptions value="{!LineItemRollupFields}"></apex:selectOptions>
+															</apex:selectList>															
+														</div>
+														<div class="clear"></div>
+													</div>
+
+
+													<div class="input-row">
+														<div class="input-label" style="margin-bottom: 0;margin-left: 7px;margin-top: 20px;">
+															<label style="margin-bottom: 0;">Product Group</label>
+														</div>
+														<div class="input-field grid-7-12">		
+															<apex:inputField id="idProductGroupField" value="{!rollupInfo.fieldExpressionSO.Apttus_Config2__ProductGroup__c}"/>									
+														</div>
+														<div class="clear"></div>
+													</div>
+												</div>
+												<div class="aptRoundedDiv" style="float: right;width: 40%;margin-top: 18px;">
+										  			<div class="aptProductListHeader"><div class="title">{!$Label.MatchInformation}</div></div>
+										  			<div class="panelBody">
+										  				<apex:outputPanel style="font-size: 12px;background: white;border: none;" id="matchDiv" />
+													</div>
+										   		</div>
+
+										   		<script>
+										   			var matchInfo  = {														
+														operationField : j$(document.getElementById('{!$Component.idOperation}')),
+														valueExpression : j$(document.getElementById('{!$Component.idValueExpression}')),
+														conditionExpression : j$(document.getElementById('{!$Component.idConditionExpression}')),
+														summaryField : j$(document.getElementById('{!$Component.idSummaryField}')),
+														matchDiv: j$(document.getElementById('{!$Component.matchDiv}')),
+														attachTo: '{!$Label.ProductAddedFromProductGroup}',
+														attachToField:j$(document.getElementById('{!$Component.idProductGroupField}'))
+
+													};
+
+													bindMatchExplanation(matchInfo);
+										   		</script>
+
+									  		</div>
+									  	</li>										
+									</apex:repeat>								  	
+								  </ul>
+								</apex:outputPanel>
+							</apex:outputPanel>
+						</apex:outputPanel>
+					</div>
+
+					<div class="waitSpinner" style="display:none;">
+						<apex:image url="{!$Resource.Apttus_Config2__Image_LoadingPage}" style="height:100%; width100%;"/>
+					</div>
+					<apex:actionFunction action="{!doAddProductRollup}" 
+										 name="doAddProductRollup" 
+										 reRender="productRollups"  							
+										 onComplete="j$('#idAddStatus_prodRollup').hide(); j$('#idAddIcon_prodRollup').show();"/>
+					<apex:actionFunction action="{!doAddHeaderRollup}" 
+										 name="doAddHeaderRollup" 
+										 reRender="headerRollups"
+										 onComplete="j$('#idAddStatus_header').hide(); j$('#idAddIcon_header').show();"/>
+					<apex:actionFunction action="{!doAddGroupRollup}" 
+										 name="doAddGroupRollup" 
+										 reRender="groupRollups"
+										 onComplete="j$('#idAddStatus_group').hide(); j$('#idAddIcon_group').show();"/>
+					<apex:actionFunction action="{!doSaveProductRollups}" 
+										 name="doSaveProductRollups" 
+										 reRender="productRollups"
+										 onComplete="j$('#idAddStatus_prodRollup').hide(); j$('#idSaveIcon_prodRollup').show();"/>
+					<apex:actionFunction action="{!doSaveHeaderRollups}" 
+										 name="doSaveHeaderRollups" 
+										 reRender="headerRollups"
+										 onComplete="j$('#idAddStatus_header').hide(); j$('#idSaveIcon_header').show();"/>
+					<apex:actionFunction action="{!doSaveGroupRollups}" 
+										 name="doSaveGroupRollups" 
+										 reRender="groupRollups"
+										 onComplete="j$('#idAddStatus_group').hide(); j$('#idSaveIcon_group').show();"/>
+					<apex:actionFunction action="{!doAttachProductRollup}" 
+										 name="doAttachProductRollup" 
+										 reRender="productRollups"
+										 onComplete="j$('.waitSpinner').hide();">
+						<apex:param name="param1" value="" assignTo="{!selectedRollupId}"/>
+					</apex:actionFunction>
+					<apex:actionFunction action="{!doRemoveProductRollup}" 
+										 name="doRemoveRollup"
+										 reRender="productRollups">
+						<apex:param name="param1" value="" assignTo="{!deleteIndex}"/>
+					</apex:actionFunction>
+					<apex:actionFunction action="{!doRemoveHeaderRollup}" 
+										 name="doRemoveHeaderRollup"
+										 reRender="headerRollups">
+						<apex:param name="param1" value="" assignTo="{!deleteIndex}"/>
+					</apex:actionFunction>
+					<apex:actionFunction action="{!doRemoveGroupRollup}" 
+										 name="doRemoveGroupRollup"
+										 reRender="groupRollups">
+						<apex:param name="param1" value="" assignTo="{!deleteIndex}"/>
+					</apex:actionFunction>										 
+				</apex:form>			
+			</div>
+			<div id="idExpressionPopup" style="display:none; background: #f8f8f8 none;min-width: 100%;">
+		      <c:ExpressionBuilder />    <!-- businessObjects="{!RefTypes}" -->
+		    </div>
+
+			
+
+</apex:page>

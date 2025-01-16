@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>58.0</apiVersion>
+    <decisions>
+        <name>check_if_Channel_Partner_Email_Opt_Out_is_true</name>
+        <label>check if Channel Partner Email Opt Out is true</label>
+        <locationX>216</locationX>
+        <locationY>538</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>If_Channel_Partner_Email_Opt_Out_is_true</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.Contact.Channel_Partner_eMail_Opt_Out__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Contact_record</targetReference>
+            </connector>
+            <label>If Channel Partner Email Opt Out is true</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_if_Record_exists</name>
+        <label>Check if Record exists</label>
+        <locationX>50</locationX>
+        <locationY>540</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Contact_record_exists</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Get_Existing_Contact_Records</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>check_if_Channel_Partner_Email_Opt_Out_is_true</targetReference>
+            </connector>
+            <label>Contact record exists</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Partner_request_Contact_Id_should_not_be_null</name>
+        <label>Partner request Contact Id should not be null</label>
+        <locationX>263</locationX>
+        <locationY>275</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>check_Contact_Id</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.ContactId</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_Existing_Contact_Records</targetReference>
+            </connector>
+            <label>check Contact Id</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <interviewLabel>Record-Trigger : Partner Request : Update Partner Contact {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Record-Trigger : Partner Request : Update Partner Contact</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <name>Get_Existing_Contact_Records</name>
+        <label>Get Existing Contact Records</label>
+        <locationX>60</locationX>
+        <locationY>363</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Check_if_Record_exists</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Email</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Email__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>FirstName</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.First_Name__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>LastName</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Last_Name__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Phone</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Phone__c</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>Contact</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates>
+        <name>Update_Contact_record</name>
+        <label>Update Contact record</label>
+        <locationX>377</locationX>
+        <locationY>542</locationY>
+        <inputAssignments>
+            <field>Channel_Partner_eMail_Opt_Out__c</field>
+            <value>
+                <elementReference>$Record.Owner:User.Contact.Channel_Partner_eMail_Opt_Out__c</elementReference>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record.Owner:User.Contact</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>440</locationX>
+        <locationY>48</locationY>
+        <connector>
+            <targetReference>Partner_request_Contact_Id_should_not_be_null</targetReference>
+        </connector>
+        <filterFormula>IF({!$Record.RecordType.Name}==&apos;Portal Request - Update Member Request&apos;, true, false)</filterFormula>
+        <object>Partner_Request__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <scheduledPaths>
+            <name>Update_Contact</name>
+            <label>Update Contact</label>
+            <maxBatchSize>200</maxBatchSize>
+            <offsetNumber>1</offsetNumber>
+            <offsetUnit>Minutes</offsetUnit>
+            <recordField>CreatedDate</recordField>
+            <timeSource>RecordField</timeSource>
+        </scheduledPaths>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Draft</status>
+</Flow>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+        <fullName>CheckClinicalTypeForAMR</fullName>
+        <active>false</active>
+        <description>The value &apos;Healthcare Prime&apos; of picklist Clinical Type can be used only by AMR users.</description>
+        <errorConditionFormula>AND(
+				/*Check clinical type field and region of user*/
+				TEXT(Clinical_Type__c) = $Label.ClinicalTypeHealthcare,
+				TEXT($User.Region__c) != $Label.TerritoryRegionAMR,
+			 /*Fire validation rule on record creation and updation*/ 
+				OR(
+								ISCHANGED(Clinical_Type__c),
+								ISNEW()
+				),
+				/*Bypass criterias are mentioned below*/
+				NOT (
+								OR (
+												$Setup.cs_Apex_Settings__c.Bypass_All_Validations__c,
+												$Profile.Name =  $Label.ProfileSystemAdmin,
+												$Profile.Name =  $Label.ProfileDataSteward
+								)
+				)
+)</errorConditionFormula>
+        <errorDisplayField>Clinical_Type__c</errorDisplayField>
+        <errorMessage>Clinical Type Healthcare Prime is for AMR Use Only – Please select from other available options (Clinical, Non Clinical, Clinical R&amp;D).
+Reach out to your regional Sales Ops team if you have any questions.</errorMessage>
+</ValidationRule>

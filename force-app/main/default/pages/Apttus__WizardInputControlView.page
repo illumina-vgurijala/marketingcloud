@@ -1,0 +1,104 @@
+<!-- 
+    Apttus Contract Management
+    WizardInputControlView
+    @2014-2015 Apttus Inc. All rights reserved.    
+ -->
+<apex:page standardController="Apttus__WizardInputControl2__c" 
+		   showHeader="false"
+		   sidebar="false" 
+		   tabStyle="Apttus__WizardInputControl2__c"
+           recordSetVar="WizardInputControls"
+           extensions="Apttus.WizardInputControlViewController">
+    <link rel="stylesheet" href="{!URLFOR($Resource.WizardComponentLibraryUI,'/css/WizardInputControl/style.css')}" />
+    <script type="text/javascript">
+    	function resetInputControlFocus(field) { 
+            if(document.getElementById(field) != null) {
+                var length = document.getElementById(field).value.length;            
+            	document.getElementById(field).focus();
+    			document.getElementById(field).setSelectionRange(length, length);
+            }                       
+        };
+    	var wait = (function() {
+  			var timer = 0;
+  			return function(callback, ms){
+    			clearTimeout (timer);
+    			timer = setTimeout(callback, ms);
+ 			};
+		})();    
+		$(document).on("keyup", ".searchTextInputControl", function() {
+   			wait(function(){                
+      			invokeSearchInputControl();
+    		}, 1000 );
+		});
+
+        var deleteInput = function(inputControlId) {
+            promptConfirmDialog({
+                    onConfirm: function() {
+                        deleteWizardInputControl(inputControlId);
+                    },
+                    promptMessageText: "{!$Label.DeleteConfirmation}",
+                    alert: "{!$Label.Alert}",
+                    buttons: [
+                        { text: "{!$Label.Delete}" },
+                        { text: "{!$Label.Cancel}" }
+                    ]
+                });
+
+            return false;
+        }
+    </script>
+     
+    <apex:form styleClass="wizard-icontrol-container" id="WizardInputControlForm"> 
+    	<apex:pageblock id="idWizardInputControlPageBlock">   
+            <apex:outputLabel styleClass="wizard-icontrol">{!$Label.apttus__inputcontrols}</apex:outputLabel>              	           
+            <apex:commandButton styleClass="wizard-btn-new-icontrol" action="{!navigateToInputControlCreation}" value="{!$Label.apttus__newinputcontrol}"/> 
+            
+            <apex:inputText styleClass="searchTextInputControl" value="{!searchText}" id="idWizardInputControlSearchText" html-placeholder="{!$Label.apttus__searchplaceholder}"/>
+            <apex:actionFunction name="invokeSearchInputControl" action="{!search}" reRender="idWizardInputControlPageBlock" oncomplete="resetStepFocus('{!$Component.idWizardInputControlSearchText}')"/>
+            
+			<apex:pageblockTable styleClass="wizard-icontrol-listview" value="{!WizardInputControls}" var="wizardInputControl" rendered="{!displayRecords}">
+                <apex:column headerValue="{!$Label.apttus__actions}" width="60px;">                    
+                    <apex:commandLink action="{!navigateToInputControlEdit}" value="{!$Label.apttus__edit}">
+                    	<apex:param value="{!wizardInputControl.Id}" name="param" assignTo="{!SelectedInputControlId}"/>
+                    </apex:commandLink>
+                    <apex:outputLabel >&nbsp;|&nbsp;&nbsp;</apex:outputLabel>
+                    <apex:commandLink onclick="return deleteInput('{!wizardInputControl.Id}');" value="{!$Label.apttus__del}">
+					</apex:commandLink>
+                </apex:column>
+            	<apex:repeat value="{!$ObjectType.Apttus__WizardInputControl2__c.FieldSets.Apttus__WizardComponentLibraryFieldset}" var="wizardInputControlFields" >            	
+                    <apex:column value="{!wizardInputControl[wizardInputControlFields.fieldPath]}"/>            		
+            	</apex:repeat>          
+			</apex:pageblockTable>       
+        	<apex:panelGrid columns="3" styleClass="wizard-icontrol-pagination" rendered="{!displayRecords}">
+                <apex:outputPanel >
+                    <apex:outputText value="{!$Label.apttus__page} {!PageNumber} {!$Label.apttus__of} {!CEILING(ResultSize/PageSize)}" />
+                </apex:outputPanel>
+                <apex:outputPanel style="margin-left:250px;">
+                    <apex:commandLink value="{!$Label.apttus__previouspagination}" rendered="{!HasPrevious}" action="{!Previous}" reRender="idWizardInputControlPageBlock"/>
+                	<apex:outputText value="{!$Label.apttus__previouspagination}" rendered="{!NOT(HasPrevious)}" style="color: #ccc;"/>
+                	<apex:outputText value="  "/>
+                	<apex:commandLink value="{!$Label.apttus__nextpagination}" rendered="{!HasNext}" action="{!Next}" reRender="idWizardInputControlPageBlock" />                    
+                	<apex:outputText value="{!$Label.apttus__nextpagination}" rendered="{!NOT(HasNext)}" style="color: #ccc;"/>
+                </apex:outputPanel>
+                <apex:outputPanel style="float:right;">
+                    <apex:outputText value="{!$Label.apttus__recordsperpage}" />
+                	<apex:selectList value="{!PageSize}" size="1" >
+                    	<apex:selectOption itemValue="5" itemLabel="{!$Label.apttus__labelfive}"/>
+                    	<apex:selectOption itemValue="10" itemLabel="{!$Label.apttus__labelten}"/>
+                        <apex:selectOption itemValue="25" itemLabel="{!$Label.apttus__labeltwentyfive}"/>
+                        <apex:selectOption itemValue="50" itemLabel="{!$Label.apttus__labelfifty}"/>
+                    	<apex:actionSupport event="onchange" reRender="idWizardInputControlPageBlock"/>
+                	</apex:selectList>
+                </apex:outputPanel>                
+            </apex:panelGrid>
+            <apex:outputPanel >
+                <apex:pageblockSection rendered="{!!displayRecords}">
+	            	<apex:outputLabel style="font-weight:bold;margin-left:0px;">{!$Label.apttus__norecordstodisplay}</apex:outputLabel>
+            	</apex:pageblockSection>
+            </apex:outputPanel>
+		</apex:pageblock>
+        <apex:actionFunction name="deleteWizardInputControl" action="{!deleteWizardInputControl}" reRender="idWizardInputControlPageBlock">
+            <apex:param value="" name="param" assignTo="{!SelectedInputControlId}"/>
+        </apex:actionFunction>
+    </apex:form>    
+</apex:page>

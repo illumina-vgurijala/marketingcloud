@@ -1,0 +1,309 @@
+<!-- 
+	Apttus Config & Pricing
+	SmartSearchSettings
+	 
+	@2015-2016 Apttus Inc. All rights reserved.
+ -->
+<apex:page lightningStylesheets="true" controller="Apttus_Config2.SmartSearchSettingsController" 
+		   standardStylesheets="true"
+		   setup="true"
+		   sidebar="{!ShowAdminSidebar}" >
+
+	<apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+	<style type="text/css">
+
+		textarea {
+			width: 40%;
+		}
+
+	</style>
+	<script>
+		j$ = jQuery.noConflict();
+
+		function setupLoadingDefaultsConfirmation(){
+			j$('#idLoadingDefaultsWarningPanel').dialog({
+				modal:true,
+				dialogClass:'LoadingDefaultsConfirmationDialog',
+				resizable:false,
+				buttons: [		
+							{
+								text:'{!$Label.Yes}',
+								click:function(){
+									j$(this).dialog('destroy');
+									invokeDoLoadDefaultSettings();
+								}
+							},
+							{
+								text:'{!$Label.No}',
+								click:function(){
+									j$(this).dialog('destroy');
+								}
+							}
+					
+						],
+				close:function(){
+					j$(this).dialog('destroy');
+					
+				}
+				
+			});
+			
+		}
+
+		/**
+		 * Used to disable smart search buttons on click.
+		 * Prevents user from submitting twice.
+		 */
+		function disableButtons() {
+			j$(".smartSearchActionBtn").attr('disabled', true);
+			j$(".smartSearchActionBtn").addClass('btnDisabled');
+		}
+
+		function updateSelectedTypeaheadField(element) {
+			var typeaheadGroup = document.querySelectorAll('[class$=typeahead-btn-group]');
+			for (var i = 0; i < typeaheadGroup.length; i++) {
+				var typeaheadElement = typeaheadGroup[i];
+				if (typeaheadElement.parentNode.id != element.parentNode.id) {
+					typeaheadElement.checked = false;
+				}
+			}
+		}
+	</script>
+	
+	<apex:sectionHeader title="{!$Label.apttus_config2__customsettings}" 
+						subtitle="{!$ObjectType.Apttus_Config2__ConfigSmartSearchSettings__c.Label & ' ' & $Label.apttus_config2__edit}" />
+	<apex:pageMessages id="smartSearchErrors" />
+	<apex:form id="smartSearchConfiguration">
+		<apex:pageBlock id="systemPropertiesBlock" 
+						mode="edit" >
+			<apex:pageBlockButtons location="top">
+				<apex:actionStatus id="idSettingsActionStatus" >
+					<apex:facet name="start"><img src="/img/loading.gif"/></apex:facet>
+					<apex:facet name="stop"> </apex:facet>
+				</apex:actionStatus>
+				<apex:commandButton value="{!$Label.apttus_config2__save}" 
+									action="{!doSave}"
+									status="idSettingsActionStatus"
+									oncomplete="openSaveSettingModal({!HasErrors})" reRender="systemPropertiesBlock, smartSearchErrors" />
+				<apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+									action="{!doCancel}" 
+									immediate="true" />
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection id="idSystemPropertiesSection" 
+								   title="1. {!$Label.apttus_config2__setupapttusintelligentcloud}"
+								   columns="2" 
+								   collapsible="false">
+				<apex:inputField value="{!settings.Apttus_Config2__EnhancedSearchURL__c}"/>
+				<apex:pageBlockSectionItem />
+				<apex:inputField value="{!protectedSmartSearchSetting.Apttus_Config2__ApiUserKey__c}"/>
+				<apex:pageBlockSectionItem />
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+
+		<apex:pageBlock id="idDisplayColumnBlock" 
+						mode="edit" >
+			<apex:pageBlockSection id="idDisplayColumnSection" 
+								   title="2. {!$Label.apttus_config2__addandreviewproductfieldweightage}" 
+								   columns="2" 
+								   collapsible="false">
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel for="idFlow" 
+									  value="{!$ObjectType.Apttus_Config2__ConfigSmartSearchSettings__c.Fields.Apttus_Config2__Flow__c.Label}" />
+					<apex:outputPanel styleClass="requiredInput" layout="block">
+						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+							<apex:selectList id="idFlow" 
+											 value="{!Flow}" 
+											 multiselect="false" 
+											 required="true" 
+											 size="1" 
+											 disabled="{!NOT(isActivateDisabled)}">
+								<apex:selectOptions value="{!FlowItems}"></apex:selectOptions>
+								<apex:actionSupport event="onchange" status="idActionStatus" reRender="idDisplayColumnBlock" />
+							</apex:selectList>
+						</apex:outputPanel>
+				</apex:pageBlockSectionItem>
+
+				<apex:pageBlockSectionItem />
+
+				<apex:pageBlockTable value="{!SmartSearchColumns}"
+									 var="columnSO"
+									 rowClasses="oddRow,evenRow">
+					<!-- sequence -->
+					<apex:column value="{!columnSO.Apttus_Config2__Sequence__c}"
+						width="5%">
+					</apex:column>
+					<!-- flow -->
+					<apex:column value="{!columnSO.Apttus_Config2__Flow__c}" />
+					<!-- field name -->
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigSmartSearchSettings__c.Fields.Apttus_Config2__FieldName__c.Label}" >
+						<apex:selectList id="nameField" 
+										 size="1" 
+										 value="{!columnSO.Apttus_Config2__FieldName__c}"
+										 disabled="{!NOT(isActivateDisabled)}">
+							<apex:selectOptions value="{!ProductFieldItems}"></apex:selectOptions>
+						</apex:selectList>
+					</apex:column>
+					<!-- weightage -->
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigSmartSearchSettings__c.Fields.Apttus_Config2__Weightage__c.Label}" >
+						<apex:selectList id="weightageField" 
+										 size="1" 
+										 value="{!columnSO.Apttus_Config2__Weightage__c}"
+										 disabled="{!NOT(isActivateDisabled)}" >
+							<apex:selectOptions value="{!WeightageItems}"></apex:selectOptions>
+						</apex:selectList>
+					</apex:column>
+					<!-- Typeahead -->
+					<apex:column headerValue="{!$ObjectType.Apttus_Config2__ConfigSmartSearchSettings__c.Fields.Apttus_Config2__Typeahead__c.Label}" >
+						<span id="{!columnSO.Id}">
+							<apex:inputCheckbox styleClass="typeahead-btn-group" 
+												value="{!columnSO.Apttus_Config2__Typeahead__c}" 
+												onclick="updateSelectedTypeaheadField(this)"
+												disabled="{!NOT(isActivateDisabled)}" />
+						</span>
+					</apex:column>
+					<!-- row actions -->
+					<apex:column width="5%" >
+						<apex:commandLink action="{!doDeleteRow}" 
+										  reRender="idDisplayColumnBlock" 
+										  status="idActionStatus"
+										  rendered="{!isActivateDisabled}">
+							<apex:param name="rowNum" value="{!columnSO.Apttus_Config2__Sequence__c}" />
+							<apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+										title="{!$Label.apttus_config2__remove}" 
+										alt="{!$Label.apttus_config2__remove}" /> 
+						</apex:commandLink>
+						<apex:image url="{!$Resource.Apttus_Config2__Image_Minus2}" 
+									title="{!$Label.apttus_config2__remove}" 
+									alt="{!$Label.apttus_config2__remove}"
+									rendered="{!NOT(isActivateDisabled)}" />
+					</apex:column>
+				</apex:pageBlockTable>
+			</apex:pageBlockSection>
+			<apex:pageBlockSection >
+				<apex:commandButton value="{!$Label.apttus_config2__addrow}" 
+									reRender="idDisplayColumnBlock" 
+									action="{!doAddRow}"
+									disabled="{!NOT(isActivateDisabled)}" />
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+
+	</apex:form>
+
+	<apex:form id="idPushSolrMetadataSO">
+		<apex:pageBlock id="idPushSolrMetadataBlock" 
+						mode="edit" >
+			<apex:pageBlockButtons location="bottom">
+				<apex:actionStatus id="idPushActionStatus" onstart="disableButtons()">
+					<apex:facet name="start"><img src="/img/loading.gif"/></apex:facet>
+					<apex:facet name="stop"> </apex:facet>
+				</apex:actionStatus>
+				<apex:commandButton value="{!$Label.apttus_config2__searchactivation}" 
+									reRender="idSyncStatusBlock,smartSearchErrors" 
+									action="{!activateSmartSearch}"
+									disabled="{!isActivateDisabled}"
+									styleClass="smartSearchActionBtn"
+									status="idPushActionStatus" />
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection id="idPushSolrMetadata" 
+								   title="3. {!$Label.apttus_config2__pushdataintosearchengine}" 
+								   columns="2" 
+								   collapsible="false">
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+
+	<apex:form id="idRefreshSolrMetadataSO">
+		<apex:pageBlock id="idRefreshSolrMetadataBlock" 
+						mode="edit" >
+			<apex:pageBlockButtons location="bottom">
+				<apex:actionStatus id="idRefreshActionStatus" onstart="disableButtons()">
+					<apex:facet name="start"><img src="/img/loading.gif"/></apex:facet>
+					<apex:facet name="stop"> </apex:facet>
+				</apex:actionStatus>
+				<apex:commandButton value="{!$Label.apttus_config2__searchmetadatarefresh}" 
+									reRender="idSyncStatusBlock,smartSearchErrors" 
+									action="{!resyncSmartSearch}"
+									disabled="{!isResyncDisabled}"
+									styleClass="smartSearchActionBtn"
+									status="idRefreshActionStatus"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection id="idRefreshSolrMetadata" 
+								   title="4. {!$Label.apttus_config2__refreshdatainsearchengine}" 
+								   columns="2" 
+								   collapsible="false">
+				<apex:pageBlockSectionItem >
+					<apex:outputText value="To be done after product schema has been changed" />
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem />
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+
+		<apex:form id="idDeactivateSmartSearch">
+		<apex:pageBlock id="idDeactivateSmartSearchBlock" 
+						mode="edit" >
+			<apex:pageBlockButtons location="bottom">
+				<apex:actionStatus id="idDeleteActionStatus" onstart="disableButtons()">
+					<apex:facet name="start"><img src="/img/loading.gif"/></apex:facet>
+					<apex:facet name="stop"> </apex:facet>
+				</apex:actionStatus>
+				<apex:commandButton value="Deactivate Search" 
+									reRender="idSyncStatusBlock,smartSearchErrors" 
+									action="{!deactivateSmartSearch}"
+									disabled="{!isDeactivateDisabled}"
+									styleClass="smartSearchActionBtn"
+									status="idDeleteActionStatus"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection id="idDeactivateSmartSearchMetadata" 
+								   title="5. {!$Label.apttus_config2__removedatainsearchengine}" 
+								   columns="2" 
+								   collapsible="false">
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+
+	<apex:pageBlock id="idSyncStatusBlock"
+					mode="edit">
+		<apex:pageBlockSection id="idSyncStatusSection" 
+							   title="{!$Label.apttus_config2__reviewsyncstatus}"
+							   columns="2" 
+							   collapsible="false">
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="idActivityAction" value="{!$ObjectType.Apttus_Config2__SmartSearchActivityHistory__c.Fields.Apttus_Config2__Action__c.Label}" />
+				<apex:outputText id="idActivityAction" value="{!activityAction}" />
+			</apex:pageBlockSectionItem>
+
+			<apex:pageBlockSectionItem />
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="idActivityMessage" value="{!$ObjectType.Apttus_Config2__SmartSearchActivityHistory__c.Fields.Apttus_Config2__Message__c.Label}" />
+				<apex:outputText id="idActivityMessage" value="{!activityMessage}" />
+			</apex:pageBlockSectionItem>
+
+			<apex:pageBlockSectionItem />
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="idAttemptedSync" value="{!$ObjectType.Apttus_Config2__SmartSearchActivityHistory__c.Fields.Apttus_Config2__StatusCode__c.Label}" />
+				<apex:outputText id="idAttemptedSync" value="{!activityStatusCode}" />
+			</apex:pageBlockSectionItem>
+
+			<apex:pageBlockSectionItem />
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="idAttemptedSync" value="{!$ObjectType.Apttus_Config2__ConfigSmartSearchSettings__c.Fields.Apttus_Config2__LastAttemptedSync__c.Label}" />
+				<apex:outputText id="idAttemptedSync" value="{!activityAttemptedSync}" />
+			</apex:pageBlockSectionItem>
+
+			<apex:pageBlockSectionItem />
+
+			<apex:pageBlockSectionItem >
+				<apex:outputLabel for="idSuccessfulSync" value="{!$ObjectType.Apttus_Config2__ConfigSmartSearchSettings__c.Fields.Apttus_Config2__LastSuccessfulSync__c.Label}" />
+				<apex:outputText id="idSuccessfulSync" value="{!activitySuccessfulSync}" />
+			</apex:pageBlockSectionItem>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+	<c:SaveSettingsModal />
+</apex:page>

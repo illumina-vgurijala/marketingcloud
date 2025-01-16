@@ -1,0 +1,1536 @@
+<!-- 
+	Apttus Deal Manager
+	DealGuidanceRule
+	 
+	@2012-2015 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Apttus_DealMgr__DealGuidanceRule__c" extensions="Apttus_DealMgr.DealGuidanceRuleController">
+
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__FormeeLibrary, '/js/formee.js')}" />
+
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__DealGuidancePageResources, 'js/jQueryDateTimePicker.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__DealGuidancePageResources, 'js/navigation.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__DealGuidancePageResources, 'js/optionController.js')}" />    
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__DealGuidancePageResources, 'js/autoCompleteWidget.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_DealMgr__DealGuidancePageResources, 'js/jquery-ui.multipickSearch-1.0.js')}" />
+
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_DealMgr__DealRuleLibrary, '/css/DealGuidancePage.css')}" />
+	<link type="text/css" href="{!URLFOR($Resource.DealGuidancePageResources,'css/jquery-ui.multipickSearch-1.0.css')}" rel="stylesheet" />
+	<link rel="stylesheet" href="{!URLFOR($Resource.DealGuidancePageResources,'css/font-awesome.min.css')}" />
+	<link rel="stylesheet" href="{!URLFOR($Resource.DealGuidancePageResources,'css/normalize.css')}" />
+	<link type="text/css" href="{!URLFOR($Resource.DealGuidancePageResources,'css/jQueryUIStyle.css')}" rel="stylesheet" />
+
+	<script type="text/javascript" src="/soap/ajax/25.0/connection.js"></script>
+	<script type="text/javascript" src="/soap/ajax/25.0/apex.js"></script>
+	
+	<style>
+		#dialog-confirm{
+				display:none;
+		}
+		.ui-state-focus {
+			background: none !important;
+			border: none !important;
+		}
+		.band-container {
+			width: 86px;
+			float: left;
+		}
+		.band-label {
+			max-width: 72%;
+			white-space: initial;
+			float: left;
+			margin: 0;
+			word-wrap: break-word;
+			padding-right: 6%;
+		}
+		.band-container span {
+			width: 20%;
+			text-align: center;
+			font-size: 20px;
+		}
+		.band-container .circle:before {
+			content: "\2B24";
+			bottom: 8px;
+			position: relative;
+		}
+		.band-container .square:before {
+			content: "\25FC";
+			bottom: 5px;
+			position: relative;
+		}
+		.band-container .pentagon:before {
+			content: "\2B1F";
+			bottom: 8px;
+			position: relative;
+		}
+		.band-container .triangle:before {
+			content: "\25B2";
+			bottom: 5px;
+			position: relative;
+		}
+		.band-container .diamond:before {
+			content: "\2BC1";
+			bottom: 8px;
+			position: relative;
+		}
+		.band-container .star:before {
+			content: "\2605";
+			bottom: 8px;
+			position: relative;
+		}
+	</style> 	
+
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+		j$.APTTUS = {};
+		
+		j$(document).ready(function(){
+			
+			initMultiPick();
+			checkScopeDisplay();
+			
+		});
+
+		function checkScopeDisplay() {
+			if (j$('.guidance-type').val() == 'Line Level') {
+				j$(".scope-block").show();
+			} else {
+				j$(".scope-block").hide();
+			}
+		}
+
+	
+	function initMultiPick() {
+		if ({!isCPQEnabled}) {
+
+
+// -------------------------------------------------------------
+		
+			var productGroupRetrievalMethod = function(request, response) {
+				Visualforce.remoting.Manager.invokeAction(
+			    	'{!$RemoteAction.DealGuidanceRuleController.searchProductGroups}',request.term, function(result, event){
+			            if(event.type == 'exception') {
+			                  console.log(event.message);
+			            } else {
+			                response(normalizeData(result, "Name", "Id"));
+			            }
+			        });
+			},
+
+
+			$productGroupHiddenCtrl = j$("[id$=idHiddenProductGroupValues]"),
+
+			productGroupMultipickList = j$("[id$=idProductGroupMultiSelect]").multipickSearch({
+			    lblResultsItemsTitle:"{!$Label.AvailableItems}",
+			    lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+			    lblClose:"{!$Label.Close}",
+			    lblNoResults:"{!$Label.NoResultsAvailable}",
+			    dataSourceFunction:productGroupRetrievalMethod,
+			    defaultResults: function(request, response) { 
+			        request.term = "";
+			        productGroupRetrievalMethod(request, response);
+			    },
+			    onItemSelected: function(settings, item){
+			        onAddSelectedItem($productGroupHiddenCtrl, item.value);
+			        // _refreshSelectedProductList(productMultipickList);
+			    },
+			    onDelete:function(settings, item) { // remove item from selected list
+			        onDeleteEvent(item.value, "idHiddenProductGroupValues");
+			        // _refreshSelectedProductList(productMultipickList);                      
+			    }                    
+			});
+
+			$productGroupHiddenCtrl.val('');
+			var productGroupList = "{!JSENCODE(dealGuidanceRuleSO.ProductGroupScope__c)}";
+			if(productGroupList != 'All' && productGroupList != '') {
+			    productGroupList = productGroupList.replace('; ', ';');
+			    productGroupList = productGroupList.split(';');
+			    for (var index = 0; index < productGroupList.length; index++) { 
+			        productGroupMultipickList.multipickSearch("addSelectedItem", {label:productGroupList[index], value:productGroupList[index]});                              
+			    }
+			}
+		}
+
+// -------------------------------------------------------------
+
+		var productFamilyRetrievalMethod = function(request, response) {
+			Visualforce.remoting.Manager.invokeAction(
+            	'{!$RemoteAction.DealGuidanceRuleController.searchProductFamily}',request.term, function(result, event){
+	                if(event.type == 'exception') {
+	                      console.log(event.message);
+	                } else {
+	                     productFamilyList = result;
+	                     response(productFamilyList);
+	                }
+	            });
+		},
+
+
+		$prodFamilyHiddenCtrl = j$("[id$=idHiddenProductFamilyValues]"),
+
+	    prodFamilyMultipickList = j$("[id$=idProductFamilyMultiSelect]").multipickSearch({
+	        lblResultsItemsTitle:"{!$Label.AvailableItems}",
+	        lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+	        lblClose:"{!$Label.Close}",
+	        lblNoResults:"{!$Label.NoResultsAvailable}",
+	        dataSourceFunction:productFamilyRetrievalMethod,
+	        defaultResults: function(request, response) { 
+	            request.term = "";
+	            productFamilyRetrievalMethod(request, response);
+	        },
+	        onItemSelected: function(settings, item){
+	            onAddSelectedItem($prodFamilyHiddenCtrl, item.value);
+	            // _refreshSelectedProductList(productMultipickList);
+	        },
+	        onDelete:function(settings, item) { // remove item from selected list
+	            onDeleteEvent(item.value, "idHiddenProductFamilyValues");
+	            // _refreshSelectedProductList(productMultipickList);                      
+	        }                    
+	    });
+
+		$prodFamilyHiddenCtrl.val('');
+		var productFamilyList = "{!JSENCODE(dealGuidanceRuleSO.ProductFamily__c)}";
+		if(productFamilyList != 'All' && productFamilyList != '') {
+		    productFamilyList = productFamilyList.replace('; ', ';');
+		    productFamilyList = productFamilyList.split(';');
+		    for (var index = 0; index < productFamilyList.length; index++) { 
+		        prodFamilyMultipickList.multipickSearch("addSelectedItem", {label:productFamilyList[index], value:productFamilyList[index]});                              
+		    }
+		}
+
+		// -------------------------------------------------------------
+
+		var accountRetrievalMethod = function(request, response) {
+			Visualforce.remoting.Manager.invokeAction(
+		    	'{!$RemoteAction.DealGuidanceRuleController.searchAccounts}',request.term, function(result, event){
+		            if(event.type == 'exception') {
+		                  console.log(event.message);
+		            } else {
+		                response(normalizeData(result, "Name", "Id"));
+		            }
+		        });
+		},
+
+
+		$accountHiddenCtrl = j$("[id$=idHiddenAccountValues]"),
+
+		accountMultipickList = j$("[id$=idAccountMultiSelect]").multipickSearch({
+		    lblResultsItemsTitle:"{!$Label.AvailableItems}",
+		    lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+		    lblClose:"{!$Label.Close}",
+		    lblNoResults:"{!$Label.NoResultsAvailable}",
+		    dataSourceFunction:accountRetrievalMethod,
+		    defaultResults: function(request, response) { 
+		        request.term = "";
+		        accountRetrievalMethod(request, response);
+		    },
+		    onItemSelected: function(settings, item){
+		        onAddSelectedItem($accountHiddenCtrl, item.value);
+		        // _refreshSelectedProductList(productMultipickList);
+		    },
+		    onDelete:function(settings, item) { // remove item from selected list
+		        onDeleteEvent(item.value, "idHiddenAccountValues");
+		        // _refreshSelectedProductList(productMultipickList);                      
+		    }                    
+		});
+
+		$accountHiddenCtrl.val('');
+
+		<apex:repeat value="{!currentAccountList}" var="account">
+		    accountMultipickList.multipickSearch("addSelectedItem", {label:"{!JSENCODE(account.Name)}", value:"{!account.Id}"});
+		</apex:repeat>
+
+
+
+		// ---------------------------------------------------------
+
+		var productsRetrievalMethod = function(request, response) {
+		    Visualforce.remoting.Manager.invokeAction(
+		        '{!$RemoteAction.DealGuidanceRuleController.searchProductsNoPriceList}', request.term,
+		                    $prodFamilyHiddenCtrl.val(), 
+		                    'in', 
+		                     function(result, event){
+		                        if(event.type == 'exception') {
+		                            console.log(event.message);
+		                        } else {
+		                            response(normalizeData(result, "Name", "Id"));
+		                        }
+		                    });
+		},
+		// get selected Products from dataabse
+		$productHiddenCtrl = j$("[id$=idHiddenProductValues]"),
+		productMultipickList = j$("[id$=idProductMultiSelect]").multipickSearch({
+		    lblResultsItemsTitle:"{!$Label.AvailableItems}",
+		    lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+		    lblClose:"{!$Label.Close}",
+		    lblNoResults:"{!$Label.NoResultsAvailable}",
+		    dataSourceFunction: productsRetrievalMethod,
+		    defaultResults: function(request, response) { 
+		        request.term = "";
+		        productsRetrievalMethod(request, response);
+		    },
+		    onItemSelected: function(settings, item){
+		        onAddSelectedItem($productHiddenCtrl, item.value);
+		    },
+		    onDelete: function(settings, item){
+		        onDeleteEvent(item.value, "idHiddenProductValues");
+		    }
+		});
+
+		$productHiddenCtrl.val('');
+		j$("[id$=idProductMultiSelect]").val("");
+		<apex:repeat value="{!currentProductList}" var="prod">
+		    productMultipickList.multipickSearch("addSelectedItem", {label:"{!JSENCODE(prod.Name)}", value:"{!prod.Id}"});
+		</apex:repeat>
+
+
+		//------------------------------------------------------------------------------------
+
+			var serviceLocationRetrievalMethod = function(request, response) {
+				Visualforce.remoting.Manager.invokeAction(
+			    	'{!$RemoteAction.DealGuidanceRuleController.searchServiceLocations}',request.term, function(result, event){
+			            if(event.type == 'exception') {
+			                  console.log(event.message);
+			            } else {
+			                if(result!=null)response(normalizeData(result, "Name", "Id"));
+			            }
+			        });
+			},
+
+
+			$serviceLocationHiddenCtrl = j$("[id$=idHiddenServiceLocationScopeValues]"),
+
+			serviceLocationMultipickList = j$("[id$=idServiceLocationScopeMultiSelect]").multipickSearch({
+			    lblResultsItemsTitle:"{!$Label.AvailableItems}",
+			    lblSelectedItemsTitle:"{!$Label.SelectedItems}",
+			    lblClose:"{!$Label.Close}",
+			    lblNoResults:"{!$Label.NoResultsAvailable}",
+			    dataSourceFunction:serviceLocationRetrievalMethod,
+			    defaultResults: function(request, response) { 
+			        request.term = "";
+			        serviceLocationRetrievalMethod(request, response);
+			    },
+			    onItemSelected: function(settings, item){
+			        onAddSelectedItem($serviceLocationHiddenCtrl, item.value);
+			    },
+			    onDelete:function(settings, item) { // remove item from selected list
+			        onDeleteEvent(item.value, "idHiddenServiceLocationScopeValues");
+			    }                    
+			});
+
+			$serviceLocationHiddenCtrl.val('');
+			var serviceLocationList = "{!JSENCODE(dealGuidanceRuleSO.ServiceLocationScope__c)}";
+			if(serviceLocationList != 'All' && serviceLocationList != '') {
+			    serviceLocationList = serviceLocationList.replace('; ', ';');
+			    serviceLocationList = serviceLocationList.split(';');
+			    for (var index = 0; index < serviceLocationList.length; index++) { 
+			        serviceLocationMultipickList.multipickSearch("addSelectedItem", {label:serviceLocationList[index], value:serviceLocationList[index]});                              
+			    }
+			}
+		//------------------------------------------------------------------------------------
+		
+
+	}
+
+	//set the properties and actions of the remove dialog
+	function promptDelete(){
+		j$( "#dialog-confirm" ).dialog({
+			resizable: false,
+			modal: true,
+			buttons: {
+			"{!$Label.apttus_dealmgr__delete}": function() {
+					doDeleteRule();
+					j$( this ).dialog( "close" );
+				},
+				Cancel: function() {
+					j$( this ).dialog( "close" );
+	
+				}
+	
+			}
+  	
+  		});
+	
+	}
+
+				
+		function updateFieldList()
+		{
+			//alert('hello');
+			doUpdateFieldList();
+		}
+		
+		/**
+		 * Initializes the call
+		 */
+		function initCall() {
+			
+			try {
+				sforce.connection.sessionId = "{!$Api.Session_ID}"; //to avoid session timeout
+				} catch(e) {
+					ap_erroralert(ap_cERROR_UNKNOWN,e);
+				}
+				
+		}
+						
+		function getDependentOptions (objName, ctrlFieldName, depFieldName) 
+		{
+			initCall();
+			// Isolate the Describe info for the relevant fields
+			var objDesc = sforce.connection.describeSObject(objName);
+			var ctrlFieldDesc, depFieldDesc;
+			var found = 0;
+			for (var i=0; i<objDesc.fields.length; i++) {
+				var f = objDesc.fields[i];
+				if (f.name == ctrlFieldName) {
+				ctrlFieldDesc = f;
+				found++;
+				} else if (f.name == depFieldName) {
+				depFieldDesc = f;
+				found++;
+				}
+				if (found==2) break;
+			}
+ 
+			// Set up return object
+			var dependentOptions = {};
+			var ctrlValues = ctrlFieldDesc.picklistValues;
+			for (var i=0; i<ctrlValues.length; i++) {
+			dependentOptions[ctrlValues[i].label] = [];
+			}
+ 
+			var base64 = new sforce.Base64Binary("");
+			function testBit (validFor, pos) 
+			{
+				var byteToCheck = Math.floor(pos/8);
+				var bit = 7 - (pos % 8);
+				return ((Math.pow(2, bit) & validFor.charCodeAt(byteToCheck)) >> bit) == 1;
+			}
+
+			// For each dependent value, check whether it is valid for each controlling value
+			var depValues = depFieldDesc.picklistValues;
+			for (var i=0; i<depValues.length; i++) {
+				var thisOption = depValues[i];
+				var validForDec = base64.decode(thisOption.validFor);
+				for (var ctrlValue=0; ctrlValue<ctrlValues.length; ctrlValue++) 
+				{
+					if (testBit(validForDec, ctrlValue)) 
+					{
+						dependentOptions[ctrlValues[ctrlValue].label].push(thisOption.label);
+					}
+				}
+			}
+			
+			return dependentOptions;
+		}
+ 
+	 	function updateDependentPickListHandler(fieldNameGuidanceType)
+	 	{
+	 		var fnGuidanceType = document.getElementById(fieldNameGuidanceType);
+			var OBJ_NAME = "{!JSENCODE(objName)}";
+			var CTRL_FIELD_NAME = "{!JSENCODE(ctrlFieldName)}";
+			var DEP_FIELD_NAME = "{!JSENCODE(depFieldName)}";
+			var options = getDependentOptions(OBJ_NAME, CTRL_FIELD_NAME, DEP_FIELD_NAME);
+			//console.debug(options);
+			var strOptions=JSON.stringify(options);
+			doUpdateDependentPickListJs(strOptions,fnGuidanceType.value);
+	 		
+	 	}
+
+	 	function isExprCriteriaValid() {
+	 	    var validationErrors = $exprValidator.criteriaExprValidator("validate");
+
+	 	    if(validationErrors.length > 0) {
+	 	        $errorSectionCont.show();
+	 	        return false;
+	 	    }
+
+	 	    $errorSectionCont.hide();
+
+	 	    return true;
+	 	}
+
+	 	function validateExprCriteriaAndSave() {
+	 	    if(!isExprCriteriaValid()) return false;
+
+	 	    saveCriteria();
+	 	}		
+		
+		
+
+		</script>
+
+	
+<apex:form id="wizardForm">
+
+	<apex:outputPanel id="idErrorMsg">
+			<apex:pageMessages />
+	</apex:outputPanel>
+	<div id="contentWrap" class="aptRoundedDiv">
+			<div class="aptGroupHeader">
+				<h2 class="main-head">
+				<apex:sectionHeader title="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Label & ' ' & $Label.apttus_dealmgr__edit}" 
+										subtitle="{!$Label.apttus_dealmgr__new & ' ' & $ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Label}" 
+										rendered="{!ISBLANK(Apttus_DealMgr__DealGuidanceRule__c.Id)}" />
+													
+				<apex:sectionHeader title="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Label & ' ' & $Label.apttus_dealmgr__edit}" 
+									subtitle="{!Apttus_DealMgr__DealGuidanceRule__c.Name}" 
+									rendered="{!NOT(ISBLANK(Apttus_DealMgr__DealGuidanceRule__c.Id))}" />				
+				</h2>
+				
+			</div>
+		<br/>	
+		<apex:pageBlock mode="edit" id="idDealGuidanceRuleBlock" rendered="{!NOT(IsViewMode)}">
+
+			<!-- Page block Buttons -->		
+			<apex:pageBlockButtons location="both" >
+				<apex:outputpanel id="buttonBlock">
+					
+					<apex:commandLink action="{!doSave}" value="{!$Label.apttus_dealmgr__save}" styleClass="aptListButton"/>
+					<apex:commandLink value="{!$Label.apttus_dealmgr__saveandnew}" action="{!doSaveAndNew}" styleClass="aptListButton"
+						rendered="{!NOT(ISBLANK(Apttus_DealMgr__DealGuidanceRule__c.Id))}"/>
+					<apex:commandLink action="{!doCancel}" value="{!$Label.apttus_dealmgr__cancel}" styleClass="aptListButton" immediate="true"/>
+
+				</apex:outputpanel>
+			</apex:pageBlockButtons>
+
+				 				
+			<apex:pageBlock mode="edit">
+				
+				<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+					<div class="aptGroupHeader">
+						<h2>
+							<apex:outputtext value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Label & ' ' & $Label.apttus_dealmgr__edit}"/>
+						</h2>
+					</div>
+
+				<!-- Deal Guidance Rule Header -->
+				<apex:pageBlockSection columns="1" title="{!$Label.apttus_dealmgr__information}" id="idEditPb">
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Name.Label}" 
+										  for="idName" />				
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>					
+								<apex:inputfield id="idName" value="{!Apttus_DealMgr__DealGuidanceRule__c.Name}"/> 
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__Sequence__c.Label}" 
+										  for="idSequence" />				
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>					
+								<apex:inputfield id="idSequence" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Sequence__c}" required="false"/> 
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>					
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__GuidanceType__c.Label}" 
+										  for="idGuidanceType" />				
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>					
+								<apex:inputfield id="idGuidanceType" styleClass="guidance-type" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__GuidanceType__c}"
+									onChange="updateDependentPickListHandler('{!$Component.idGuidanceType}');"/>
+								
+								<apex:actionStatus id="idBOStatusWait2" startText="{!$Label.apttus_dealmgr__pleasewait}" /> 
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__BusinessObject__c.Label}" 
+										  for="idBusinessObject" />
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+	   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+								<apex:selectList id="idBusinessObject" 
+	  										 value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__BusinessObject__c}" 
+	  										 multiselect="false" 
+	  										 required="false" 
+	  										 size="1"  onChange="updateFieldList();" >
+									<apex:selectOptions value="{!businessObjectItems}"></apex:selectOptions>
+								</apex:selectList>										
+							<apex:actionStatus id="idBOStatusWait" startText="{!$Label.apttus_dealmgr__pleasewait}" />	
+	 					</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+
+					<apex:pageBlockSectionItem id="idDimensionSetFieldSection">
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__DimensionSetId__c.Label}" 
+										  for="idDimensionSetId" />
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+	   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+							<apex:selectList id="idDimensionSetId" 
+  										 value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__DimensionSetId__c}" 
+  										 multiselect="false" 
+  										 size="1">
+									<apex:selectOptions value="{!DimensionsetItems}"></apex:selectOptions>
+							</apex:selectList>
+								<apex:actionsupport event="onchange" action="{!doInitializeRuleEntryGrid}"
+									reRender="idDealGuidanceRuleEntriesPanel"
+									status="idStatusWait"/>
+								<apex:actionStatus id="idStatusWait" startText="{!$Label.apttus_dealmgr__pleasewait}" />															
+	 					</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__Measure__c.Label}" 
+										  for="idMeasure" />				
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>					
+								<apex:inputfield id="idMeasure" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Measure__c}" /> 
+								<apex:actionSupport event="onchange" reRender="idEditPb" status="idStatusWait3" />
+						<apex:actionStatus id="idStatusWait3" startText="{!$Label.apttus_dealmgr__pleasewait}" />	
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+
+					<apex:pageBlockSectionItem rendered="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Measure__c == 'Custom'}" >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__CustomMeasureSource__c.Label}" 
+										  for="idCustomMeasure" />
+					  	<apex:outputPanel styleClass="requiredInput" layout="block">
+					  		<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+					  		<apex:selectList id="idCustomMeasure"
+					  						 value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__CustomMeasureSource__c}"
+					  						 multiselect="false"
+					  						 size="1" >
+		  						<apex:selectOptions value="{!CustomMeasureFields}" />
+	  						</apex:selectList>
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem rendered="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Measure__c == 'Custom'}" >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__CustomMeasureBandDirection__c.Label}" 
+										  for="idMeasureBandDirection" />
+					  	<apex:outputPanel styleClass="requiredInput" layout="block">
+					  		<apex:outputPanel styleClass="requiredBlock" layout="block"/>
+					  		<apex:inputfield id="idMeasureBandDirection" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__CustomMeasureBandDirection__c}" />
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>					
+					
+					<apex:inputfield id="idCurrencyScope" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__CurrencyScope__c}" 
+														  rendered="{!isMultiCurrency}" />		
+														  
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__InitialRows__c.Label}" 
+										  for="idInitialRows" />				
+						<apex:outputPanel styleClass="requiredInput" layout="block">
+		   						<apex:outputPanel styleClass="requiredBlock" layout="block"/>					
+								<apex:inputfield id="idInitialRows" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__InitialRows__c}"/>
+								<apex:actionsupport event="onchange" action="{!doInitializeRuleEntryGridRows}"
+									reRender="idDealGuidanceRuleEntriesPanel"
+									status="idStatusWait2"/>
+								<apex:actionStatus id="idStatusWait2" startText="{!$Label.apttus_dealmgr__pleasewait}" />	
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					
+					<apex:inputfield id="idActive" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Active__c}"/>
+					<apex:inputfield id="idDescription" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Description__c}" style="width:500px;"/>
+	 				
+				</apex:pageBlockSection>
+				<apex:pageBlockSection columns="1">
+                    <apex:repeat value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.FieldSets.Apttus_DealMgr__RuleFieldSet}" 
+                                            var="fld">
+                    	<apex:inputField value="{!Apttus_DealMgr__DealGuidanceRule__c[fld]}" />
+                    </apex:repeat>
+                </apex:pageBlockSection>
+                       
+				<!-- Deal Guidance Rule Criteria -->
+				<apex:outputPanel id="idScopeBlock" styleClass="scope-block">
+					<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+						<div class="aptGroupHeader">
+							<h2>Rule Scope</h2>
+						</div>
+
+						<apex:pageBlockSection columns="1">
+							<!--
+							<apex:pageBlockSectionItem >
+								<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__ServiceLocationScope__c.Label}" 
+												  for="serviceLocationScope" />				
+								<apex:outputPanel layout="block">
+			   						<apex:outputPanel layout="block"/>					
+									<apex:selectList size="1" id="idServiceLocationScope" styleClass="search-field field-value shown-text" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ServiceLocationScope__c}">
+										<apex:selectOptions value="{!ServiceLocations}"/>
+									</apex:selectList>
+								</apex:outputPanel>
+							</apex:pageBlockSectionItem>
+							--> 
+							 
+							<apex:pageBlockSectionItem rendered="{!isCPQEnabled}">
+								<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__ServiceLocationScope__c.Label}" 
+												  for="idServiceLocationScope" />				
+								<apex:outputPanel layout="block">
+				   						<apex:outputPanel layout="block"/>					
+										<apex:inputText id="idServiceLocationScopeMultiSelect" styleClass="search-field field-value shown-text" html-placeholder="Search" />
+										<apex:inputHidden id="idHiddenServiceLocationScopeValues" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ServiceLocationScope__c}" />	
+								</apex:outputPanel>
+							</apex:pageBlockSectionItem>
+											
+							<apex:pageBlockSectionItem >
+								<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__ProductFamily__c.Label}" 
+												  for="idProductFamily" />				
+								<apex:outputPanel layout="block">
+				   						<apex:outputPanel layout="block"/>					
+										<apex:inputText id="idProductFamilyMultiSelect" styleClass="search-field field-value shown-text" html-placeholder="Search" />
+										<apex:inputHidden id="idHiddenProductFamilyValues" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ProductFamily__c}" />
+								</apex:outputPanel>
+							</apex:pageBlockSectionItem>
+
+							<apex:pageBlockSectionItem rendered="{!isCPQEnabled}">
+								<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__ProductGroupScope__c.Label}" 
+												  for="idProductGroupScope" />				
+								<apex:outputPanel layout="block">
+				   						<apex:outputPanel layout="block"/>					
+										<apex:inputText id="idProductGroupMultiSelect" styleClass="search-field field-value shown-text" html-placeholder="Search" />
+										<apex:inputHidden id="idHiddenProductGroupValues" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ProductGroupScope__c}" />	
+								</apex:outputPanel>
+							</apex:pageBlockSectionItem>
+
+
+							<apex:pageBlockSectionItem >
+								<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__ProductScope__c.Label}" 
+												  for="idProductScope" />				
+								<apex:outputPanel layout="block">
+				   						<apex:outputPanel layout="block"/>					
+										<apex:inputText id="idProductMultiSelect" styleClass="search-field field-value shown-text" html-placeholder="Search" />
+										<apex:inputHidden id="idHiddenProductValues" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ProductScope__c}" />	
+								</apex:outputPanel>
+							</apex:pageBlockSectionItem>
+
+							<apex:pageBlockSectionItem >
+								<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__AccountScope__c.Label}" 
+												  for="idAccountScope" />				
+								<apex:outputPanel layout="block">
+				   						<apex:outputPanel layout="block"/>					
+										<apex:inputText id="idAccountMultiSelect" styleClass="search-field field-value shown-text" html-placeholder="Search" />
+										<apex:inputHidden id="idHiddenAccountValues" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__AccountScope__c}" />	
+								</apex:outputPanel>
+							</apex:pageBlockSectionItem>
+							
+							<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Criteria__c}" rendered="false"/>
+							<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__CriteriaFieldNames__c}" rendered="false"/>
+						</apex:pageBlockSection>
+					</div>
+				</apex:outputPanel>
+			    <apex:outputPanel id="idCriteriaBlock">
+				
+					<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+									<div class="aptGroupHeader">
+										<h2>{!$Label.RuleCriteria}</h2>
+									</div>
+
+					    <apex:pageBlockSection id="idPredicatesSection" 
+					    					   columns="2" 
+					    					   collapsible="false" >
+					        <apex:pageBlockTable value="{!predicates}" 
+					        					 var="predicate" 
+					        					 columns="8" 
+					        					 rowClasses="oddRow,evenRow" >
+					        	
+					        	<apex:column width="5%" rendered="{!isAdvancedOptionsMode}" >
+					        		<apex:outputText id="idRowNum" value="{!predicate.RowNum}. " />
+								</apex:column>
+					        	<apex:column headerValue="{!$Label.apttus_dealmgr__field}" width="25%" >
+					        		<apex:outputPanel styleClass="{!IF(predicate.FieldInError, 'errorRow', '')}" layout="block" >
+					        			<apex:selectList id="idField" size="1" value="{!predicate.FieldName}" >
+								      		<apex:selectOptions value="{!FieldItems}"></apex:selectOptions>
+								      		<apex:actionSupport event="onchange" 
+								      							action="{!doUpdateFieldInfo}" 
+								      							reRender="idPredicatesSection" />
+								      	</apex:selectList>
+									</apex:outputPanel>
+								</apex:column>
+								<apex:column headerValue="{!$Label.apttus_dealmgr__operator}" width="25%" >
+							    	<apex:outputPanel styleClass="{!IF(predicate.CompOperInError, 'errorRow', '')}" layout="block" >
+								    	<apex:selectList id="idCompOper" size="1" value="{!predicate.CompOper}" >
+								      		<apex:selectOptions value="{!compOperItems}"></apex:selectOptions>
+								      	</apex:selectList>
+							      	</apex:outputPanel>
+							   	</apex:column>
+						   		<apex:column headerValue="{!$Label.apttus_dealmgr__value}" width="25%" >
+							    	<apex:outputPanel styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" layout="block" >
+							    		<apex:inputText id="idFieldValue" 
+							    						size="25" 
+							    						value="{!predicate.FieldValue}" 
+							    						rendered="{!NOT(predicate.IsPicklist)}" />
+							    		<apex:selectList id="idFieldValue2" 
+							    						 size="1" 
+							    						 multiselect="false"
+							    						 value="{!predicate.FieldValue}" 
+							    						 rendered="{!predicate.IsPicklist && NOT(predicate.IsMultiPicklist)}" >
+								      		<apex:selectOptions value="{!predicate.fieldValueItems}"></apex:selectOptions>
+								      	</apex:selectList>
+								      	<apex:selectList id="idFieldValue3" 
+							    						 size="5" 
+							    						 multiselect="true"
+							    						 value="{!predicate.FieldValues}" 
+							    						 rendered="{!predicate.IsPicklist && predicate.IsMultiPicklist}" >
+								      		<apex:selectOptions value="{!predicate.fieldValueItems}"></apex:selectOptions>
+								      	</apex:selectList>
+							   		</apex:outputPanel>
+							   	</apex:column>
+							   	<apex:column width="5%" >
+							    	<apex:outputText id="idBoolOper" 
+							    					 value="{!predicate.BoolOper}" 
+							    					 rendered="false"/> <!-- {!NOT(isAdvancedOptionsMode) && NOT(ISBLANK(predicate.BoolOper))}" /> TODO CHANGE RENDERED TO FALSE --> 
+							    	<apex:commandLink action="{!doAddRow}" 
+										  	  	  	  reRender="idPredicatesSection, idAdvancedOptionsSection" 
+										  	  	  	   > <!-- rendered="{!NOT(isAdvancedOptionsMode) && ISBLANK(predicate.BoolOper)}" --> 
+										<apex:image url="{!$Resource.Apttus_DealMgr__Image_Plus2}" 
+					                       			title="{!$Label.apttus_dealmgr__add}" 
+					                       			alt="{!$Label.apttus_dealmgr__add}" />  	  	  	  
+									</apex:commandLink>
+							   	</apex:column>
+							   	<apex:column width="5%" >
+							   	<apex:commandLink id="idDeleteRow" 
+											      action="{!doDeleteRow}" 
+											  	  reRender="idPredicatesSection, idAdvancedOptionsSection" 
+											  	  rendered="{!predicate.RowNum > 1}" >
+									<apex:param name="rowNum" value="{!predicate.RowNum}" />	
+									<apex:image url="{!$Resource.Apttus_DealMgr__Image_Minus2}" 
+					                       		title="{!$Label.apttus_dealmgr__remove}" 
+					                       		alt="{!$Label.apttus_dealmgr__remove}" />	  
+								</apex:commandLink>
+								</apex:column>
+							   	<apex:column width="10%" >
+							   		<apex:outputText value="{!predicate.ErrorMsg}" style="color:red;" />
+							   	</apex:column>
+							   
+					        </apex:pageBlockTable>
+				        
+				    	</apex:pageBlockSection>
+
+				    	<apex:pageBlockSection id="idAdvancedOptionsSection" columns="1" collapsible="false" >		        
+				        	<apex:commandLink value="Clear Advanced Options" 
+				        						action="{!clearAdvancedOptions}"
+				        						reRender="idAdvancedOptionsSection" 
+				        						id="idHideOptionButton"/>
+				        	<apex:outputText value="Advanced Filter Condition" />
+				        	<apex:inputText id="idAdvancedOptions" 
+		        				size="80" 
+		        				value="{!advancedOptionsString}" />
+						</apex:pageBlockSection>
+					</div>
+	 	 		</apex:outputPanel>
+	 	 	
+				<!-- Deal Guidance Rule Entries -->
+		    	<apex:outputPanel id="idDealGuidanceRuleEntriesPanel">
+
+					<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+									<div class="aptGroupHeader">
+										<h2>{!$ObjectType.DealGuidanceRuleEntry__c.LabelPlural}</h2>
+									</div>
+		    					<input class="expand-filters" type="checkbox" value="{!IsruleEntryExpanded}" />
+		    					<div class="child-filter-fields">
+					    		<apex:pageBlockSection id="idDealGuidanceRuleEntriesSection" 
+					    					   columns="2" 
+					    					   collapsible="false" 
+					    					   rendered="{!ShowEntryGridInAddNewMode}">
+							        <apex:pageBlockTable id="idDealGuidanceRuleEntriesTable" 
+							        					 value="{!ruleEntries}" 
+							        					 var="entryInfo" 
+							        					 columns="14"   
+							        					 width="100%" 
+							        					 rowClasses="oddRow,evenRow"  
+							        					 rendered="{!HasRuleEntries}" >
+							        	
+							        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealGuidanceRuleEntry__c.Fields.Apttus_DealMgr__Sequence__c.Label}" 
+							        				 width="5%" >
+							        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+										</apex:column>
+										
+							        	<apex:column headerValue="{!dimension1Label}" 
+							        				 width="10%" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim1InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension1Value__c}" 
+							        							 rendered="{!NOT(isDimension1Picklist)}" />
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension1Value__c}" 
+						  										 multiselect="false" 
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension1Picklist && NOT(isDimension1MultiPicklist)}" >
+													<apex:selectOptions value="{!dimension1PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension1Values}" 
+						  										 multiselect="true" 
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension1Picklist && isDimension1MultiPicklist}" >
+													<apex:selectOptions value="{!dimension1PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension2Label}" 
+													 width="8%" 
+													 rendered="{!isDimension2Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim2InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension2Value__c}" 
+							        							 rendered="{!NOT(isDimension2Picklist)}" />
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension2Value__c}" 
+						  										 multiselect="false"   
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension2Picklist && NOT(isDimension2MultiPicklist)}" >
+													<apex:selectOptions value="{!dimension2PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension2Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension2Picklist && isDimension2MultiPicklist}" >
+													<apex:selectOptions value="{!dimension2PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+								   		<apex:column headerValue="{!dimension3Label}" 
+								   					 width="8%" 
+								   					 rendered="{!isDimension3Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim3InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension3Value__c}" 
+							        							 rendered="{!NOT(isDimension3Picklist)}" />
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension3Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension3Picklist && NOT(isDimension3MultiPicklist)}" >
+													<apex:selectOptions value="{!dimension3PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension3Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension3Picklist && isDimension3MultiPicklist}" >
+													<apex:selectOptions value="{!dimension3PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension4Label}" 
+													 width="8%" 
+													 rendered="{!isDimension4Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim4InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension4Value__c}" 
+							        							 rendered="{!NOT(isDimension4Picklist)}" />
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension4Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension4Picklist && NOT(isDimension4MultiPicklist)}" >
+													<apex:selectOptions value="{!dimension4PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension4Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension4Picklist && isDimension4MultiPicklist}" >
+													<apex:selectOptions value="{!dimension4PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension5Label}" 
+													 width="8%" 
+													 rendered="{!isDimension5Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim5InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension5Value__c}" 
+							        							 rendered="{!NOT(isDimension5Picklist)}" />
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension5Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension5Picklist && NOT(isDimension5MultiPicklist)}" >
+													<apex:selectOptions value="{!dimension5PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension5Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension5Picklist && isDimension5MultiPicklist}" >
+													<apex:selectOptions value="{!dimension5PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension6Label}" 
+													 width="8%" 
+													 rendered="{!isDimension6Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim6InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension6Value__c}" 
+							        							 rendered="{!NOT(isDimension6Picklist)}" />
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension6Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension6Picklist && NOT(isDimension6MultiPicklist)}" >
+													<apex:selectOptions value="{!dimension6PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension6Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension6Picklist && isDimension6MultiPicklist}" >
+													<apex:selectOptions value="{!dimension6PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+					
+										<apex:column rendered="{!isBand1Enabled}" >
+											<apex:facet name="header">
+												<div class="elem band-container">
+													<p class="band-label">{!Band1Label}</p>
+													<span class="{!LOWER(Band1Shape)}" style="color:{!Band1ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim1InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField style="Width:80px" value="{!entryInfo.entrySO.Apttus_DealMgr__Band1Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand2Enabled}" >
+											<apex:facet name="header">
+												<div class="elem band-container">
+													<p class="band-label">{!Band2Label}</p>
+													<span class="{!LOWER(Band2Shape)}" style="color:{!Band2ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim2InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField style="Width:80px" value="{!entryInfo.entrySO.Apttus_DealMgr__Band2Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand3Enabled}" >
+											<apex:facet name="header">
+												<div class="elem band-container">
+													<p class="band-label">{!Band3Label}</p>
+													<span class="{!LOWER(Band3Shape)}" style="color:{!Band3ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim3InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField style="Width:80px" value="{!entryInfo.entrySO.Apttus_DealMgr__Band3Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand4Enabled}" >
+											<apex:facet name="header">
+												<div class="elem band-container">
+													<p class="band-label">{!Band4Label}</p>
+													<span class="{!LOWER(Band4Shape)}" style="color:{!Band4ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim4InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField style="Width:80px" value="{!entryInfo.entrySO.Apttus_DealMgr__Band4Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand5Enabled}" >
+											<apex:facet name="header">
+												<div class="elem band-container">
+													<p class="band-label">{!Band5Label}</p>
+													<span class="{!LOWER(Band5Shape)}" style="color:{!Band5ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim5InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField style="Width:80px" value="{!entryInfo.entrySO.Apttus_DealMgr__Band5Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand6Enabled}" >
+											<apex:facet name="header">
+												<div Class="elem band-container">
+													<p class="band-label">{!Band6Label}</p>
+													<span class="{!LOWER(Band6Shape)}" style="color:{!Band6ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim6InError, 'errorRow', '')}" layout="block" >
+							        			<apex:inputField style="Width:80px" value="{!entryInfo.entrySO.Apttus_DealMgr__Band6Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+					
+					
+					
+									   	<apex:column width="5%" >
+									    	<apex:commandLink action="{!doAddEntryRow}" 
+													  	  	  reRender="idDealGuidanceRuleEntriesSection" >
+												<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+												<apex:image url="{!$Resource.Apttus_DealMgr__Image_Plus2}" 
+								                       		title="{!$Label.apttus_dealmgr__add}" 
+								                       		alt="{!$Label.apttus_dealmgr__add}" />		  	  	  
+											</apex:commandLink>
+									   	</apex:column>
+									   	
+									   	<apex:column width="5%" >
+										   	<apex:commandLink action="{!doDeleteEntryRow}" 
+														  	  reRender="idDealGuidanceRuleEntriesSection" 
+														  	  rendered="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c > 1}" >
+												<apex:param name="rowNum" value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+												<apex:image url="{!$Resource.Apttus_DealMgr__Image_Minus2}" 
+								                       		title="{!$Label.apttus_dealmgr__remove}" 
+								                       		alt="{!$Label.apttus_dealmgr__remove}" />		  
+											</apex:commandLink>
+										</apex:column>
+										
+					
+									   	<apex:column width="5%" >
+									   		<apex:outputText value="{!entryInfo.ErrorMsg}" style="color:red;" />
+									   	</apex:column>
+									   
+							        </apex:pageBlockTable>
+									
+					    		</apex:pageBlockSection>
+					    		<apex:pageBlockSection collapsible="false" 
+					    					   rendered="{!ShowEntryGridInAddNewMode == false}">					    		
+									<apex:pageblocksectionItem >
+										<apex:panelGrid columns="1">
+						                    <apex:outputText value="{!$Label.apttus_dealmgr__norecordstodisplay}" />
+						                </apex:panelGrid>			
+					                </apex:pageblocksectionItem>					    		
+								</apex:pageBlockSection>
+								
+								</div>
+					</div>
+					
+				</apex:outputPanel>
+				
+				</div>
+				
+			</apex:pageBlock>
+		
+		</apex:pageBlock>
+
+		<!-- View Mode -->
+		<apex:pageBlock id="idDealGuidanceRuleDetailBlock"
+                        rendered="{!IsViewMode}"
+                        mode="detail">
+        
+            <apex:pageBlockButtons location="both">
+            	<apex:commandLink action="{!doEdit}" value="{!$Label.apttus_dealmgr__edit}" styleClass="aptListButton"/>
+				<apex:commandLink action="{!doClone}" 
+										value="{!$Label.apttus_dealmgr__clone}" 
+										reRender="wizardForm"
+										rendered="{!NOT(ISBLANK(Apttus_DealMgr__DealGuidanceRule__c.Id)) && NOT(isEditMode)}"
+										styleClass="aptListButton"/> 				
+				<apex:commandLink value="{!$Label.apttus_dealmgr__delete}"
+										onClick="promptDelete();"
+										rendered="{!NOT(ISBLANK(Apttus_DealMgr__DealGuidanceRule__c.Id)) && NOT(isEditMode)}"
+										reRender="wizardForm"
+										styleClass="aptListButton"/>            	
+            </apex:pageBlockButtons>
+
+			<apex:pageBlock mode="detail" id="idDealGuidanceRuleBlock">
+				
+				<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+					<div class="aptGroupHeader">
+						<h1>
+							<apex:outputtext value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Label & ' ' & $Label.apttus_dealmgr__detail}"/>
+						</h1>										
+					</div>
+
+				<!-- Deal Guidance Rule Header -->
+				<apex:pageBlockSection columns="1">
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Name}"/> 
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Sequence__c}"/>
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__GuidanceType__c}"/>
+					
+					<!-- <apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__BusinessObject__c}"/>  -->
+					<apex:pageBlockSectionItem >
+							<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__BusinessObject__c.Label}" 
+											  for="idBusinessObject" />
+							<apex:outputtext id="idBusinessObject" value="{!BusinessObjectLabel}"/>
+					</apex:pageBlockSectionItem>
+											
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__DimensionSetId__c}"/>
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Measure__c}"/>
+					
+					<apex:pageBlockSectionItem rendered="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Measure__c == 'Custom'}" >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__CustomMeasureSource__c.Label}" 
+										  for="idCustomMeasureSource" />
+						<apex:outputfield id="idCustomMeasureSource" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__CustomMeasureSource__c}"/>
+					</apex:pageBlockSectionItem>
+					
+					<apex:pageBlockSectionItem rendered="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Measure__c == 'Custom'}" >
+						<apex:outputLabel value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.Fields.Apttus_DealMgr__CustomMeasureBandDirection__c.Label}" 
+										  for="idMeasureBandDirection" />
+					  	<apex:outputfield id="idMeasureBandDirection" value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__CustomMeasureBandDirection__c}"/>
+					</apex:pageBlockSectionItem>	
+									
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__CurrencyScope__c}" rendered="{!isMultiCurrency}" />
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__InitialRows__c}"/>
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Active__c}"/>
+					<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Description__c}"/>
+					<!-- <apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__Criteria__c}"/>
+					 -->					
+				</apex:pageBlockSection>
+				<apex:pageBlockSection columns="1">
+                    <apex:repeat value="{!$ObjectType.Apttus_DealMgr__DealGuidanceRule__c.FieldSets.Apttus_DealMgr__RuleFieldSet}" 
+                                            var="fld">
+                    	<apex:outputField value="{!Apttus_DealMgr__DealGuidanceRule__c[fld]}" />
+                    </apex:repeat>
+                </apex:pageBlockSection>
+				<!-- Deal Guidance Rule Scope -->
+
+				<apex:outputPanel id="idScopeBlock">
+					<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+						<div class="aptGroupHeader">
+							<h2>Rule Scope</h2>
+						</div>
+					
+					<apex:pageBlockSection columns="1" rendered="{!isRuleLineLevel}">
+						<apex:outputField value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ServiceLocationScope__c}" rendered="{!isCPQEnabled}"/>				
+						<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ProductFamily__c}" />
+						<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ProductGroupScope__c}" rendered="{!isCPQEnabled}" />
+						<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__ProductScope__c}" />
+						<apex:outputfield value="{!Apttus_DealMgr__DealGuidanceRule__c.Apttus_DealMgr__AccountScope__c}" />
+
+					</apex:pageBlockSection>
+
+					</div>
+				</apex:outputPanel>
+				
+				<!-- Deal Guidance Rule Criteria -->
+			    <apex:outputPanel >
+				
+					<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+									<div class="aptGroupHeader">
+										<h2>{!$Label.RuleCriteria}</h2>
+									</div>
+					    
+					    <apex:pageBlockSection id="idPredicatesSection" 
+					    					   columns="2" 
+					    					   collapsible="false" >
+					        <apex:pageBlockTable value="{!predicates}" 
+					        					 var="predicate" 
+					        					 columns="8" 
+					        					 rowClasses="oddRow,evenRow" 
+					        					 rendered="{!HasRuleCriteriaViewMode}">
+					        	
+					        	<apex:column width="5%" rendered="{!isAdvancedOptionsMode}" >
+					        		<apex:outputText id="idRowNum" value="{!predicate.RowNum}. " />
+								</apex:column>
+					        	<apex:column headerValue="{!$Label.apttus_dealmgr__field}" width="25%" >
+					        		<apex:outputPanel styleClass="{!IF(predicate.FieldInError, 'errorRow', '')}" layout="block" >
+					        			<apex:selectList id="idField" size="1" value="{!predicate.FieldName}" disabled="true">
+								      		<apex:selectOptions value="{!FieldItems}"></apex:selectOptions>
+								      		<apex:actionSupport event="onchange" 
+								      							action="{!doUpdateFieldInfo}" 
+								      							reRender="idPredicatesSection" />
+								      	</apex:selectList>
+									</apex:outputPanel>
+								</apex:column>
+								<apex:column headerValue="{!$Label.apttus_dealmgr__operator}" width="25%" >
+							    	<apex:outputPanel styleClass="{!IF(predicate.CompOperInError, 'errorRow', '')}" layout="block" >
+								    	<apex:selectList id="idCompOper" size="1" value="{!predicate.CompOper}" disabled="true">
+								      		<apex:selectOptions value="{!compOperItems}"></apex:selectOptions>
+								      	</apex:selectList>
+							      	</apex:outputPanel>
+							   	</apex:column>
+						   		<apex:column headerValue="{!$Label.apttus_dealmgr__value}" width="25%" >
+							    	<apex:outputPanel styleClass="{!IF(predicate.FieldValueInError, 'errorRow', '')}" layout="block" >
+							    		<apex:outputText id="idFieldValue" 
+							    						value="{!predicate.FieldValue}" 
+							    						rendered="{!NOT(predicate.IsPicklist)}"/>
+							    		<apex:selectList id="idFieldValue2" 
+							    						 size="1" 
+							    						 multiselect="false"
+							    						 value="{!predicate.FieldValue}" 
+							    						 rendered="{!predicate.IsPicklist && NOT(predicate.IsMultiPicklist)}" disabled="true">
+								      		<apex:selectOptions value="{!predicate.fieldValueItems}"></apex:selectOptions>
+								      	</apex:selectList>
+								      	<apex:selectList id="idFieldValue3" 
+							    						 size="5" 
+							    						 multiselect="true"
+							    						 value="{!predicate.FieldValues}" 
+							    						 rendered="{!predicate.IsPicklist && predicate.IsMultiPicklist}" disabled="true">
+								      		<apex:selectOptions value="{!predicate.fieldValueItems}"></apex:selectOptions>
+								      	</apex:selectList>
+							   		</apex:outputPanel>
+							   	</apex:column>
+							   	<apex:column width="5%" >
+							    	<apex:outputText id="idBoolOper" 
+							    					 value="{!predicate.BoolOper}" 
+							    					 rendered="false"/> 
+							   	</apex:column>
+							
+							   
+					        </apex:pageBlockTable>
+
+				        	<apex:pageblocksectionItem rendered="{!HasRuleCriteriaViewMode=false && NOT(isRuleLineLevel)}">
+										<apex:panelGrid columns="1">
+						                    <apex:outputText value="{!$Label.apttus_dealmgr__norecordstodisplay}" />
+						                </apex:panelGrid>			
+					        </apex:pageblocksectionItem> 
+				    	</apex:pageBlockSection>
+					</div>
+	 	 		</apex:outputPanel>
+	 	 	
+				<!-- Deal Guidance Rule Entries -->
+		    	<apex:outputPanel >
+
+					<div class="aptRoundedDiv" style="margin:10px;width:auto;">
+									<div class="aptGroupHeader">
+										<h2>{!$ObjectType.DealGuidanceRuleEntry__c.LabelPlural}</h2>
+									</div>
+		    					<input class="expand-filters" type="checkbox" value="{!IsruleEntryExpanded}" />
+		    					<div class="child-filter-fields">
+					    		<apex:pageBlockSection id="idDealGuidanceRuleEntriesSection" 
+					    					   columns="2" 
+					    					   collapsible="false" 
+					    					   rendered="{!IsAddNewMode=false}">
+							        <apex:pageBlockTable id="idDealGuidanceRuleEntriesTable" 
+							        					 value="{!ruleEntries}" 
+							        					 var="entryInfo" 
+							        					 columns="14"   
+							        					 width="100%" 
+							        					 rowClasses="oddRow,evenRow"  
+							        					 rendered="{!HasRuleEntriesViewMode}" >
+							        	
+							        	<apex:column headerValue="{!$ObjectType.Apttus_DealMgr__DealGuidanceRuleEntry__c.Fields.Apttus_DealMgr__Sequence__c.Label}" 
+							        				 width="5%" >
+							        		<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Sequence__c}" />
+										</apex:column>
+										
+							        	<apex:column headerValue="{!dimension1Label}">
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim1InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension1Value__c}" 
+							        							 rendered="{!NOT(isDimension1Picklist)}"/>
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension1Value__c}" 
+						  										 multiselect="false" 
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension1Picklist && NOT(isDimension1MultiPicklist)}" disabled="true">
+													<apex:selectOptions value="{!dimension1PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension1Values}" 
+						  										 multiselect="true" 
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension1Picklist && isDimension1MultiPicklist}" disabled="true">
+													<apex:selectOptions value="{!dimension1PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension2Label}"
+													 rendered="{!isDimension2Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim2InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension2Value__c}" 
+							        							 rendered="{!NOT(isDimension2Picklist)}"/>
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension2Value__c}" 
+						  										 multiselect="false"   
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension2Picklist && NOT(isDimension2MultiPicklist)}" disabled="true">
+													<apex:selectOptions value="{!dimension2PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension2Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension2Picklist && isDimension2MultiPicklist}" disabled="true">
+													<apex:selectOptions value="{!dimension2PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+								   		<apex:column headerValue="{!dimension3Label}" 
+								   					 rendered="{!isDimension3Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim3InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension3Value__c}" 
+							        							 rendered="{!NOT(isDimension3Picklist)}"/>
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension3Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension3Picklist && NOT(isDimension3MultiPicklist)}" disabled="true">
+													<apex:selectOptions value="{!dimension3PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension3Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension3Picklist && isDimension3MultiPicklist}" disabled="true">
+													<apex:selectOptions value="{!dimension3PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension4Label}"
+													 rendered="{!isDimension4Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim4InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension4Value__c}" 
+							        							 rendered="{!NOT(isDimension4Picklist)}"/>
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension4Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension4Picklist && NOT(isDimension4MultiPicklist)}" disabled="true">
+													<apex:selectOptions value="{!dimension4PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension4Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension4Picklist && isDimension4MultiPicklist}" disabled="true">
+													<apex:selectOptions value="{!dimension4PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension5Label}"
+													 rendered="{!isDimension5Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim5InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension5Value__c}" 
+							        							 rendered="{!NOT(isDimension5Picklist)}"/>
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension5Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension5Picklist && NOT(isDimension5MultiPicklist)}" disabled="true">
+													<apex:selectOptions value="{!dimension5PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension5Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension5Picklist && isDimension5MultiPicklist}" disabled="true">
+													<apex:selectOptions value="{!dimension5PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+										
+										<apex:column headerValue="{!dimension6Label}"
+													 rendered="{!isDimension6Enabled}" >
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim6InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension6Value__c}" 
+							        							 rendered="{!NOT(isDimension6Picklist)}"/>
+							        			<apex:selectList value="{!entryInfo.entrySO.Apttus_DealMgr__Dimension6Value__c}" 
+						  										 multiselect="false"  
+						  										 required="false" 
+						  										 size="1" 
+						  										 rendered="{!isDimension6Picklist && NOT(isDimension6MultiPicklist)}" disabled="true">
+													<apex:selectOptions value="{!dimension6PicklistItems}" />
+												</apex:selectList>
+												<apex:selectList value="{!entryInfo.Dimension6Values}" 
+						  										 multiselect="true"  
+						  										 required="false" 
+						  										 size="5" 
+						  										 rendered="{!isDimension6Picklist && isDimension6MultiPicklist}" disabled="true">
+													<apex:selectOptions value="{!dimension6PicklistItems}" />
+												</apex:selectList>
+											</apex:outputPanel>
+										</apex:column>
+					
+										<apex:column rendered="{!isBand1Enabled}">
+											<apex:facet name="header">
+												<div Class="elem band-container">
+													<p class="band-label">{!Band1Label}</p>
+													<span class="{!LOWER(Band1Shape)}" style="color:{!Band1ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim1InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Band1Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand2Enabled}">
+											<apex:facet name="header">
+												<div Class="elem band-container">
+													<p class="band-label">{!Band2Label}</p>
+													<span class="{!LOWER(Band2Shape)}" style="color:{!Band2ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim2InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Band2Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand3Enabled}">
+											<apex:facet name="header">
+												<div Class="elem band-container">
+													<p class="band-label">{!Band3Label}</p>
+													<span class="{!LOWER(Band3Shape)}" style="color:{!Band3ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim3InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Band3Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand4Enabled}">
+											<apex:facet name="header">
+												<div Class="elem band-container">
+													<p class="band-label">{!Band4Label}</p>
+													<span class="{!LOWER(Band4Shape)}" style="color:{!Band4ColorCode}"></span>
+												</div>
+											</apex:facet>															 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim4InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Band4Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand5Enabled}">
+											<apex:facet name="header">
+												<div Class="elem band-container">
+													<p class="band-label">{!Band5Label}</p>
+													<span class="{!LOWER(Band5Shape)}" style="color:{!Band5ColorCode}"></span>
+												</div>
+											</apex:facet>													 
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim5InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Band5Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+										<apex:column rendered="{!isBand6Enabled}">
+											<apex:facet name="header">
+												<div Class="elem band-container">
+													<p class="band-label">{!Band6Label}</p>
+													<span class="{!LOWER(Band6Shape)}" style="color:{!Band6ColorCode}"></span>
+												</div>
+											</apex:facet>
+							        		<apex:outputPanel styleClass="{!IF(entryInfo.Dim6InError, 'errorRow', '')}" layout="block" >
+							        			<apex:outputField value="{!entryInfo.entrySO.Apttus_DealMgr__Band6Value__c}"/>
+											</apex:outputPanel>
+										</apex:column>
+					
+					
+									   
+							        </apex:pageBlockTable>
+
+									<apex:pageblocksectionItem rendered="{!HasRuleEntriesViewMode=false}">
+										<apex:panelGrid columns="1">
+						                    <apex:outputText value="{!$Label.apttus_dealmgr__norecordstodisplay}" />
+						                </apex:panelGrid>			
+					                </apex:pageblocksectionItem> 							      
+					    </apex:pageBlockSection>
+								
+								</div>
+					</div>
+					
+				</apex:outputPanel>
+		
+				</div>
+			</apex:pageBlock>
+            
+        </apex:pageBlock>
+         	
+	</div>
+
+		<!-- action function to invoke javascript to update field list -->
+     	<apex:actionFunction name="doUpdateFieldList" 
+                             action="{!doUpdateFieldList}"
+                             reRender="idCriteriaBlock, idEditPb, idDealGuidanceRuleEntriesPanel" 
+                             status="idBOStatusWait"
+                             oncomplete="checkScopeDisplay();"/>
+                             
+		<apex:actionFunction name="doDeleteRule" 
+								action="{!doDelete}"
+								rerender="wizardForm"
+								/>
+		
+		<div id="dialog-confirm" title="{!$Label.RemoveConfirmation}">
+			<p><span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 20px 0;"></span>{!$Label.RemoveMessage}</p>
+		</div>
+
+	<apex:actionFunction name="doUpdateDependentPickListJs"
+						action="{!doUpdateDependentPickList}" 
+						immediate="true" 
+						rerender="idCriteriaBlock, idEditPb, idDealGuidanceRuleEntriesPanel"
+						status="idBOStatusWait2"
+						oncomplete="checkScopeDisplay();">
+		<apex:param name="dependentPickListValues" value="" />
+		<apex:param name="selectedGuidanceType" value="" />
+		
+	</apex:actionFunction>
+
+	<apex:actionFunction name="doSave" action="{!doSave}" reRender="dummy" />
+		    			        		
+</apex:form>
+
+</apex:page>

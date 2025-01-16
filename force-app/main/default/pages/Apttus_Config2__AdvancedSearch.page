@@ -1,0 +1,176 @@
+<!-- 
+    Apttus Config & Pricing
+    IncentiveManager
+     
+    @2015-2016 Apttus Inc. All rights reserved.
+
+ -->
+ <apex:page controller="Apttus_Config2.AdvancedSearchController" 
+ 			lightningStylesheets="true"
+ 			standardStylesheets="false" 
+ 			sidebar="false" 
+ 			showHeader="false" 
+ 			applyHtmlTag="false" 
+ 			docType="html-5.0">
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/font-awesome.min.css')}" />
+    <link rel="stylesheet" href="{!URLFOR($Resource.IncentivesPageResources,'css/normalize.css')}" />
+    <link type="text/css" href="{!URLFOR($Resource.IncentivesPageResources,'css/incentives-style.css')}" rel="stylesheet" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__IncentivesPageResources, 'js/AdvanceSearch.js')}" />
+
+    <script>
+        var selectedProducts = [];
+
+        (function($){
+          $(document).ready(function(){
+            $('[id$=idProductSearchString]').bind("keypress", function search(e) {
+              if (e.keyCode == 13) {
+                searchFunction();
+                return false; // prevent the button click from happening
+              }
+            });
+          });          
+        })(j$);
+
+        function resizeMe() {
+          window.parent.openingPopup = true;
+          window.parent.resizeIframe(window.frameElement);
+        }
+
+        function setSelectedProductID(productID, productName, cb){
+            var currentValue = j$('[id$=selectedProductIds]').val();
+            if(cb.checked){                
+                if(currentValue == '') {
+                    currentValue = productID;
+                } else {
+                    currentValue = currentValue + '; ' + productID;
+                }
+            } else {
+                 currentValue = currentValue.replace(productID, "");
+            }
+
+            selectedProducts.push({value: productID, label: productName});
+
+            j$('[id$=selectedProductIds]').val(currentValue);
+        }
+
+    </script>
+    <body>
+        <apex:variable var="rowcount" value="{!0}" />
+        <apex:form styleClass="advanced-search">
+            <apex:inputHidden id="selectedProductIds" />
+            <div class="advanced-search-container">
+                <div class="search">
+                    <label class="spy-glass">
+                        <i class="fa fa-search"></i>
+                        <div>
+                            <i class="fa fa-times"></i>
+                        </div>
+                    </label>
+                    <apex:inputText id="idProductSearchString" value="{!searchString}" html-placeholder="{!$Label.apttus_config2__search}" />
+                    <apex:actionFunction action="{!doSearchProduct}" name="searchFunction" reRender="idProductSearchResultPanel" />
+                </div>
+            </div>
+            <apex:outputPanel id="idProductSearchResultPanel">
+                <div class="data-controls top-data-controls">
+                    <div class="paging-status">
+                        <span>Items {!firstResult}-{!lastResult} (of {!resultsCount})</span>
+                    </div>
+                    <!-- Product paging buttons -->
+                    <apex:outputPanel styleClass="paging">
+                      <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                        styleClass="prev">&lt;{!$Label.PreviousPage}
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!previousPage}" 
+                                          rendered="{!NOT(PreviousPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idProductSearchResultPanel">&lt;{!$Label.PreviousPage}
+                      </apex:commandLink>
+                      <span> | </span>
+                      <apex:outputPanel rendered="{!NextPageStatus}" 
+                                        styleClass="prev">{!$Label.NextPage}&gt;
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!nextPage}" 
+                                          rendered="{!NOT(NextPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idProductSearchResultPanel">{!$Label.NextPage}&gt;
+                      </apex:commandLink>
+                      
+                    </apex:outputPanel>
+                    
+                    <div style="clear: both;"></div>
+                </div>
+                <table class="product-search-header" border="0" cellpadding="0" cellspacing="0">
+                    <thead>
+                        <th class="checkbox-4"><input type="checkbox" id="checkAll" /><label for="checkAll"> </label></th>
+                        <th class="product-15">{!$ObjectType.Product2.fields.ProductCode.Label}</th>
+                        <th class="product-family-category-19">{!$ObjectType.Product2.fields.Name.Label}</th>
+                        <th class="product-family-category-19">{!$ObjectType.Product2.fields.Family.Label}</th>
+                    </thead>
+                </table>
+                <div class="scrollable-data">
+                    <apex:dataTable value="{!searchedProductList}" var="product" styleClass="advanced-search-results">
+                        <apex:column styleClass="checkbox-4">
+                            <input type="checkbox" id="singleCheck{!rowcount}" onchange="setSelectedProductID('{!product.Id}', '{!JSENCODE(product.Name)}', this);"/><label for="singleCheck{!rowcount}"> </label>
+                            <apex:variable var="rowcount" value="{!rowcount+1}" />
+                        </apex:column>
+                        <apex:column styleClass="product-15">
+                            {!product.ProductCode}
+                        </apex:column>
+                        <apex:column styleClass="product-family-category-19">
+                            {!product.name}
+                        </apex:column>
+                        <apex:column styleClass="product-family-category-19">
+                            {!product.family}
+                        </apex:column>
+                    </apex:dataTable>
+                </div>
+                <div class="data-controls">
+                    <apex:outputPanel rendered="{!isUsingBenefits}">
+                    <div class="commands">
+                        <a href="#" class="btn disabled" id="idSelect" onclick="parent.setSelectedProductCriteriaIDs(j$('[id$=selectedProductIds]').val());">Select</a>
+                        <a href="#" class="btn cancel" id="idCancel" onclick="window.parent.productAdvancedSearchDialog.dialog('close');">Cancel</a>
+                    </div>
+                    </apex:outputPanel>
+
+                    <apex:outputPanel rendered="{!NOT(isUsingBenefits)}">
+                    <div class="commands">
+                        <a href="#" class="btn disabled" id="idSelect" onclick="parent.getSelectedProductID(j$('[id$=selectedProductIds]').val(), selectedProducts);">Select</a>
+                        <a href="#" class="btn cancel" id="idCancel" onclick="window.parent.productAdvancedSearchDialog.dialog('close');">Cancel</a>
+                    </div>
+                    </apex:outputPanel>
+
+                    <apex:outputPanel styleClass="paging">
+                      <apex:outputPanel rendered="{!PreviousPageStatus}" 
+                                        styleClass="prev">&lt;{!$Label.PreviousPage}
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!previousPage}" 
+                                          rendered="{!NOT(PreviousPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idProductSearchResultPanel">&lt;{!$Label.PreviousPage}
+                      </apex:commandLink>
+                      <span> | </span>
+                      <apex:outputPanel rendered="{!NextPageStatus}" 
+                                        styleClass="prev">{!$Label.NextPage}&gt;
+                      </apex:outputPanel>
+                      <apex:commandLink action="{!nextPage}" 
+                                          rendered="{!NOT(NextPageStatus)}"
+                                          status="idSpinnerStatus"
+                                          reRender="idProductSearchResultPanel">{!$Label.NextPage}&gt;
+                      </apex:commandLink>
+                      
+                    </apex:outputPanel>
+                    <div style="clear: both;"></div>
+                </div>
+                <script>
+                j$(document).ready(function(){
+                    resizeMe();
+                    advancedSearchFunctionality(j$, ".product-search-header", ".advanced-search-results");
+                });
+                </script>
+            </apex:outputPanel>
+        </apex:form>
+    </body>
+        
+</apex:page>

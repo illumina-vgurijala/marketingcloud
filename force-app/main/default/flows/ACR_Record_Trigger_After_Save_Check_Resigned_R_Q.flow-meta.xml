@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>54.0</apiVersion>
+    <assignments>
+        <description>If any other ACR record has R/Q, then we are assigning it as False</description>
+        <name>Assignment_if_Other_ACRs_are_R_Q</name>
+        <label>Assignment if Other ACRs are R/Q</label>
+        <locationX>502</locationX>
+        <locationY>869</locationY>
+        <assignmentItems>
+            <assignToReference>Check_If_Last_ACR</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Check_Final_Outcome</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <description>To check if this is the last ACR record.</description>
+        <name>Store_Last_ACR_Boolean</name>
+        <label>Store Last ACR Boolean</label>
+        <locationX>695</locationX>
+        <locationY>455</locationY>
+        <assignmentItems>
+            <assignToReference>Check_If_Last_ACR</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Get_Other_ACRs</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <description>If last ACR record is true, then assign R/Q value</description>
+        <name>Check_Final_Outcome</name>
+        <label>Check Final Outcome</label>
+        <locationX>846</locationX>
+        <locationY>872</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Check_Final_Outcome_Item</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Check_If_Last_ACR</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Update_Contact_Resigned_R_Q</targetReference>
+            </connector>
+            <label>Check Final Outcome Item</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>Check Other ACR  which has R/Q item</description>
+        <name>Check_Other_ACR_is_R_Q</name>
+        <label>Check Other ACR is R/Q</label>
+        <locationX>495</locationX>
+        <locationY>626</locationY>
+        <defaultConnector>
+            <targetReference>Loop_on_ther_ACRs</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Check_Other_ACR_is_R_Q_item</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Loop_on_ther_ACRs.Roles</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue>
+                    <stringValue>Regulatory/Quality</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Assignment_if_Other_ACRs_are_R_Q</targetReference>
+            </connector>
+            <label>Check Other ACR is R/Q item</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <description>Check Roles on ACR if it contains Regulatory/Quality</description>
+        <name>Check_Roles</name>
+        <label>Check Roles</label>
+        <locationX>448</locationX>
+        <locationY>454</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Is_Roles_Changed</name>
+            <conditionLogic>2 AND 3 AND 4 AND NOT(1)</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Roles</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue>
+                    <stringValue>Regulatory/Quality</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record__Prior.Roles</leftValueReference>
+                <operator>Contains</operator>
+                <rightValue>
+                    <stringValue>Regulatory/Quality</stringValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Record.Contact.Is_Active__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>$Setup.cs_Apex_Settings__c.Bypass_All_Flows__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Store_Last_ACR_Boolean</targetReference>
+            </connector>
+            <label>Is Roles Changed</label>
+        </rules>
+    </decisions>
+    <description>If the &apos;Regulatory/Quality&apos; Role value on an Account Contact Relationship Record is removed AND the Account Contact Relationship Record is the last record flagged as &apos;Regulatory/Quality&apos; for a Contact AND the Contact is ACTIVE (do not proceed with AC if Contact is inactive)
+
+THEN: The Contact should be flagged as &apos;Resigned R/Q&apos;.</description>
+    <interviewLabel>ACR:Record-Trigger:After Save: Check Resigned R/Q {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>ACR:Record-Trigger:After Save: Check Resigned R/Q</label>
+    <loops>
+        <description>LoopThrough all ACR Records</description>
+        <name>Loop_on_ther_ACRs</name>
+        <label>Loop on ther ACRs</label>
+        <locationX>854</locationX>
+        <locationY>626</locationY>
+        <collectionReference>Get_Other_ACRs</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Check_Other_ACR_is_R_Q</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Check_Final_Outcome</targetReference>
+        </noMoreValuesConnector>
+    </loops>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordLookups>
+        <description>Query all ACR Records</description>
+        <name>Get_Other_ACRs</name>
+        <label>Get Other ACRs</label>
+        <locationX>854</locationX>
+        <locationY>455</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Loop_on_ther_ACRs</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>ContactId</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.ContactId</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>AccountContactRelation</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates>
+        <description>Updating the contact Record</description>
+        <name>Update_Contact_Resigned_R_Q</name>
+        <label>Update Contact Resigned R/Q</label>
+        <locationX>855</locationX>
+        <locationY>1075</locationY>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.ContactId</elementReference>
+            </value>
+        </filters>
+        <inputAssignments>
+            <field>Resigned_R_Q__c</field>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputAssignments>
+        <object>Contact</object>
+    </recordUpdates>
+    <start>
+        <locationX>330</locationX>
+        <locationY>48</locationY>
+        <connector>
+            <targetReference>Check_Roles</targetReference>
+        </connector>
+        <filterLogic>1 AND NOT(2)</filterLogic>
+        <filters>
+            <field>Resigned_R_Q_ACR__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </filters>
+        <filters>
+            <field>Roles</field>
+            <operator>Contains</operator>
+            <value>
+                <stringValue>Regulatory/Quality</stringValue>
+            </value>
+        </filters>
+        <object>AccountContactRelation</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <variables>
+        <description>Variable to store if this is the last ACR record to have Regulatory/Quality value</description>
+        <name>Check_If_Last_ACR</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <value>
+            <booleanValue>true</booleanValue>
+        </value>
+    </variables>
+    <variables>
+        <name>Other_ACR_Records</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>AccountContactRelation</objectType>
+    </variables>
+</Flow>

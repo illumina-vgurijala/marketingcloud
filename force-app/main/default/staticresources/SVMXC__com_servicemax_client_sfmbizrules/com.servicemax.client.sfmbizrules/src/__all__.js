@@ -1,0 +1,1058 @@
+// Code: C:\var\lib\jenkins\workspace\ReleaseOps\SVMX_UIFW_SUM20\src\modules\com.servicemax.client.sfmbizrules\src\formulafield.js
+/**
+ * This file needs a description
+ * @class com.servicemax.client.sfmbizrules.jsel
+ * @singleton
+ * @author unknown
+ *
+ * @copyright 2013 ServiceMax, Inc.
+ */
+
+(function(){
+
+	var ffImpl = SVMX.Package("com.servicemax.client.sfmbizrules.formulafield");
+	var datetimeUtils = com.servicemax.client.lib.datetimeutils.DatetimeUtil;
+
+	ffImpl.Class("FormulaFieldEngine", com.servicemax.client.lib.api.Object, {
+		__constructor : function() {},
+
+		initialize : function(params){
+			var me = this;
+
+			// set up the context roots
+			var props = {};
+			var i = 0, cr = params.contextRoots, l = cr.length;
+			for(i = 0; i < l; i++){
+				eval("var " + cr[i] + " = {};");
+			}
+
+			this.addContext = function(context, root){
+				var r = eval(root);
+				for(var name in context){
+					var value = context[name];
+					r[name] = value;
+				}
+			};
+
+			this.updateValue = function(alias, field, value){
+				if($D[alias] && field in $D[alias]){
+					$D[alias][field] = value;
+				}
+			}
+
+			this.getContext = function(alias){
+				return $D[alias];
+			}
+
+			this.setProperty = function(key, value) {
+				props[key] = value;
+			};
+
+			this.getProperty = function(key) {
+				return props[key];
+			};
+
+			this.resolveFormula = function(expr, params){
+
+				// Math Operators
+				function $ADD(val1, val2){
+					return $FLOAT(val1) + $FLOAT(val2);
+				}
+
+				function $SUBTRACT(val1, val2){
+					return $FLOAT(val1) - $FLOAT(val2);
+				}
+
+				function $MULTIPLY(val1, val2){
+					return $FLOAT(val1) * $FLOAT(val2);
+				}
+
+				function $DIVIDE(val1, val2){
+					return $FLOAT(val1) / $FLOAT(val2);
+				}
+
+				function $FLOAT(value){
+					var parsedValue = parseFloat(value);
+					if(isNaN(parsedValue)) parsedValue = 0;
+					return parsedValue;
+				}
+
+				function isDate( d ){
+					var regExpr = /((?:(?:[1]{1}\d{1}\d{1}\d{1})|(?:[2]{1}\d{3}))[-:\/.](?:[0]?[1-9]|[1][012])[-:\/.](?:(?:[0-2]?\d{1})|(?:[3][01]{1})))(?![\d])/;
+					return regExpr.test( d.toString() );
+				}
+
+				function isNumber( n ) {
+					if(!n) return false;
+					if( isDate(n) ) return false;
+					var regExpr = /^-?(\d+\.?\d*)$|(\d*\.?\d+)$/;
+					return regExpr.test( n.toString() );
+				}
+
+				// Logical Operators
+
+				function $EQUAL(val1, val2){
+					if(isNumber(val1) && isNumber(val2)){
+						return $FLOAT(val1) === $FLOAT(val2);
+					}
+					if(typeof val1 === typeof val2)
+						return val1 === val2;
+					else if (typeof val1 === "boolean" || typeof val2 === "boolean") {
+						val2 = Boolean(val2);
+						val1 = Boolean(val1);
+						return val1 === val2;
+					}else {
+						return val1 === val2;
+					}
+				}
+
+				function $NOTEQUAL(val1, val2){
+					if(isNumber(val1) && isNumber(val2)){
+						return $FLOAT(val1) !== $FLOAT(val2);
+					}
+					return val1 !== val2;
+				}
+
+				function $LESSTHAN(val1, val2){
+					if(isNumber(val1) && isNumber(val2)){
+						return $FLOAT(val1) < $FLOAT(val2);
+					}
+					return val1 < val2;
+				}
+
+				function $GREATERTHAN(val1, val2){
+					if(isNumber(val1) && isNumber(val2)){
+						return $FLOAT(val1) > $FLOAT(val2);
+					}
+					return val1 > val2;
+				}
+
+				function $LESSTHANEQUAL(val1, val2){
+					if(isNumber(val1) && isNumber(val2)){
+						return $FLOAT(val1) <= $FLOAT(val2);
+					}
+					return val1 <= val2;
+				}
+
+				function $GREATERTHANEQUAL(val1, val2){
+					if(isNumber(val1) && isNumber(val2)){
+						return $FLOAT(val1) >= $FLOAT(val2);
+					}
+					return val1 >= val2;
+				}
+
+				//Date Functions
+
+				function $DATE(year, month, day){
+					if(!year || !month || !day) return "";
+					var expression = ("0000" + year).slice(-4) + "-" + ("00" + month).slice(-2) + "-" + ("00" + day).slice(-2);
+					return datetimeUtils.getFormattedDatetime(expression, datetimeUtils.getSaveFormat("date"));
+				}
+
+				function $DATEVALUE(expression){
+					if(!expression) return "";
+					return datetimeUtils.getFormattedDatetime(expression, datetimeUtils.getSaveFormat("date"));
+				}
+
+				function $DATETIMEVALUE(expression){
+					if(!expression) return "";
+					return datetimeUtils.getFormattedDatetime(expression, datetimeUtils.getSaveFormat("datetime"));
+				}
+
+				function $DAY(date){
+					if(!date) return "";
+					date = datetimeUtils.getFormattedDatetime(date, datetimeUtils.getSaveFormat("date"));
+					return datetimeUtils.parseDate(date).getDate();
+				}
+
+				function $MONTH(date){
+					if(!date) return "";
+					date = datetimeUtils.getFormattedDatetime(date, datetimeUtils.getSaveFormat("date"));
+					return datetimeUtils.parseDate(date).getMonth() + 1;
+				}
+
+				function $YEAR(date){
+					if(!date) return "";
+					date = datetimeUtils.getFormattedDatetime(date, datetimeUtils.getSaveFormat("date"));
+					return datetimeUtils.parseDate(date).getFullYear();
+				}
+
+				function $TODAY(){
+					var res = datetimeUtils.macroDrivenDatetime('Today', "YYYY-MM-DD", "HH:mm:ss");
+					res = datetimeUtils.getFormattedDatetime(res, datetimeUtils.getSaveFormat("date"));
+					return res;
+				}
+
+				function $NOW(){
+					var res = datetimeUtils.getCurrentDatetime(datetimeUtils.getSaveFormat("datetime"));
+					res = datetimeUtils.getFormattedDatetime(res, datetimeUtils.getSaveFormat("datetime"));
+					return res;
+				}
+
+				function $DATEDIFF(d1, d2, options){
+		    		var diff = datetimeUtils.getDurationBetween(d1, d2);
+		    		switch(options){
+		    			case "INDAYS":
+		    				return diff.asDays();
+		    			case "INWEEKS":
+		    				return diff.asWeeks();
+		    			case "INMONTHS":
+		    				return diff.asMonths();
+		    			case "INYEARS":
+		    				return diff.asYears();
+		    			default:
+		    				return 0;
+		    		}
+				}
+
+				//Logical Functions
+
+				function $AND(){
+					var i = 0, l = arguments.length;
+					for(i = 0; i < l; i++){
+						if(arguments[i] !== true){
+							return false;
+						}
+					}
+					return true;
+				}
+
+				function $OR(){
+					var i = 0, l = arguments.length;
+					for(i = 0; i < l; i++){
+						if(arguments[i] === true){
+							return true;
+						}
+					}
+					return false;
+				}
+
+				function $NOT(condition){
+					if(condition){
+						return false;
+					}else{
+						return true;
+					}
+				}
+
+				function $IF(condition, truthy, falsey){
+					if(condition){
+						return truthy;
+					}else{
+						return falsey;
+					}
+				}
+
+				// Rollup Functions
+
+				function $SUMOF(list, fieldName){
+					list = list || [];
+					var total = 0;
+					for(i = 0; i < list.length; i++){
+						total += $FLOAT(list[i][fieldName]);
+					}
+					return total;
+				}
+
+				function $AVGOF(list, fieldName){
+					list = list || [];
+					return $SUMOF(list, fieldName)/list.length;
+				}
+
+				function $MAXOF(list, fieldName){
+					list = list || [];
+					var i, l = list.length, max = 0, val;
+					for(i = 0; i < list.length; i++){
+						val = $FLOAT(list[i][fieldName]);
+						if(val > max){
+							max = val;
+						}
+					}
+					return max;
+				}
+
+				function $MINOF(list, fieldName){
+					list = list || [];
+					var i, l = list.length, min = l ? list[0][fieldName] : 0, val;
+					for(i = 0; i < list.length; i++){
+						val = $FLOAT(list[i][fieldName]);
+						if(val < min){
+							min = val;
+						}
+					}
+					return min;
+				}
+
+				var $F = {
+					ADD: $ADD, SUBTRACT: $SUBTRACT, MULTIPLY: $MULTIPLY, DIVIDE: $DIVIDE,
+					EQUAL: $EQUAL, NOTEQUAL: $NOTEQUAL, LESSTHAN: $LESSTHAN, GREATERTHAN: $GREATERTHAN, LESSTHANEQUAL: $LESSTHANEQUAL, GREATERTHANEQUAL: $GREATERTHANEQUAL,
+					DATE: $DATE, DATEVALUE: $DATEVALUE, DATETIMEVALUE: $DATETIMEVALUE,
+					DAY: $DAY, MONTH: $MONTH, YEAR: $YEAR,
+					TODAY: $TODAY, NOW: $NOW, DATEDIFF: $DATEDIFF,
+					AND: $AND, OR: $OR, NOT: $NOT, IF: $IF,
+					SUMOF: $SUMOF, AVGOF: $AVGOF, MAXOF: $MAXOF , MINOF: $MINOF
+				};
+
+				try {
+					return eval(expr);
+				} catch(e) {
+					return {error: "Warning: Error found in configured formula."};
+				}
+			};
+		}
+
+	}, {});
+})();
+
+// end of file
+
+// Code: C:\var\lib\jenkins\workspace\ReleaseOps\SVMX_UIFW_SUM20\src\modules\com.servicemax.client.sfmbizrules\src\impl.js
+
+/**
+ * Business rules engine evaluates a set of rules and returns an array of warnings and errors.
+ * Depends upon expressions engine.
+ * @author Michael Kantor
+ * @class com.servicemax.client.sfmbizrules.impl
+ * @singleton
+ *
+ * @copyright 2013 ServiceMax, Inc
+ */
+
+(function(){
+
+	var appImpl = SVMX.Package("com.servicemax.client.sfmbizrules.impl");
+
+	appImpl.Class("Module", com.servicemax.client.lib.api.ModuleActivator, {
+
+		__constructor : function(){
+			this.__base();
+		},
+
+		beforeInitialize : function(){},
+		initialize : function(){},
+		afterInitialize : function(){}
+
+	}, {});
+
+	appImpl.Class("BusinessRuleValidator", com.servicemax.client.lib.api.Object, {
+		__SourceObjectName : null,
+		__constructor : function(){
+
+		},
+
+		/**
+		 * PUBLIC METHOD evaluateBusinessRules
+		 * @param {Object} inParams
+		 *    {Object} rules Rules structure generated by getBusinessRulesHash()
+		 *    {Object} data Data from sobjectinfo
+		 *    {Object} fields Field definitions generated by getFieldTypes()
+		 *    {Object} recordTypeMaps A hash of arrays listing the recordTypeId values for each object type
+		 *    {SFMPageModel} pageModel An instance of the SFMPageModel
+		 *
+		 */
+		evaluateBusinessRules : function(inParams) {
+			var inRules = inParams.rules;
+			var inData = inParams.data;
+			this.fields = inParams.fields;
+			this.recordTypeMaps = inParams.recordTypeMaps;
+			var pageModel = inParams.pageModel;
+
+			this.errors = [];
+			this.warnings = [];
+			var dataSets = {header: {lines: [inData]}};
+			for (var itemKey in inData.details) {
+				dataSets[itemKey] = inData.details[itemKey];
+			}
+
+			for (var itemKey in dataSets) {
+				this.__evaluateBusinessRulesOnItems(dataSets[itemKey].lines, itemKey, inRules, pageModel);
+			}
+
+			this.__removeDuplicates( this.errors );
+			this.__removeDuplicates( this.warnings );
+
+            this.errors.sort( this.__sortObjectsBySequence );
+            this.warnings.sort( this.__sortObjectsBySequence );
+
+            var results = {
+                errors: this.errors,
+                warnings: this.warnings
+            };
+
+			delete this.errors; // Don't leave these errors/warnings to hang around
+			delete this.warnings;
+			delete this.fields;
+			return results;
+		},
+
+
+		evaluateEntryCriteriaBusinessRules : function(inParams) {
+			var inRules = inParams.rules;
+		    var inData = inParams.data;
+			this.fields = inParams.fields;
+		    this.errors = [];
+		    this.warnings = [];
+		    this.skipSectionList = [];
+
+		   	// this.__getValuesAndEvaluateEntryCriteria([inParams.fieldValueData], 'header', inRules, null);
+			var isError = this.__evaluateBusinessRulesOnItem(inParams.fieldValueData, 'header', inRules, null);
+
+		    results = {
+		        errors: this.errors,
+		        warnings: this.warnings,
+		        skipSections: this.skipSectionList
+		    };
+
+		    delete this.errors; // Don't leave these errors/warnings to hang around
+		    delete this.warnings;
+		    delete this.fields;
+		    delete this.skipSectionList;
+
+		    return results;
+		},
+
+		__getValuesAndEvaluateEntryCriteria : function(inDataList, itemKey, inRules, inPageModel) {
+
+		    var me = this;
+		    SVMX.array.forEach(inDataList, function(inDataItem) {
+
+		        var isError = me.__evaluateBusinessRulesOnItem(inDataItem, itemKey, inRules, inPageModel);
+		        // Abort iterating over all lineitems if its an error
+		        if (isError && itemKey !== "header") return false;
+
+		    }, this);
+		},
+
+        __sortObjectsBySequence: function(a, b) {
+            a.sequence = parseInt(a.sequence);
+            b.sequence = parseInt(b.sequence);
+
+            return a.sequence - b.sequence;
+        },
+
+		/**
+		 * PRIVATE METHOD:
+		 * Don't show the same error/warning message twice.
+		 */
+		__removeDuplicates : function(inArray) {
+			var messageHash = {};
+			for (var i = inArray.length-1; i >= 0; i--) {
+				var item = inArray[i];
+				if (messageHash[item.message]) SVMX.array.removeElementAt(inArray, i);
+				messageHash[item.message] = true;
+			}
+		},
+
+		/**
+		 * PRIVATE METHOD:
+		 * Evaluate all rules on all items in the given lineItem (or header item)
+		 */
+		__evaluateBusinessRulesOnItems : function(inDataList, itemKey, inRules, inPageModel) {
+			SVMX.array.forEach(inDataList, function(inDataItem) {
+				inDataItem = !inPageModel ? inDataItem : inPageModel.getRawValues({
+					data: inDataItem,
+					referenceValue: "value",
+					fieldTypes: this.fields
+				});
+
+				var isError = this.__evaluateBusinessRulesOnItem(inDataItem, itemKey, inRules, inPageModel);
+
+				// Abort iterating over all lineitems if its an error
+				if (isError && itemKey !== "header") return false;
+			}, this);
+		},
+
+		/**
+		 * PRIVATE METHOD:
+		 * Evaluate all rules on a single Item of data
+		 */
+		__evaluateBusinessRulesOnItem : function(inDataItem, itemKey, inRules, inPageModel) {
+			var ruleSetKey, ruleSet, itemType, itemName;
+			var hasErrors = false;
+			// Find the ruleSet for inDataItem
+			for (itemType in inRules) {
+				ruleSet = inRules[itemType];
+				var key = ruleSet.key || "header";
+
+				// If the ruleSet applies to inItemData, run all rules in the ruleset
+				if (key === itemKey) {
+					ruleSetKey = key;
+					itemName = ruleSet.name;
+					break;
+				}
+			}
+
+			if (inDataItem.RecordTypeId && this.recordTypeMaps) {
+
+			    if (ruleSet.rules.length) {
+				    var tableName = ruleSet.rules[0].ruleInfo.bizRule[SVMX.OrgNamespace + "__Source_Object_Name__c"];
+				    var recordTypeMatch = SVMX.array.get(this.recordTypeMaps[tableName], function(item) {
+				    	return item.recordTypeId == inDataItem.RecordTypeId ||
+				    		item.name == inDataItem.RecordTypeId ||
+				    		item.fixedName == inDataItem.RecordTypeId;
+				    });
+				    if (recordTypeMatch) inDataItem.RecordTypeId = recordTypeMatch.fixedName;
+				}
+			}
+
+			// Iterate over every rule in the ruleset and validate the current item
+			if (ruleSetKey) {
+				SVMX.array.forEach(ruleSet.rules, function(inRule, inRuleIndex) {
+					var ruleResult = this.__evaluateBusinessRuleOnItem(inRule, inDataItem);
+					if (ruleResult) {
+						this.__reportIssue(SVMX.cloneObject(inRule), ruleResult, inDataItem, itemName);
+						if (ruleResult == "Error") {
+							if (itemKey !== "header") return false; // abort forEach loop if any line items fail
+							hasErrors = true;
+						}
+					}else{
+						//for checklist entry criteria
+						if (this.skipSectionList) {
+							this.skipSectionList.push(SVMX.cloneObject(inRule));
+						}
+					}
+				}, this);
+			}
+
+			return hasErrors;
+		},
+
+		/* PRIVATE METHOD:
+		 * Takes the rule, the ruleResult (Warning, Error) and the data that was invalid
+		 * and modifies the message by template substituting in values and then pushing
+		 * it onto the errors or warnings array.
+		 */
+		__reportIssue: function(inRule, inRuleResult, inDataItem, inItemName) {
+			if (!!inItemName) {
+                inRule.message = inItemName + ": " + inRule.message;
+            }
+
+            inRule.message = inRule.message?inRule.message:"";
+
+			inRule.message = inRule.message
+				// User can use html tags but no event handlers, styles, etc... within those tags
+				.replace(/\<.*?\>/g, function(inValue) {
+					return inValue.replace(/\s.*$/,">");
+				})
+
+				// Strip out any forbidden tags
+				.replace(/\<(object|script|style|link|embed).*?\>/gi,"")
+
+				// Remove this once stylesheets for li are updated
+				.replace(/\<li\>/g, "<li style='list-style:inherit;margin-left:20px !important;margin-top:5px !important;'>")
+				// Remove this once stylesheets for ol are updated
+				.replace(/\<ol\>/g, "<ol style='margin-top:10px;margin-bottom:10px;'/>")
+				.replace(/\<ul\>/g, "<ul style='margin-top:10px;margin-bottom:10px;'/>")
+
+				// This is needed to support template substituting in values from inData into the message
+				.replace(/\{\{.*?\}\}/g, SVMX.proxy(this, function(inValue) {
+					try {
+						var text = inValue.substring(2, inValue.length - 2);
+						text = text.replace(/\s/g, "_");
+						var fieldName = SVMX.OrgNamespace + "__" + text + "__c";
+
+						// Handle the case where the proper name really is "Account" instead of "SVMXC__Account__c"
+						if (!(fieldName in inDataItem) && (text in inDataItem)) {
+							fieldName = text;
+						}
+
+						var fieldValue = inDataItem[fieldName];
+						/* Before substituting in a value, do any necessary formatting on it */
+						switch (this.fields[inRule.ruleInfo.bizRule[SVMX.OrgNamespace + "__Source_Object_Name__c"]][fieldName]) {
+							case "date":
+							case "datetime":
+								if ("Ext" in window) {
+									return Ext.Date.format(inDataItem[fieldName], Ext.Date.defaultFormat);
+								} else {
+									return inDataItem[fieldName];
+								}
+							case "int":
+							case "double":
+								/* Format the number, but do not lose any precision in the number */
+								var v = inDataItem[fieldName];
+								if ("Ext" in window) {
+									return Ext.util.Format.number(v,",0") +
+											String(v).indexOf(".") == -1 ? "" :
+										   String(v).replace(/^.*\./, ".");
+								} else {
+									return v;
+								}
+							default:
+								return fieldValue;
+						}
+					} catch(e) {
+						return "{error}";
+					}
+				}));
+
+			if (inRuleResult == "Error") {
+				this.errors.push(inRule);
+			} else {
+				this.warnings.push(inRule);
+			}
+		},
+
+		/**
+		 * PRIVATE METHOD:
+		 * Evaluate a single business rule on an item of data
+		 */
+		__evaluateBusinessRuleOnItem : function(inRule, inData) {
+			var ruleElements = inRule.ruleInfo.bizRuleDetails;
+			var results = [];
+			var expressions = [];
+
+			for (var i = 0; i < ruleElements.length; i++) {
+				var element = ruleElements[i];
+				expressions[i] = this.__generateExpression(element, inData, inRule.ruleInfo.bizRule[SVMX.OrgNamespace + "__Source_Object_Name__c"]);
+			}
+
+			if (expressions.length > 0) {
+				try {
+					results = SVMX.executeExpressions(expressions, inData);
+				    // Any rule that returns -1 is a rule evaluated against a null value; we ignore these results.  As true means error, we change any -1 values to false.
+				    results = SVMX.array.map(results, function(item) {return SVMX.executeExpressionsResultInvalid(item) ? false : item;});
+				} catch(e) {
+					// results = []
+				}
+			}
+			// TODO: Handle advanced expressions here
+			var advancedExpr = inRule.ruleInfo.bizRule[SVMX.OrgNamespace + "__Advance_Expression__c"];
+			var evalResults = false, isError = false;
+			if (!results || results.length === 0) {
+				isError = true;
+			} else if (!advancedExpr) {
+				evalResults = SVMX.array.every(results, function(inResult) {return inResult;});
+			} else {
+				try {
+					// Replace OR with " || ", AND with " && " and all numbers with values from
+					// the results array
+					advancedExpr = advancedExpr.replace(/OR/ig, "||")
+											   .replace(/AND/ig,"&&")
+											   .replace(/NOT\s*/ig, "!")
+											   .replace(/\d+/g, function(inValue) {return results[inValue-1];});
+					evalResults = eval(advancedExpr);
+				} catch(e) {
+					SVMX.getLoggingService().getLogger("SVMX-businessrules").error("EXPR:" + advancedExpr + " fails to compile to javascript");
+					isError = true;
+				}
+			}
+			if (isError || evalResults) {
+				return inRule.ruleInfo.bizRule[SVMX.OrgNamespace + "__Message_Type__c"];
+			}
+		},
+
+		/*
+		 * PRIVATE METHOD:
+		 * Generate expressions for the expression engine from a given rule expression
+		 */
+		__generateExpression : function(inElement, inData, inObjectName) {
+			var baseElement = {	fieldName: inElement[SVMX.OrgNamespace + "__Field_Name__c"],
+								operand:   inElement[SVMX.OrgNamespace + "__Operand__c"],
+								operator:  inElement[SVMX.OrgNamespace + "__Operator__c"],
+								parameterType: inElement[SVMX.OrgNamespace + "__Parameter_Type__c"]
+								};
+			var expression, operator, operand1, operand2,
+				type1, type2, hasDateField, hasDateTimeField;
+
+			/* Step 1: Get the type of the field we are looking at */
+
+			if(inObjectName == null && inData.attributes.type === SVMX.OrgNamespace +'__Checklist__c') {
+					inObjectName = SVMX.OrgNamespace +'__Checklist__c';
+			}
+			__SourceObjectName = inObjectName;
+
+			type1 = this.fields[inObjectName][baseElement.fieldName];
+
+			if (type1 === 'question') {
+
+				var fieldType = inElement[SVMX.OrgNamespace + "__Display_Type__c"];
+				type1 = fieldType.toLowerCase();
+
+			}
+
+			if (type1 === "date") hasDateField = true;
+			else if (type1 === "datetime") hasDateTimeField = true;
+
+			/* Step 2: Get the type of the field/value/constant we are comparing our field to */
+			if (baseElement.parameterType === "Constant") {
+				switch(baseElement.operand) {
+					case "Today":
+					case "Tomorrow":
+					case "Yesterday":
+						type2 = "date";
+						hasDateField = true;
+						break;
+					case "Now":
+						type2 = "datetime";
+						hasDateTimeField = true;
+						break;
+					default:
+						type2 = type1;
+				}
+			} else if (baseElement.parameterType == "Field Value") {
+				type2 = this.fields[inObjectName][baseElement.operand];
+				if (type2 === "date") {
+                    hasDateField = true;
+				} else if (type2 === "datetime") {
+                    hasDateTimeField = true;
+                }
+			} else if (baseElement.parameterType == "Value") {
+				if (type1 === "date" || type1 === "datetime") {
+					if (!baseElement.operand) {
+					    type2 = type1;
+					} else if (baseElement.operand.length > 10) {
+						type2 = "datetime";
+						hasDateTimeField = true;
+					} else {
+						type2 = "date";
+						hasDateField = true;
+					}
+				} else {
+					type2 = type1;
+				}
+			}
+
+      operand1 = this.__getOperandExpression(type1, baseElement.fieldName,"" ,"",baseElement.operand);
+
+			var operationMap = {"NOTCONTAIN": "NOTCONTAINS"}; // rename some of our operations to match our expression engine.
+			operator = baseElement.operator.toUpperCase();
+			operator = operationMap[operator] || operator;
+
+			/* Step 3: Generate an expression; the expression will be a little different
+			 * if we are comparing a date field to a datetime field than for other types of comparisons
+			 */
+			if (hasDateField && hasDateTimeField &&
+				SVMX.array.indexOf(["ne", "eq","lt","le","gt","ge"], baseElement.operator) != -1) {
+				operator = "$DATE"+ operator;
+			} else {
+				operator = "$" + operator;
+			}
+
+            if (operator == "$ISNULL" || operator == "$ISNOTNULL") {
+                expression = operator + "(" + operand1 + ")";
+            } else {
+    		    operand2 = this.__getOperandExpression(type2, baseElement.operand, baseElement.parameterType, type1);
+    		    expression = operator + "(" + operand1 + "," + operand2 + ")";
+    		}
+
+			return expression;
+		},
+
+    __getOperandExpression : function(inType, inValue, inParamType, inDataType, inOperandType) {
+            if (!!inParamType && inParamType !== "Field Value"  ) {
+                //CONSTANT or LITERAL
+                return  this.__prepLiteralOperand(inDataType, inValue);
+            }
+            //normal
+            return this.__prepOperand(inType, inValue, inOperandType);
+       	},
+
+        __prepLiteralOperand : function(inDataType, inValue) {
+            switch(inDataType) {
+                case "double":
+				case "int":
+				case "currency":
+				case "percent":
+				    // Sometimes the values come in as Strings, and don't respond to === against numbers
+					return "$NUMBER(" + inValue + ")";
+				case "boolean":
+				    var operand = typeof inValue === "string" ? "'" + inValue + "'" : inValue;
+				    return "$BOOLEAN(" + operand + ")";
+				case "date":
+				case "datetime":
+					// Dates are added to expressions through the $DATE functions
+					return this.__prepDateOperand(inValue);
+				default:
+					// All other fields are added to expressions as quoted strings.
+					// Note: No need to test for operand === 0 because thats handled above with numbers.
+					if (inValue === null || inValue === undefined) {
+					   return "null";
+					} else {
+					   return '"' +  inValue.replace(/('|")/g, "\\$1") + '"';
+					}
+			}
+        },
+
+        __prepDateOperand : function(inValue) {
+        switch(inValue) {
+        case "Tomorrow":// Tomorrow
+					return "$DATETOMORROW()";
+				case "Today":
+					return "$DATETODAY()";
+				case "Yesterday":
+					return "$DATEYESTERDAY()";
+				case "Now":
+					return "$DATENOW()";
+				default:
+				    if (inValue === null) {
+				        return "null";
+				    } else if (typeof inValue == "string") {
+				        return "$DATE('" + inValue + "')";
+				    } else {
+				        return "$DATE(" + inValue + ")";
+				    }
+            }
+        },
+
+        __prepOperand : function(inType, inValue, inOperandType) {
+            if ((inValue === null || inValue === "") && inType != "boolean") return "null";
+            switch(inType) {
+                case "double":
+    		    case "int":
+    			case "currency":
+    			case "percent":
+                    return "$NUMBER(" + inValue + ")";
+    			case "boolean":
+    			    return "$BOOLEAN(" + inValue  + ")";
+    			case "date":
+    				return "$DATE(" + inValue + ")";
+    			case "datetime":
+    			    /**
+                     * This was needed to address timezone offsetting the below operand
+                     * which may not show the correct date. we needed to use the user display date
+                     * to ensure the date is correct for comparason
+                     */
+                     if(__SourceObjectName === SVMX.OrgNamespace +'__Checklist__c') {
+                          return "$LOCALDATETIME(" + inValue + ")";
+                     }
+                     else {
+                         return "$DATE(" + inValue + ")";
+                     }
+
+    			default:
+                    return inValue;
+    		}
+        }
+	});
+
+	appImpl.Class("FieldUpdateRuleValidator", com.servicemax.client.lib.api.Object, {
+        __constructor : function(){},
+
+        evaluateFieldUpdateRules : function(inParams) {
+            var inRules = inParams.rules;
+            var inData = inParams.data;
+            var pageModel = inParams.pageModel;
+
+            var regExp = /[\\\]\[\-~!@#$%^&*()+=\|\/{}:"';<>,.? ]/g;
+            var ffEngine = SVMX.create("com.servicemax.client.sfmbizrules.formulafield.FormulaFieldEngine");
+
+            this.__aliasMap = {}
+            this.__headerContext = {};
+            this.__updatableFields = { details : {} };
+            this.__fieldTypes = inParams.fields;
+
+            this.errors = [];
+			this.warnings = [];
+
+            for(var itemType in inRules){
+                this.__aliasMap[inRules[itemType].key] = inRules[itemType].id.replace(regExp,'_');
+            }
+
+            ffEngine.initialize({ contextRoots : ["$D"] });
+
+            var headerAlias = inRules.header.id.replace(regExp,'_');
+            var data = pageModel ? this.getRawData(inData, pageModel, true) : inData;
+
+			this.__headerContext[headerAlias] = data;
+            ffEngine.addContext(this.__headerContext, "$D"); // SFD-313: If the details require the header fields.
+
+            // Resolve rules for all child lines
+            for (var itemKey in data.details) {
+                this.__evaluateFieldUpdateRulesOnItems(data.details[itemKey].lines, itemKey, inRules, pageModel, ffEngine);
+            }
+
+            ffEngine.addContext(this.__headerContext, "$D");  // SFD-313: the context of all details need to be added again in case of multiple records for same detail, for roll up summary.
+            
+            SVMX.array.forEach(inRules.header.rules, function(inRule, inRuleIndex) {
+                var ruleElements = inRule.ruleInfo.bizRuleDetails,
+                    ruleResult, field;
+
+                SVMX.array.forEach(ruleElements, function(element) {
+                    field = element[SVMX.OrgNamespace + "__Field_Name__c"];
+                    formula = element[SVMX.OrgNamespace + "__Formula__c"];
+
+                    if(field &&  formula){
+                    	this.__updatableFields[field] = true;
+
+                        ruleResult = ffEngine.resolveFormula(formula);
+                        if (ruleResult && typeof ruleResult === "object" && "error" in ruleResult){
+                        	this.warnings[0] = {message: ruleResult.error};
+                        	return;
+                        }
+                        data[field] = ruleResult;
+                        ffEngine.updateValue(headerAlias, field, ruleResult);
+                    }
+                }, this);
+            }, this);
+
+            var results = {
+                response: data,
+                errors: this.errors,
+                warnings: this.warnings
+            };
+
+            return results;
+        },
+
+        /**
+         * PRIVATE METHOD:
+         * Evaluate all rules on all items in the given lineItem (or header item)
+         */
+        __evaluateFieldUpdateRulesOnItems: function(inDataList, itemKey, inRules, inPageModel, ffEngine) {
+        	var childAlias, ruleSet;
+            for (var key in inRules) {
+                if (inRules[key].key === itemKey) {
+                	ruleSet = inRules[key];
+                    break;
+                }
+            }
+
+            childAlias = this.__aliasMap[itemKey];
+            this.__headerContext[childAlias] = [];
+            this.__updatableFields.details[itemKey] = {};
+
+        	SVMX.array.forEach(inDataList, function(inDataItem) {
+                this.__evaluateFieldUpdateRulesOnItem(inDataItem, ruleSet, childAlias, this.__updatableFields.details[itemKey], inPageModel, ffEngine);
+            }, this);
+        },
+
+        /**
+         * PRIVATE METHOD:
+         * Evaluate all rules on a single Item of data
+         */
+        __evaluateFieldUpdateRulesOnItem : function(inDataItem, ruleSet, childAlias, updatableFields, inPageModel, ffEngine) {
+            var context = {};
+            context[childAlias] = inDataItem;
+            ffEngine.addContext(context, "$D");
+
+            // Iterate over every rule in the ruleset and validate the current item
+            if (ruleSet) {
+                SVMX.array.forEach(ruleSet.rules, function(inRule, inRuleIndex) {
+                    this.__evaluateFieldUpdateRuleOnItem(inDataItem, inRule, childAlias, updatableFields, ffEngine);
+                }, this);
+            }
+            this.__headerContext[childAlias].push(ffEngine.getContext(childAlias));
+        },
+
+        /**
+         * PRIVATE METHOD:
+         * Evaluate a single business rule on an item of data
+         */
+        __evaluateFieldUpdateRuleOnItem : function(inDataItem, inRule, childAlias, updatableFields, ffEngine) {
+            var ruleElements = inRule.ruleInfo.bizRuleDetails,
+                ruleResult, field;
+
+            SVMX.array.forEach(ruleElements, function(element) {
+                field = element[SVMX.OrgNamespace + "__Field_Name__c"];
+                formula = element[SVMX.OrgNamespace + "__Formula__c"];
+
+                if(field && formula){
+                	updatableFields[field] = true;
+
+                    ruleResult = ffEngine.resolveFormula(formula);
+                    if (ruleResult && typeof ruleResult === "object" && "error" in ruleResult){
+                    	this.warnings[0] = {message: ruleResult.error};
+                    	return;
+                    }
+                    inDataItem[field] = ruleResult;
+                    ffEngine.updateValue(childAlias, field, ruleResult);
+                }
+            }, this);
+        },
+
+        getUpdatableFields: function(){
+        	return this.__updatableFields || { details : {} };
+        },
+
+        getRawData: function(inData, pageModel, isConversionRequired){
+        	var result;
+            result = !pageModel ? inData : this.getRawValues( inData, this.__fieldTypes, isConversionRequired );
+
+            if(!inData.details) return result;
+
+            result.details = {};
+            for (var itemKey in inData.details) {
+            	result.details[itemKey] = { lines: [] };
+                this.__getChildRawData( inData.details[itemKey].lines, result.details[itemKey].lines, pageModel, isConversionRequired );
+            }
+            return result;
+        },
+
+        __getChildRawData: function(inDataList, lines, pageModel, isConversionRequired){
+        	var count = 0;
+        	SVMX.array.forEach(inDataList, function(inDataItem) {
+        		var childData = !pageModel ? inDataItem : this.getRawValues( inDataItem, this.__fieldTypes, isConversionRequired );
+        		// Provide a temporary record id to correctly map the newly created records.
+        		// This temporary record id should get removed in formula execution flow itself.
+        		if(!inDataItem.Id){
+        			inDataItem.Id = childData.Id = "tempChildId_" + count++;
+        		}
+                lines.push( childData );
+            }, this);
+        },
+
+        getRawValues: function(data, fieldTypes, isConversionRequired){
+        	var result = {}, key, value;
+        	var object = data.attributes && data.attributes.type;
+        	var fields = fieldTypes[object] || {};
+
+        	for (key in data) {
+        		value = data[key];
+        		if (key !== 'details'){
+        			if (value && typeof value === "object" && "fieldvalue" in value && "value" in value.fieldvalue) {
+        				value = value.fieldvalue.value;
+        			}
+        			if(isConversionRequired){
+        				value = this.__convertFieldValue(value, fields[key], false);
+        			}
+        		}
+        		result[key] = value;
+			}
+			return result;
+        },
+
+        parseResult: function(data, updatableFields, fieldTypes){
+        	var result = {}, key;
+        	var object = data.attributes && data.attributes.type;
+        	var fields = fieldTypes[object] || {};
+
+        	for (key in data) {
+        		if(key !== 'details' && key in updatableFields){
+					result[key] = this.__convertFieldValue(data[key], fields[key], true);
+				}else{
+					result[key] = data[key];
+				}
+			}
+			return result;
+        },
+
+        __convertFieldValue: function(inValue, inType, isSaveFormat){
+        	if(inValue === "") return inValue;
+
+        	switch(inType) {
+        		case "date":
+        		case "datetime":
+        			var datetimeUtils = com.servicemax.client.lib.datetimeutils.DatetimeUtil;
+        			if(inType === "datetime"){
+        				if(isSaveFormat){
+        					inValue = datetimeUtils.convertToTimezone( inValue, null, true );
+        				}else{
+        					inValue = datetimeUtils.convertToTimezone( inValue, null, false );
+        				}
+        			}
+            		inValue = datetimeUtils.getFormattedDatetime(inValue, datetimeUtils.getSaveFormat( inType ));
+            		break;
+            	case "string":
+            	case "textarea":
+            		if(!inValue) inValue = "";
+            		else inValue = new String( inValue ).valueOf();
+            		break;
+			}
+			return inValue;
+        }
+    });
+
+})();
+
+// end of file
+

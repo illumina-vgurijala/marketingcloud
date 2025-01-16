@@ -1,0 +1,92 @@
+<aura:component controller="PQNAlertsController" implements="force:appHostable" extends="c:BaseSuperComponent">
+   <!-- Alert Section-->
+<div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_info" role="alert">
+  <span class="slds-assistive-text">info</span>
+  <span class="slds-icon_container slds-icon-utility-user slds-m-right_x-small" title="Description of icon when needed">
+    
+  </span>
+        <!--Display Integration status notification to user -->
+  <h2>{!v.strIntegrationStatus} &nbsp;  {!v.strBatchJobStatus} </h2>
+ <button class="slds-button slds-button_icon slds-notify__close slds-button_icon-inverse" title="Close">
+    
+    <span class="slds-assistive-text">Close</span>
+  </button>
+</div>
+<!-- Alert Section ends-->
+    <!--Header Section starts -->
+<lightning:layout class="slds-page-header slds-page-header--object-home">
+		<lightning:layoutItem>
+            <lightning:icon iconName="standard:scan_card" alternativeText="PQN Alerts"/>
+        </lightning:layoutItem>
+ <lightning:layoutItem padding="horizontal-small">
+            <div class="page-section page-header">
+                <h1 class="slds-text-heading--label">Product Notifications</h1>
+                <h2 class="slds-text-heading--medium">Salesforce to Mi2.0</h2>
+            </div>
+        </lightning:layoutItem>
+  </lightning:layout>
+    <!-- Header section ends-->
+  <!-- Create attribute to store Campaign lookup records--> 
+  <aura:attribute name="objSelectedLookUpRecord" type="sObject" default="{}"/>
+   
+   <!--Attribute for file upload component. Stores the data processed--> 
+    <aura:attribute name="ProcessFileDataContents" type="Map"  />
+ 	<!--Attributes for Input form start-->
+    <aura:attribute name="strPQNNumber" type="String" default="" />
+    <aura:attribute name="strPQNUrl" type="String" default="" />
+    <aura:attribute name="datPQNDate" type="Date" default="" />
+    <!--Attributes for Input form end-->
+    <aura:attribute name="strIntegrationStatus" type="String" default="" />
+    <aura:attribute name="boolSpinnerIntegrationStatus" type="Boolean" default="false"/>
+    <aura:attribute name="strBatchJobStatus" type="String" default=""/>
+    <aura:attribute name="DisplayFileComp" type="Boolean" default="false"/>
+	<aura:attribute name="DisplayFormComp" type="Boolean" default="false"/> 
+    <aura:attribute name="NotificationTypeValues" type="List" />
+    <aura:attribute name="SelectedNotificationType" type="String" />
+    <aura:registerEvent name="IntegrationSucess" type="c:IntegrationSucess"/>
+    <aura:handler name="init" value="{!this}" action="{!c.loadComponent}" />
+	<aura:handler name="IntegrationSucess" action="{!c.HandleIntSucess}" event="c:IntegrationSucess" />
+    <aura:handler name ="etCampaignSelected" event="c:etCampaignSelected" action="{!c.displayFileComponent}"/>
+     <aura:handler name ="etFileSelected" event="c:etFileSelected" action="{!c.displayFormComponent}"/>
+   <!--Campaign lookup starts-->
+    <div class="slds-box slds-theme_default ">    
+  		<c:CustomLookup strobjectAPIName="Campaign" strIconName="standard:campaign" 
+                  objSelectedRecord="{!v.objSelectedLookUpRecord}" strlabel="Campaign Name"/>
+    </div>
+   <!--Campaign lookup ends-->
+    <!--File component start-->
+    <aura:if isTrue="{!v.DisplayFileComp}">
+   
+    <div class="slds-box slds-theme_default">
+        <c:FileUploadComponent ProcessFileDataMap="{!v.ProcessFileDataContents}"/>
+        
+    </div>
+ 	 </aura:if>
+    <!--File Component End -->
+    <!--Form starts -->
+	<aura:if isTrue="{!v.DisplayFormComp}">
+    <div class="slds-box  slds-theme_default" >
+       <form class="slds-form--stacked clas slds-box slds-form-element slds-size_3-of-4 "  >  
+			<lightning:input aura:id="PQNForm" label="Notification Number" name="strPQNNumber" value="{!v.strPQNNumber}" required="true"/> 
+			<lightning:input aura:id="PQNForm" type="url" label="Notification Link" name="strPQNUrl" value="{!v.strPQNUrl}" placeholder="Enter valid Notification URL here..." />      
+			<!--<lightning:input type="date" aura:id="PQNForm" label="Notification Date" value="{!v.datPQNDate}"/>-->
+			<lightning:select name="NotificationType" label="Notification Name" aura:id="PQNForm" value="{!v.SelectedNotificationType}" required="true" messageWhenValueMissing="Please select Notification Type">
+         		<aura:iteration items="{!v.NotificationTypeValues}" var="item">
+           			 <option text="{!item.label}" value="{!item.value}" selected="{!item.selected}"/>
+       			</aura:iteration>
+    		</lightning:select>
+			<aura:if isTrue="{!v.boolSpinnerIntegrationStatus}">
+			  <div class="slds-text-body_small slds-text-color_error">Sending to Mi2.0... 
+				 <img src="/auraFW/resources/aura/images/spinner.gif" class="spinner-img" alt="Loading"/>		  
+			  </div>
+		   </aura:if>
+    
+			<lightning:button label="Submit to MyIllumina" class="slds-m-top--medium" variant="brand" onclick="{!c.validateAndSubmitForm}" />
+     </form>
+        
+    </div>
+    </aura:if>
+    <!-- Form Ends-->
+  
+ <!-- here c: is org. namespace prefix-->
+</aura:component>

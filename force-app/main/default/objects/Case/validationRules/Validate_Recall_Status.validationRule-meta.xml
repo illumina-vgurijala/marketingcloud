@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Validate_Recall_Status</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    /* Bypass conditions */
+    NOT(
+        OR(
+            $Profile.Name = $Label.Integration_SAP_Service,
+            $Profile.Name = $Label.Integration_Service_SNAP_Profile,
+            $User.FirstName = $Label.Automated_Process_User,
+            $Setup.cs_Apex_Settings__c.Bypass_All_Validations__c
+        )
+    ),
+    /* Original validation conditions */
+    RecordType.Name = $Label.CaseRecordTypeServiceRequest,
+    Recall__c = TRUE,
+    ISCHANGED(Status) &amp;&amp; 
+    OR(
+        ISPICKVAL(Status, &quot;Completed&quot;),
+        ISPICKVAL(Status, &quot;Closed&quot;)
+    ),
+    OR(
+        ISPICKVAL(Recall_Acknowledgement_Status__c, &quot;&quot;),
+           Internal_Non_Customer__c = FALSE
+    )
+)</errorConditionFormula>
+    <errorMessage>The Recall Acknowledgement Status field does not have information, and/or the Internal(Not visible in MyIllumina) box is not checked. Navigate to the case page and ensure that both fields have the proper information.</errorMessage>
+</ValidationRule>

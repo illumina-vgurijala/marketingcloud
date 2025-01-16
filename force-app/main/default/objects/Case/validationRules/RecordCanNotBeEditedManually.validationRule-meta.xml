@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RecordCanNotBeEditedManually</fullName>
+    <active>false</active>
+    <errorConditionFormula>AND(
+NOT($Profile.Name ==$Label.Integration_SAP_Service), 
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 		
+ISCHANGED(Status) ,
+NOT(AND(
+    ISCHANGED(Record_Updated_from_SFM__c),
+    Record_Updated_from_SFM__c )),
+
+OR(RecordType.Name = $Label.CaseRecordTypeInquiry,
+RecordType.Name = $Label.CaseRecordTypeServiceRequest,
+RecordType.Name = $Label.CaseRecordTypeBusinessIssue),
+
+OR(
+TEXT(Status) = $Label.CaseStatusCompleted,
+TEXT(Status) = $Label.CaseStatusClosed,
+TEXT(Status) = $Label.CaseStatusClosedDuplicate,
+TEXT(Status) = $Label.CaseStatusPendingLogisticsReview,
+TEXT(Status) = $Label.CaseStatusPendingQAReview,
+TEXT(Status) = $Label.CaseStatusReopenRequested,
+TEXT(Status) = $Label.CaseStatusReopened,
+AND(
+					TEXT(PRIORVALUE(Status))=$Label.CaseStatusPendingQAReview,
+					OR(	
+						TEXT(Status) = $Label.CaseStatusInitiated, 
+						TEXT(Status) = $Label.CaseStatusInProgress,
+						TEXT(Status) = $Label.CaseStatusAwaitingResponseCustomer, 
+						TEXT(Status) = $Label.CaseStatusAwaitingResponseInternal
+						)
+					)
+),
+    NOT(AND(
+    ISCHANGED(Record_Edit_Source__c),
+    OR(TEXT(Record_Edit_Source__c) = $Label.Close_as_Notification_Quick_Action,
+       TEXT(Record_Edit_Source__c) = $Label.Close_as_Spam_Quick_Action)
+))
+)</errorConditionFormula>
+    <errorMessage>Status can only be updated from SFM Buttons.</errorMessage>
+</ValidationRule>

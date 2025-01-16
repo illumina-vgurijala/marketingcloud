@@ -1,0 +1,303 @@
+<template>
+
+  <template if:false={showConfirmation}>
+    <div class="findContact" style="font-weight: bold; border-bottom: 3px solid #cecccc;">Find Contacts </div>
+    <div class="checkboxClass" style="padding-left: 3rem; padding-top: 1rem; display: inline-flex;">
+      <lightning-radio-group name="radioGroup" label="Radio Group" options={options} value={value}
+        variant="label-hidden" onchange={handleRadioButtonChange} required type="radio"></lightning-radio-group>
+    </div>
+    <div data-id="resultBox" aria-expanded="false" aria-haspopup="listbox" role="combobox">
+      <div>
+        <div class='inputClass' style="display: inline-block;  padding: 10px; width: 85%;">
+          <lightning-input value={selectRecordName} class="searchText" onkeypress={handleKeyPress}>
+          </lightning-input>
+        </div>
+        <div class='inputClass' style=" display: inline-block;  padding: 20px;">
+          <lightning-button label="Search" title="Search" onclick={handleSearch}>
+          </lightning-button>
+        </div>
+      </div>
+    </div>
+    <template if:true={showContact}>
+      <template if:false={isAppPage}>
+        <div style="height: 200px;">
+
+          <lightning-datatable key-field="Id" data={searchRecords} hide-checkbox-column="true" columns={columnContact}
+            onrowaction={handleRowAction} sorted-by={sortBy} sorted-direction={sortDirection} onsort={handleSortdata1} enable-infinite-loading={InfinityLoad} onloadmore={loadMoreData}
+            is-loading={tableLoadingState}>
+          </lightning-datatable>
+        </div>
+      </template>
+      <template if:true={isAppPage}>
+        <div>
+          <template for:each={searchRecords} for:item="serrec">
+            <lightning-card variant="Narrow" key={serrec.Name} title={serrec.Name} class="slds-card_boundary">
+                <lightning-button slot="actions" onclick={createStakeHolder} icon-name="utility:add"
+                variant="border-filled" value={serrec}></lightning-button>
+                <lightning-layout multiple-rows>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Name</p>
+                            <a href={serrec.NameUrl}>{serrec.Name}</a>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Title</p>
+                            <p>{serrec.Title}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">AccountName</p>
+                            <a href={serrec.AccountUrl}>{serrec.AccountName}</a>
+                            
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Role</p>
+                            <p>{serrec.Roles}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Region</p>
+                            <p>{serrec.Region}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Email</p>
+                            <p>{serrec.Email}</p>
+                        </div>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </lightning-card>
+          </template>
+          <a href="#" onclick={loadMoreData}>click to load more</a>
+        </div>
+      </template>
+    </template>
+    <template if:false={showContact}>
+      <div style="padding: 2rem;">
+        No records found
+      </div>
+    </template>
+    <div class="findContact" style="font-weight: bold; border-bottom: 3px solid #cecccc;padding: 10px;">Stakeholders
+    </div>
+
+    <template if:true={showStakeholderRecord}>
+      <template if:false={isAppPage}> 
+        <div style="height: auto; overflow:auto; max-height: 346px">
+        <lightning-datatable key-field="Id" data={stakeholderRecords} hide-checkbox-column="true"
+          columns={columnStakeholder} onrowaction={StakeholderRowAction} sorted-by={sortBy}
+          sorted-direction={sortDirection} onsort={handleSortdata}>
+        </lightning-datatable>
+      </div>
+    </template>
+    <template if:true={isAppPage}>
+        <div>
+          <template for:each={stakeholderRecords} for:item="stakeRec">
+            <lightning-card variant="Narrow" key={stakeRec.Name} title={stakeRec.Name} class="slds-card_boundary">
+                <lightning-button slot="actions" onclick={deleteStakeHolder} icon-name="utility:delete"
+                variant="border-filled" value={stakeRec}></lightning-button>
+                <lightning-button slot="actions" onclick={editStakeHolder} icon-name="utility:edit"
+                variant="border-filled" value={stakeRec}></lightning-button>
+                
+                <lightning-layout multiple-rows>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">First Name</p>
+                            <a href={stakeRec.stakeholderForFirstNameUrl}>{stakeRec.firstName}</a>
+                            
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Last Name</p>
+                            <a href={stakeRec.stakeholderForFirstNameUrl}>{stakeRec.lastName}</a>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Support Quotient</p>
+                            <p>{stakeRec.Support_Quotient__c}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Ranking</p>
+                            <lightning-button label={stakeRec.Ranking_in_Number__c} variant="neutral" onclick={showRanking} value={stakeRec}></lightning-button>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Influence</p>
+                            <p>{stakeRec.Influence__c}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Support</p>
+                            <p>{stakeRec.Level_of_Support__c}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Access</p>
+                            <p>{stakeRec.Current_Access__c}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                        <div class="header-column">
+                            <p class="field-title" title="Field 1">Buying Role</p>
+                            <p>{stakeRec.Buying_Role__c}</p>
+                        </div>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" small-device-size="6" medium-device-size="4" large-device-size="3" padding="around-small">
+                      <div class="header-column">
+                          <p class="field-title" title="Field 1">Department</p>
+                          <p>{stakeRec.Department__c}</p>
+                      </div>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </lightning-card>
+          </template>
+        </div>
+      </template>
+    </template>
+    <template if:false={showStakeholderRecord}>
+      <div style="padding: 2rem;">
+        No records found
+      </div>
+    </template>
+  </template>
+  <template if:true={showSaveView}>
+    <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+      aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+      <div class="slds-modal__container">
+        <!-- modal header start -->
+        <header class="slds-modal__header">
+          <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close"
+            onclick={closeModal}>
+            <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small">
+            </lightning-icon>
+            <span class="slds-assistive-text">Close</span>
+          </button>
+          <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{headerStakeholder}</h2>
+        </header>
+        <!-- modal body start -->
+        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+          <lightning-record-form object-api-name="Key_Stakeholder_Analysis__c" fields={fields} onsuccess={handleSuccess}
+            onsubmit={handleSubmit} oncancel={closeModal} onerror={handleOnError}>
+          </lightning-record-form>
+
+
+        </div>
+
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+
+  </template>
+  <template if:true={showEditView}>
+    <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+      aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_large">
+      <div class="slds-modal__container">
+        <!-- modal header start -->
+        <header class="slds-modal__header">
+          <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close"
+            onclick={closeEditModal}>
+            <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small">
+            </lightning-icon>
+            <span class="slds-assistive-text">Close</span>
+          </button>
+          <h2 id="modal-heading-02" class="slds-text-heading_medium slds-hyphenate">Edit Stakeholder Record</h2>
+        </header>
+        <!-- modal body start -->
+        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+          <lightning-record-form record-id={editStakeholderRecord.Id} object-api-name='Key_Stakeholder_Analysis__c'
+            fields={fields} mode="edit" onsuccess={handleEditSuccess} onsubmit={handleEditSubmit}
+            oncancel={closeEditModal} onerror={handleEditOnError}>
+          </lightning-record-form>
+        </div>
+
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+
+  </template>
+
+
+
+
+
+  <template if:true={showConfirmation}>
+    <!--<div style="height:640px">-->
+      <section role="dialog" tabindex="-1" aria-label="Meaningful description of the modal content" aria-modal="true"
+        aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header slds-modal__header_empty">
+            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close"
+              onclick={closeConfirmationModal}>
+              <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small">
+              </lightning-icon>
+              <span class="slds-assistive-text">Close</span>
+            </button>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-3">
+            {errorMsg}
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button label="Cancel" variant="neutral" onclick={closeConfirmationModal}></lightning-button>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <lightning-button label="Save" variant="brand" onclick={deactivateStakeholderRecord}></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    <!--</div>-->
+  </template>
+
+
+  <template if:true={showRating}>
+    <div style="height:640px">
+      <section role="dialog" tabindex="-1" aria-label="Meaningful description of the modal content" aria-modal="true"
+        aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header slds-modal__header_empty">
+            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close"
+              onclick={closeRatingModal}>
+              <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small">
+              </lightning-icon>
+              <span class="slds-assistive-text">Close</span>
+            </button>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-4">
+
+            <div class="custom-box">
+              <p><b>Rating </b>
+                <lightning-formatted-rich-text value={editStakeholderRecord.Ranking__c}></lightning-formatted-rich-text>
+              </p>
+
+              <p><b>Support Quotient </b>
+                <lightning-formatted-number value={editStakeholderRecord.Support_Quotient__c}>
+                </lightning-formatted-number>
+              </p>
+            </div>
+
+          </div>
+          <footer class="slds-modal__footer">
+            <center>
+              <lightning-button label="Cancel" variant="neutral" onclick={closeRatingModal}></lightning-button>
+            </center>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+
+  </template>
+
+</template>

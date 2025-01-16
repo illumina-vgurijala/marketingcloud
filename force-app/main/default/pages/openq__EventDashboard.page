@@ -1,0 +1,1612 @@
+<apex:page controller="openq.EventDashboard" extensions="openq.PrintActions" showHeader="true" standardStylesheets="false" sidebar="false" tabStyle="openq__Event__c">
+  
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></apex:includescript>
+    <apex:includescript value="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></apex:includescript>
+    <apex:includescript value="{!URLFOR($Resource.openq__StylesScriptsImages,'scripts/jquery.tablesorter.min.js')}"> </apex:includescript>
+    <apex:includescript value="{!URLFOR($Resource.openq__FullCalendar, 'fullcalendar/fullcalendar.js')}"></apex:includescript>
+    <apex:includescript value="{!URLFOR($Resource.openq__StylesScriptsImages, 'scripts/printOnFrame.js')}" > </apex:includescript>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__StylesScriptsImages, 'css/tooltip.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/common.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/style2.css')}"/>    
+    <apex:stylesheet value="{!URLFOR($Resource.openq__Styles_StandAlone, 'css/jquery-ui.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__FullCalendar, 'cupertino/theme.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__FullCalendar, 'fullcalendar.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.openq__FullCalendar, 'fullcalendar.print.css')}"/>
+    
+    <!--[if IE 8 ]><script src="{!URLFOR($Resource.StylesScriptsImages, 'scripts/excanvas.js')}" type="text/javascript"></script><![endif]-->            
+    <script src="{!URLFOR($Resource.StylesScriptsImages, 'scripts/html2canvas.js')}" type="text/javascript"></script>
+    <style>
+      
+       @media (min-height: 550px){
+       
+            div [id$="leftContainer"] {
+                height: 550px !important;
+            }
+       }
+            
+       @media all{ 
+        table [class^=fc]{
+        
+            cursor:default;
+        }
+        .fc-event-inner, .fc-event{
+        
+            cursor:pointer !important;  
+        }
+        #bodyTable{
+            background-color: #E6E6E5;
+        }
+        
+        [id$='mainContainer'] {         
+            padding-left: 222px;
+            display: block;
+        }
+         
+        #rightContainer {
+            min-width: 665px;            
+            float: none;
+            margin-right: 0px;
+            margin-left: 20px;
+            margin-top: 0px;
+            font-family: Verdana, sans-serif;   
+        }
+        
+        #theFullCalendar {
+            display: inline-block;
+            width: 100%;
+            float: left;
+        }
+        
+        img.ui-datepicker-trigger {
+            margin-left: -16px;
+            cursor: pointer;
+        }
+        
+        .popupField{
+            margin-left: 5px;
+        }
+        
+        .ui-datepicker-next span {
+            width: 20px;
+            height: 20px;
+            background-position: 0 0;
+            cursor: pointer;
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/datepicker-arrows.png')});            
+        }
+        
+        .buttonDisabled {
+            cursor: default !important;
+            opacity: 0.5;
+            filter: alpha(opacity=50); /* For IE8 and earlier */
+        }
+                
+        .ui-datepicker-prev span {
+            width: 20px;
+            height: 20px;
+            background-position: 0 -20px;
+            cursor: pointer;
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/datepicker-arrows.png')});
+        }
+        
+        .monthTable {
+            float: left; 
+            padding: 10px 0px 10px 10px; 
+            width: 120px;
+            font-size: 11px;
+        }
+        
+        tr.monthTableDayNames td {
+            font-weight: bold;
+        }
+        
+        tr.monthTableCell td {
+            border: 1px solid #dddddd;
+            text-align: center;
+            width: 30px;
+        }
+        
+        td.dayWithEvent {
+            background-color: {!HTMLENCODE(todayDefaultColor)};
+        }
+        
+        a.calendarDay {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        a.calendarDay:hover {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .monthTableHeader {
+            border: 1px solid #dddddd;
+            background-color: #cecece;
+            text-align: center;
+        }
+        
+        .dvPrevYear {
+            float: left;
+            cursor:pointer;         
+            width: 20px;
+            height: 20px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.EventModuleImages,'back-thin-icon.png')});                            
+        }
+        
+        .dvNextYear {
+            float: left;
+            cursor:pointer;         
+            width: 20px;
+            height: 20px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.EventModuleImages,'next-thin-icon.png')});                            
+        }               
+        
+        .settings {
+            width: 16px;
+            height: 16px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/cogsprite.png')});                            
+        }
+        
+        .settings:hover{
+        
+            background-position: 0px -20px;
+            cursor: pointer;
+        }
+        
+        .newObject {
+            background-repeat: no-repeat;
+            background-size: 16px;
+            height: 16px;
+            width: 16px;
+            float:right;
+            background-color: transparent;
+            margin-right: 6px;       
+        }
+        
+        .newObject.easyAdd {                    
+            background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/plus.png')});
+        }
+        
+        .newObject.easyAdd:hover {
+             cursor: pointer;
+        }
+        
+        #eventCalendar{
+            padding: 1px 1.4em;
+        }
+        
+        table#tblListViewCalendar td{
+            padding: 2px;
+            font-size: 12px;
+        }        
+        
+        .clearfix{
+            clear: both;
+        }
+        
+        table tr.odd{
+            background-color: #E5E2FF;
+        }
+        
+        .configdialog-inside {
+            padding: 15px;
+        }
+        
+        tr.configdialog-row td {
+            text-align: right;
+        }
+        
+        .listViewBtn {
+            cursor:pointer;
+            float: left;
+            width: 32px;
+            height: 32px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.EventModuleImages,'list-view.png')});                            
+        }
+        
+        .dayViewBtn {
+            cursor:pointer;
+            float: left;
+            width: 32px;
+            height: 32px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.EventModuleImages,'day-view.png')});                            
+        }
+        
+        .weekViewBtn {
+            cursor:pointer;
+            float: left;
+            width: 32px;
+            height: 32px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.EventModuleImages,'week-view.png')});                            
+        }
+        
+        .monthViewBtn {
+            cursor:pointer;
+            float: left;
+            width: 32px;
+            height: 32px;
+            background-position: 0px -1px;          
+            background-image: url({!URLFOR($Resource.EventModuleImages,'month-view.png')});                            
+        }
+        
+        
+        table#tblListViewCalendar th {
+            text-align: left;
+        }
+        
+        .epFieldTitle {
+            font-weight: bold;
+            vertical-align: top;
+        }
+        
+        .fc-event-time {
+            display: none;
+        }
+        .ui-datepicker-next span {
+            background-position: -30px 0;
+            cursor: pointer;
+            height: 20px;
+            width: 20px;
+        }
+        
+        .ui-datepicker-prev span {
+            background-position: -98px 0;
+            cursor: pointer;
+            height: 20px;
+            width: 20px;
+        }
+        
+        #confirmCreateEvent{
+            display: none;
+        }
+}
+    .fc-event{
+        background-color:#A0E0E0;
+    }
+     .confirmCreateEventFromCalendar{
+        margin-left: 86px;
+        margin-top: -20px;
+        top: 50%;
+     }
+    .cancelCreateEventFromCalendar{
+        margin-left: 17px;
+        margin-top: 24px;
+        top: 50%;
+    }
+    .fc-view-agendaWeek > div .fc-day-content , .fc-view-agendaDay > div .fc-day-content {
+        padding-bottom:10px;
+    }
+ 
+div [id$="rigthContainer"] {    
+    z-index: 10;
+} 
+
+div [id$="leftContainer"] {
+    float: left;
+    padding-bottom: 70px;
+    height: 768px;
+    left: 0;
+    position: fixed;
+    width: 550px;
+    z-index: 999;
+}
+[id$="mainContainer"]{
+    padding:0px;
+}
+form {
+    overflow: hidden;
+}
+@media not print{
+    /*.toPrint{display:none;}*/
+}
+.pushy-open {
+    margin-left: 0;
+    transform: translate3d(0px, 0px, 0px);
+    width: 450px;
+}
+@media print
+        {
+    /*      @page { size: landscape; }
+            body * { visibility: hidden;}
+            body{    background: none repeat scroll 0 0 #FFFFFF !important;}
+            .toPrint * { visibility: visible; }
+            .toPrint{ position: absolute; top: 0px; left: 30px; margin-top:-100px;}
+            .fc-header , .dvPrevYear,.dvNextYear, .hideOnPrint, .th_hiddeOnPrint, .td_hiddeOnPrint  {visibility:hidden !important;display:none;}
+        */} 
+        .pushy{
+        position: absolute !important;
+        }
+    .divContainer {
+        cursor: pointer;
+        float: right;
+        height: 30px;
+        margin-left: 55px;
+        margin-right: -45px;
+        margin-top: 10px;
+        position: relative;
+        text-align: center;
+        vertical-align: middle;
+        width: 90px;
+    }
+  .divContainer:hover{
+    color:#c3c3c3;
+  }
+  .optionsFilter{ 
+    background-color: #FFFFFF;
+   color: #000000;
+   display: block;
+   height: 10px;
+   padding: 15px 30px;
+   position: static;
+   top: 872px;
+   width: 350px;
+   z-index: 99;
+  }
+.printIcon{
+    cursor:pointer;
+    margin-right:4px;
+    width:16px;
+    height:16px;
+    background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/print-icon.png')}) 
+}
+.pdfIcon {
+    cursor:pointer;
+    margin-right:4px;
+    width:16px;
+    height:16px;
+    background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/pdficon.png')}) 
+
+}
+/*Event legend Pop up CSS*/ 
+.legendIcon{
+    cursor:pointer;
+    margin-right:4px;
+    width:16px;
+    height:16px;
+    background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/legend-icon.png')}) 
+} 
+
+.legendColorCloseIcon{
+    cursor: pointer;
+    height: 24px;
+    left: 100%;
+    margin-left: -30px;
+    position: absolute;
+    top: 3px;
+    width: 24px;
+    background-image: url({!URLFOR($Resource.StylesScriptsImages,'img/close.png')})
+}
+
+[id$=colorLegendComponent]{
+    border: 1px solid; 
+    background-color: rgb(255, 255, 255);
+    position: fixed;
+    border-radius: 7px;
+    padding: 12px;
+    width: auto;
+    min-width:300px;
+    max-width:600px;
+    left: 50%;
+    margin-left: -300px;
+    height: auto;
+    z-index: 99;
+    top: 0px;
+    margin-top:120px;
+    filter: alpha(Opacity=30);
+    opacity: 0.3;
+    overflow: hidden;
+    display:none;
+}
+    .fullOpacity{
+        opacity:1;
+        filter: alpha(Opacity=100);
+    }
+    .cellLegend{
+        float:left;
+        width:auto;
+        margin-left:10px;
+    }   
+    .cellLegend .colorBox{
+        float:left;
+        height:10px;
+        margin-left:0;
+        margin-right:9px;
+        margin-top:6px;
+        width:10px;
+    }
+    .cellLegend .colorLabel{
+        float:left;
+        max-width:500px;
+        word-wrap:break-word;
+    }
+    
+    #tblListViewCalendar .numberField{
+    
+        display: block;
+        text-align: right;
+        margin-right: 20%;
+    }                       
+    
+</style>
+                        
+    <apex:form >
+        <!--  left side filter menu  -->
+        <apex:outputPanel layout="block" id="leftContainer" styleClass="pushyWrapper">
+            <c:LeftSideMenu container_selector="container" >            
+                        <div id="leftLeft" class="shadow-wrap" style="height:100%;">
+                            <div class="optionsFilter">
+                                <div class="divContainer" onclick="applyFilter();">
+                                    <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Apply</a>
+                                </div>
+                                <div class="divContainer" onclick="resetFilter();">
+                                    <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Reset</a>
+                                </div>
+                            </div>
+                            <c:GenerateFilterComponent filterList="{!filterList}" callback="initCalendarFc"/>
+                            <div class="optionsFilter">
+                                <div class="divContainer" onclick="applyFilter();">
+                                    <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Apply</a>
+                                </div>
+                                <div class="divContainer" onclick="resetFilter();">
+                                    <a class="btnCustom default narrow gr btnOverride" style="text-align: center;" >Reset</a>
+                                </div>
+                            </div>
+                        </div>
+                    
+             </c:LeftSideMenu>
+         </apex:outputPanel>    
+         <apex:outputPanel id="legendWrapper">   
+            <apex:repeat var="cat" value="{!eventCategoriesList}" >
+                    <apex:outputpanel rendered="{!cat.isConfiguredForColorCoding}"  id="colorLegendComponent" layout="block">
+                        <span style="font-weight:bold;">{!cat.subFolderName}:</span><br/>
+                        <div id="closeLegend" class="legendColorCloseIcon"></div>
+                        <apex:repeat var="col" value="{!cat.colors}">
+                            <div class='cellLegend'>
+                                <div class="colorBox" style="background-color:{!HTMLENCODE(col.Color_Code__c)};"></div><div class="colorLabel">{!col.LOV_Value__c}</div><br/>
+                            </div>
+                        </apex:repeat>
+                    </apex:outputpanel>
+            </apex:repeat>
+            </apex:outputPanel>
+    </apex:form>
+    
+        
+    <apex:outputPanel styleClass="configdialog" layout="block" style="display:none;">
+        <apex:form styleClass="configdialog-inside">
+            <table>
+                <tr>
+                    <td align="right" style="vertical-align: top;">
+                        <apex:outputText value="Color Code {!$Label.openq__event_label_plural} by: " style="vertical-align: top;" />
+                    </td>
+                    <td align="left" style="padding-left: 10px;">
+                        <apex:selectList value="{!colorCodeEventsBy}" size="1">
+                            <apex:selectOptions value="{!colorCodeEventsByItems}" />
+                        </apex:selectList>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" style="vertical-align: top;">
+                        <apex:outputText value="Calendar Default View: " style="vertical-align: top;" />
+                    </td>
+                    <td align="left" style="padding-left: 10px;">
+                        <apex:selectList value="{!calendarDefaultView}" size="1">
+                            <apex:selectOptions value="{!calendarDefaultViewItems}" />
+                        </apex:selectList>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" style="vertical-align: top;">
+                        <apex:outputText value="List/Week View Start Time: " style="vertical-align: top;" />
+                    </td>
+                    <td align="left" style="padding-left: 10px;">
+                        <apex:selectList value="{!viewsStartTime}" size="1">
+                            <apex:selectOptions value="{!viewsStartTimeItems}" />
+                        </apex:selectList>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" style="vertical-align: top;">
+                        <apex:outputText value="List View Start Date: " style="vertical-align: top;" />
+                    </td>
+                    <td align="left" style="padding-left: 10px;">
+                        <apex:inputText value="{!listViewBaseDateStr}" styleClass="datepicker" style="border-radius: 5px; width: 135px;" />
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" style="vertical-align: top;">
+                        <apex:outputText value="List View End Date: " style="vertical-align: top;" />
+                    </td>
+                    <td align="left" style="padding-left: 10px;">
+                        <apex:inputText value="{!listViewLastDateStr}" styleClass="datepicker" style="border-radius: 5px; width: 135px;" />
+                    </td>
+                </tr>
+            </table>
+            <apex:outputText value="{!configMessage}" id="configMessage" styleClass="configMessage" />
+            <apex:actionStatus startText="Saving..." id="configStatus" style="clear:both;" />
+            <apex:actionFunction action="{!setEventsConfigurations}" status="configStatus" rerender="configMessage,theFullCalendar,apexListViewCalendar,legendWrapper" name="setEventsConfigurations" oncomplete="onEventsConfigurationsDone();" />         
+        </apex:form>
+    </apex:outputPanel>
+    <apex:outputPanel styleClass="eventPopup" layout="block" style="display:none;">
+        <table>
+            <apex:repeat value="{!popupFields}" var="pf">
+                <tr>
+                    <td>
+                        <apex:outputText style="font-weight: bold;" value="{!pf.label}:"/>
+                    </td>
+                    <td>
+                        <apex:outputPanel rendered="{!pf.apiName != namespace+'Name__c'}">
+                            <span id="{!pf.apiName}" class="popupField" data-apiname="{!pf.apiName}">&nbsp;</span>
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!pf.apiName == namespace+'Name__c'}">
+                            <a id="{!pf.apiName}" class="popupField" data-apiname="{!pf.apiName}" href="#">&nbsp;</a>
+                        </apex:outputPanel>
+                    </td>
+                </tr>
+            </apex:repeat>
+        </table>
+    </apex:outputPanel>
+ 
+    <apex:outputPanel id="mainContainer" styleClass="default clearFix order-sm layout-order" layout="block">
+        <div id="topHeader" style="margin-left: -222px;">
+            <div class="breadcrumbs">
+                You're here:&nbsp;
+                <apex:outputLink value="{!$Page.openq__EventDashboard}">{!$Label.openq__event_label_plural}</apex:outputLink>               
+            </div>
+        </div>
+        <apex:form > 
+        
+                        
+        <div id="container" class="pushy_container">    
+            <input type="hidden" id="lvFilteredColumn" value="" />
+            <input type="hidden" id="lvFilteredColumnLabel" value="" />
+        
+            <div id="rightContainer" class="wi-gen gr b-card shado conc" style="margin-top: 0;">
+                <apex:outputPanel id="rightContentPanel">   
+                    <div id="eventCalendar">           
+                        <div class="calendar_controls" style="overflow: auto; margin-bottom: 5px;">
+                            <apex:outputPanel styleClass="listViewBtn" />
+                            <apex:outputPanel styleClass="dayViewBtn" />
+                            <apex:outputPanel styleClass="weekViewBtn" />
+                            <apex:outputPanel styleClass="monthViewBtn" />
+                            
+                            <div style="float: right;" title="Add {!$Label.openq__event_label}">
+                                <apex:outputLink value="#" styleClass="newObject easyAdd" />
+                            </div>                           
+                            <div style="float: right;" title="Settings">
+                                <div class="settings"  style="margin-right: 4px;" >
+                                </div>
+                            </div>     
+                            <div style="float:right;" id="openLegend" title="Legend">
+                                <div class="legendIcon"></div>
+                            </div>
+                            <div style="float:right;" id="printFeature" title="Print Calendar">
+                                <div class="printIcon" onclick="printCalendar();" ></div>
+                            </div>
+                        </div>
+                        
+                        <div id="wvShowWeekends" style="display:none; position:relative; left: 60%; top: 20px;">
+                            <input type="checkbox" name="ckShowWeekends" onclick="showWeekends(this.checked);" checked="checked" />&nbsp;Show weekends
+                        </div>
+                        <div class="calendar_container" style="display:inline-block; width: 100%;">
+                            <div id="theFullCalendar"></div>
+                            <div id="dayViewQuickSelector" style="float: left;display:none;">
+                                <apex:actionFunction name="gotoPreviousYear" action="{!gotoPreviousYear}" rerender="dayViewYearSpan,miniCalendars" status="dvStatus" >
+                                    <apex:param name="fieldList" value="" assignTo="{!flJson}" />
+                                </apex:actionFunction>
+                                <apex:actionFunction name="gotoNextYear" action="{!gotoNextYear}" rerender="dayViewYearSpan,miniCalendars" status="dvStatus" >
+                                    <apex:param name="fieldList" value="" assignTo="{!flJson}" />
+                                </apex:actionFunction>
+                                <apex:outputPanel layout="block" style="margin-left: 140px; margin-top: 5px;">
+                                    <apex:outputPanel styleClass="dvPrevYear" />
+                                    <apex:outputText id="dayViewYearSpan" style="float: left; margin-left: 15px; margin-right: 15px; color: #245C8A; font-weight: bold;" value="{!dayViewCurrentYear}" />
+                                    <apex:outputPanel styleClass="dvNextYear" />
+                                    <apex:actionStatus startText="Loading..." id="dvStatus" />
+                                </apex:outputPanel>
+                                <apex:outputPanel layout="block" style="clear:both;" id="miniCalendars">
+                                <apex:repeat value="{!dayViewMonths}" var="dayViewMonth">
+                                    <div class="monthTable" style="clear: {!IF(dayViewMonth.monthModule == 1, 'left', 'none')}">
+                                        <table>
+                                            <thead>
+                                                <tr><th class="monthTableHeader" colspan="7" scope="colgroup">{!dayViewMonth.monthName}</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="monthTableCell monthTableDayNames">
+                                                    <td>S</td>
+                                                    <td>M</td>
+                                                    <td>T</td>
+                                                    <td>W</td>
+                                                    <td>T</td>
+                                                    <td>F</td>
+                                                    <td>S</td>
+                                                </tr>
+                                            <apex:repeat value="{!dayViewMonth.weeks}" var="dvWeek">
+                                                <tr class="monthTableCell">
+                                                    <apex:repeat value="{!dvWeek}" var="dvDay">
+                                                    <td style="color: {!IF(dvDay.isDayOfMonth, '#000;', '#DDD;')}" class="{!IF(dvDay.isDayWithEvents && dvDay.isDayOfMonth, 'dayWithEvent', '')}">
+                                                        <apex:outputText value="{!dvDay.dayMarkup}" escape="false" /> 
+                                                    </td>
+                                                    </apex:repeat>
+                                                </tr>
+                                            </apex:repeat>
+                                            </tbody>    
+                                        </table>            
+                                        </div>                              
+                                </apex:repeat>
+                                </apex:outputPanel>
+                            </div>
+                        </div>
+                        <apex:actionFunction name="refreshCalendarView" status="dvStatus" reRender="miniCalendars" action="{!refreshListView}" >
+                            <apex:param name="fieldList" value="" assignTo="{!flJson}" />
+                        </apex:actionFunction>
+                        <apex:actionFunction name="refreshListView" reRender="apexListViewCalendar,miniCalendars" action="{!refreshListView}" oncomplete="waitOff();" >
+                            <apex:param name="fieldList" value="" assignTo="{!flJson}" />
+                        </apex:actionFunction>
+                        
+                        <apex:outputPanel id="apexListViewCalendar">        
+                            
+                            <div class="" id="listViewCalendar">
+                                <table id="tblListViewCalendar" style="background-color:#fff;">
+                                    <tr> 
+                                        <td colspan="{!columnLabelList.size+2}" align="center">
+                                            <div id="filteringBy"></div>
+                                            <div id="clearFiltersDiv" style="margin-left: 10px;display:none;">
+                                                <a href="javascript:;" onclick="clearListViewFilters();">Clear</a>
+                                            </div>
+                                        </td> 
+                                    </tr>
+                                    <tr>
+                                        <th width="5%">&nbsp;</th>
+                                        
+                                        <apex:repeat var="eventColumn" value="{!columnLabelList}">
+                                        <th>
+                                            {!eventColumn.fieldLabel}
+                                        </th>
+                                        </apex:repeat>
+            
+                                        <th class="th_hiddeOnPrint">Actions</th>
+                                    </tr>
+                                    <apex:repeat var="dayWithEvent" value="{!lvEvents}">
+                                        <tr class="ui-widget-header evt-date-grouper">
+                                            <td colspan="{!columnLabelList.size+2}">{!dayWithEvent.dateDsc}</td> 
+                                        </tr>
+                                        <apex:repeat var="eventRow" value="{!dayWithEvent.eventRows}">
+                                        <tr class="evt-row">
+                                            <td>&nbsp;</td>
+                                            <apex:repeat var="cell" value="{!eventRow.cells}"> 
+                                                <td style="{!cell.cellStyle}" class="{!cell.fieldApiName}">
+                                                    <apex:outputText styleClass="{!IF(cell.isNumberOrCurrency, 'numberField', 'nonNumberField')}" value="{!cell.cellValue}" />
+                                                </td>
+                                            </apex:repeat>
+                                            <td class="td_hiddeOnPrint">
+                                                <apex:outputLink value="openq__Event_Detail?eventId={!eventRow.eventId}">View</apex:outputLink>
+                                                <apex:outputPanel rendered="{!$Objecttype.openq__Event__c.deletable}">
+                                                    &nbsp;|&nbsp;
+                                                    <apex:commandLink value="Delete" action="{!deleteEvent}" reRender="apexListViewCalendar" 
+                                                      onclick="if(!confirm('Are you sure you want to delete this event?')) return false;"
+                                                      oncomplete="filterEvents();">
+                                                        <apex:param name="selEventId" assignTo="{!selEventId}" value="{!eventRow.eventId}" />  
+                                                    </apex:commandLink>
+                                                </apex:outputPanel>
+                                            </td>
+                                        </tr>
+                                        </apex:repeat>
+                                    </apex:repeat>
+                                </table>
+                            </div>
+                        </apex:outputPanel>
+                    </div>
+                </apex:outputPanel> 
+            </div>  
+    <script type="text/javascript">
+    /***
+        
+        Start Filer Block
+        
+    ***/
+    function applyFilter(){
+            
+            waitOn();   
+            var view = $("#theFullCalendar").fullCalendar('getView');
+              if($('#listViewCalendar').css('display')=='block'){
+                waitOn();
+                refreshListView( JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])) );
+            }else{
+                
+                switch(view.name){
+                     case 'agendaDay':
+                        waitOn();
+                        refreshCalendarView( JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])) );
+                        invokeEventsRetrieval(view);
+                        
+                      break;
+                     
+                     case 'agendaWeek':
+                            waitOn();
+                            invokeEventsRetrieval(view);
+                       break;
+                     case 'month':                       
+                        waitOn();
+                        invokeEventsRetrieval(view);
+                       break;
+             
+                     default: 
+                       break;
+                   
+                }
+        }
+    }
+    function resetFilter(){
+        //receives an instance of the component widget.  returns a cleared filter list. 
+        filterProcessor.clearGeneralFilterComponent(document.querySelectorAll('.filtersWrapper')[0]);
+        //we need to refresh always the calendar view on Day view
+        refreshCalendarView( JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])) );
+        applyFilter();
+    }
+    /***
+    
+        End Filter Blocks
+    **/ 
+    
+    function refreshTabs() {
+        jQuery( '#tabs' ).tabs({
+             create: function( event, ui ) {
+                 jQuery('#tabs').show();
+             },
+             activate: function( event, ui ) {
+                 jQuery( '.ui-tabs-paneltablesorter' ).trigger('sorton', [[]]);                   
+             }
+        });
+    }
+
+        var firstCalendarLoad = true;        
+        var xEvent, yEvent;
+       
+        function initCalendarFc(){
+            
+            createCalendar();
+            
+            refreshTabs();
+            installConfigDialog();
+            installLeftPanelSettings();
+            installViewModes();
+            installEventPopup();
+            installAddEvent();
+            installDayViewActions();
+            loadDatePickers();
+            installPopUpLegend();
+            installPrintFeature();            
+        }
+        function installPopUpLegend(){
+                 
+            //this code initialize the Event Legend pop up
+            var legend = new legendPopUp();
+            legend.init();  
+        }
+        jQuery(document).ready(function(){
+            waitOn();
+            
+            if(msieversion() != -1 && msieversion() < 9){
+            
+                jQuery('div [id$= leftContainer]').height('75%');
+            }
+            overwriteYearFunction();
+            //this function is in GenerateFilterComponent.component
+            //When it finishes, it calls the callback defined there.
+            //It asynchronously loads the JS through Require.js
+   
+            initFilterComponent();
+        });
+        
+        function loadDatePickers() {                                    
+            jQuery( ".datepicker" ).datepicker({
+                showOn: "both",
+                buttonImage: "{!URLFOR($Resource.openq__StylesScriptsImages,'img/datepicker-ico.png')}",
+                buttonImageOnly: true,
+                dateFormat: 'mm/dd/yy'
+            });
+        }
+        var startEventDateToSend = null;
+        var endEventDateToSend = null;
+        var haveTime = null;
+        
+        
+        function invokeEventsRetrieval(view){
+            var dVisStart = view.visStart;
+            var dDayFrom = dVisStart.getUTCDate();
+            var dMonthFrom = dVisStart.getMonth() + 1;
+            var dYearFrom = dVisStart.getFullYear();
+            var dDateFrom = dYearFrom + "-" + dMonthFrom + "-" + dDayFrom; 
+                
+            var dVisEnd = view.visEnd;
+            var dDayTo = dVisEnd.getUTCDate();
+            var dMonthTo = dVisEnd.getMonth() + 1;
+            var dYearTo = dVisEnd.getFullYear();
+            var dDateTo = dYearTo + "-" + dMonthTo + "-" + dDayTo;
+            
+            //filterProcessor is an object loaded in the filter component.  it contains the functions necessary to get the JSON.
+            //It is actually a JS object that maps to the filtersList variable in the controller
+            Visualforce.remoting.Manager.invokeAction(
+                '{!$RemoteAction.EventDashboard.retrieveEvents}', 
+                dDateFrom, dDateTo, JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])),
+                
+                function(result, event){                                
+                    if(event.status) {
+                        $("#theFullCalendar").fullCalendar('removeEvents');
+                        eventArray = jQuery.parseJSON(event.result);
+                        $("#theFullCalendar").fullCalendar( 'addEventSource', jQuery.parseJSON(event.result) );
+                        firstCalendarLoad = false;
+                    }
+                    waitOff();
+                }, 
+                {escape: false}
+            );
+        }
+         var eventArray  =  JSON.parse('{!JSENCODE(jsonEvents)}') ; 
+        function createCalendar(){
+            var myFullCalendar = $('#theFullCalendar');
+            var viewMode = "{!JSENCODE(calendarDefaultView)}"; // Extract the view mode configured by the user
+              eventArray = JSON.parse('{!JSENCODE(jsonEvents)}');
+            
+            // Depending on the view type configured by the user
+            if(viewMode == "" || viewMode == "list"){
+                $('#dayViewQuickSelector').css('display', 'none');
+                viewMode = '';
+            } 
+            else {
+                $('#listViewCalendar').css('display', 'none');
+            }
+            
+            myFullCalendar.fullCalendar(createCalendarConfigs(true, eventArray, viewMode));
+        }
+        
+        //Allow user to view all event information on mouseover even if the event time span does not permit it 
+        function installResizeEvent(){
+        
+            jQuery('.fc-event-title').each(function(){
+        
+                if(jQuery(this).parents('.fc-event').height() < jQuery(this).height()){
+                  
+                  jQuery(this).parents('.fc-event').attr('originalHeight', jQuery(this).parents('.fc-event').height());
+                  jQuery(this).parents('.fc-event').attr('overHeight', jQuery(this).height());
+                  
+                  jQuery(this).parents('.fc-event').mouseover(function(){
+                      jQuery(this).height(jQuery(this).attr('overHeight'));             
+                  });
+                  
+                  jQuery(this).parents('.fc-event').mouseout(function(){
+                
+                      jQuery(this).height( jQuery(this).attr('originalHeight'));                
+                  });
+                  
+                }
+                
+            });
+        }
+        
+        function installDayViewActions(){
+            $(".dvPrevYear").click(function(){
+                gotoPreviousYear(JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])));
+            });
+            
+            $(".dvNextYear").click(function(){
+                gotoNextYear(JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])));
+            });
+        }
+        
+        function gotoDay(day, month, year){
+            
+            //prevent going to e.g. "0 November 2014" which goes to October.
+            //This can happen if you change the year to 2020, then change the month to November, then click "This Year"
+            if(day == 0) day = 1;
+            $("#theFullCalendar").fullCalendar('gotoDate', year, month-1, day);         
+        }
+        
+        function show() {
+            $(".eventPopup").dialog("open");
+            $('.ui-dialog-titlebar').css('display', 'inline-block');
+            $('.ui-dialog-titlebar').css('float', 'right');
+        }
+        
+        function hide() {
+           $(".eventPopup").css("visibility", "hidden");
+        }               
+        
+        function installAddEvent(){
+            $(".newObject").click(function() {
+                window.location.replace("apex/Event_Detail?newEvent=1");
+            });
+        }     
+        
+        function installEventPopup(){
+            $(".eventPopup").dialog({
+                autoOpen: false,
+                modal: true,
+                maxWidth: 800,
+                width: 500,
+                show: {
+                    effect: "drop",
+                    duration: 500
+                },
+                hide: {
+                    effect: "drop",
+                    duration: 500
+                },
+                close: function() {
+                    $('.ui-dialog-titlebar').css('display', 'block');
+                    $('.ui-dialog-titlebar').css('float', '');
+                }
+            });
+        }
+        
+        function installLeftPanelSettings(){
+            $(".settings").click(function() {
+                $( ".configdialog" ).dialog( "open" );
+            });
+        }
+        
+        function installViewModes(){
+            $(".listViewBtn").click(function() {
+                waitOn();
+                refreshListView( JSON.stringify(filterProcessor.getFilterObject(document.querySelectorAll('.filtersWrapper')[0])) );
+                $('#listViewCalendar').css('display', 'block');
+                $('#theFullCalendar').css('display', 'none');
+                $('#dayViewQuickSelector').css('display', 'none');
+                $("#wvShowWeekends").css("display", "none");
+                toPrintElement = jQuery('#tblListViewCalendar')[0];
+                showPrintIcon();
+            });
+            
+            $(".dayViewBtn").click(function() {
+                $('#theFullCalendar').css('display', 'inline-block');
+                $('#listViewCalendar').css('display', 'none');
+                $('#dayViewQuickSelector').css('display', 'block');
+                $('#theFullCalendar').fullCalendar('changeView', 'agendaDay');
+                toPrintElement =  jQuery('.calendar_container')[0];
+
+            });
+            
+            $(".weekViewBtn").click(function() {                
+                $('#theFullCalendar').css('display', 'inline-block');
+                $('#listViewCalendar').css('display', 'none');
+                $('#dayViewQuickSelector').css('display', 'none');
+                $('#theFullCalendar').css('width', '100%');
+                $('#theFullCalendar').fullCalendar('changeView', 'agendaWeek');
+                $("#wvShowWeekends").css("position", "absolute");
+                $("#wvShowWeekends").css("left", ($(".fc-button-next").position().left + 40) + "px");
+                $("#wvShowWeekends").css("top", $(".fc-button-next").position().top + "px");
+                toPrintElement = jQuery('.fc-view-agendaWeek')[0];
+
+            });
+            
+            $(".monthViewBtn").click(function() {
+                firstCalendarLoad = false;
+                $('#theFullCalendar').css('display', 'inline-block');
+                $('#listViewCalendar').css('display', 'none');
+                $('#dayViewQuickSelector').css('display', 'none');
+                $('#theFullCalendar').css('width', '100%');
+                
+                var evts = $('#theFullCalendar').fullCalendar( 'clientEvents');
+                if(evts.length > 0){
+                    $("#theFullCalendar").fullCalendar( 'refetchEvents' );
+                }
+                $('#theFullCalendar').fullCalendar('changeView', 'month');
+                toPrintElement = jQuery('.fc.fc-ltr.ui-widget')[0];
+            });
+        }
+ 
+        function installConfigDialog(){
+            $(".configdialog").dialog({
+                title: 'Configuration options',
+                autoOpen: false,
+                height: 300,
+                width: 450,
+                modal: true,
+                show: {
+                    effect: "drop",
+                    duration: 500
+                },
+                hide: {
+                    effect: "drop",
+                    duration: 500
+                },
+                buttons: {
+                    "Save": function() {
+                        setEventsConfigurations();
+                    },
+                    Cancel: function() {
+                        $(this).dialog( "close" );
+                    }
+                },
+                close: function() {
+                    $(".configMessage").css('display', 'none');
+                }
+            });
+        }
+        
+        function onEventsConfigurationsDone(){
+            installPopUpLegend();
+            installLeftPanelSettings();
+            if($('.configMessage').html() == '{!JSENCODE(configurationsSuccess)}'){
+                if($("#theFullCalendar").css('display') == 'block'){
+                    $("#listViewCalendar").css('display', 'none');
+                    refreshViewDisplay();
+                }
+                window.setTimeout('$(".configdialog").dialog("close");', 1500);  
+            }           
+        }
+        
+        function showWeekends(isChecked){
+            var dToday = $('#theFullCalendar').fullCalendar('getDate');
+            $('#theFullCalendar').fullCalendar('destroy');
+            var myFullCalendar = $('#theFullCalendar');
+             eventArray = JSON.parse('{!JSENCODE(jsonEvents)}');
+            
+            // Will create the calendar
+            myFullCalendar.fullCalendar(createCalendarConfigs(isChecked, eventArray, 'agendaWeek'));
+            myFullCalendar.fullCalendar('gotoDate', dToday);
+            $('#theFullCalendar').fullCalendar('render');
+        }
+    
+    function refreshViewDisplay(){
+        applyFilter();
+    }
+        function createCalendarConfigs(considerWeekends, eventArray, viewMode){
+            return {
+                events: eventArray,
+                allDayDefault: false,
+                ignoreTimezone: false,
+                firstDay: 0,        
+                weekends: considerWeekends,
+                weekMode: 'variable',
+                weekNumbers: true,
+                buttonText: {
+                    today:    'Today'
+                },
+                header: {
+                    center: 'prev, today, next',
+                    right: 'prevYear, today, nextYear '
+                },        
+                isRTL: false,        
+                theme: true,
+                titleFormat: {
+                    week: "MM/dd/yyyy{ '&#8212;' MM/dd/yyyy}"
+                },        
+                timeFormat:{
+                    agenda: 'h:mm{ - h:mm}'
+                },        
+                columnFormat:{
+                    week: 'dddd M/d'
+                },
+                selectable: true,
+                minTime: "{!viewsStartTime}",
+                defaultView: viewMode || 'month',
+                viewDisplay: function(view) {
+                    showPrintIcon();
+                    var viewMode = "{!JSENCODE(calendarDefaultView)}"; // Extract the view mode configured by the user
+                    switch(view.name){
+                        case 'agendaDay':
+                            
+                            //overwriteYearFunction not needed here because button is not shown.                            
+                            
+                            toPrintElement =  jQuery('.calendar_container')[0];
+                            view.setHeight(9999);
+                            $('.fc-button-today:eq(1)').css('display', 'none');                         
+                            $('#listViewCalendar').css('display', 'none');
+                            $('#dayViewQuickSelector').css('width', '390px');
+                            $('#dayViewQuickSelector').css('display', 'block');
+                            $('#theFullCalendar').css('display', 'inline-block');
+                            $('#theFullCalendar').css('width', ($('#theFullCalendar').parent().width() - 390) + 'px');
+                            $('.fc-button-nextYear').css('display', 'none');
+                            $('.fc-button-prevYear').css('display', 'none');
+                            $("#wvShowWeekends").css("display", "none");
+                                
+                            break;
+                        
+                        case 'agendaWeek':
+                            
+                            view.setHeight(9999);
+                            toPrintElement = jQuery('.fc-view-agendaWeek')[0];
+                            overwriteYearFunction();
+                            $('.fc-button-today:eq(1)').css('display', 'inline-block');
+                            $('.fc-button-today:eq(1)').html('This Year');
+                            $('#listViewCalendar').css('display', 'none');
+                            $('#theFullCalendar').css('display', 'inline-block');
+                            $('#theFullCalendar').css('width', '100%');
+                            $('#dayViewQuickSelector').css('display', 'none');
+                            $('.fc-button-nextYear').css('display', 'inline-block');
+                            $('.fc-button-prevYear').css('display', 'inline-block');
+                            $("#wvShowWeekends").css("display", "block");
+                            
+                            break;
+                            
+                        case 'month':           
+                            
+                            overwriteYearFunction();                
+                            
+                            if((viewMode == "" || viewMode == "list") && firstCalendarLoad){
+                                $('#theFullCalendar').css('display', 'none');
+                                $('.fc-button-today:eq(1)').html('This Year');                                                              
+                            }
+                            else {
+                                                                                        
+                                toPrintElement = jQuery('.fc.fc-ltr.ui-widget')[0];
+                                $('.fc-button-today:eq(1)').html('This Year');                              
+                                $('.fc-button-today:eq(1)').css('display', 'inline-block');
+                                $('#listViewCalendar').css('display', 'none');
+                                $('#dayViewQuickSelector').css('display', 'none');
+                                $('#theFullCalendar').css('width', '100%');
+                                $('#theFullCalendar').css('display', 'inline-block');
+                                $('.fc-button-nextYear').css('display', 'inline-block');
+                                $('.fc-button-prevYear').css('display', 'inline-block');
+                                $("#wvShowWeekends").css("display", "none");                            
+                            }
+
+                            break;
+                        
+                        default: 
+                            break;
+                    }
+                    
+                    if(viewMode =="" || viewMode == "list"){
+                        
+                        toPrintElement = jQuery('#tblListViewCalendar')[0];
+                    }                   
+                    if(firstCalendarLoad && viewMode != 'list'){
+                        firstCalendarLoad = false;
+                    }
+                    else {
+                        invokeEventsRetrieval(view);
+                    }
+                    waitOff();
+                },
+                selectable: true,           
+                selectHelper: true,
+                select: function(start, end, allDay) {
+                   
+                    haveTime  = !allDay;
+                    
+                    startEventDateToSend = start;
+                
+                    endEventDateToSend = end;
+                    if(confirm('You have chosen to create a new {!$Label.openq__event_label}. Continue?')){
+                    
+                        createNewEventPopulated();
+                    
+                    }    
+
+                    $("#theFullCalendar").fullCalendar('unselect');
+                },
+                eventClick: function(event, jsEvent, view) {
+                    xEvent = jsEvent.clientX;
+                    yEvent = jsEvent.clientY;
+                    
+                    jQuery('.popupField').each(function(){
+                                                
+                        var apiName = jQuery(this).data('apiname');
+                                                
+                        if(apiName){
+                            
+                            if(event.hasOwnProperty(apiName)){                          
+                            
+                                if(apiName != '{!JSENCODE(namespace)}Name__c'){
+                                                        
+                                        
+                                    jQuery(this).html(event[apiName]);                                  
+                                
+                                }else{
+                                    
+                                    jQuery(this).closest('a').attr('href', 'Event_Detail?eventId=' + event.id);
+                                    jQuery(this).closest('a').html(event[apiName]);
+                                }
+                            }                           
+                        }                       
+                    });
+                    
+                    show();                 
+                },              
+                eventAfterAllRender: function(){
+                    installResizeEvent();
+                    $("#wvShowWeekends").css("position", "absolute");
+                    $("#wvShowWeekends").css("left", (Math.floor($(".fc-button-next").position().left) + 50) + "px");
+                    $("#wvShowWeekends").css("top", $(".fc-button-next").position().top + "px");    
+                }                
+            };
+        }
+        
+        Object.prototype.hasOwnProperty = function(property) {
+            return this[property] !== undefined;
+        };
+        function overwriteYearFunction(){
+            
+            $('.fc-button-today:eq(1)').unbind('click');
+            $('.fc-button-today:eq(1)').bind('click',function(){ 
+                var date= $("#theFullCalendar").fullCalendar('getDate');
+                var d = new Date();
+                gotoDay(date.getDay(),date.getMonth()+1,d.getUTCFullYear());
+                $(this).addClass('ui-state-disabled');
+                $(this).unbind('click');
+            });
+        }
+        
+        function msieversion() {
+
+            var ua = window.navigator.userAgent;
+            var msie = ua.indexOf('MSIE ');
+            var trident = ua.indexOf('Trident/');
+        
+            if (msie > 0) {
+                // IE 10 or older => return version number
+                return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+            }
+        
+            if (trident > 0) {
+                // IE 11 (or newer) => return version number
+                var rv = ua.indexOf('rv:');
+                return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
+            }
+        
+            // other browser
+            return -1;          
+        }
+                
+        function getHourFormat(dst,dend){
+            dend = (dend==0)?'00':dend;
+            if(dst>11){
+                
+                dst = (dst-12 == 0 )?'12':dst-12;
+                var meridian = 'pm';
+                dst = (dst<10)?('0'+dst):dst;
+                return dst+':'+dend+' '+meridian;
+            
+            }else{
+                
+                var meridian = 'am';
+                dst = (dst == 0 )? 12 : dst;
+                dst = (dst<10)?('0'+dst):dst;
+                return dst+':'+dend+' '+meridian;
+            
+            } 
+        }
+        function createNewEventPopulated(){
+            waitOn();
+            var sTime = getHourFormat(startEventDateToSend.getHours(),startEventDateToSend.getMinutes());
+            var eTime = getHourFormat(endEventDateToSend.getHours(),endEventDateToSend.getMinutes());
+            var eMDate = endEventDateToSend.getMonth()+1;
+            var sMDate = startEventDateToSend.getMonth()+1;
+            var eDDate =  (endEventDateToSend.getDate()<10)?'0'+endEventDateToSend.getDate():endEventDateToSend.getDate();
+            var sDDate = (startEventDateToSend.getDate()<10)?'0'+startEventDateToSend.getDate():startEventDateToSend.getDate();;
+            
+            eMDate = (eMDate<10)?'0'+eMDate:eMDate;
+            sMDate = (sMDate<10)?'0'+sMDate:sMDate;
+            if(haveTime){
+                
+                window.location.replace("apex/Event_Detail?newEvent=1&endDate="+eMDate+'/'+eDDate+'/'+endEventDateToSend.getFullYear()+'&endTime='+eTime+"&startDate="+sMDate+'/'+sDDate+'/'+startEventDateToSend.getFullYear()+'&startTime='+sTime);
+            }else{
+                
+                window.location.replace("apex/Event_Detail?newEvent=1&endDate="+eMDate+'/'+eDDate+'/'+endEventDateToSend.getFullYear()+"&startDate="+sMDate+'/'+sDDate+'/'+startEventDateToSend.getFullYear());
+                
+            }
+        }
+        
+        /***
+        Print Functions Block
+        **/
+        var toPrintElement =  null;
+        var queuedBase64 =  new Array();
+        var persistHeight = null;
+        //this function is call by the user to start the print process
+        function printCalendar(){
+            
+            var view = $("#theFullCalendar").fullCalendar('getView');           
+            
+            if(isIE() && msieversion()==8 && jQuery('#listViewCalendar').css('display') != 'none'){
+                    if(confirm('For best results, make sure the orientation is set to landscape and enable the "Print Background Colors and Images" \noption in the File -> Page Setup dialog before continuing.')){
+                        urbanPrint(toPrintElement.cloneNode(true));                     
+                    }
+            
+            }else {
+            
+                checkCurrentElementToPrint(view)
+                printCalendarPDF(toPrintElement);
+            }           
+        }
+        function installPrintFeature(){
+            
+            if(isFirefox || msieversion() > 8){
+                
+              jQuery('#printFeature').attr('title','View as PDF');
+              jQuery('#printFeature .printIcon').addClass('pdfIcon').removeClass('printIcon');
+                    
+            }else{
+                
+                jQuery('#printFeature').attr('title','Print Calendar');
+                
+            }
+        }
+        function showPrintIcon(){
+            if(isIE() && msieversion()==8 ){
+                if(jQuery('#listViewCalendar').css('display') != 'none'){
+                
+                     jQuery('#printFeature').show();
+                }else{
+                     jQuery('#printFeature').hide();
+                
+                }
+            }
+        }
+        //this function check what is the currently view and set the height and the print element 
+        //rememeber the initial height 
+        function checkCurrentElementToPrint(view){
+            if(jQuery('#listViewCalendar').css('display') != 'none'){
+
+                toPrintElement = jQuery('#tblListViewCalendar')[0];
+            }else{
+                switch(view.name){
+                    case 'agendaDay':   
+                        persistHeight = view.getHeight();
+                        
+                        view.setHeight(9999);
+                        toPrintElement =  jQuery('.calendar_container')[0];
+    
+                        break;
+                    case 'agendaWeek':
+                        
+                        persistHeight = view.getHeight();
+                        view.setHeight(9999);
+                        
+                        toPrintElement = jQuery('.fc-view-agendaWeek')[0];
+                
+                        break;
+                        
+                    case 'month':                           
+                        console.log('hide');
+                        jQuery('.fc-button').hide();    
+                        toPrintElement = jQuery('.fc.fc-ltr.ui-widget')[0];
+                        
+                        break;
+                }
+             }
+        }
+        /***
+            
+            this funciton recives a DOM element that is proccessed by html2canvas library and converts into a canvas
+            NOTE: the DOM element must be visibile and displayed 
+        
+        ***/
+        function printCalendarPDF(e){
+            waitOn();
+            html2canvas(e, {
+                  onrendered: function(canvas) {
+                    processCanvasToBase64(canvas);
+                    
+                    var view = $("#theFullCalendar").fullCalendar('getView');
+                    
+                    if(view.name == 'month'){
+                    
+                        jQuery('.fc-button').show();
+                    }           
+                    
+                  }
+                 
+                });
+        }
+        /***
+            
+            this function recives a canvas and proccess to get the base64 code
+            split this string on array string chunks 
+    
+        
+        ***/
+        function processCanvasToBase64(canvas){
+            queuedBase64 =  new Array();
+            var strDataURI = canvas.toDataURL().replace('data:image/png;base64,','');
+            var limit = 900000; 
+            var str  = 0 
+            var end = limit;
+            var bound = strDataURI.length-limit; 
+            var arrayToSend = []
+            if(bound>0){
+                var mustGoAway =false
+                while(end <= strDataURI.length ){ 
+                
+                    if(strDataURI.substring(str,end)!='')
+                        queuedBase64.push(strDataURI.substring(str,end));
+                
+                    str = end; 
+                    end += limit; 
+                    if(mustGoAway)break;
+                    if(end > strDataURI.length ){
+                        end =strDataURI.length ;
+                        mustGoAway = true;
+                    }
+                } 
+                sendNextChunk();
+            }else{
+            
+                queuedBase64.push(strDataURI);
+                generateDirectAttachment(queuedBase64);
+            
+            }
+        }
+        /**
+        
+        send to the controller the array of base64 chunks part by part
+        **/
+        function sendNextChunk(){
+            if(queuedBase64.length !=0 ){ 
+                Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.PrintActions.loadBase64BeforePrint}',queuedBase64[0],
+                    function(result,event){
+                        queuedBase64.shift();
+                        
+                        if(queuedBase64.length != 0)
+                            sendNextChunk();
+                        else 
+                            generateAttachment();
+    
+                    });
+            }
+        }
+        /**
+            set the height of the calendar to the previous calendar
+        **/
+        function resetHeight(){
+            
+            if(persistHeight != null){
+                
+                var view = $("#theFullCalendar").fullCalendar('getView');
+                view.setHeight(persistHeight);
+                persistHeight = null;
+            }           
+        }
+        /**
+            generateDirectAttachment if the chunk array have just one element we try to retrive the attachment directly
+            when the remote actions end the callback  reset the hegith and try to print the attachment
+        **/
+         function generateDirectAttachment(e){
+           Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.PrintActions.directInsertAttachmentImg}',e,
+                function(result,event){
+                    
+                    
+                 
+                    finalPrintStep(result);
+                });
+        
+        }
+        /**
+            generateAttachment:  get the attachment generated by the sendnextChunk
+            when the remote actions end the callback  reset the hegith and try to print the attachment 
+        **/
+        function generateAttachment(){
+           Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.PrintActions.insertAttachmentImg}',
+                function(result,event){
+                     
+                    
+                    finalPrintStep(result);
+                });
+        
+        }
+        /**
+            this function try to print the iframe 
+            if is IE9 or firefox just show a window witht he pdf
+            else print the iframe content 
+        **/
+        function finalPrintStep(finalURL){
+            
+            if(isFirefox || msieversion() > 8){
+            
+                    window.open(finalURL,'_newtab');
+                    waitOff();
+                            
+            }else{
+
+                var hidden_div = document.createElement('div');
+                 
+                hidden_div.style.display = 'none';  
+                hidden_div.id = 'iframeContainerToPrint';
+                var frame = document.createElement('iframe');
+                var url  = window.location.href;
+                
+                if( url.indexOf('{!JSENCODE(namespace)}') == -1){
+                
+                    finalURL = finalURL.replace('{!JSENCODE(namespace)}','');
+                }
+                
+                frame.src =  window.location.protocol+'//'+window.location.host+finalURL;
+                frame.id = 'frameToPrint'
+                frame.width = '100%';
+                frame.height = '100%';
+                frame.name = 'frameToPrint'; 
+                            
+             jQuery(frame).load(function(){
+                    setTimeout(function(){
+
+                            window.frames["frameToPrint"].print();
+                            
+                            setTimeout(function(){
+                                jQuery(hidden_div).remove();
+                                waitOff();
+                            },300);
+                    },2000);
+                });
+                hidden_div.appendChild(frame);
+                document.getElementsByTagName('body')[0].appendChild(hidden_div);
+                 
+            }
+        }
+        
+        
+                    
+/***
+
+Legend Pop up section
+***/            
+function legendPopUp(){
+    
+    var t =  new Object();
+    t.initialized = false;
+
+    t.init = function(){
+      if(!t.initialized){
+      
+        t.initialized = true;      
+        posOnTop(jQuery(window).scrollTop());
+        jQuery('[id$=colorLegendComponent]').css('margin-left', '-'+(jQuery('[id$=colorLegendComponent]').width()/2));
+        
+        jQuery('[id$=colorLegendComponent]').mouseover(function(){
+    
+            jQuery(this).addClass('fullOpacity')
+        });
+        
+        jQuery('[id$=colorLegendComponent]').mouseout(function(){
+    
+           jQuery(this).removeClass('fullOpacity');
+        });
+          
+        addScrollListener();
+        bindOpenClose();
+}
+    }
+
+
+function bindOpenClose(){
+    jQuery('#openLegend').bind('click',function(){
+         jQuery('[id$=colorLegendComponent]').fadeIn();
+    })
+    jQuery('#closeLegend').bind('click',function(evt){
+        evt.stopPropagation();
+        jQuery('[id$=colorLegendComponent]').fadeOut();
+    })
+
+}
+function posOnTop(scroll){
+ if(scroll>=120){
+    jQuery('[id$=colorLegendComponent]').css('margin-top',0)
+
+    }else if(scroll<20){
+           jQuery('[id$=colorLegendComponent]').css('margin-top',120)
+    }
+}
+
+function addScrollListener(){
+jQuery(window).scroll(function(){
+   
+ posOnTop(jQuery(window).scrollTop());
+})
+}
+return t;
+}
+</script>
+        </div>
+        </apex:form>    
+      
+        <c:WaitComponent />
+        <div class=""></div>
+    </apex:outputPanel>
+</apex:page>

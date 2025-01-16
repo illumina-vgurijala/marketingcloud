@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckISOpptyStageChangeFromCreate</fullName>
+    <active>true</active>
+    <description>This Rule checks if all the Mandatory Fields are Populated  when an Indirect Opportunity is moved to move to either Qualify, Develop, Prove, Negotiate and Resolve, Finalize, or Closed Won  from Create Stage</description>
+    <errorConditionFormula>AND ( 
+/*Checking Relevant Record Type*/ 
+$RecordType.DeveloperName= $Label.OpportunityRTIndirectStandard
+, 
+/*Checking Exit Stages*/ 
+AND ( 
+TEXT(PRIORVALUE ( StageName ))=$Label.OpportunityStageCreate,
+OR ( 
+TEXT ( StageName ) = $Label.OpportunityStageDevelop, 
+TEXT ( StageName ) = $Label.OpportunityStageQualify, 
+TEXT ( StageName ) = $Label.OpportunityStageNegotiateResolve, 
+TEXT ( StageName ) = $Label.OpportunityStageProve,
+TEXT ( StageName ) = $Label.OpportunityStageFinalize
+) 
+),
+/*Check if any of the field is populated*/ 
+OR (
+Text (Deal_Registration_Status__c) = $Label.OpportunityDealRegStatusPending
+),
+NOT (
+OR ( 
+ISCHANGED ( Is_Updated_By_System__c ),
+Is_Updated_By_System__c = true,
+$Profile.Name =  $Label.ProfileSystemAdmin,
+$Profile.Name =  $Label.ProfileDataSteward
+)
+)
+)</errorConditionFormula>
+    <errorMessage>The Deal Registration Status has not been set to Accepted. Please contact your Partner Account Manager</errorMessage>
+</ValidationRule>

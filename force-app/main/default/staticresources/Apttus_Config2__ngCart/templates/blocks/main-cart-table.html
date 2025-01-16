@@ -1,0 +1,260 @@
+
+<div main-cart="main-cart" class="main-cart-wrapper main-cart-wrapper--overflow">
+  <cart-header check-boxes="mainCart.checkBoxes"></cart-header>
+  <div class="main-cart-container--positioning">
+    <div class="main-cart-container">
+      <table>
+        <!--Column heading-->
+        <thead class="cart-label-row">
+          <th ng-repeat="column in mainCart.tableColumns" ng-class="{'is--editable' : column.IsEditable}" class="main-cart-col main-cart-col--header  main-cart-col--{{column.columnClassName}} {{column.StyleClass}}">
+            <div>
+              <label>{{column.Label}}</label>
+            </div>
+            <div cart-label-field="cart-label-field" class="fixed-label">
+              <label>{{column.Label}}</label>
+            </div>
+          </th>
+        </thead>
+        <tbody ng-sortable="{ handle: '.line-item-row--draggable', group: 'lineItem'}">
+          <!--top level cart line items-->
+          <tr item="lineItem" dir-paginate="lineItem in mainCart.cartLineItems | itemsPerPage: 5" class="line-item-row">
+            <td ng-repeat="column in mainCart.tableColumns" ng-class="{'is--editable' : column.IsEditable}" class="main-cart-col main-cart-col--{{column.columnClassName}} {{column.StyleClass}}">
+              <!--Top level column fields-->
+              <div class="fieldtype-wrapper fieldtype-wrapper--{{column.FieldType}} {{column.StyleClass}}">
+                <div ng-include="'fieldType'+ column.FieldType"></div>
+              </div>
+              <!--Top level charge lines-->
+              <ul ng-if="lineItem.chargeLines.length &amp;&amp; column.FieldType !== 'DETAIL'" class="submenu submenu--chargelines chargelines {{lineItem.lineItemSO.OptionId__r.Name}}">
+                <li ng-repeat="chargeLine in lineItem.chargeLines" class="charge-line-col">
+                  <div class="fieldtype-wrapper fieldtype--{{column.FieldType}}">
+                    <div ng-include="'fieldType'+ column.FieldType"></div>
+                  </div>
+                </li>
+              </ul>
+              <!--Top level option lines-->
+              <ul ng-if="lineItem.optionLines.length &amp;&amp; column.FieldType !== 'DETAIL'" class=" submenu submenu--optionlines">
+                <li ng-repeat="optionLine in lineItem.optionLines" class="option-line-col">
+                  <div class="fieldtype-wrapper">
+                    <!--div(ng-include="'fieldType'+ column.FieldType")-->
+                    
+                  </div>
+                  <!--Secondary Level option and charge lines-->
+                  <ul ng-if="optionLine.chargeLines.length" class="charge-lines">
+                    <li ng-repeat="chargeLine in optionLine.chargeLines" class="charge-line-col">
+                      <div class="fieldtype-wrapper">
+                        <!--div(ng-include="'fieldType'+ column.FieldType")-->
+                      </div>
+                    </li>
+                  </ul>
+                  <ul ng-if="optionLine.optionLines" class="submenu submenu--optionlines  option-{{optionLine.lineItemSO.OptionId__r.Id}}">
+                    <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionLineCol'" class="option-line-col"></li>
+                  </ul>
+                </li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<cart-totals check-boxes="mainCart.checkBoxes"></cart-totals>
+<!--mainCart.tableColumns-->
+<!--All sub options detail lines beyond level 1-->
+<script type="text/ng-template" id="subOptionLineDetail">
+  <div class="line-item-name">
+    <div class="checkbox-override">
+      <input type="checkbox" id="{{optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber}}" ng-model="mainCart.checkBoxes.all[optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber].selected" ng-click="mainCart.enableActions(optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber)"/>
+      <label for="{{optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber}}"></label>
+    </div><i toggle-class="is--open" parent="option-line-col" ng-if="optionLine.optionLines.length" toggle-all-class="option-{{optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber}}" toggle-all-class-with="is--visible" class="line-item--expandable"></i>
+    <h3>{{optionLine.lineItemSO.OptionId__r.Name}}</h3>
+  </div>
+  <ul ng-if="optionLine.chargeLines.length" class="submenu submenu--chargelines chargelines">
+    <li ng-repeat="chargeLine in optionLine.chargeLines" class="charge-line-col">
+      <div class="fieldtype-wrapper">
+        <div>
+          <p>{{optionLine.lineItemSO.OptionId__r.Name}}</p>
+        </div>
+      </div>
+    </li>
+  </ul>
+  <ul ng-if="optionLine.optionLines.length" class="submenu submenu--optionlines">
+    <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionLineDetail'" class="option-line-col">
+      <p>{{optionLine.lineItemSO.OptionId__r.Name}}</p>
+    </li>
+  </ul>
+</script>
+<!--All beneath top level. Not in left DETAIL column-->
+<script type="text/ng-template" id="subOptionLineCol">
+  <div class="fieldtype-wrapper">
+    <div ng-include="'fieldType'+ column.FieldType"></div>
+  </div>
+  <ul ng-if="optionLine.chargeLines.length" class="submenu submenu--chargelines chargelines chargelines-{{optionLine.lineItemSO.OptionId__r.Id}}">
+    <li ng-repeat="chargeLine in optionLine.chargeLines" class="charge-line-col">
+      <div class="fieldtype-wrapper">
+        <div ng-include="'fieldType'+ column.FieldType"></div>
+      </div>
+    </li>
+  </ul>
+  <ul ng-if="optionLine.optionLines" class="submenu submenu--optionlines option-{{optionLine.lineItemSO.OptionId__r.Id}}">
+    <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionLineCol'" class="option-line-col"></li>
+  </ul>
+</script>
+<!--All detail beneath top level-->
+<script type="text/ng-template" id="fieldTypeDETAIL">
+  <div class="line-item-name">
+    <div class="line-item-row--draggable is--draggable"></div>
+    <div class="checkbox-override">
+      <input type="checkbox" id="{{lineItem.lineItemSO[column.FieldName].Id + lineItem.txnPrimaryLineNumber}}" ng-model="mainCart.checkBoxes.all[ lineItem.lineItemSO[column.FieldName].Id + lineItem.txnPrimaryLineNumber ].selected" ng-click="mainCart.enableActions(lineItem.lineItemSO[column.FieldName].Id + lineItem.txnPrimaryLineNumber)" class="{{lineItem.lineItemSO[column.FieldName].Id + lineItem.txnPrimaryLineNumber}}"/>
+      <label for="{{lineItem.lineItemSO[column.FieldName].Id + lineItem.txnPrimaryLineNumber}}"></label>
+    </div><i toggle-class="is--open" parent="line-item-row" ng-if="lineItem.optionLines.length" class="line-item--expandable"></i>
+    <h3><span class="line-item--name">{{lineItem.lineItemSO[column.FieldName].Name}}</span><i ui-sref="configure({txnPrimaryLineNumber: lineItem.txnPrimaryLineNumber})" ng-if="lineItem.lineItemSO.HasAttributes__c || lineItem.lineItemSO.HasOptions__c" class="line-item--configurable ss-wrench"></i></h3>
+  </div>
+  <!--Output all charge top level lines-->
+  <ul ng-if="lineItem.chargeLines.length" class="chargelines">
+    <li ng-repeat="chargeLine in lineItem.chargeLines" class="charge-line-col">
+      <p>{{chargeLine.lineItemSO[mainCart.chargeKey]}}</p>
+    </li>
+  </ul>
+  <!--Include all sub option lines of the bundle-->
+  <ul ng-if="lineItem.optionLines.length">
+    <li ng-repeat="optionLine in lineItem.optionLines" class="option-line-col">
+      <div class="option-line-name">
+        <div class="checkbox-override">
+          <input type="checkbox" id="{{optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber}}" ng-model="mainCart.checkBoxes.all[optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber].selected" ng-click="mainCart.enableActions(optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber)"/>
+          <label for="{{optionLine.lineItemSO.OptionId__r.Id + optionLine.txnPrimaryLineNumber}}" class="txn-{{optionLine.txnPrimaryLineNumber}}"></label>
+        </div><i toggle-class="is--open" parent="option-line-col" toggle-all-class="option-{{optionLine.lineItemSO.OptionId__r.Id}}" toggle-all-class-with="is--visible" ng-if="optionLine.optionLines.length" class="line-item--expandable"></i>
+        <h3>{{optionLine.lineItemSO.OptionId__r.Name}}</h3>
+      </div>
+      <ul ng-if="optionLine.chargeLines.length" class="submenu submenu--chargelines chargelines chargelines-{{optionLine.lineItemSO.OptionId__r.Id}}">
+        <li ng-repeat="chargeLine in optionLine.chargeLines" class="charge-line-col">
+          <p>{{chargeLine.lineItemSO[mainCart.chargeKey]}}</p>
+        </li>
+      </ul>
+      <ul ng-if="optionLine.optionLines.length" class="submenu submenu--optionlines option-{{optionLine.lineItemSO.OptionId__r.Id}}">
+        <li ng-repeat="optionLine in optionLine.optionLines" ng-include="'subOptionLineDetail'" class="option-line-col"></li>
+      </ul>
+    </li>
+  </ul>
+</script>
+<!--UNDEFINED-->
+<script type="text/ng-template" id="fieldTypeUNDEFINED">
+  <p ng-if="lineItem.lineItemSO[column.FieldName]">{{lineItem.lineItemSO[column.FieldName]}}</p>
+  <p ng-if="chargeLine.lineItemSO[column.FieldName]">{{chargeLine.lineItemSO[column.FieldName]}}</p>
+  <p ng-if="optionLine.lineItemSO[column.FieldName]">{{optionLine.lineItemSO[column.FieldName]}}</p>
+</script>
+<!--STRING-->
+<script type="text/ng-template" id="fieldTypeSTRING">
+  <p ng-if="lineItem.lineItemSO[column.FieldName]">{{lineItem.lineItemSO[column.FieldName]}}</p>
+  <p ng-if="chargeLine.lineItemSO[column.FieldName]">{{chargeLine.lineItemSO[column.FieldName]}}</p>
+  <p ng-if="optionLine.lineItemSO[column.FieldName]">{{optionLine.lineItemSO[column.FieldName]}}</p>
+</script>
+<!--REFERENCE-->
+<script type="text/ng-template" id="fieldTypeREFERENCE">
+  <div ng-if="column.IsEditable">
+    <p>(editable reference)</p>
+  </div>
+  <div ng-if="!column.IsEditable">
+    <p ng-if="lineItem.lineItemSO[column.FieldName]">{{lineItem.lineItemSO[column.FieldName]}}</p>
+    <p ng-if="chargeLine.lineItemSO[column.FieldName]">{{chargeLine.lineItemSO[column.FieldName]}}</p>
+    <p ng-if="optionLine.lineItemSO[column.FieldName]">{{optionLine.lineItemSO[column.FieldName]}}</p>
+  </div>
+</script>
+<!--PERCENT-->
+<script type="text/ng-template" id="fieldTypePERCENT">
+  <div ng-if="column.IsEditable">
+    <p>(editable %)</p>
+  </div>
+  <div ng-if="!column.IsEditable">
+    <p ng-if="lineItem.lineItemSO[column.FieldName]">{{lineItem.lineItemSO[column.FieldName] * 100| number :1}}%</p>
+    <p ng-if="chargeLine.lineItemSO[column.FieldName]"> {{chargeLine.lineItemSO[column.FieldName] * 100| number :1}}%</p>
+    <p ng-if="optionLine.lineItemSO[column.FieldName]"> {{optionLine.lineItemSO[column.FieldName] * 100| number :1}}%</p>
+  </div>
+</script>
+<!--DATE-->
+<script type="text/ng-template" id="fieldTypeDATE">
+  <div ng-if="column.IsEditable">
+    <p ng-if="lineItem.lineItemSO[column.FieldName]">
+      <input pikaday="lineItem.lineItemSO[column.FieldName]"/>
+    </p>
+    <!--ERROR HERE-->
+    <!--p(ng-if="chargeLine.lineItemSO[column.FieldName]")input( pikaday="chargeLine.lineItemSO[column.FieldName]", default-date="{{chargeLine.lineItemSO[column.FieldName] | date : 'shortDate'}}" set-default-date="true")
+    -->
+    <p ng-if="optionLine.lineItemSO[column.FieldName]">{{optionLine.lineItemSO[column.FieldName] | date : 'shortDate'}} (editable)</p>
+  </div>
+  <div ng-if="!column.IsEditable">
+    <p ng-if="lineItem.lineItemSO[column.FieldName]">{{lineItem.lineItemSO[column.FieldName] | date : 'shortDate'}}</p>
+    <p ng-if="chargeLine.lineItemSO[column.FieldName]">{{chargeLine.lineItemSO[column.FieldName] | date : 'shortDate'}}</p>
+    <p ng-if="optionLine.lineItemSO[column.FieldName]">{{optionLine.lineItemSO[column.FieldName] | date : 'shortDate'}}</p>
+  </div>
+</script>
+<!--DOUBLE-->
+<script type="text/ng-template" id="fieldTypeDOUBLE">
+  <div ng-if="column.IsEditable">
+    <p>
+      <input type="number" value="{{lineItem.lineItemSO[column.FieldName]}}" ng-if="lineItem.lineItemSO[column.FieldName]"/>
+    </p>
+    <p>
+      <input type="number" value="{{chargeLine.lineItemSO[column.FieldName]}}" ng-if="lineItem.lineItemSO[column.FieldName]"/>
+    </p>
+    <p>
+      <input type="number" value="{{optionLine.lineItemSO[column.FieldName]}}" ng-if="lineItem.lineItemSO[column.FieldName]"/>
+    </p>
+  </div>
+  <div ng-if="!column.IsEditable">
+    <p ng-if="lineItem.lineItemSO[column.FieldName]">{{lineItem.lineItemSO[column.FieldName]}}</p>
+    <p ng-if="chargeLine.lineItemSO[column.FieldName]">{{chargeLine.lineItemSO[column.FieldName]}}</p>
+    <p ng-if="optionLineItem.lineItemSO[column.FieldName]">{{optionLine.lineItemSO[column.FieldName]}}</p>
+  </div>
+</script>
+<!--QUANTITY-->
+<script type="text/ng-template" id="fieldTypeQUANTITY">
+  <div ng-if="column.IsEditable">
+    <p>
+      <input ng-if="lineItem.lineItemSO[column.FieldName]" type="number" value="{{lineItem.lineItemSO[column.FieldName]}}"/>
+    </p>
+    <p>
+      <input ng-if="chargeLine.lineItemSO[column.FieldName]" type="number" value="{{chargeLine.lineItemSO[column.FieldName]}}"/>
+    </p>
+    <p>
+      <input ng-if="optionLine.lineItemSO[column.FieldName]" type="number" value="{{optionLine.lineItemSO[column.FieldName]}}"/>
+    </p>
+  </div>
+  <div ng-if="!column.IsEditable">
+    <p ng-if="chargeLine">{{chargeLine.lineItemSO[column.FieldName]}}</p>
+    <p ng-if="optionLine">{{optionLine.lineItemSO[column.FieldName]}}</p>
+    <p ng-if="lineItem.lineItemSO.lineItemSO[column.FieldName]">{{lineItem.lineItemSO.lineItemSO[column.FieldName]}}</p>
+  </div>
+</script>
+<!--CURRENCY-->
+<script type="text/ng-template" id="fieldTypeCURRENCY">
+  <div ng-if="column.IsEditable">
+    <p ng-if="lineItem.lineItemSO[column.FieldName]" contentEditable="true">{{lineItem.lineItemSO[column.FieldName] | currency}}</p>
+    <p ng-if="chargeLine.lineItemSO[column.FieldName]" contentEditable="true">{{chargeLine.lineItemSO[column.FieldName] | currency}}</p>
+    <p ng-if="optionLine.lineItemSO[column.FieldName]" contentEditable="true">{{optionLine.lineItemSO[column.FieldName] | currency}}</p>
+  </div>
+  <div ng-if="!column.IsEditable">
+    <p ng-if="lineItem.lineItemSO[column.FieldName]">{{lineItem.lineItemSO[column.FieldName] | currency}}</p>
+    <p ng-if="chargeLine.lineItemSO[column.FieldName]">{{chargeLine.lineItemSO[column.FieldName] | currency}}</p>
+    <p ng-if="optionLine.linetItemSO[column.FieldName]">{{optionLine.linetItemSO[column.FieldName] | currency}}</p>
+  </div>
+</script>
+<!--PICKLIST-->
+<script type="text/ng-template" id="fieldTypePICKLIST">
+  <div ng-if="column.IsEditable">
+    <p>
+      <dropdown-list options="column.pickListEntries" model="lineItem.lineItemSO[column.FieldName]" ng-if="lineItem.lineItemSO[column.FieldName]"></dropdown-list>
+    </p>
+    <p>
+      <dropdown-list options="column.pickListEntries" model="chargeLine.lineItemSO[column.FieldName]" ng-if="chargeLine.lineItemSO[column.FieldName]"></dropdown-list>
+    </p>
+    <p>
+      <dropdown-list options="column.pickListEntries" model="optionLine.pickListEntries[0].value" ng-if="optionLine.lineItemSO[column.FieldName]"></dropdown-list>
+    </p>
+  </div>
+  <div ng-if="!column.IsEditable">
+    <p>{{lineItem.lineItemSO[column.FieldName]}}</p>
+    <p>{{chargeLine.lineItemSO[column.FieldName]}}</p>
+    <p>{{optionLine.lineItemSO[column.FieldName]}}</p>
+  </div>
+</script>

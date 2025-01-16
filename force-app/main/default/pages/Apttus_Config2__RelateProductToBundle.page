@@ -1,0 +1,1264 @@
+<!-- 
+ 	Apttus Config & Pricing
+ 	RelateProductToBundle
+ 	 
+ 	@2010-2015 Apttus Inc. All rights reserved.
+ -->
+<apex:page standardController="Product2"
+		   extensions="Apttus_Config2.RelateProductToBundleController,Apttus_Config2.ManageProductOptionController,Apttus_Config2.RemoteActionController" 
+		   showHeader="true"
+		   sidebar="{!ShowAdminSidebar}" 
+		   cache="false"> 
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}"/>
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JSTreeLibrary, 'jstree-v.pre1.0/jquery.jstree.js')}"/>
+	
+	<script>
+	var j$ = jQuery.noConflict();
+	var treeRerender = false;
+	var depth = 0;
+	function buildHierarchy(arry) {
+		var roots = [], children = {};
+		
+		// find the top level nodes and hash the children based on parent
+		for (var i = 0, len = arry.length; i < len; ++i) {
+		    var item = arry[i];
+		    var p = item.parentId;
+		    var target = !p ? roots : (children[p] || (children[p] = []));
+		
+		    target.push({ value: item });
+		}
+		
+		// function to recursively build the tree
+		var findChildren = function(parent) {
+		    //if (children[parent.value.Id]) {
+		        parent.children = children[parent.value.Id];
+		        parent.data = {};
+		        parent.data.title = parent.value.label;
+		        parent.data.icon = parent.value.imageUrl;
+		        hasImage = false;
+	        	if(parent.value.imageUrl != ""){
+	        		hasImage = true;
+	        	}
+		        parent.attr = {"Id" : parent.value.Id, "hasImage" : hasImage, "Type" : parent.value.type, "Leaf" : parent.value.leaf};
+		        if (children[parent.value.Id]) {
+			        for (var i = 0, len = parent.children.length; i < len; ++i) {
+			        	parent.children[i].data = {};
+			        	parent.children[i].data.title = parent.children[i].value.label;
+			        	hasImage = false
+			        	if(parent.children[i].value.imageUrl != ""){
+			        		hasImage = true;
+			        	}
+			        	parent.children[i].data.icon = parent.children[i].value.imageUrl;
+			        	parent.children[i].attr = {"Id" : parent.children[i].value.Id, 
+			        								"Leaf" : parent.children[i].value.leaf, 
+			        								"hasImage" : hasImage, 
+			        								"Type" : parent.children[i].value.type};
+			            findChildren(parent.children[i]);
+			        }
+		        }
+		    //}
+		};
+		
+		// enumerate through to handle the case where there are multiple roots
+		for (var i = 0, len = roots.length; i < len; ++i) {
+		    findChildren(roots[i]);
+		}
+		return roots;
+	}
+	
+	// variable to hold the selected option group in the tree view
+	var selectedBundleId;
+	
+	j$(function() {
+		//set the properties and actions of the create option group dialog
+		j$( "#createOptionGroup" ).dialog({
+			autoOpen: false,
+			modal: true,
+			buttons: {
+				"Create Option Group": function() {
+					j$( this ).dialog( "close" );
+					createOptionGroup();
+				},
+				Cancel: function() {
+					j$( this ).dialog( "close" );
+				}
+			} 
+		});
+		
+	});
+	
+	//set the properties and actions of the remove dialog
+	function promptDelete(type){
+		j$( "#dialog-confirm" ).dialog({
+			resizable: false,
+			modal: true,
+			buttons: {
+			"Remove": function() {
+					if(type == 'poc'){
+						loading('.remove-btn');
+						removeSelectedPOC(selectedNodeId);
+					}else if(type == 'pog'){
+						loading('.remove-btn');
+						removeSelectedBundle(selectedNodeId);
+					}
+					selectedNodeId = '';
+					isSelectedNodeLeaf = '';
+					selectedNodeType = '';
+					j$( this ).dialog( "close" );
+	
+				},
+				Cancel: function() {
+					j$( this ).dialog( "close" );
+	
+				}
+	
+			}
+  	
+  		});
+	
+	}
+	
+	//get height of document
+	function getDocHeight(doc) {
+	    doc = doc || document;
+	    // from http://stackoverflow.com/questions/1145850/get-height-of-entire-document-with-javascript
+	    var body = doc.body, html = doc.documentElement;
+	    var height = Math.max( body.scrollHeight, body.offsetHeight, 
+	        html.clientHeight, html.scrollHeight, html.offsetHeight );
+	    return height;
+	}
+	
+	//set height of given iframe
+	function setIframeHeight(id) {
+	    var ifrm = document.getElementById(id);
+	    var doc = ifrm.contentDocument? ifrm.contentDocument: ifrm.contentWindow.document;
+	    ifrm.style.visibility = 'hidden';
+	    ifrm.style.height = "10px"; // reset to minimal height in case going from longer to shorter doc
+	    // some IE versions need a bit added or scrollbar appears
+	    try{
+	    	ifrm.style.height = doc.body.scrollHeight + 40 + "px";
+	    }catch(err){
+	    }
+	    //ifrm.style.height = "1444px";
+	    ifrm.style.visibility = 'visible';
+	}
+	
+	//hide loading div
+	function finishedLoadingProds(){
+		j$('#loading-prods').hide();
+	}
+	
+	//hide loading div
+	function finishedLoadingOpGroups(){
+		j$('#loading-option-groups').hide();
+	}
+	
+	//display loading div for given element
+	function loading(styleClass){
+		j$(styleClass).after('<img src="/img/loading32.gif" class="saving-img" alt="Saving..." />');
+		j$(styleClass).attr('disabled','disabled');
+	}
+	
+	//hide loading div for given element
+	function loadComplete(styleClass){
+		j$(styleClass).next('img').remove();
+		j$(styleClass).removeAttr('disabled');
+	}
+	
+	//display loading div for right column
+	function showLoadingDiv() {
+		determineLocationAndSizeOfOveraly();
+		j$('.aptLoadingOverlay').show();
+	}
+	
+	//hide loading div for right column
+	function hideLoadingDiv() {
+		j$('.aptLoadingOverlay').hide();
+	}
+	
+	//get height and width of right column
+	function determineLocationAndSizeOfOveraly() {
+		var position = j$('#right-col').position();
+		j$('.aptLoadingOverlay').css( { position: 'absolute', left: position.left, top: position.top });
+		j$('.aptLoadingOverlay').width(j$('#right-col').width()+50);
+		j$('.aptLoadingOverlay').height(j$('#right-col').height()+50);
+	}
+	/**
+	 * Gets the string representation of the inclusion criteria
+	 * @param filterName the inclusion criteria name
+	 * @return the inclusion criteria expression
+	 */
+    function getInclusionCriteriaExpr(filterName){
+		document.getElementById('idFilterExprName').innerHTML = "{!JSINHTMLENCODE($Label.LoadingPage)}";
+	    document.getElementById('idFilterExprBody').innerHTML = '';
+	        
+		Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.RemoteActionController.getInclusionCriteriaExpr}', filterName, function(result, event) {
+		    // check response status
+		    if (event.status) {
+		        // ok response (check the result)
+		        document.getElementById('idFilterExprName').innerHTML = !JSINHTMLENCODE(filterName);
+		        if (result) {
+		        	document.getElementById('idFilterExprBody').innerHTML = !JSINHTMLENCODE(result);
+		        	
+				}
+			} else {
+		    	document.getElementById('idFilterExprBody').innerHTML = !JSINHTMLENCODE(event.message);
+		    	
+			}
+			
+       	}, {buffer:false, escape:true});
+		
+		// show the modal panel
+		document.getElementById("idFilterExprPanel").style.display = "block";     
+		
+		showFilterExpr();
+		         
+	}
+	/**
+	 * Show filter expression dialog
+	 */
+	function showFilterExpr() {
+		// Show filter expression dialog
+		j$("#idFilterExprPanel").dialog("open");
+      	
+   	}
+
+   	function showExpressionDialog(inputField) {  
+   		if(!{!IsFieldExpressionEnabled}) {
+   			return;
+   		}
+
+        j$("#idExpressionPopup").dialog({
+          autoOpen: true,
+          title: 'Edit Expression',          
+          modal: true,
+          resizable:true,          
+          width:450,
+          height:400,          
+          open: function( event, ui ) {
+
+            // set calculated formula value to focus field
+            j$('.CalculatedFormula').val(j$(inputField).val());
+            j$('#idExpressionPopup').css('overflow', 'hidden');
+          },
+          close: function( event, ui ) {
+             // update focus field value
+            j$(inputField).val(j$('.CalculatedFormula').val());
+
+          },
+          buttons: {
+            'Ok' : function() {
+              j$( this ).dialog( "close" );
+
+            }
+          }         
+        });
+  	}
+
+  	function disablePicklist() {
+		j$("[id$=disabled]").attr("disabled", "disabled");
+  	}
+	</script>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__GridSystemLibrary, 'text.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__GridSystemLibrary, '960.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-style.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__FormeeLibrary, '/css/formee-structure.css')}" />
+	<style>
+	.jstree-default.jstree-focused {
+		background: none !important;
+	}
+	.tree-commands{
+		font-size:12px;
+	} 
+	.aptRoundedDiv {
+				padding-bottom: 5px;
+				background-color: white;
+				border: 1px solid #aaaaaa;
+				-webkit-border-radius: 4px; /* Safari 3-4, iOS 1-3.2, Android ≤1.6 */
+		         border-radius: 4px; /* Opera 10.5, IE9+, Safari 5, Chrome, Firefox 4+, iOS 4, Android 2.1+ */
+			  	
+				/* IE Stuff */		
+			 	zoom: 1; 
+				width:100%;
+		         
+		}
+		
+	   	div.aptProductListHeader {
+    		cursor: pointer;
+
+	    	width:100%;
+	    	padding: 6px 0px;
+			font-size: 1em;
+			line-height: 1.5em;
+			color: #6f6f6f;
+			-webkit-border-top-left-radius: 6px;
+			-webkit-border-top-right-radius: 6px;
+			-moz-border-radius-topleft: 6px;
+			-moz-border-radius-topright: 6px;
+			border-top-left-radius: 6px;
+			border-top-right-radius: 6px;
+			
+			background: url('{!$Resource.CPQNewSprites}') repeat-x;
+			background-position: 0px 0px;
+			
+		}
+		div.aptProductListSubHeader {
+    		cursor: pointer;
+	    	padding: 4px 0px;
+			font-size: 1em;
+			line-height: 1.5em;
+			color: #6f6f6f;
+			float:left;
+			background: url('{!$Resource.CPQNewSprites}') repeat-x;
+			background-position: 0px -150px;
+			border-spacing: 10px;
+			width:100%
+		}
+		
+		div.aptProductCatalogLine {
+    		width:50%; 
+    		margin-left:10px;    
+    	}
+    	
+    	div.aptCategoryIcon {
+    		background: url('{!$Resource.CPQNewSprites}');
+		 	background-position: -4px -282px;
+			height: 15px;
+			width: 15px;
+			margin-left:5px;
+			float:left;
+		
+    	}
+    	
+    	div.aptCategoryIcon {
+    		background: url('/img/forcecom/icon_sprite.png');
+		 	background-position: 0px 0px;
+			height: 16px;
+			width: 16px;
+			margin-left:5px;
+			float:left;
+		
+    	}
+    	
+    	.aptProductManagementLink{
+    	
+    		display:table-cell
+    	}
+    	
+    	.aptPanelGrid{
+    		width:100%;
+    		border-spacing: 0px;
+    	}
+    	
+    	.aptPanelGrid tr {
+    		border-spacing: 0px;
+    	}
+    	
+    	.aptPanelGrid td {
+    		border-spacing: 0px;
+    	}
+    	
+    	.aptPanelColumn{
+    		width:100%;
+    		border-spacing: 0px;
+    	}
+    	
+    	.aptPanelColumn a{
+    		margin-left: 10px;
+    		font-size:11px;
+    	}
+    	.aptRoundedDiv2 {
+				border: 1px solid #DDD;
+				margin-right:1%;
+				margin-left:1%;
+				-webkit-border-radius: 6px; /* Safari 3-4, iOS 1-3.2, Android ≤1.6 */
+		         border-radius: 6px; /* Opera 10.5, IE9+, Safari 5, Chrome, Firefox 4+, iOS 4, Android 2.1+ */
+			  	/* useful if you don't want a bg color from leaking outside the border: */
+				/* -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box; */
+				/*-webkit-box-shadow: 0px 0px 4px 0px #000;  Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+		        /*box-shadow: 0px 0px 4px 0px #000; /* Opera 10.5, IE9+, Firefox 4+, Chrome 6+, iOS 5 */
+				margin-top:5px;
+				/* IE Stuff */		
+			 	zoom: 1; 
+		      	filter: 
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=0,strength=2),
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=45,strength=2),
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=90,strength=2),
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=135,strength=2),
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=180,strength=2),
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=225,strength=2),
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=270,strength=2),
+		          progid:DXImageTransform.Microsoft.Shadow(color=#000000,direction=315,strength=2);
+		         
+		}
+		
+		.aptProductHeader {
+			background: -moz-linear-gradient(top,  rgba(30,87,153,1) 0%, rgba(125,185,232,0) 100%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(30,87,153,1)), color-stop(100%,rgba(125,185,232,0)));
+			background: -webkit-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -o-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: -ms-linear-gradient(top,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			background: linear-gradient(to bottom,  rgba(30,87,153,1) 0%,rgba(125,185,232,0) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1e5799', endColorstr='#007db9e8',GradientType=0 );
+			border-radius: 3px;
+			height:40px;		
+		}
+		
+		.aptGroupHeader {
+			background: -moz-linear-gradient(top, rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0)));
+			background: -webkit-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: -o-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: -ms-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: linear-gradient(to bottom, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6d3d3d3', endColorstr='#00ffffff',GradientType=0 );
+			height: 40px;
+			padding-top: 10px;
+			padding-left: 10px;
+		}
+		div.aptSubMenu {
+    		background: -moz-linear-gradient(top, rgba(211,211,211,0.65) 0%, rgba(255,255,255,0) 100%);
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(211,211,211,0.65)), color-stop(100%,rgba(255,255,255,0)));
+			background: -webkit-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: -o-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: -ms-linear-gradient(top, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			background: linear-gradient(to bottom, rgba(211,211,211,0.65) 0%,rgba(255,255,255,0) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a6d3d3d3', endColorstr='#00ffffff',GradientType=0 );
+			border: 1px solid #DDD;
+			margin-top: 10px;
+		}
+		 
+		.actionsList{
+			list-style-type:none;
+			padding-left:0px;
+		}
+		
+		.formee .formee-txt, .formee input[type="text"], .formee input[type="password"], .formee input[type="file"], .formee textarea{
+			line-height: 0.7em;
+			padding: 5px;
+			height: 2.0em;
+			width:75%;
+		} 
+		
+		.formee select {
+			line-height: 0.7em;
+			padding: 2px;
+			height: 2.0em;
+			width:95%;
+		}
+		
+		.formee legend{
+			font-size: 1.5em;
+			font-weight: bold;
+			margin-left: 3%;
+			width: 20%;
+		}
+				
+		.formee-button, .formee input[type="submit"], .formee input[type="button"], .formee input[type="reset"] {
+			font-size: 12px;
+			text-transform:none;
+		}
+		
+		ul li, ol li {
+			margin-left: 0em;
+			margin-right: 1.5em;
+			padding-left: 0;
+		}
+		
+		h2{
+			display: block;
+			margin-left:0px !important;
+			font: bold 14px/1.1em Arial,Sans-Serif;
+		}
+		
+
+		
+		.alignRight{
+			text-align:right;
+		}
+		.input-row{
+		}
+		.input-label{
+		}
+		.input-field{
+		}
+		#category-fields{
+			padding:5px;
+		}
+		#loading, #reorderLoading, #loading-prods, #loading-option-groups{
+			display:none;
+			text-align:center;
+		}	
+		.idEditClassWrapClass{
+			min-height:500px;
+		}	
+		#pocs-list li{
+			margin-left:30px;
+		}
+		.aux-button{
+			float:right;
+		}
+		.selectedProduct{
+			background:#FFFF66;
+		}
+		.errorMsg{
+			margin-top:10px;
+		}
+		.hasImage a ins{
+			background-size:14px !important;
+		}
+		.command-buttons{
+			text-align:center;
+		}
+		.idEditPOGWrap{
+			float:left;
+		}
+		#right-col{
+			float:left;
+			min-width:988px;
+			width: 95%;
+			border:1px solid #aaaaaa;
+			padding:10px;
+			background:#eeeeee;
+			position:relative;
+			left:-1px;
+		}
+		@media screen and (-webkit-min-device-pixel-ratio:0) {
+			#right-col{
+				min-width:1045px;
+			}
+		}
+		.left-col{
+			float:left;
+		}
+		.jstree{
+			width:220px;
+			overflow-y:auto;
+		}
+		.grid-7-12{
+		}
+		.formee .alpha .left-col{
+			margin:10px !important;
+		}
+		.jstree li.noImage-product > a ins{ 
+			background:none;
+		}
+		.jstree li.noImage-optiongroup > a ins{ 
+			background:url({!$Resource.ProductGroupIcon}) no-repeat;
+			filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='{!$Resource.ProductGroupIcon}', sizingMethod='scale');
+		    -ms-filter: "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='{!$Resource.ProductGroupIcon}', sizingMethod='scale')";
+		    -webkit-background-size: 16px;
+		    -moz-background-size: 16px;
+		    -o-background-size: 16px;
+		    background-size: 16px;
+		}
+		.jstree a {
+			display:inline !important;
+		}
+		.wrapper{
+			min-width:1200px;
+		}
+		.formee-button, .formee input[type="submit"], .formee input[type="button"], .formee input[type="reset"] {
+		    padding: 4px;
+		}
+		.formee .formee-txt, .formee input[type="text"], .formee input[type="password"], .formee input[type="file"], .formee textarea {
+		    width: 130px;
+		}
+		#sidetree{
+			height:auto;
+			padding-bottom:10px;
+			border:1px solid #eeeeee;
+		}
+		#contentWrap{
+			min-width:1260px;
+		}
+		@media screen and (-webkit-min-device-pixel-ratio:0) {
+			#contentWrap{ 
+				min-width:1325px;
+			}
+		}		
+		.jstree-clicked{
+			border-left:1px solid #eeeeee;
+			border-top:1px solid #eeeeee;
+			border-bottom:1px solid #eeeeee;
+		}
+		.ui-tabs .ui-tabs-nav li.tab-header{
+			float:none;
+			margin:10px 5px;
+		}
+		.shadow {
+			-moz-box-shadow: 3px 3px 4px #000;
+			-webkit-box-shadow: 3px 3px 4px #000;
+			box-shadow: 3px 3px 4px #000;
+		}
+		iframe{
+			border:none;
+		}
+		.tree-commands{
+			margin-bottom:5px;
+		}
+		.main-head{
+			float:left;
+			line-height: 25px;
+		}
+		.node-label{
+			white-space:normal;
+			display:inline-block;
+		}
+		ins{
+			float:left;
+		}
+		#dialog-confirm{
+			display:none;
+		}
+		
+		.modal {
+		    display:    none;
+		    position:   fixed;
+		    z-index:    1000;
+		    top:        0;
+		    left:       0;
+		    height:     100%;
+		    width:      100%;
+		    background: rgba( 255, 255, 255, .8 ) 
+		                50% 50% 
+		                no-repeat;
+		}
+		
+		/* When the body has the loading class, we turn
+		   the scrollbar off with overflow:hidden */
+		body.loading {
+		    overflow: hidden;   
+		}
+		
+		/* Anytime the body has the loading class, our
+		   modal element will be visible */
+		body.loading .modal {
+		    display: block;
+		}
+		#loading-box{
+			position:fixed;
+		    top: 50%;
+		    left: 50%;
+		    width:30em;
+		    height:18em;
+		    margin-top: -9em; /*set to a negative number 1/2 of your height*/
+		    margin-left: -15em; /*set to a negative number 1/2 of your width*/
+		    text-align:center;
+		}
+		.saving-img{
+			width:20px;
+			vertical-align:middle;
+		}
+		.aptLoadingOverlay {
+			background-color: #ffffff;
+			background-image: url('/img/loading32.gif');
+			background-repeat: no-repeat;
+			background-position: center 35px;
+			display: none;
+			z-index: 10000;
+			opacity: 0.7;
+			filter:alpha(opacity=70);
+			-moz-opacity:0.7;
+			-khtml-opacity: 0.7;
+			text-align:center; 
+			vertical-align:center;
+			-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=70)";
+		}
+	</style>
+	<!--[if IE]>
+	<style>
+		.jstree li.noImage-product > a ins{ 
+			background:none;
+			background-repeat:none;
+			filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='{!$Resource.ProductIcon}', sizingMethod='scale');
+		    -ms-filter: "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='{!$Resource.ProductIcon}', sizingMethod='scale')";
+		    background-size: 12px;
+		}
+		.jstree li.noImage-optiongroup > a ins{ 
+			background:none;
+			background-repeat:none;
+			filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='{!$Resource.ProductGroupIcon}', sizingMethod='scale');
+		    -ms-filter: "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='{!$Resource.ProductGroupIcon}', sizingMethod='scale')";
+		    background-size: 12px;
+		}
+	</style>
+	<![endif]-->
+	<div id="content"></div>
+	<div class="aptLoadingOverlay">
+		<div>
+			<br/>
+			<h2>{!$Label.Loading}...</h2><br/>
+				&nbsp;
+		</div>
+	</div>
+	<div>
+		<apex:form id="idForm" styleClass="formee wrapper">
+			<apex:outputPanel id="idErrorMsg">
+				<apex:pageMessages />
+			</apex:outputPanel>
+			<div id="contentWrap" class="aptRoundedDiv">
+				<div class="aptGroupHeader">
+					<div style="float:left;">
+						<apex:commandButton action="{!doCancel}" value="Back"/>
+					</div>
+					<h2 class="main-head">&nbsp;&nbsp;&nbsp;&nbsp;{!product.name} - {!$Label.BundleOptionManager}</h2>
+					<div class="clear"></div>
+				</div>
+			
+			<table style="width:100%">
+			<tr>
+			<td width="230" style="vertical-align:top;">
+			<apex:outputPanel id="treeWrap" styleClass="left-col treeWrap" layout="block">
+				<div style="margin:0 0 10px 0;'">
+					<div style="float:left;">
+						<apex:commandButton value="{!$Label.apttus_config2__add}/{!$Label.apttus_config2__remove} {!$Label.apttus_config2__optiongroups}" 
+							action="{!addOptionGroups}" 
+							rerender="bundlesPanel,idEditPOGWrap,idEditPOCWrap,framePanel,idErrorMsg,treeWrap"
+							onClick="selectedNodeId = '';"
+							status="loadStatus" />
+					</div>
+					<div class="clear"/>
+				</div>
+				<div class="tree-commands">
+					<a class="tree-commands" href="javascript:void(0);" onclick="j$('#sidetree').jstree('open_all');">{!$Label.Expand} All</a>
+					<a class="tree-commands" href="javascript:void(0);" onclick="j$('#sidetree').jstree('close_all');">{!$Label.Collapse} All</a>
+				</div>
+				<div id="sidetree">
+					<!-- TREE DISPLAY -->
+				</div>
+				<apex:outputPanel id="bundleMaintenanceBtn">
+					<apex:commandButton action="{!runBundleMaintenance}"
+										value="{!bundleMaintenanceBtnlabel}"
+										disabled="{!bundleMaintenanceBtnDisabled}"
+										rerender="bundleMaintenanceBtn,idErrorMsg"
+										status="loadStatus"
+										onComplete="hideLoadingDiv();" />
+					<apex:outputPanel layout="block" id="bcvUpdatePanel">
+						{!bvcLastUpdate}
+					</apex:outputPanel>
+				</apex:outputPanel>
+				<script> 
+					var clsNodes = new Array();
+					var selectedNodeId;
+					var selectedNodeType;
+					var isSelectedNodeLeaf = 'false';
+				</script>
+				
+				<apex:repeat value="{!GroupListValues}" var="grp">
+					<script type="text/javascript">
+					  	var clsNode = new Object();
+					  	clsNode.type = "{!JSENCODE(grp.nodeType)}";
+					  	clsNode.name = "{!SUBSTITUTE(JSENCODE(grp.name),'"','&#34;')}";
+					  	clsNode.label = "<span class='node-label'>{!SUBSTITUTE(JSENCODE(grp.label),'"','&#34;')}</span>";
+					  	clsNode.parentId = "{!JSENCODE(grp.parentId)}";
+			  			clsNode.rootId = "{!JSENCODE(grp.rootId)}";
+					  	clsNode.Id = "{!JSENCODE(grp.nodeId)}";
+					  	clsNode.lvl = "{!grp.nodeLvl}";
+					  	clsNode.leaf = "{!grp.leaf}";
+					  	clsNode.expanded = "{!grp.expanded}";
+					  	clsNode.focus = "{!grp.focus}";
+			  			clsNode.productCount = "{!grp.productCount}";
+			  			clsNode.imageUrl = "{!JSENCODE(grp.imageUrl)}";
+					  	clsNodes.push(clsNode);
+					</script>
+				</apex:repeat>
+				<script type="text/javascript">
+					var theTree = { 
+							"json_data" : {
+							},
+							"plugins" : [ "themes", "json_data", "ui" ],
+							"core" : {"html_titles" : true},
+							"themes" : {
+								"icons" : true,
+								"dots" : false
+							}
+						};
+					theTree.json_data.data = buildHierarchy(clsNodes);
+					j$(document).ready(function(){
+						
+						j$("#sidetree").jstree(theTree).bind("select_node.jstree", 
+							function (e, data) { 
+								selectedNodeId = data.rslt.obj.attr("id");
+								isSelectedNodeLeaf = data.rslt.obj.attr("Leaf");
+								selectedNodeType = data.rslt.obj.attr("Type");
+								if(selectedNodeType == 'option' && !treeRerender){
+									loadPoc(selectedNodeId);
+								}else if(isSelectedNodeLeaf == 'true' && !treeRerender){
+									loadLeafPog(selectedNodeId);
+								}else if(!treeRerender){
+									loadPog(selectedNodeId);
+								}
+								treeRerender = false;
+							}
+						).bind('loaded.jstree', function(e, data) {
+						    j$("[hasImage='true']").addClass('hasImage');
+						    j$("[hasImage='false']").addClass('noImage');
+						    j$("[hasImage='false'][type='option']").addClass('noImage-product');
+						    j$("[hasImage='false'][type='optionGroup']").addClass('noImage-optiongroup');
+						    j$('#sidetree').jstree('open_all');
+						    if(selectedNodeId != undefined && selectedNodeId != ''){
+						    	treeRerender = true;
+						    	j$('#sidetree').jstree('open_node',j$('#'+selectedNodeId));
+						    	j$('#'+selectedNodeId+' > a').trigger('click');
+						    }
+						});
+					});
+				</script>
+			</apex:outputPanel>
+			<!-- End Tree -->
+			</td><td style="vertical-align:top;">
+			<div id="right-col" class="shadow">
+			<apex:outputPanel id="idEditPOCWrap" layout="block" >
+				<apex:outputPanel layout="block" rendered="{!AND(ISBLANK(selectedPOC),ISBLANK(selectedBundle),ISBLANK(optionGroupURL))}">
+					<br/><br/><br/><h1>{!$Label.apttus_config2__noproductoptiongroupselected}</h1><br/><br/><br/>
+				</apex:outputPanel>
+				<apex:outputPanel layout="block" rendered="{!NOT(ISBLANK(selectedPOC))}">
+				<div class="aptRoundedDiv">
+				<div class="aptGroupHeader">
+					<h2>
+						{!$Label.Product} 
+						<a href="/{!selectedPOC.pocSO.ComponentProductId__c}">
+							{!selectedPOC.pocSO.ComponentProductId__r.Name}
+						</a>
+					</h2>
+				</div>
+				<div id="category-fields">
+					<div class="input-col-left ">	
+						<apex:outputPanel styleClass="input-row grid-1-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__Default__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedPOC.pocSO.Apttus_Config2__Default__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__InclusionCriteria__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:selectList value="{!selectedPOC.pocSO.Apttus_Config2__InclusionCriteria__c}" 
+		  										 multiselect="false" 
+		  										 required="false" 
+		  										 size="1" >
+									<apex:selectOptions value="{!inclusionCriteriaItems}"></apex:selectOptions>
+									<apex:actionSupport event="onchange" reRender="idComponentsTable" />
+								</apex:selectList>
+						      	<apex:commandLink rerender="dummy" 
+						      					  rendered="{!NOT(ISBLANK(selectedPOC.pocSO.Apttus_Config2__InclusionCriteria__c))}">
+									<apex:image url="{!$Resource.Apttus_Config2__Image_Info}"
+												title="{!$Label.apttus_config2__view}" 
+							                    alt="{!$Label.apttus_config2__view}"
+												onclick="getInclusionCriteriaExpr('{!JSENCODE(selectedPOC.pocSO.Apttus_Config2__InclusionCriteria__c)}');" />
+								</apex:commandLink>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-1-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__Required__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedPOC.pocSO.Apttus_Config2__Required__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__MinQuantity__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputText value="{!selectedPOC.minQuantityExpression.Apttus_Config2__Expression__c}" onclick="showExpressionDialog(this);" style="text-overflow: ellipsis;resize:none;"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__MaxQuantity__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputText value="{!selectedPOC.maxQuantityExpression.Apttus_Config2__Expression__c}" onclick="showExpressionDialog(this);" style="text-overflow: ellipsis;resize:none;"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__DefaultQuantity__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputText value="{!selectedPOC.defaultQuantityExpression.Apttus_Config2__Expression__c}" onclick="showExpressionDialog(this);" style="text-overflow: ellipsis;resize:none;"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-1-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__Modifiable__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedPOC.pocSO.Apttus_Config2__Modifiable__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-1-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__AllowCloning__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedPOC.pocSO.Apttus_Config2__AllowCloning__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<div class="input-row grid-8-12"/>						
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block" style="margin-top: -20px;">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__AutoUpdateQuantity__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedPOC.pocSO.Apttus_Config2__AutoUpdateQuantity__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block" style="margin-top: -20px;">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionComponent__c.fields.Apttus_Config2__ConfigType__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedPOC.pocSO.Apttus_Config2__ConfigType__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+					</div>
+					<div class="command-buttons grid-12-12">
+						<apex:commandButton value="{!$Label.apttus_config2__save}" 
+											action="{!saveSelectedPOC}"
+											rerender="idEditPOCWrap,idErrorMsg" 
+											onClick="loading('.save-btn');"
+											styleClass="save-btn"
+											onComplete="loadComplete('.save-btn');" />
+											
+						<apex:commandButton value="{!$Label.apttus_config2__remove}" 
+											onClick="promptDelete('poc');"
+											styleClass="remove-btn"
+											rerender="idEditPOCWrap" />
+					</div>
+					<div class="clear"/>
+				</div>
+				</div>
+				</apex:outputPanel>
+			</apex:outputPanel>
+			
+			<apex:outputPanel id="idEditPOGWrap" layout="block">
+				<apex:outputPanel layout="block" rendered="{!NOT(ISBLANK(selectedBundle))}">
+				<div class="aptRoundedDiv">
+				<div class="aptGroupHeader">
+					<h2>
+						{!$Label.OptionGroup} 
+						<a href="/{!selectedBundle.pog.OptionGroupId__r.Id}">
+							{!selectedBundle.pog.OptionGroupId__r.Name}
+						</a>
+					</h2>
+				</div>
+				<div id="category-fields">
+					<div class="input-col-left ">	
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__ContentType__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField id="disabled" onmouseover="disablePicklist();" value="{!selectedBundle.pog.Apttus_Config2__ContentType__c}"/>
+							</div>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" 
+											layout="block" 
+											rendered="{!ISNULL(selectedBundle.pog.Apttus_Config2__ContentType__c) || (selectedBundle.pog.Apttus_Config2__ContentType__c == Options)}">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__MinOptions__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedBundle.pog.Apttus_Config2__MinOptions__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" 
+											layout="block"
+											rendered="{!ISNULL(selectedBundle.pog.Apttus_Config2__ContentType__c) || (selectedBundle.pog.Apttus_Config2__ContentType__c == Options)}">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__MaxOptions__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedBundle.pog.Apttus_Config2__MaxOptions__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" 
+											layout="block"
+											rendered="{!ISNULL(selectedBundle.pog.Apttus_Config2__ContentType__c) || (selectedBundle.pog.Apttus_Config2__ContentType__c == Options)}">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__MinTotalQuantity__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputText value="{!selectedBundle.minTotalQuantityExpression.Apttus_Config2__Expression__c}" onclick="showExpressionDialog(this);" style="text-overflow: ellipsis;resize:none;"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" 
+											layout="block"
+											rendered="{!ISNULL(selectedBundle.pog.Apttus_Config2__ContentType__c) || (selectedBundle.pog.Apttus_Config2__ContentType__c == Options)}">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__MaxTotalQuantity__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputText value="{!selectedBundle.maxTotalQuantityExpression.Apttus_Config2__Expression__c}" onclick="showExpressionDialog(this);" style="text-overflow: ellipsis;resize:none;"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-1-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__IsHidden__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputCheckbox value="{!selectedBundle.pog.Apttus_Config2__IsHidden__c}" />
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-1-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__IsPicklist__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedBundle.pog.Apttus_Config2__IsPicklist__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__ModifiableType__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedBundle.pog.Apttus_Config2__ModifiableType__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block" rendered="{!isAttributes}">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__ProductAttributeGroupMemberId__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedBundle.pog.Apttus_Config2__ProductAttributeGroupMemberId__c}"/> 
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+						<apex:outputPanel styleClass="input-row grid-2-12" layout="block" rendered="{!isDetailPage}">
+							<div class="input-label">
+								<apex:outputLabel value="{!$ObjectType.Apttus_Config2__ProductOptionGroup__c.fields.Apttus_Config2__DetailPage__c.label}"/>
+							</div>
+							<div class="input-field">
+								<apex:inputField value="{!selectedBundle.pog.Apttus_Config2__DetailPage__c}"/>
+							</div>
+							<div class="clear"/>
+						</apex:outputPanel>
+					</div>
+					<div class="command-buttons grid-12-12">
+						<apex:commandButton value="{!$Label.apttus_config2__save}" 
+											action="{!saveSelectedBundle}"
+											rerender="idEditPOGWrap,idErrorMsg" 
+											onClick="loading('.save-btn');"
+											styleClass="save-btn"
+											onComplete="loadComplete('.save-btn');" />
+						
+						<apex:commandButton value="{!$Label.apttus_config2__remove}" 
+											onClick="promptDelete('pog');"
+											styleClass="remove-btn"
+											rerender="idEditPOGWrap" />
+					</div>
+					<div class="clear"/>
+				</div>
+				</div>
+				</apex:outputPanel>
+			</apex:outputPanel>
+			<apex:outputPanel id="framePanel">
+				<!-- Leaf Option Group (Edit, Add, Remove Options)-->
+				<apex:outputPanel id="productClassificationPanel" 
+									rendered="{!AND(NOT(ISBLANK(productClassificationURL)), isOptions)}" 
+									layout="block">
+					<script>
+						j$(document).ready(function() {
+							j$( "#tabs" ).tabs({show:function() {setIframeHeight('productClassificationFrame');setIframeHeight('removeOptionFrame');setIframeHeight('editOptionFrame');setIframeHeight('pogOrderFrame1');}});
+						}); 
+					</script>
+					<div id="tabs">
+						
+						<ul>
+							<li class="tab-header"><h2>{!$Label.ManageOptions} {!$Label.for} {!selectedBundle.pog.OptionGroupId__r.Name}</h2></li>
+							<li><a href="#tabs-1" onclick="setIframeHeight('productClassificationFrame');">{!$Label.Add}</a></li>
+							<li><a href="#tabs-2" onclick="setIframeHeight('removeOptionFrame');">{!$Label.apttus_config2__remove}</a></li>
+							<li><a href="#tabs-3" onclick="setIframeHeight('pogOrderFrame1');">{!$Label.Reorder}</a></li>
+							<li><a href="#tabs-4" onclick="setIframeHeight('editOptionFrame');">{!$Label.Edit}</a></li>
+						</ul>
+						<div id="tabs-1">
+							<!-- ManageAddingOptions -->
+							<iframe id="productClassificationFrame" width="100%" onload="setIframeHeight(this.id);hideLoadingDiv();" src="{!productClassificationURL}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0"/>
+						</div>
+						<div id="tabs-2">
+							<!-- ManageRemovingOptions -->
+							<iframe id="removeOptionFrame" width="100%" onload="setIframeHeight(this.id);" src="{!removeOptionComponent}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0" />
+						</div>
+						<div id="tabs-3">
+							<!-- manageproductoptiongroupreorder -->
+							<iframe id="pogOrderFrame1" width="100%" onload="setIframeHeight(this.id);" src="{!productOptionGroupreOrder}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0" />
+						</div>
+						<div id="tabs-4">
+							<!-- Edit Option Group (ManageProductOptionComponentsEdit)-->
+							<iframe id="editOptionFrame" width="100%" onload="setIframeHeight(this.id);" src="{!editOptionComponent}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0" />
+						</div>
+					</div>
+				</apex:outputPanel>
+				
+				<!-- Add Option Group -->
+				<apex:outputPanel id="prodFramePanel" rendered="{!NOT(ISBLANK(optionGroupURL))}" layout="block">
+					<!-- ManageRelatedOptionGroups -->
+					<iframe id="prodFrame" width="100%" onload="setIframeHeight(this.id);hideLoadingDiv();" src="{!optionGroupURL}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0" />
+				</apex:outputPanel>
+				
+				<!-- Parent Option Group (Edit Option Group Fields) -->
+				<apex:outputPanel id="pogEditFramePanel" rendered="{!NOT(ISBLANK(selectedBundleURL))}" layout="block">
+					<script>
+						j$( "#tabs" ).tabs({show:function() {setIframeHeight('pogsEditFrame');setIframeHeight('pogOrderFrame2');}});
+					</script>
+					<div id="tabs">
+						<ul>
+							<li class="tab-header"><h2>{!$Label.ChildOptionGroups} for {!selectedBundle.pog.OptionGroupId__r.Name}</h2></li>
+							<li><a href="#tabs-1" onclick="setIframeHeight('pogsEditFrame');">{!$Label.Edit}</a></li>
+							<li><a href="#tabs-2" onclick="setIframeHeight('pogOrderFrame2');">{!$Label.Reorder}</a></li>
+						</ul>
+						<div id="tabs-1">
+							<!-- manageproductoptiongroupedit -->
+							<iframe id="pogsEditFrame" width="100%" onload="setIframeHeight(this.id); hideLoadingDiv();" src="{!selectedBundleURL}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0" />
+						</div>
+						<div id="tabs-2">
+							<!-- manageproductoptiongroupreorder -->
+							<iframe id="pogOrderFrame2" width="100%" onload="setIframeHeight(this.id);" src="{!productOptionGroupreOrder}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0" />
+						</div>
+					</div>
+				</apex:outputPanel>
+				<!--	<apex:outputPanel id="pocFramePanel" rendered="{!NOT(ISBLANK(selectedPOC))}" layout="block">
+				 not using 
+					<iframe id="pocFrame" width="100%" onload="setIframeHeight(this.id); hideLoadingDiv();" src="{!selectedPOCURL}" scrolling="no" marginheight="0" marginwidth="0" frameborder="0" />
+				</apex:outputPanel>-->
+			</apex:outputPanel>
+			</div> 
+			</td></tr></table>
+			
+			<apex:actionFunction name="loadPog" 
+								action="{!loadPOG}" 
+								rerender="BundleMaintanenceButton,productClassificationPanel,bundlesPanel,idEditPOGWrap,idEditPOCWrap,framePanel,idErrorMsg" 
+								status="loadStatus">
+				<apex:param name="selectedBundleId"
+							value="" /> 
+			</apex:actionFunction>
+			
+			<apex:actionFunction name="loadLeafPog" 
+								action="{!loadLeafPOG}" 
+								rerender="BundleMaintanenceButton,productClassificationPanel,bundlesPanel,idEditPOGWrap,idEditPOCWrap,framePanel,idErrorMsg" 
+								status="loadStatus">
+				<apex:param name="selectedBundleId"
+							value="" />
+			</apex:actionFunction>
+			
+			<apex:actionFunction name="loadPoc" 
+								action="{!loadPOC}" 
+								rerender="BundleMaintanenceButton,productClassificationPanel,bundlesPanel,idEditPOGWrap,idEditPOCWrap,framePanel,idErrorMsg" 
+								status="loadStatus"
+								onComplete="hideLoadingDiv();" >
+				<apex:param name="selectedPOCId"
+							value="" />
+			</apex:actionFunction>
+			
+			<apex:actionStatus id="loadStatus" 
+								onStart="showLoadingDiv();" 
+								onStop="determineLocationAndSizeOfOveraly();hideLoadingDiv();" />
+								
+			<apex:actionFunction name="rerenderTree"
+								rerender="treeWrap" 
+								action="{!reload}"
+								status="loadStatus" />
+									
+			<apex:actionFunction name="rerenderTreeAndFrame" 
+								action="{!reload}"
+								status="loadStatus"
+								onComplete="checkUpdatedBCV();" />	
+
+			<apex:actionFunction name="checkUpdatedBCV" 
+								rerender="treeWrap,framePanel" 
+								action="{!checkUpdatedBCV}"
+								status="loadStatus" />	
+			
+			<div id="createOptionGroup">
+			</div>
+
+			<apex:inputHidden value="{!Product2.Name}" />
+			</div>
+			
+			<apex:actionFunction name="removeSelectedBundle" 
+								action="{!removeSelectedBundle}" 
+								rerender="idEditPOCWrap,idEditPOGWrap"
+								onComplete="loadComplete('.remove-btn');rerenderTreeAndFrame();selectedNodeId='';hideLoadingDiv();">
+				<apex:param name="selectedNodeId"
+							value="" />
+			</apex:actionFunction>
+								
+			<apex:actionFunction name="removeSelectedPOC" 
+								action="{!removeSelectedPOC}"
+								rerender="idEditPOCWrap,idEditPOGWrap"
+								onComplete="loadComplete('.remove-btn');rerenderTreeAndFrame();selectedNodeId='';hideLoadingDiv();">
+				<apex:param name="selectedNodeId"
+							value="" />
+			</apex:actionFunction>
+			
+			
+			<apex:actionFunction name="runBundleMaintenance"
+								action="{!runBundleMaintenance}"
+								immediate="true"
+								rerender="idBatchJobMonitor"/>
+			
+			<!-- inclusion criteria expression dialog -->
+			<apex:outputPanel >
+				<div id="idFilterExprPanel" style="display: none">
+					<apex:outputPanel >
+						<div class="hd">
+					    	<apex:outputPanel >
+					    		<span id="idFilterExprName">Hello Name</span>
+					        </apex:outputPanel>	
+					    </div> 
+					    <div class="bd">
+				    		<apex:pageBlock >
+				    			<apex:pageBlockSection columns="1">
+				    				<apex:pageBlockSectionItem >
+				    					<span id="idFilterExprBody">Hello Description</span>
+					    			</apex:pageBlockSectionItem>
+				    			</apex:pageBlockSection>
+				    		</apex:pageBlock>
+					    </div> 
+					</apex:outputPanel>	
+				</div>
+			</apex:outputPanel>
+		</apex:form>
+	</div><div class="clear"/>
+	
+	<div id="dialog-confirm" title="Remove Confirmation">
+		<p><span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 20px 0;"></span>{!$Label.RemoveMessage}</p>
+	</div>
+	<div class="modal">
+		<div id="loading-box"><img src="/img/loading32.gif" />
+		{!$Label.Loading}...</div>
+	</div>
+
+	<div id="idExpressionPopup" style="display:none; background: #f8f8f8 none; height: 79%">
+      <c:ExpressionBuilder /> 
+    </div>
+	
+</apex:page>

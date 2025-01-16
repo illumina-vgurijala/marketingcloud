@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckProductSourceIsSAPOnCase</fullName>
+    <active>true</active>
+    <description>Products that do not have Source System as SAP cannot be added to Case - CMCM-165</description>
+    <errorConditionFormula>AND(
+	NOT($Profile.Name = $Label.Integration_SAP_Service),
+	NOT($Profile.Name = $Label.Integration_Service_SNAP_Profile),
+	NOT($User.FirstName = $Label.Automated_Process_User),
+	NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+	SVMXC__Product__c !=&apos;&apos;,
+	Case_Product_Source_System__c &lt;&gt; &apos;SAP&apos;, 
+	OR(IsNew(),
+	AND(ISCHANGED(Status),
+	OR (
+		TEXT(PRIORVALUE(Status)) = $Label.CaseStatusInitiated,
+		TEXT(PRIORVALUE(Status)) = $Label.CaseStatusInProgress,
+		TEXT(PRIORVALUE(Status)) = $Label.CaseStatusAwaitingResponseCustomer,
+		TEXT(PRIORVALUE(Status)) = $Label.CaseStatusAwaitingResponseInternal
+		),
+	OR(
+		TEXT(Status) = $Label.CaseStatusPendingLogisticsReview,
+		TEXT(Status) = $Label.CaseStatusPendingQAReview,
+		TEXT(Status) = $Label.CaseStatusCompleted ,
+		TEXT(Status) = $Label.CaseStatusClosedDuplicate,
+		TEXT(Status) = $Label.CaseStatusClosed,
+		TEXT(Status) = $Label.CaseStatusCompleted
+		)
+	),
+	ISCHANGED(SVMXC__Product__c)
+)
+)</errorConditionFormula>
+    <errorDisplayField>SVMXC__Product__c</errorDisplayField>
+    <errorMessage>The Product you selected is an online promotion and can’t be added to Cases or Work Orders. Select the related Product and Save again.</errorMessage>
+</ValidationRule>

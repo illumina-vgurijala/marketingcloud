@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckForRevRecCodeIncotermsChange</fullName>
+    <active>true</active>
+    <description>Validation Rule to enforce user to restrict users from changing Rev Rec Code or Shipping Incoterms 2010 if status is &apos;completed&apos; and &apos;Send Email to Contract Admin And Orders&apos; is false</description>
+    <errorConditionFormula>AND (
+    /* Profiles who bypass rule */
+    $Profile.Name &lt;&gt; $Label.ProfileSystemAdmin,
+    NOT( CONTAINS($Profile.Name, &apos;Integration&apos;)),
+
+    /* Contract review completed */
+    ISPICKVAL(Contract_Review_Status__c , &apos;Completed&apos;),
+    /* Email not sent */
+    NOT(Send_Email_to_Contract_Admin_And_Orders__c),
+    /* Values which need approvals were changed */
+    OR (
+        ISCHANGED(Rev_Rec_Code__c),
+        ISCHANGED(Inco_Term_1__c) 
+    )
+)</errorConditionFormula>
+    <errorDisplayField>Send_Email_to_Contract_Admin_And_Orders__c</errorDisplayField>
+    <errorMessage>You must send an email alert to Contracts Admin and Customer Service Inbox, if the Shipping Incoterms 2010 and/or the Rev Rec Code has been changed after the Contract Status was already &quot;Completed&quot;.</errorMessage>
+</ValidationRule>

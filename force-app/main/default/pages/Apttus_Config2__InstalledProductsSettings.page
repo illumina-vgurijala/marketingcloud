@@ -1,0 +1,343 @@
+<!-- 
+    Apttus Config & Pricing
+    InstalledProductsSettings
+     
+    @2013-2014 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page lightningStylesheets="true" controller="Apttus_Config2.InstalledProductsSettingsController" 
+           standardStylesheets="true"
+           setup="true"
+           tabStyle="Apttus_Config2__InstalledProductsSettings__c" >    
+    
+    <apex:stylesheet value="{!$Resource.Apttus_Config2__ConfigStyles}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-1.8.3.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'js/jquery-ui-1.9.2.custom.min.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__JQueryUILibrary19, 'css/smoothness/jquery-ui-1.9.2.custom.css')}" />
+    
+    <style type="text/css">
+     
+        textarea {
+            width: 40%;
+        }
+        
+        [id$=idRelateValidationSection] .pbSubsection {
+            width: 20%;
+        }
+
+        [id$=idRelateValidationSection] .pbSubsection select {
+            width: 12rem;
+        }
+
+        [id$=idRelateValidationSection] .pbSubsection [class$=relatePanelActions] { 
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        [id$=idCotermSection] .pbSubsection {
+            width: 20%;
+        }
+
+         [id$=idCotermSection] .pbSubsection select {
+            width: 12rem;
+        }
+
+        [id$=idCotermSection] .pbSubsection [class$=cotermPanelActions] { 
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        [id$=idRenewalCotermSection] .pbSubsection {
+            width: 20%;
+        }
+
+         [id$=idRenewalCotermSection] .pbSubsection select {
+            width: 12rem;
+        }
+
+        [id$=idRenewalCotermSection] .pbSubsection [class$=renewalCotermPanelActions] { 
+            vertical-align: middle;
+            text-align: center;
+        }
+
+    </style>
+    <script type="text/javascript">
+        var j$ = jQuery.noConflict();
+    </script>
+    
+    <apex:sectionHeader title="{!$Label.apttus_config2__installedproductssettings}"  
+                        subtitle="{!$Label.apttus_config2__installedproductssettings}" />
+                                            
+    <apex:form id="idInstalledProductsSettings">
+        <apex:pageBlock id="idInstalledProductsSettingsBlock" 
+                        mode="edit" >
+            <apex:pageMessages />
+            <apex:pageBlockButtons >
+                <apex:commandButton value="{!$Label.apttus_config2__save}" 
+                                    action="{!doSave}"
+                                    oncomplete="openSaveSettingModal({!HasErrors})" reRender="idInstalledProductsSettings" />
+                <apex:commandButton value="{!$Label.apttus_config2__cancel}" 
+                                    action="{!doCancel}" 
+                                    immediate="true" />
+            </apex:pageBlockButtons>
+            <apex:outputPanel >         
+                <apex:pageBlockSection columns="2" title="{!$Label.apttus_config2__installedproductssettings}" collapsible="true">
+                    <apex:inputField value="{!systemProperties.Apttus_Config2__DirectConfigureAssetActions__c}"/>
+                    <apex:inputField value="{!systemProperties.Apttus_Config2__HideAssetActions__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__SubmenuActions__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__MaxRenewsPerTrip__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__ShowAccountsFilter__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__AmendChangeFields__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__FilterFields__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__DefaultRenewalTerm__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__HideCoTerm__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__AllowBackdatedTermination__c}"/>
+                    <apex:selectList size="1" 
+                                     multiselect="false"
+                                     value="{!settings.Apttus_Config2__ShowAssets__c}">
+                        <apex:selectOptions value="{!AssetSourceItems}"/>
+                    </apex:selectList>
+                </apex:pageBlockSection>    
+                <apex:pageBlockSection columns="2" title="{!$Label.apttus_config2__renewalsettings}" collapsible="true">
+                    <apex:inputField value="{!settings.Apttus_Config2__RenewalLeadTime__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__RenewalGroupFields__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__DefaultRenewalPriceList__c}"/>
+					<apex:selectList size="1" 
+										multiselect="false"
+										value="{!settings.Apttus_Config2__RenewalExecutionMode__c}" >
+						<apex:selectOptions value="{!RenewalExecutionModeItems}"></apex:selectOptions>
+					</apex:selectList>
+                    <apex:inputField value="{!settings.Apttus_Config2__MaxRenewalLineItemPerCart__c}"/>
+                   	<apex:inputField value="{!settings.Apttus_Config2__MaxRenewalGroupPerJob__c}"/>
+                   	<apex:inputField value="{!settings.Apttus_Config2__RenewalDefaultPriceBook__c}"/>
+					<apex:selectList size="1" 
+										multiselect="false"
+										value="{!settings.Apttus_Config2__RenewalBusinessObjectType__c}" >
+						<apex:selectOptions value="{!RenewalBusinessObjectTypeItems}"></apex:selectOptions>
+					</apex:selectList>
+               </apex:pageBlockSection>
+                <apex:pageBlockSection columns="2" title="{!$Label.apttus_config2__miscellaneoussettings}" collapsible="false">
+                    <apex:inputField value="{!settings.Apttus_Config2__EnableOneTimeChange__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__AssetCurrencyFieldPrecision__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__AllowMassChange__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__CreateRenewalOpportunity__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__RenewOneRamp__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__ShowServiceCoverage__c}"/>
+                    <apex:inputField value="{!settings.Apttus_Config2__AccountHierarchyBatchSize__c}"/>
+                </apex:pageBlockSection> 
+    
+                <apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__EndDatePreferencesForCotermination__c.Label}" 
+                                       columns="5" 
+                                       id="idCotermSection" 
+                                       collapsible="true">
+                    <apex:pageBlockSectionItem id="idCotermLeftSection">
+                        <apex:selectList size="5" 
+                                         multiselect="true"
+                                         value="{!leftCotermList}">
+                            <apex:selectOptions value="{!availableCotermOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyleClass="cotermPanelActions">
+                        <apex:outputPanel >
+                            <apex:outputPanel layout="block" styleClass="text">{!$Label.apttus_config2__add}</apex:outputPanel>
+                            <apex:commandLink action="{!addCotermOption}" 
+                                              reRender="idCotermSection, idDefaultCoterm" 
+                                              status="idActionStatus">
+                                <apex:image value="/s.gif" alt="Add" styleClass="rightArrowIcon" title="Add" />
+                            </apex:commandLink>
+                            <apex:commandLink action="{!removeCotermOption}" 
+                                              reRender="idCotermSection, idDefaultCoterm" 
+                                              status="idActionStatus">
+                                <apex:image value="/s.gif" alt="Remove" styleClass="leftArrowIcon" title="Remove" />
+                            </apex:commandLink>
+                            <apex:outputPanel layout="block" styleClass="text">{!$Label.apttus_config2__remove}</apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem id="idCotermRightSection">
+                        <apex:outputLabel />
+                        <apex:selectList size="5" 
+                                         multiselect="true"
+                                         value="{!rightCotermList}">
+                            <apex:selectOptions value="{!selectedCotermOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+
+                <apex:pageBlockSection >
+                    <apex:selectList size="1"  id="idDefaultCoterm"
+                                      multiselect="false"
+                                      value="{!settings.Apttus_Config2__DefaultCoterminationOption__c}" >
+                            <apex:selectOptions value="{!selectedCotermOptions}"></apex:selectOptions>
+                    </apex:selectList> 
+                </apex:pageBlockSection>
+
+                <apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__CoterminationPreferencesDuringRenewal__c.Label}" 
+                                       columns="5" 
+                                       id="idRenewalCotermSection" 
+                                       collapsible="true">
+                    <apex:pageBlockSectionItem id="idRenewalCotermLeftSection">
+                        <apex:selectList size="5" 
+                                         multiselect="true"
+                                         value="{!leftRenewalCotermList}">
+                            <apex:selectOptions value="{!availableRenewalCotermOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem dataStyleClass="renewalCotermPanelActions">
+                        <apex:outputPanel >
+                            <apex:outputPanel layout="block" styleClass="text">{!$Label.apttus_config2__add}</apex:outputPanel>
+                            <apex:commandLink action="{!addRenewalCotermOption}" 
+                                              reRender="idRenewalCotermSection, idDefaultRenewalCoterm" 
+                                              status="idActionStatus">
+                                <apex:image value="/s.gif" alt="Add" styleClass="rightArrowIcon" title="Add" />
+                            </apex:commandLink>
+                            <apex:commandLink action="{!removeRenewalCotermOption}" 
+                                              reRender="idRenewalCotermSection, idDefaultRenewalCoterm" 
+                                              status="idActionStatus">
+                                <apex:image value="/s.gif" alt="Remove" styleClass="leftArrowIcon" title="Remove" />
+                            </apex:commandLink>
+                            <apex:outputPanel layout="block" styleClass="text">{!$Label.apttus_config2__remove}</apex:outputPanel>
+                        </apex:outputPanel>
+                    </apex:pageBlockSectionItem>
+                    <apex:pageBlockSectionItem id="idRenewalCotermRightSection">
+                        <apex:outputLabel />
+                        <apex:selectList size="5" 
+                                         multiselect="true"
+                                         value="{!rightRenewalCotermList}">
+                            <apex:selectOptions value="{!selectedRenewalCotermOptions}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+
+                <apex:pageBlockSection >
+                    <apex:selectList size="1"  id="idDefaultRenewalCoterm"
+                                      multiselect="false"
+                                      value="{!settings.Apttus_Config2__DefaultRenewalCoterminationOption__c}" >
+                            <apex:selectOptions value="{!selectedRenewalCotermOptions}"></apex:selectOptions>
+                    </apex:selectList> 
+                </apex:pageBlockSection>
+
+				<apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__SplitAssetActions__c.Label}"
+				             id="idSplitAssetActions"
+				             columns="1"
+				             collapsible="true">
+				    <c:SelectList leftLabel="{!$Label.apttus_config2__available} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__SplitAssetActions__c.Label}"
+				        leftOptions="{!splitAssetActions}"
+				        rightLabel="{!$Label.apttus_config2__selected} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__SplitAssetActions__c.Label}"
+				        rightOptions="{!selectedSplitAssetActions}"
+				        showUpDownButtons="false"
+				        size="5"
+				        width="12rem"
+                id="idSplitAssetActionsComponent"/>
+				</apex:pageBlockSection>
+
+				<apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__RelateActionCriteriaFields__c.Label}"
+									   id="idRelateValidationSection"
+									   columns="3"
+									   collapsible="true">
+					<apex:pageBlockSectionItem id="idRelateLeftSection">
+						<apex:selectList size="10" 
+										 multiselect="true"
+										 value="{!leftRelatedSelectedList}">
+							<apex:selectOptions value="{!assetRelatedFields}"></apex:selectOptions>
+						</apex:selectList>
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem dataStyleClass="relatePanelActions">
+						<apex:outputPanel >
+							<apex:outputPanel layout="block" styleClass="text">{!$Label.apttus_config2__add}</apex:outputPanel>
+							<apex:commandLink action="{!addValidationField}" 
+											  reRender="idRelateValidationSection" 
+											  status="idActionStatus">
+								<apex:image value="/s.gif" alt="Add" styleClass="rightArrowIcon" title="Add" />
+							</apex:commandLink>
+							<apex:commandLink action="{!removeValidationField}" 
+											  reRender="idRelateValidationSection" 
+											  status="idActionStatus">
+								<apex:image value="/s.gif" alt="Remove" styleClass="leftArrowIcon" title="Remove" />
+							</apex:commandLink>
+							<apex:outputPanel layout="block" styleClass="text">{!$Label.apttus_config2__remove}</apex:outputPanel>
+						</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+					<apex:pageBlockSectionItem id="idRelateRightSection">
+						<apex:selectList size="10" 
+										 multiselect="true"
+										 value="{!rightRelatedSelectedList}">
+							<apex:selectOptions value="{!selectedAssetRelatedFields}"></apex:selectOptions>
+						</apex:selectList>
+					</apex:pageBlockSectionItem>
+					<apex:outputText value="* {!$ObjectType.Apttus_Config2__PriceDimension__c.Label}"></apex:outputText>
+				</apex:pageBlockSection>
+				<apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__AssetSource__c.Label}"
+									   id="idAssetSource"
+									   columns="1"
+									   collapsible="true">
+				<c:SelectList leftLabel="{!$Label.apttus_config2__available} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__AssetSource__c.Label}"
+							  leftOptions="{!assetSourceFields}"
+							  rightLabel="{!$Label.apttus_config2__selected} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__AssetSource__c.Label}"
+							  rightOptions="{!selectedAssetSourceFields}"
+							  showUpDownButtons="false"
+							  size="14"
+							  width="12rem"
+                id="idAssetSourceComponent"/>
+                </apex:pageBlockSection>
+                <apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__MassEditActionCriteriaFields__c.Label}"
+                                       id="idMassEditCriteriaFields"
+                                       columns="1"
+                                       collapsible="true">
+                    <c:SelectList leftLabel="{!$Label.apttus_config2__available} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__MassEditActionCriteriaFields__c.Label}"
+                                  leftOptions="{!massEditCriteriaFields}"
+                                  rightLabel="{!$Label.apttus_config2__selected} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__MassEditActionCriteriaFields__c.Label}"
+                                  rightOptions="{!selectedMassEditCriteriaFields}"
+                                  showUpDownButtons="false"
+                                  size="14"
+                                  width="12rem"
+                                  id="idMassEditCriteriaFieldsComponent"/>
+                    <apex:outputText value="* {!$ObjectType.Apttus_Config2__PriceDimension__c.Label}"></apex:outputText>
+                </apex:pageBlockSection>
+                <apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__PurchaseIdentificationCriteria__c.Label}"
+                                       id="idCoterminationCriteriaFields"
+                                       columns="1"
+                                       collapsible="true">
+                    <c:SelectList leftLabel="{!$Label.apttus_config2__available} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__PurchaseIdentificationCriteria__c.Label}"
+                                  leftOptions="{!purchaseIdentificationCriteria}"
+                                  rightLabel="{!$Label.apttus_config2__selected} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__PurchaseIdentificationCriteria__c.Label}"
+                                  rightOptions="{!selectedPurchaseIdentificationCriteria}"
+                                  showUpDownButtons="false"
+                                  size="14"
+                                  width="12rem"
+                                  id="idCoterminationCriteriaFieldsComponent"/>
+                    <apex:outputText value="* {!$ObjectType.Apttus_Config2__PriceDimension__c.Label}"></apex:outputText>
+                </apex:pageBlockSection>
+                <apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__MergeActionCriteriaFields__c.Label}"
+                                       id="idMergeActionCriteriaFields"
+                                       columns="1"
+                                       collapsible="true">
+                    <c:SelectList leftLabel="{!$Label.apttus_config2__available} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__MergeActionCriteriaFields__c.Label}"
+                                  leftOptions="{!mergeActionCriteriaFields}"
+                                  rightLabel="{!$Label.apttus_config2__selected} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__MergeActionCriteriaFields__c.Label}"
+                                  rightOptions="{!selectedMergeActionCriteriaFields}"
+                                  showUpDownButtons="false"
+                                  size="14"
+                                  width="12rem"
+                                  id="idMergeActionCriteriaFieldsComponent"/>
+                    <apex:outputText value="* {!$ObjectType.Apttus_Config2__PriceDimension__c.Label}"></apex:outputText>
+                </apex:pageBlockSection>
+                <apex:pageBlockSection title="{!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__EditableFieldsForCancelledLines__c.Label}"
+                                       id="idEditableFieldsForCancelledlines"
+                                       columns="1"
+                                       collapsible="true">
+                    <c:SelectList leftLabel="{!$Label.apttus_config2__available} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__EditableFieldsForCancelledLines__c.Label}"
+                                  leftOptions="{!editableFieldsForCancelledLines}"
+                                  rightLabel="{!$Label.apttus_config2__selected} {!$ObjectType.Apttus_Config2__InstalledProductsSettings__c.Fields.Apttus_Config2__EditableFieldsForCancelledLines__c.Label}"
+                                  rightOptions="{!selectedEditableFieldsForCancelledLines}"
+                                  showUpDownButtons="false"
+                                  size="14"
+                                  width="12rem"
+                                  id="idEditableFieldsForCancelledlinesComponent"/>
+                </apex:pageBlockSection>
+            </apex:outputPanel>
+    
+        </apex:pageBlock>           
+    
+    </apex:form>
+    <c:SaveSettingsModal />
+</apex:page>

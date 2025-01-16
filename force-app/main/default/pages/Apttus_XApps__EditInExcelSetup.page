@@ -1,0 +1,104 @@
+<!-- 
+    Apttus XAuthor Apps
+    EditInExcelSetup
+     
+    @2013-2014 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus_XApps.EditInExcelSetupController" 
+           showHeader="true"
+           sidebar="true"
+           cache="false"   
+           tabStyle="Apttus_XApps__Application__c">	
+    
+    <style type="text/css">
+
+	    .errorRow {
+	        border: 1px solid red;
+	    }
+    
+	    .oddRow {
+	        background-color: #FFFFFF;
+	    }
+    
+	    .evenRow {
+	        background-color: #EDF3FE;
+	    }
+    
+	</style>
+	
+    <apex:sectionHeader title="{!$Label.apttus_xapps__setupeditinexcelapplications}" />
+    
+    <apex:form id="idEditExcelApps">
+		
+		<apex:pageBlock id="idEditExcelAppsBlock" mode="edit">
+			<apex:pageMessages />
+			
+			<apex:pageBlockButtons location="both">
+		        <apex:commandButton value="{!$Label.apttus_xapps__save}" 
+		        					action="{!doSave}"  />
+		        <apex:commandButton value="{!$Label.apttus_xapps__cancel}" 
+		        					action="{!doCancel}" 
+		        					immediate="true"  />
+		    </apex:pageBlockButtons>
+		    
+		    <apex:outputText value="{!$Label.apttus_xapps__editinexcelsetupinstruction}" /> <p/>
+		    
+		    <apex:pageBlockSection id="idAppsSection" 
+		    					   title="Apps" 
+		    					   columns="2" 
+		    					   collapsible="false" >
+		        <apex:pageBlockTable value="{!EditInExcelApps}" 
+		        					 var="app" 
+		        					 rowClasses="oddRow, evenRow" >
+		        	
+		        	<apex:column headerValue="{!$ObjectType.Apttus_XApps__XAuthorEditInExcelApplication__c.Fields.Name.Label}" >
+		        		<apex:outputPanel styleClass="{!IF(app.NameInError, 'errorRow', '')}" layout="block" >
+		        			<apex:inputText id="idName" 
+		        							value="{!app.AppSO.Name}" 
+		        							disabled="{!app.IsStandard}"/>
+						</apex:outputPanel>
+					</apex:column>
+					
+		        	<apex:column headerValue="Application" >
+	        			<apex:selectList id="idApp" 
+	        							 size="1" 
+	        							 value="{!app.AppSO.Apttus_XApps__AppUniqueId__c}" 
+	        							 disabled="{!app.IsStandard}" >
+				      		<apex:selectOptions value="{!AppItems}"></apex:selectOptions>
+				      	</apex:selectList>
+					</apex:column>
+					
+				   	<apex:column width="5%" >
+				    	<apex:commandLink action="{!doAddRow}" 
+							  	  	  	  reRender="idAppsSection" 
+							  	  	  	  rendered="{!(app.AppSO.Apttus_XApps__Sequence__c == LastRowSequence)}">
+							<apex:image url="{!$Resource.Apttus_XApps__Image_Plus2}" 
+			                       			title="{!$Label.apttus_xapps__add}" 
+			                       			alt="{!$Label.apttus_xapps__add}" />   	  	  
+						</apex:commandLink>
+				   	</apex:column>
+				   	<apex:column width="5%" >
+					   	<apex:commandLink id="idDeleteRow" 
+									      action="{!doDeleteRow}" 
+									  	  reRender="idAppsSection" 
+									  	  rendered="{!NOT(app.IsStandard) && app.AppSO.Apttus_XApps__Sequence__c > 1}" >
+							<apex:param name="rowNum" value="{!app.AppSO.Apttus_XApps__Sequence__c}" />	
+							<apex:image url="{!$Resource.Apttus_XApps__Image_Minus2}" 
+				                       		title="{!$Label.apttus_xapps__remove}" 
+				                       		alt="{!$Label.apttus_xapps__remove}" />	  
+						</apex:commandLink>
+					</apex:column>
+				    <apex:column width="20%">
+				   		<apex:outputText value="{!app.ErrorMsg}" style="color:red;" />
+				   	</apex:column>
+				   	
+		        </apex:pageBlockTable>
+		        
+		    </apex:pageBlockSection>
+				    
+		</apex:pageBlock>
+		
+	</apex:form>
+	
+</apex:page>

@@ -1,0 +1,507 @@
+<!--
+ *  Apttus Contract Management
+ *  ParallelReviewCycle
+ *   
+ *  @2019-2020 Apttus Inc. All rights reserved.
+ -->
+ <apex:page sidebar="false" standardController="Apttus__DocumentVersion__c" lightningStylesheets="true"
+ extensions="Apttus.ParallelReviewCycleController" showHeader="{!UPPER($CurrentPage.parameters.source) != 'XAUTHOR'}"
+ action="{!onRedirectToMSTeamReviewCycle}">
+ <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"
+ />
+
+ <style type="text/css">
+    html{
+        background:none!important;
+    }
+    
+    body {
+        margin: 0px;
+		background-color: #b0c4df!important;
+    }
+     .reviewC1 {
+         width: 25%;
+         float: left;
+     }
+    
+     .reviewC1 .bPageBlock {
+         margin-bottom: 0px;
+         height : 96vh;
+         overflow: auto;
+     }
+     
+     .reviewC2 .detailList {
+         background-color: #f3f2f2;
+     }
+     
+     body .bPageTitle .ptBody .pageDescription.headerFont {
+         font-size: 18px;
+         font-family: Arial, Helvetica, sans-serif;
+     }
+     
+     body .btn {
+         margin-right: 10px;
+     }
+     
+     .reviewC2 {
+         background: white!important;
+         padding: 3px;
+     }
+     
+     .bPageTitle {
+         background-color: #f3f2f2;
+     }
+     
+     .boldFont {
+         font-weight: bold;
+         font-size: 14px;
+     }
+     
+     .greyBackground {
+         background: #f3f2f2;
+     }
+     
+     .reviewerP {
+         float: right;
+         height: 100%;
+     }
+     
+     .floatRight {
+         float: right;
+     }
+     
+     .reviewerC {
+         height: 100%;
+         min-height:94vh;
+         margin: 10px;
+         box-shadow: 0 2px 2px 0;
+         border: 1px solid rgb(221, 219, 218);
+         background: #FFFFFF;
+         border-radius:.25rem;
+     }
+     
+     .popupBackground {
+         background-color: black;
+         opacity: 0.1;
+         filter: alpha(opacity=10);
+         position: fixed;
+         width: 100%;
+         height: 100%;
+         top: 0;
+         left: 0;
+         z-index: 9998;
+     }
+     
+     .popUpHeaderPanel {
+         padding: 10px;
+         border-bottom: 2px solid #e7e7ea;
+         text-align: center;
+     }
+     
+     .popUpButtonContainer {
+         border-top: 2px solid #e7e7ea;
+         text-align: right;
+         padding: 20px;
+         border-bottom-left-radius: .5em;
+         border-bottom-right-radius: .5em;
+         background: #f3f2f3;
+     }
+     
+     .popUpHeaderText {
+         color: #404040;
+         font-size: 1rem;
+         font-weight: 700;
+     }
+     
+     .custPopup {
+         background-color: white;
+         z-index: 9999;
+         left: 50%;
+         position: absolute;
+         width: 540px;
+         margin-left: -250px;
+         top: 100px;
+         border-radius: .5em;
+     }
+     
+     .popUpInputContainer {
+         padding: 20px;
+         font-size: 1rem;
+     }
+     
+     .popUpInputLabel {
+         color: #4a4a4a;
+     }
+     
+     body .headerRow,
+     .slds-vf-scope .headerRow {
+         text-transform: none;
+     }
+     
+     body .bPageBlock .detailList .labelCol {
+         text-align: left;
+     }
+     
+     .greyBackground table.detailList tbody tr th,
+     .greyBackground table.detailList tbody tr td {
+         font-size: 0.75rem !important;
+     }
+     
+     .greyBackground table.detailList {
+         display: flex;
+     }
+     
+     .greyBackground .detailList .dataCol{
+         padding-left:2px;
+     }
+
+    .reviewCyleBorderGreen {
+        border-left-width: 4px;
+        border-left-style: solid;
+        border-left-color: #00cc44;
+        padding-left : 6px;
+        padding-bottom : 3px;
+        padding-top : 3px;
+    }
+
+    .reviewCyleBorderBlue {
+        border-left-width: 4px;
+        border-left-style: solid;
+        border-left-color: #0099ff;
+        padding-left : 6px;
+        padding-bottom : 3px;
+        padding-top : 3px;
+    }
+
+    .reviewCyleBorderRed {
+        border-left-width: 4px;
+        border-left-style: solid;
+        border-left-color: #ff3300;
+        padding-left : 6px;
+        padding-bottom : 3px;
+        padding-top : 3px;
+    }
+
+    .redColor{
+        color : #ff3300;
+        float: right;
+    }
+    
+    .blueColor{
+        color : #0099ff;
+        float: right;
+    }
+
+    .greenColor{
+        color : #00cc44;
+        float: right;
+    }
+	
+	.noWrap {
+		white-space: nowrap!important;
+	}
+	
+	.btnDisplay {
+		display: inline!important;
+	}
+    
+    .reviewCycleStyle {
+         background: white!important;
+         padding: 3px;
+     }
+
+    .reviewCycleDetail {
+         background: #f3f2f2;
+         margin-top: 10px;
+         margin-left: 10px;
+     }
+
+     .marginleftTableCell {
+        padding-left:10px;
+     }
+     </style>
+
+ <apex:outputPanel rendered="{!OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t')}">
+     <apex:slds />
+     <apex:stylesheet value="{!URLFOR($Resource.Apttus__SLDS080, 'assets/styles/salesforce-lightning-design-system-vf.css')}"/>
+ </apex:outputPanel>
+
+ <apex:variable var="reviewActionMultipleCancel" value="cancelReviewers" />
+ <apex:variable var="reviewActionCancel" value="cancelReview" />
+ <apex:variable var="reviewActionAdd" value="AddReviewers" />
+ 
+ <apex:outputText value="{!Apttus__DocumentVersion__c.Apttus__Title__c}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!Apttus__DocumentVersion__c.Apttus__LatestVersionId__c}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!Apttus__DocumentVersion__c.AgreementId__r.Name}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!Apttus__DocumentVersion__c.LatestVersionId__r.Apttus__ContentId__c}" rendered="false"></apex:outputText>
+ <apex:outputText value="{!Apttus__DocumentVersion__c.TemplateId__r.Id}" rendered="false"></apex:outputText>
+ 
+
+ <div class="{!IF(OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t'), 'slds-scope' ,'' )}">
+     <apex:form enctype="multipart/form-data" id="form">
+
+         <!-- loads the page header for classic view -->
+         <apex:outputPanel rendered="{!Not(IsLightningTheme)}">
+             <div class="bPageTitle">
+                 <div class="ptBody">
+                     <div class="content">
+                         <img src="{!URLFOR($Resource.LightningResource, '/images/headericons/SendReview.png')}"
+                             alt="Review Cycle" class="pageTitleIcon" title="{!$Label.ReviewCycle}"
+                         />
+                         <h1 class="pageType">{!$Label.ReviewCycle}<span class="titleSeparatingColon">:</span>
+                         </h1>
+                         <h2 class="pageDescription headerFont"> {!agreementname}<span class="titleSeparatingColon">:</span>
+                         </h2>
+                         <span> {!docTitle}<span class="titleSeparatingColon">:</span></span>
+                         <div class="blank">&nbsp;</div>
+                     </div>
+                     <div style="float:right">
+						 <apex:outputPanel rendered="{!UPPER($CurrentPage.parameters.source) != 'XAUTHOR'}">
+							 <apex:commandButton action="{!loadReviewCycleInfo}" value="{!$Label.apttus__refreshreviewcycle}" />
+							 <apex:commandButton action="{!cancel}" value="{!$Label.apttus__reviewexit}" />
+						 </apex:outputPanel>
+                     </div>
+                 </div>
+             </div>
+         </apex:outputPanel>
+        <!-- loads the page header for lightning view -->
+        <apex:outputPanel rendered="{!IsLightningTheme}">
+            <div id="loading">{!$Label.LoadingPage}</div>
+            <script>    
+                var lightningRedirectURL = '/lightning/cmp/{!nsPrefix}__ParallelReviewCycleContainer?{!nsPrefix}__recordId={!docVersionId}';
+                
+                if((typeof sforce != 'undefined') && sforce && sforce.one) {
+                    sforce.one.navigateToURL(lightningRedirectURL);            
+                }        
+            </script> 
+        </apex:outputPanel>        
+
+         <div class="reviewP">
+             <!-- loads panel for list of review cycles -->
+             <apex:outputPanel rendered="{!Not(IsLightningTheme)}">
+             <apex:outputPanel id="reviewCyclePanel" layout="block" rendered="{!$User.UIThemeDisplayed != 'Theme4t'}" styleclass="reviewC1">
+                 <apex:pageBlock id="pb1" rendered="{!(hasReviewCycles)}">
+                     <apex:repeat value="{!reviewCyclesWrapper}" var="reviewCycle">
+                         <apex:outputPanel layout="block" id="reviewcyclePanel" styleclass="reviewCycleStyle">
+                         <apex:outputPanel styleClass="{!reviewCycle.selectedBorder}" >
+                             <apex:commandLink action="{!loadReviewers}" value="{!reviewCycle.reviews.Name}" reRender="reviewerpanel"
+                                 styleClass="boldFont" style="color:black">
+                                 <apex:param value="{!reviewCycle.reviews.Id}" name="CycleId" assignTo="{!selectReviewCycleId}"
+                                 />
+                                 <apex:param value="{!reviewCycle.reviews.Name}" name="CycleName" assignTo="{!selectReviewCycleName}"
+                                 />
+                                 <apex:param value="{!reviewCycle.reviews.Apttus__ReviewStatus__c}" name="CycleStatus" assignTo="{!selectReviewCycleStatus}"
+                                 />
+                             </apex:commandLink>&nbsp;&nbsp;&nbsp;
+                             <apex:outputText value="{!reviewCycle.reviews.Apttus__ReviewStatus__c}" 
+                             styleClass="{!reviewCycle.selectedColor}"></apex:outputText><br/>
+                        </apex:outputPanel>
+                             <apex:outputPanel layout="block" styleClass="reviewCycleDetail">
+                                 <div style="padding:10px">
+                                    <table>
+										<tr>
+											<td>
+												<span>{!$Label.apttus__initiatedby}</span> <br/> 
+												<apex:outputField label="{!$Label.apttus__initiatedby}" value="{!reviewCycle.reviews.CreatedById}"
+													rendered="{!UPPER($CurrentPage.parameters.source) != 'XAUTHOR'}"/>
+												
+												<!-- remove link to user if source = XAuthor -->
+												<apex:outputText label="{!$Label.apttus__initiatedby}" value="{!reviewCycle.reviews.CreatedBy.Name}"
+													rendered="{!UPPER($CurrentPage.parameters.source) == 'XAUTHOR'}"/>
+												<br/><br/>
+											</td>
+										</tr>
+                                        <tr><td>
+                                            <span>{!$Label.apttus__initiatedon}</span><br/>
+                                            <apex:outputField label="{!$Label.apttus__initiatedon}" value="{!reviewCycle.reviews.createddate}"/>
+                                        </td>
+                                        <td class="marginleftTableCell">
+                                            <span>{!$Label.apttus__reviewcycleendedon}</span><br/>                  
+                                            <apex:outputField label="{!$Label.apttus__reviewcycleendedon}" value="{!reviewCycle.reviews.Apttus__EndedCancelledOn__c}"/> 
+                                        </td></tr>
+                                    </table>
+                                 </div>
+                             </apex:outputPanel><br/><br/>
+                         </apex:outputPanel>
+                     </apex:repeat>
+                 </apex:pageBlock>
+             </apex:outputPanel>
+             </apex:outputPanel>
+
+             <!-- loads panel for list of reviewers for a particular review cycle selected -->
+             <apex:outputpanel id="reviewerpanel" layout="block" style="width:{!IF($User.UIThemeDisplayed == 'Theme4t', '100%' ,'75%' )};" styleClass="reviewerP slds-brand-band slds-brand-band_cover slds-brand-band_medium"  rendered="{!Not(IsLightningTheme)}">  
+                 <apex:outputPanel id="error" layout="block" rendered="{!hasErrors}">
+                   <apex:pageMessages />
+                 </apex:outputPanel>
+                 <apex:outputpanel layout="block" styleClass="reviewerC" style="margin:{!IF(OR($User.UIThemeDisplayed == 'Theme4d', $User.UIThemeDisplayed == 'Theme4t'), '10px' ,'0px 10px' )};">
+                     <apex:pageBlock id="pb2" mode="maindetail" title="{!selectReviewCycleName}">
+                         <apex:pageBlockButtons location="top" rendered="{!UPPER($CurrentPage.parameters.source) != 'XAUTHOR'}">
+                             <apex:outputpanel id="button1" styleClass="floatRight" rendered="{!IF((selectReviewCycleStatus ='In Progress' || selectReviewCycleStatus = 'Not Started' ),true,false)}">
+                                 <apex:commandButton style="margin-left:10px" action="{!addreviewerurl}" value="{!$Label.apttus__addreviewer}">
+                                     <apex:param value="{!reviewActionAdd}" name="reviewAction" assignTo="{!reviewAction}" />
+                                    </apex:commandButton>
+                                 <apex:commandButton styleClass="btnDisplay slds-button slds-button_brand" action="{!showPopup}" value="{!$Label.apttus__cancelreview}" rerender="popup" disabled="{!disabled}">
+                                     <apex:param value="{!reviewActionMultipleCancel}" name="reviewAction" assignTo="{!reviewAction}" />
+                                 </apex:commandButton>
+                             </apex:outputpanel>
+                         </apex:pageBlockButtons>
+                         <apex:pageBlockTable id="BFTable2a" value="{!reviewerWrapper}" rowClasses="firstHeaderRow"
+                             var="a" columns="8">
+                             <apex:column width="20px" rendered="{!UPPER($CurrentPage.parameters.source) != 'XAUTHOR'}">
+                                 <apex:facet name="header"></apex:facet>
+                                 <apex:inputCheckbox value="{!a.selected}" id="checkedone" rendered="{!IF(((a.reviewer.ReviewStatus__c ='In Progress' || a.reviewer.ReviewStatus__c = 'Not Started' ) &&
+                                                 (selectReviewCycleStatus ='In Progress' || selectReviewCycleStatus = 'Not Started' )),true,false)}">
+                                     <apex:actionSupport event="onclick" action="{!GetSelected}" rerender="reviewerpanel" />
+                                 </apex:inputCheckbox>
+                             </apex:column>
+							 <apex:column headerValue="{!$Label.apttus__name}">
+                                 <apex:outputText value="" rendered="{!CONTAINS(a.reviewer.Apttus__ReviewerEmail__c, a.reviewer.Name)}"/>
+                                 <apex:outputText value="{!a.reviewer.Name}" rendered="{!NOT(CONTAINS(a.reviewer.Apttus__ReviewerEmail__c, a.reviewer.Name))}"/>                                 
+                             </apex:column>
+                             <apex:column headerValue="{!$Label.apttus__revieweremail}" value="{!a.reviewer.Apttus__ReviewerEmail__c}"
+                             />
+                             <apex:column headerValue="{!$Label.apttus__startdate}" value="{!a.reviewer.CreatedDate}"
+                             />
+                             <apex:column headerValue="{!$Label.apttus__enddate}" value="{!a.reviewer.Apttus__EndedCancelledOn__c}"
+                             />
+                             <apex:column headerValue="{!$Label.apttus__reviewstatus}" value="{!a.reviewer.Apttus__ReviewStatus__c}"
+                             />
+                             <apex:column headerValue="{!$Label.apttus__comments}" value="{!a.reviewer.Apttus__Comment__c}" />
+                             <apex:column headerValue="{!$Label.apttus__actions}" rendered="{!UPPER($CurrentPage.parameters.source) != 'XAUTHOR'}">
+                                 <apex:outputpanel rendered="{!IF(((a.reviewer.ReviewStatus__c ='In Progress' || a.reviewer.ReviewStatus__c = 'Not Started' ) &&
+                                                 (selectReviewCycleStatus ='In Progress' || selectReviewCycleStatus = 'Not Started' )),true,false)}">
+                                    
+									<button type="button" class="slds-button slds-button_brand noWrap"
+										onclick="openEndReviewPopUp('{!a.reviewer.Id}')">{!$Label.EndReview}</button>
+										                                    
+									<button type="button" class="slds-button slds-button_neutral noWrap" style="margin-left:0rem !important"
+										onclick="openPopUp('{!reviewActionCancel}','{!a.reviewer.Id}')">{!$Label.apttus__cancelreview}</button>
+										
+                                 </apex:outputpanel>
+                             </apex:column>
+                         </apex:pageBlockTable>
+                     </apex:pageBlock>
+                     <apex:actionFunction name="openPopUp" action="{!showPopup}" rerender="popup">
+                         <apex:param value="" name="reviewAction" assignTo="{!reviewAction}" />
+                         <apex:param value="" name="SelectedreviewerId" assignTo="{!SelectedreviewerId}" />
+                     </apex:actionFunction>
+                     <apex:actionFunction name="openEndReviewPopUp" action="{!showPopup}" rerender="endReviewPopUp">
+                         <apex:param value="" name="SelectedreviewerId" assignTo="{!SelectedreviewerId}" />
+                     </apex:actionFunction>
+                 </apex:outputpanel>
+             </apex:outputpanel>
+
+             <apex:outputPanel id="popup">
+                 <apex:outputPanel styleClass="popupBackground" layout="block" rendered="{!displayPopUp}"
+                 />
+                 <apex:actionRegion >
+                     <apex:outputPanel styleClass="custPopup" layout="block" rendered="{!displayPopUp}">
+                         <div class="popUpHeaderPanel">
+                             <span class="popUpHeaderText">{!$Label.apttus__cancelreview}</span>
+                         </div>
+                         <div class="popUpInputContainer">
+                             <apex:outputPanel >
+                                 <span style="padding-top:25px;font-family=Arial, Helvetica, sans-serif;font-size:12px;font-weight:bold;">{!$Label.apttus__popupconfirmationmessage}</span>
+                             </apex:outputPanel><br></br><br></br>
+                                 <span style="padding-top:25px;font-family=Arial, Helvetica, sans-serif;font-size:12px">{!$Label.PopupCommentText}</span><br/>
+                             <apex:outputPanel >
+                                 <apex:inputTextArea style="margin: 0px;width:100%; height: 107px; font-size:12px"
+                                     html-maxlength="252" rows="5" id="comments" label="Comments"
+                                     value="{!reviewActionComment}" styleClass="popUpInputLabel"
+                                     html-placeholder="Max 252 characters" />
+                             </apex:outputPanel><br></br><br></br>
+                             <apex:outputPanel >
+                                 <span style="padding-top:25px;font-family=Arial, Helvetica, sans-serif;font-size:12px">{!$Label.apttus__popupnote}</span>
+                             </apex:outputPanel>
+                         </div>
+
+                         <div class="greyBackground popUpButtonContainer">
+                             <apex:outputPanel >
+                                 <button type="button" class="slds-button slds-button_neutral" onclick="cancel()">
+                             <span>{!$Label.Cancel}</span> 
+                         </button>
+                             </apex:outputPanel>
+                             <apex:outputPanel >
+                                 <button type="button" class="slds-button slds-button_brand" onclick="save()">
+                             <span>{!$Label.Submit}</span>
+                         </button>
+                             </apex:outputPanel>
+                             <apex:actionFunction name="cancel" action="{!closePopup}" reRender="reviewerpanel,reviewCyclePanel,popup"
+                             />
+                             <apex:actionFunction name="save" action="{!cancelReviewForReviewer}" reRender="reviewerpanel,reviewCyclePanel,popup">
+                             </apex:actionFunction>
+                         </div>
+                     </apex:outputPanel>
+                 </apex:actionRegion>
+             </apex:outputPanel>
+             
+            <apex:outputPanel id="endReviewPopUp">
+                <apex:actionRegion >
+                    <apex:outputPanel styleClass="popupBackground" layout="block" rendered="{!displayPopUp}" />
+                    <apex:outputPanel styleClass="custPopup" layout="block" rendered="{!displayPopUp}">
+                        <div class="popUpHeaderPanel">
+                            <span class="popUpHeaderText">{!$Label.UploadDocumentEndReview}</span>
+                        </div>
+                        <div class="popUpInputContainer">
+                            <span style="font-size:12px;font-weight:bold;">{!$Label.EndReviewPopupConfirmationMessage}</span><br/>
+							<span style="font-size:12px;font-weight:bold;">{!$Label.EndReviewPopupWithoutDocumentMessage}</span>
+                            <br/><br/>
+                            <apex:outputPanel rendered="{!displayError}">
+                                <span style="color:red;">{!$Label.apttus__endreviewfileuploaderrormessage}</span><br/><br/>                     
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!displaySelectFileError}">
+                                <span style="color:red;">{!$Label.apttus__documenttoupload}</span><br/><br/>                         
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!displayUploadFileError}">
+                                <span style="color:red;">{!$Label.apttus__documentuploadbeforeendreview}</span><br/> <br/>                           
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!displayUploadFileSuccess}">
+                                <span style="color:green;">{!$Label.apttus__fileuploadedsuccessfully}</span><br/> <br/>                           
+                            </apex:outputPanel>
+                            <apex:outputPanel >                              
+                                <apex:inputFile value="{!fileBody}" fileName="{!fileName}" style="font-size: .9rem;"/>
+                                
+                            </apex:outputPanel>
+                            <apex:outputPanel >
+                                    <button type="button" style="float:right; font-size: 0.75rem"  class="slds-button slds-button_brand" text="{!$Label.Upload}" onclick="upload()">
+                                        <span>{!$Label.Upload}</span> 
+                                    </button>
+                                </apex:outputPanel>
+                                <br></br><br></br><br></br>
+                                <span style="padding-top:25px;font-family=Arial, Helvetica, sans-serif;font-size:12px">{!$Label.apttus__comments}</span><br/>
+                            <apex:outputPanel >
+                                <apex:inputTextArea style="width:496px; height: 107px; font-size:12px" html-maxlength="252"
+                                        rows="5" id="endReviewComments" label="Comments" value="{!reviewActionComment}"
+                                        styleClass="popUpInputLabel" html-placeholder="{!$Label.apttus__maximumcharacters}"/>
+                            </apex:outputPanel><br></br> 
+                        </div>
+                        <div class="greyBackground popUpButtonContainer">
+                                <apex:outputPanel >
+                                    <button type="button" class="slds-button slds-button_neutral" text="{!$Label.Cancel}" onclick="cancel()">
+                                        <span>{!$Label.Cancel}</span>
+                                    </button>
+                                </apex:outputPanel>
+                                <apex:outputPanel >
+                                    <button type="button" class="slds-button slds-button_brand" onclick="processEndReview()">
+                                        <span>{!$Label.EndReview}</span> 
+                                    </button>
+                                </apex:outputPanel>
+                                <apex:actionFunction name="cancel" action="{!closePopup}"/>
+                                <apex:actionFunction name="upload" action="{!doUploadEndReviewDocument}"/>
+                                <apex:actionFunction name="save" action="{!doEndReviewForReviewer}"/>
+                        </div>
+                        <script>
+                            function  processEndReview() {
+                                alert('{!JSENCODE($Label.EndReviewIsProcessing)}');
+                                save();
+                            }
+                        </script>
+                    </apex:outputPanel>
+                </apex:actionRegion>
+            </apex:outputPanel>
+        </div>
+     </apex:form>
+ </div>
+ </html>
+</apex:page>

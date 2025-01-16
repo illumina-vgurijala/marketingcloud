@@ -1,0 +1,315 @@
+<apex:page showHeader="true" sidebar="false" tabStyle="DupeBlocker_Settings_VF__tab" standardStylesheets="true" controller="CRMfusionDBR101.SettingsEnableObjectController">
+  <c:DB_Settings_Style />
+
+	<style>
+    .ui-progressbar .ui-progressbar-value {
+      background-image: url({!$Resource.DB_Icons}/pbar-ani.gif);
+    }
+  </style>
+
+  <!-- add SettingsEnableObject component here -->
+  <c:SettingsEnableObject />
+
+  <script type="text/javascript">
+
+    var REMOTE_CALL_DELAY_IN_MS = 20;
+    var LABEL_RETRIEVE_BATCH_SIZE = 90;
+    var objectApiNames = new Array();
+    var objectLabelMap = new Object();
+    var pendingObjectLabelCalls = 0;
+
+		$(document).ready( function() {
+			initObjectList();
+		});
+
+		// Get the API names of all available objects and retrieve the labels.
+		function initObjectList()
+		{
+		<apex:repeat value="{!availableObjects0}" var="objectName" id="objectListRepeater0" >
+			objectApiNames.push( '{!JSENCODE( objectName )}' );
+		</apex:repeat>
+		<apex:repeat value="{!availableObjects1}" var="objectName" id="objectListRepeater1" >
+			objectApiNames.push( '{!JSENCODE( objectName )}' );
+		</apex:repeat>
+		<apex:repeat value="{!availableObjects2}" var="objectName" id="objectListRepeater2" >
+			objectApiNames.push( '{!JSENCODE( objectName )}' );
+		</apex:repeat>
+		<apex:repeat value="{!availableObjects3}" var="objectName" id="objectListRepeater3" >
+			objectApiNames.push( '{!JSENCODE( objectName )}' );
+		</apex:repeat>
+			objectApiNames.sort();
+
+			// Loop through our api names in batches of LABEL_RETRIEVE_BATCH_SIZE and query the labels for the objects.
+			for ( var x = 0; x < objectApiNames.length; x += LABEL_RETRIEVE_BATCH_SIZE )
+			{
+				var apiNamesBatch = objectApiNames.slice( x, Math.min( x + LABEL_RETRIEVE_BATCH_SIZE, objectApiNames.length ) );
+				var delay = pendingObjectLabelCalls * REMOTE_CALL_DELAY_IN_MS;
+				delayLoadObjectNames( apiNamesBatch, delay );
+				pendingObjectLabelCalls++;
+			}
+		}
+
+		// Load labels for api names after the specified delay.
+		function delayLoadObjectNames( apiNamesBatch, delayInMs )
+		{
+			setTimeout( function() {
+				Visualforce.remoting.Manager.invokeAction(
+					'{!$RemoteAction.SettingsEnableObjectController.getObjectLabels}',
+					apiNamesBatch,
+					handleGetObjectLabelsResult,
+					{escape: true}
+				);
+			}, delayInMs );
+		}
+
+		// Process object labels.
+		function handleGetObjectLabelsResult( result, event )
+		{
+			pendingObjectLabelCalls--;
+			// If the call failed, display an error and exit.
+			if ( !event.status )
+			{
+				displayError( event.message );
+				return;
+			}
+
+			// Copy the results into our label map.
+			$.extend( objectLabelMap, result );
+
+			// If this is the last result, update our selectedObject list.
+			if ( pendingObjectLabelCalls == 0 )
+				buildSelectedObject();
+		}
+
+		// Build the select options for our selectedObject select list.
+		function buildSelectedObject()
+		{
+			// Add the options to our select list.
+			for ( var x = 0; x < objectApiNames.length; x++ )
+        $('#selectedObject').append('<option value="' + objectApiNames[x] + '" data-label="' + objectLabelMap[objectApiNames[x]] + '">' +
+					objectLabelMap[objectApiNames[x]] + ' [' + objectApiNames[x] + ']</option>');
+
+			// Sort the select list.
+			var options = $('#selectedObject option');
+			options.sort( function( a, b ) {
+				if ( a.text > b.text )
+					return 1;
+				else if ( a.text < b.text )
+					return -1;
+				else
+					return 0;
+			});
+
+			// Reset the select list and append the new sorted values.
+			$('#selectedObject').empty().append( options );
+		}
+
+		// Re-enable objects, reset variables, etc..
+		function cleanUp()
+		{
+			enabling = false;
+			disabling = false;
+
+			// Enable the deploy button and select list.
+			$('#enableButton').removeAttr( 'disabled' );
+			$('#selectedObject').removeAttr( 'disabled' );
+
+			selectedObject = null;
+			deploymentJobId = null;
+    }
+
+		// Display a progress message.
+		function displayProgress( message, title )
+		{
+			if ( $( '#dialog-message' ).hasClass( 'ui-dialog-content' ) )
+				$( '#dialog-message' ).dialog( 'close' );
+
+			if (!title)
+				title = 'Enabling Object';
+			$( '#dialog-progress' ).attr( 'title', title );
+			$( '#dialog-progress' ).html( message );
+			$( '#dialog-progress').dialog({
+				modal: true,
+				minWidth: 500,
+				closeOnEscape: false,
+				open: function(event, ui) {
+					$(".ui-dialog-titlebar-close", $(this).parent()).hide();
+				}
+			});
+		}
+
+		// Display any messages
+		function displayMessage( message, title, execFunc )
+		{
+			if ( $( '#dialog-progress' ).hasClass( 'ui-dialog-content' ) )
+				$( '#dialog-progress' ).dialog( 'close' );
+
+			if (!title)
+				title = 'Enable Object';
+			$( '#dialog-message' ).attr( 'title', title );
+			$( '#dialog-message' ).html( message );
+			$( '#dialog-message').dialog({
+				modal: true,
+				minWidth: 500,
+				buttons: {
+					Ok: function() {
+						cleanUp();
+						$( this ).dialog( 'close' );
+						if ( execFunc )
+							execFunc();
+					}
+				}
+			});
+		}
+
+		// Display any error messages
+		function displayError( message, title, execFunc )
+		{
+			if ( $( '#dialog-progress' ).hasClass( 'ui-dialog' ) )
+				$( '#dialog-progress' ).dialog( 'close' );
+			if ( $( '#dialog-message' ).hasClass( 'ui-dialog' ) )
+				$( '#dialog-message' ).dialog( 'close' );
+
+			if (!title)
+				title = 'Enable Object Error';
+			if (!execFunc)
+				execFunc = quit;
+			$( '#dialog-errorMessage' ).attr( 'title', title );
+			$( '#dialog-errorMessage' ).html( message );
+			$( '#dialog-errorMessage').dialog({
+				modal: true,
+				minWidth: 500,
+				buttons: {
+					Ok: function() {
+						cleanUp();
+						$( this ).dialog( 'close' );
+						if ( execFunc )
+							execFunc();
+					}
+				}
+			});
+    }
+
+    function enableObject() {
+
+			if ( !$('#selectedObject option:selected').val() )
+			{
+				alert( 'You must select an object from the list.' );
+				return;
+      }
+
+			// Disable the deploy button and select list.
+			$('#enableButton').attr( 'disabled', 'disabled' );
+      $('#selectedObject').attr( 'disabled', 'disabled' );
+
+			var selectedObject = $('#selectedObject option:selected').val();
+      var selectedObjectLabel = $('#selectedObject option:selected').attr('data-label');
+
+
+      DupeBlockerEnableObjects.enableObject(selectedObject, selectedObjectLabel,
+        function (action, message) {
+
+          switch(action) {
+            case 'error':
+              displayError( message );
+              break;
+            case 'enable-object-done':
+              displayMessage(message, 'Object Enabled', quit);
+              break;
+          }
+
+        });
+
+			// Display a message indicating we're processing.
+			displayProgress( 'Enabling DupeBlocker for ' + selectedObjectLabel + ' ['+ selectedObject +'].  This may ' +
+				'take up to a few minutes as unit tests must be run.', 'Enabling Object' );
+
+    }
+
+    function disableObject(apiName, label, triggerName, className) {
+
+			// Disable the deploy button and select list.
+			$('#enableButton').attr( 'disabled', 'disabled' );
+			$('#selectedObject').attr( 'disabled', 'disabled' );
+
+
+      DupeBlockerEnableObjects.disableObject(apiName, label, triggerName, className,
+        function (action, message) {
+
+          switch (action) {
+            case 'error':
+              displayError( message );
+              break;
+            case 'disable-object-done':
+              displayMessage(message, 'Object Disabled', quit);
+              break;
+          }
+        });
+
+			// Display a message indicating we're processing.
+			displayProgress( 'Disabling DupeBlocker for ' + label + ' [' + apiName + '].', 'Disabling Object' );
+
+    }
+
+		function quit()
+		{
+			location.reload();
+		}
+
+  </script>
+
+	<table class="pageTable" width="100%" cellspacing="0" cellpadding="0">
+		<tr>
+			<td class="leftCol" width="220px"><c:DB_Settings_Menu page="enableobjects" /></td>
+			<td class="rightCol">
+        <div>
+          <apex:sectionHeader title="DupeBlocker Settings" subTitle="Enable/Disable DupeBlocker for Selected Objects" />
+          <apex:actionRegion id="enableOutput">
+            <apex:pageMessages />
+            <apex:form id="enableForm">
+              <apex:pageBlock id="enableBlock" mode="edit">
+                <apex:pageBlockSection columns="1" collapsible="false" showHeader="false">
+                  <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$Label.crmfusiondbr101__db_eo_object_select_label}" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                      <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                      <select id="selectedObject" name="selectedObject" size="10">
+                      </select>
+                    </apex:outputPanel>
+                  </apex:pageBlockSectionItem>
+                </apex:pageBlockSection>
+                <div style="text-align: center">
+                  <input type="submit" id="enableButton" value="Enable" onClick="enableObject(); return false;" />
+                </div>
+              </apex:pageBlock>
+            </apex:form>
+          </apex:actionRegion>
+          <apex:form >
+            <apex:pageBlock mode="maindetail" title="DupeBlocker Enabled Objects">
+              <apex:pageBlockSection columns="2">
+                <apex:outputText value="No additional objects currently enabled." rendered="{!NOT( haveEnabledObjects )}" />
+                <apex:repeat value="{!enabledObjects}" var="enabledObject">
+                  <apex:pageBlockSectionItem >
+                    <apex:outputText escape="false" value="{!enabledObject.displayName}" />
+                    [<a href="#"
+                      onclick="disableObject( '{!enabledObject.apiName}', '{!enabledObject.label}', '{!enabledObject.triggerName}', '{!enabledObject.className}' ); return false;">disable</a>]
+                  </apex:pageBlockSectionItem>
+                </apex:repeat>
+              </apex:pageBlockSection>
+            </apex:pageBlock>
+          </apex:form>
+        </div>
+        <div id="dialog-errorMessage"></div>
+        <div id="dialog-message"></div>
+        <div id="dialog-progress"></div>
+
+      </td>
+		</tr>
+  </table>
+
+	<apex:includeScript value="{!URLFOR($Resource.CRMfusionDBR101__DB_Javascript, 'jquery.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.CRMfusionDBR101__DB_Javascript, 'jquery-ui.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.CRMfusionDBR101__DB_Javascript, 'jszip/jszip.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.CRMfusionDBR101__DB_Javascript, 'jszip/jszip-deflate.js')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.CRMfusionDBR101__DB_Themes, 'jquery-ui-lightness/jquery-ui-lightness.min.css')}" />
+</apex:page>

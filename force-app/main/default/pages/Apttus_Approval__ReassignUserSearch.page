@@ -1,0 +1,129 @@
+<!-- 
+    Apttus Approvals Management
+    ReassignUserSearch
+     
+    @2010-2019 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Approval_Request__c"
+           extensions="Apttus_Approval.ReassignUserSearchController"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' ||
+                                   $User.UIThemeDisplayed == 'Theme4u' ||
+                                   $User.UIThemeDisplayed == 'Theme4t'}">
+
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+
+    <apex:sectionHeader title="{!$Label.apttus_approval__reassignusersearch}" rendered="{!isReassignedToTypeUser}"/>
+    <apex:sectionHeader title="{!$Label.apttus_approval__reassignqueuesearch}" rendered="{!isReassignedToTypeQueue}"/>
+    <apex:sectionHeader title="{!$Label.apttus_approval__reassignrolesearch}" rendered="{!isReassignedToTypeRole}"/>
+    
+    <apex:form >
+        <apex:PanelGrid columns="3" cellpadding="2">
+        
+            <apex:outputLabel value="{!$Label.apttus_approval__search}" for="idSearchTextC" rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" style="font-weight: bold;" />
+            <apex:inputText id="idSearchTextC" rendered="{!$User.UIThemeDisplayed != 'Theme4d' && $User.UIThemeDisplayed != 'Theme4u'}" value="{!searchText}" size="25" style="height:15px;font-size:13px;" />
+            <apex:outputLabel value="{!$Label.apttus_approval__search}" for="idSearchTextL" rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" style="font-weight: bold;" />
+            <apex:inputText id="idSearchTextL" rendered="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" value="{!searchText}" />
+            
+            <apex:commandButton action="{!doSearch}" value="{!$Label.apttus_approval__go}" rendered="{!isReassignedToTypeUser}" 
+                                rerender="idSearchResult" status="idSearchUserStatus" />
+            <apex:commandButton action="{!doSearch}" value="{!$Label.apttus_approval__go}" rendered="{!isReassignedToTypeQueue}" 
+                                rerender="idSearchResult" status="idSearchQueueStatus" />
+            <apex:commandButton action="{!doSearch}" value="{!$Label.apttus_approval__go}" rendered="{!isReassignedToTypeRole}" 
+                                rerender="idSearchResult" status="idSearchRoleStatus" />
+        </apex:PanelGrid>
+        
+        <apex:pageBlock title="{!reassignedToType}s" id="idSearchResult">
+            <apex:pageMessages />
+            
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!doReturn}" value="{!$Label.apttus_approval__cancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+
+           <apex:outputPanel id="idResultStatsPanel" styleClass="bNext" layout="block" style="text-align: right;"
+                rendered="{!(isReassignedToTypeUser && hasUsers) || (isReassignedToTypeQueue && hasQueues) || (isReassignedToTypeRole && hasRoles)}">
+                <font size="1px">{!$Label.PageNbr}:&nbsp;{!currentPageNumber}&nbsp;{!$Label.OutOf}&nbsp;{!totalPages}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <apex:outputPanel id="idNavigationPanel" styleClass="next"
+                        layout="block" rendered="{!OR(hasNextPage,hasPreviousPage)}">
+                        <apex:outputPanel rendered="{!NOT(hasPreviousPage)}" styleClass="greyedLink">&lt;{!$Label.PreviousPage}</apex:outputPanel>
+                        <apex:commandLink rendered="{!hasPreviousPage}" action="{!previousPage}" reRender="idSearchResult">&lt;{!$Label.PreviousPage}</apex:commandLink>
+                        <span> | </span>
+                        <apex:outputPanel rendered="{!NOT(hasNextPage)}" styleClass="greyedLink">{!$Label.NextPage}&gt;</apex:outputPanel>
+                        <apex:commandLink rendered="{!hasNextPage}" action="{!nextPage}" reRender="idSearchResult">{!$Label.NextPage}&gt;</apex:commandLink>
+                    </apex:outputPanel> 
+                </font>
+            </apex:outputPanel>
+            <p/>
+            <apex:outputPanel >
+                <apex:actionstatus id="idSearchUserStatus" startText="{!$Label.apttus_approval__searchstatusmessage}">
+                    <apex:facet name="stop">
+                        <apex:outputPanel rendered="{!isReassignedToTypeUser}">
+                            <apex:pageBlockTable value="{!userList}" var="userWrapper">
+                                <apex:column headerValue="{!$Label.apttus_approval__name}">
+                                    <apex:commandLink action="{!doChooseAssignee}" value="{!userWrapper.userSO.Name}" >
+                                        <apex:param name="reassignedToId" assignTo="{!reassignedToId}" value="{!userWrapper.userSO.Id}" />
+                                        <apex:param name="reassignedToName" assignTo="{!reassignedToName}" value="{!userWrapper.userSO.Name}" />
+                                        <apex:param name="reassignedToType" assignTo="{!reassignedToType}" value="User" />
+                                    </apex:commandLink>     
+                                </apex:column>
+                                <apex:column headerValue="{!$Label.apttus_approval__role}" >
+                                    <apex:outputField value="{!userWrapper.userSO.UserRole.Name}" />
+                                </apex:column>
+                                <apex:column headerValue="{!$Label.apttus_approval__level}" >
+                                    <apex:outputText value="{!userWrapper.approverLevel}" />
+                                </apex:column>
+                            </apex:pageBlockTable>
+                        </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionstatus>
+                <apex:actionstatus id="idSearchQueueStatus" startText="{!$Label.apttus_approval__searchstatusmessage}">
+                    <apex:facet name="stop">
+                        <apex:outputPanel rendered="{!isReassignedToTypeQueue}">
+                            <apex:pageBlockTable value="{!queueList}" var="queueWrapper">
+                                <apex:column headerValue="{!$Label.apttus_approval__name}">
+                                    <apex:commandLink action="{!doChooseAssignee}" value="{!queueWrapper.queueSO.Queue.Name}" >
+                                        <apex:param name="reassignedToId" assignTo="{!reassignedToId}" value="{!queueWrapper.queueSO.Queue.Id}" />
+                                        <apex:param name="reassignedToName" assignTo="{!reassignedToName}" value="{!queueWrapper.queueSO.Queue.Name}" />
+                                        <apex:param name="reassignedToType" assignTo="{!reassignedToType}" value="Queue" />
+                                    </apex:commandLink>     
+                                </apex:column>
+                                <apex:column headerValue="{!$Label.apttus_approval__email}" >
+                                    <apex:outputText value="{!queueWrapper.queueSO.Queue.Email}" />
+                                </apex:column>
+                            </apex:pageBlockTable>
+                        </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionstatus>
+                <apex:actionstatus id="idSearchRoleStatus" startText="{!$Label.apttus_approval__searchstatusmessage}">
+                    <apex:facet name="stop">
+                        <apex:outputPanel rendered="{!isReassignedToTypeRole}">
+                            <apex:pageBlockTable value="{!roleList}" var="roleWrapper">
+                                <apex:column headerValue="{!$Label.apttus_approval__name}">
+                                    <apex:commandLink action="{!doChooseAssignee}" value="{!roleWrapper.roleSO.Name}" >
+                                        <apex:param name="reassignedToId" assignTo="{!reassignedToId}" value="{!roleWrapper.roleSO.Id}" />
+                                        <apex:param name="reassignedToName" assignTo="{!reassignedToName}" value="{!roleWrapper.roleSO.Name}" />
+                                        <apex:param name="reassignedToType" assignTo="{!reassignedToType}" value="Role" />
+                                    </apex:commandLink>     
+                                </apex:column>
+                            </apex:pageBlockTable>
+                        </apex:outputPanel>
+                    </apex:facet>
+                </apex:actionstatus>
+            </apex:outputPanel>
+            
+        </apex:pageBlock>   
+        
+    </apex:form>
+    
+</apex:page>

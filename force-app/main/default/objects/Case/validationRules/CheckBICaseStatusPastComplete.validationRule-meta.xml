@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckBICaseStatusPastComplete</fullName>
+    <active>false</active>
+    <description>This validation checks if the case status is past complete</description>
+    <errorConditionFormula>AND
+ (
+     NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+     $Setup.Channel_Partner_Profile_Settings__c.Is_Channel_Partner__c,
+ RecordType.Name = $Label.CaseRecordTypeBusinessIssue,
+ TEXT(Sub_Type__c) = $Label.CaseSubTypeComplaint,
+ TEXT(PRIORVALUE(Status)) = $Label.CaseStatusCompleted,
+ OR(
+     TEXT(Status) = $Label.CaseStatusCanceled,
+     TEXT(Status) = $Label.CaseStatusPendingLogisticsReview,
+     TEXT(Status) = $Label.CaseStatusClosed
+    )
+)</errorConditionFormula>
+    <errorMessage>Business Issue cases with case sub type as Complaint cannot be moved past Complete status</errorMessage>
+</ValidationRule>

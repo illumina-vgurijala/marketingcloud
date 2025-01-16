@@ -1,0 +1,132 @@
+<!-- 
+    Apttus XAuthor Apps
+    EditInExcelLaunch
+     
+    @2013-2015 Apttus Inc. All rights reserved.
+    
+    parameters
+    ==========
+    Name            | Required | Description
+    ================|==========|======================================================================================
+    appName         | Yes      | The Edit In Excel application name. The application must be setup for editing in Excel 
+                    |          |
+    mode            | No       | The application mode. 
+                    |          | Valid values are : edit, touchless. If this parameter is not provided, the mode
+                    |          | would default to edit. 
+                    |          |
+    parentRecordId  | No       | The id of the parent record associated with the child objects. If a parent record id 
+                    |          | is not provided the excel application would launch for export. 
+                    |          | This parameter is applicable only in edit mode.
+                    |          |
+    selectedRecordId| No       | The id of the selected record. 
+                    |          | This parameter is applicable and required only in touchless mode.
+                    |          |
+    outputType      | No       | The output type. 
+                    |          | Valid values are : EXCEL, PDF. If this parameter is not provided, the output type
+                    |          | would default to EXCEL.
+                    |          | This parameter is applicable only in touchless mode.
+                    |          |
+    returnId        | No       | The id of the record to navigate to when the cancel button is clicked.  
+                    |          | If this parameter is not provided, the parent record id would be used instead.     
+                    |          | This parameter is applicable only in edit mode.            
+    				|		   |
+    returnPage		| No	   | The name of the return page to navigate to after the export process is completed.
+   					|		   | Parameters for the return page may be passed by prefixing the parameter name with 'return_'.
+   					|		   | for e.g. if you pass in a parameter return_id, the return page will be called 
+   					|		   | with the parameter id. A record id may be passed as the value for the return page.
+    ===================================================================================================================
+    
+ -->
+<apex:page controller="Apttus_XApps.EditInExcelLaunchController">
+           
+    <apex:form >
+        
+        <apex:pageBlock rendered="{!NOT(isInitialized) && NOT(hasErrors)}">
+            <apex:pageMessage severity="info" 
+                              strength="1" 
+                              summary="{!InstructionText}" />
+                              
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton value="{!$Label.apttus_xapps__continue}" 
+                                    action="{!doGetEditInExcelPage}"
+                                    onclick="beginTimeout()" 
+                                    rendered="{!NOT(IsTouchlessMode)}"
+                                    rerender="dummy" /> 
+                <apex:commandButton value="{!$Label.apttus_xapps__continue}" 
+                                    action="{!doExport}" 
+                                    onclick="beginTimeout()"
+                                    rendered="{!IsTouchlessMode}" 
+                                    status="idExportStatus" >
+                    <apex:actionStatus id="idExportStatus">
+                        <apex:facet name="start">
+                            <img src="/apexpages/devmode/img/saveStatus.gif" />
+                        </apex:facet>
+                        <apex:facet name="stop" />
+                    </apex:actionStatus>                        
+                </apex:commandButton>
+                <apex:commandButton value="{!$Label.apttus_xapps__cancel}" action="{!doCancel}" immediate="true" />
+            </apex:pageBlockButtons>
+        
+        </apex:pageBlock>
+        
+        <apex:pageBlock mode="edit" rendered="{!hasErrors}" >
+            <apex:pageMessages />
+            <apex:pageBlockButtons location="bottom" >
+                <apex:commandButton action="{!doCancel}" value="{!$Label.apttus_xapps__cancel}" immediate="true"/>
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+        
+    </apex:form>
+    <!--
+        Callout from SFDC to external servers would timeout after 60 seconds. The timeout will kill the connection and 
+        to address the issue, added a default 50 sec timeout. Refer JIRA AB-1434 for more details.
+    -->
+    <script type="text/javascript">
+        function afterTimeout() {                  
+        try {            
+            // get the timeout message
+            var cMsg = "{!JSENCODE(TimeoutMessage)}";
+            var message = "";            
+            var lines = cMsg.split("\\n");
+            for (var i = 0; i < lines.length; i++) {
+                if (i > 0) {
+                    message += "\n";
+                }
+                message += lines[i];
+            }
+            // show timeout message
+            if (confirm(message)) {
+                // back to detail page
+                goBack();                  
+            }
+            }catch(ex) {
+                alert(ex.errors.message);
+                // back to detail page
+                goBack();      
+            }       
+        }
+        // beginTimoue will be called on the onclick on continue button
+        function beginTimeout() {   
+            // read the default timeout from the protected CS 
+            var timeoutMillis = parseInt("{!CallTimeoutMillis}");            
+            // delay until timeout  
+            gTimeoutId = setTimeout(function() {
+            try {
+                // handle timeout
+                afterTimeout();
+            } catch (ex) {
+                alert(ex.errors.message);
+                // back to detail page
+                goBack();
+            } 
+            }, timeoutMillis); 
+        }
+        function goBack() {
+            // get the sobject id
+            var sObjectId = "{!JSENCODE(ReturnId)}";
+    
+            // go back to the detail page
+            top.location.replace("/" + sObjectId);                  
+        }
+    </script>  
+</apex:page>

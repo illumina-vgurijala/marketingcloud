@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckCaseReasonForApprovalDenial</fullName>
+    <active>true</active>
+    <description>Check Case Reason for Approval / Denial is given When Super User or QA User Approves or Rejects Reopen Request.</description>
+    <errorConditionFormula>AND(
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+NOT($User.FirstName ==$Label.Automated_Process_User), 
+NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    TEXT(PRIORVALUE(Status)) =
+    $Label.CaseStatusReopenRequested,
+    OR(
+	   TEXT(Status) = $Label.CaseStatusClosed,
+	   TEXT(Status) = $Label.CaseStatusInProgress
+    ),
+    OR(
+    Reason_for_Approval_Denial_of_Reopen__c = &apos;.&apos;,
+    ISBLANK(Reason_for_Approval_Denial_of_Reopen__c)
+    ),
+    OR(
+    $Profile.Name = $Label.ProfileSystemAdmin,
+    
+    $Permission.SS_ByPass_Case_Lock = TRUE
+    )
+)</errorConditionFormula>
+    <errorMessage>Approval or Denial Reasons are required for tracking. Enter a Reason for Approval OR Denial of Reopen.</errorMessage><!--Updated as part of DCP-55963-->
+</ValidationRule>

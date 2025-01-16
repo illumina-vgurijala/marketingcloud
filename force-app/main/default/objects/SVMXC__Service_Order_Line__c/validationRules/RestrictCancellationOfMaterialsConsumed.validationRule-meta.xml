@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RestrictCancellationOfMaterialsConsumed</fullName>
+    <active>true</active>
+    <description>Validation rule to restrict MaterialsConsumed records moving to cancelled status.</description>
+    <errorConditionFormula>AND(
+    NOT($Setup.cs_Apex_Settings__c.Bypass_All_Validations__c),
+    NOT($Profile.Name ==$Label.Integration_SAP_Service),
+    NOT($User.FirstName ==$Label.Automated_Process_User),
+    NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    ISCHANGED(SVMXC__Line_Status__c),
+    ISPICKVAL(PRIORVALUE(SVMXC__Line_Status__c),"Closed"),
+    OR(
+	ISPICKVAL(SVMXC__Product__r.Service_Product_Type__c, "NONFRU"),
+	SVMX_PS_VS_Return_Installed_Product__r.Service_Product_Type__c = "NONFRU"
+	),
+    TEXT(SVMXC__Line_Type__c) = &apos;Material Consumed&apos;
+)</errorConditionFormula>
+    <errorMessage>NONFRU products cannot be cancelled once Closed. If this needs to be removed from the Service Report, uncheck the Include in Service Report checkbox</errorMessage>
+</ValidationRule>

@@ -1,0 +1,233 @@
+<!-- 
+    Apttus Approvals Management
+    ApprovalProcessInitialAction
+     
+    @2010-2018 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page standardController="Apttus_Approval__Approval_Process__c" 
+           extensions="Apttus_Approval.ApprovalProcessInitialActionController" 
+           showHeader="true" 
+           sidebar="true" 
+           tabStyle="Apttus_Approval__Approval_Process__c"
+           lightningStylesheets="{!$User.UIThemeDisplayed == 'Theme4d' || 
+                                   $User.UIThemeDisplayed == 'Theme4u'}"> 
+    
+    <apex:includescript value="{!$Resource.Apttus_Approval__ApprovalsPendoJSLib}" />
+    <script>
+        pendo.initialize({
+            visitor: {
+                id: '{!JSENCODE($Organization.Id)}' + '-' +'{!JSENCODE($User.Id)}'
+            },
+            account: {
+                id:'{!JSENCODE($Organization.Id)}',
+                name: '{!JSENCODE($Organization.Name)}'
+            }
+        });
+    </script>
+    
+    <style>
+        textarea {
+            width: 40%;
+        }
+    </style>
+    
+    <!-- ADD mode -->
+    <apex:sectionHeader title="{!$Label.apttus_approval__new & ' ' & $Label.apttus_approval__approvalprocessinitialaction}" 
+                        subtitle="{!businessObjectLabel & ': ' & parentProcessName}" 
+                        rendered="{!IsAddMode && ISBLANK(Apttus_Approval__Approval_Process__c.Id)}" />
+
+    <!-- EDIT mode -->
+    <apex:sectionHeader title="{!$Label.apttus_approval__edit & ' ' & $Label.apttus_approval__approvalprocessinitialaction}" 
+                        subtitle="{!businessObjectLabel & ': ' & parentProcessName}" 
+                        rendered="{!IsEditMode && NOT(ISBLANK(Apttus_Approval__Approval_Process__c.Id))}" />
+
+    <apex:form id="idInitialActionForm">
+        
+        <!-- required fields -->
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Name}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Active__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Description__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Name__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Label__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Object_Type__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Process_Name__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.RecordTypeId}" rendered="false" />
+
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Action__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Action_Type__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Name_Source__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Name__c}" rendered="false" />
+        <apex:outputText value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Value__c}" rendered="false" />
+
+        <apex:pageBlock id="idInitialActionBlock" 
+                        title="{!$Label.apttus_approval__approvalprocessinitialaction & ' ' & $Label.apttus_approval__edit}" 
+                        mode="edit"
+                        rendered="{!NOT(inSearchMode)}" >
+            <apex:pageMessages />
+            
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton value="{!$Label.apttus_approval__save}" action="{!doSave}" />
+                <apex:commandButton value="{!$Label.apttus_approval__saveandnew}" action="{!doSaveAndNew}" />
+                <apex:commandButton value="{!$Label.apttus_approval__cancel}" action="{!doCancel}" immediate="true" />
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockSection id="idInitialActionBlockSection" 
+                                   title="{!$Label.apttus_approval__information}" 
+                                   columns="1" 
+                                   collapsible="false" >
+                
+                <!-- business object -->
+                <apex:pageBlockSectionItem rendered="{!NOT(ISBLANK(Apttus_Approval__Approval_Process__c.Id))}"
+                                           helpText="{!$Label.apttus_approval__businessobjecthelp}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__businessobject}" for="idBusinessObjectLabel" />
+                    <apex:outputText id="idBusinessObjectLabel" value="{!businessObjectLabel}" />
+                </apex:pageBlockSectionItem>
+                
+                <!-- initial action field action type -->
+                <apex:pageBlockSectionItem helpText="{!$Label.apttus_approval__initialsubmissionactiontypehelp}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__fieldactiontype}" for="idFieldActionType" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block" >
+                        <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                        <apex:selectList id="idFieldActionType" 
+                                         value="{!fieldActionType}" 
+                                         multiselect="false" 
+                                         required="false" 
+                                         size="1" >
+                            <apex:selectOptions value="{!fieldActionTypeItems}"></apex:selectOptions>
+                            <apex:actionSupport event="onchange"
+                                                action="{!doFieldActionTypeChanged}"
+                                                reRender="idInitialActionBlock"
+                                                status="idStatusWaitFieldActionType" />
+                        </apex:selectList>
+                        <apex:actionStatus id="idStatusWaitFieldActionType" startText="{!$Label.apttus_approval__statuspleasewait}..." />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!-- initial action field name -->
+                <apex:pageBlockSectionItem helpText="{!$Label.apttus_approval__initialsubmissionactionfieldnamehelp}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__fieldname}" for="idFieldName" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block" >
+                        <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                        <apex:selectList id="idFieldName" 
+                                         value="{!fieldName}"
+                                         multiselect="false" 
+                                         required="false" 
+                                         size="1" >
+                            <apex:selectOptions value="{!fieldItems}"></apex:selectOptions>
+                            <apex:actionSupport event="onchange"
+                                                reRender="idInitialActionBlock" 
+                                                status="idStatusWaitFieldName" />
+                        </apex:selectList>
+                        <apex:actionStatus id="idStatusWaitFieldName" startText="{!$Label.apttus_approval__statuspleasewait}..." />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!-- initial action field value (for FieldUpdateConstant type) -->
+                <apex:pageBlockSectionItem rendered="{!NOT(isFieldItemTypeSelectable) &&
+                                                       NOT(isActionTypeFieldUpdateValue)}"
+                                           helpText="{!$Label.apttus_approval__initialsubmissionactionfieldvaluehelp}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__fieldvalue}" for="idFieldValue" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:inputText id="idFieldValue" size="30"
+                                        value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Value__c}" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!-- initial action field value (for FieldUpdateValue type) -->
+                <apex:pageBlockSectionItem rendered="{!NOT(isFieldItemTypeSelectable) &&
+                                                           isActionTypeFieldUpdateValue}"
+                                           helpText="{!$Label.apttus_approval__initialsubmissionactionfieldvaluehelp}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__fieldvalue}" for="idFieldValue" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:outputText id="idFieldValue"
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Value__c}" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!-- initial action description -->
+                <apex:pageBlockSectionItem helpText="{!$Label.apttus_approval__initialsubmissionactiondescriptionhelp}">
+                    <apex:outputLabel value="{!$Label.apttus_approval__description}" for="idDescription" />
+                    <apex:outputPanel id="idDescription">
+                        <apex:inputField value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Description__c}" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+            </apex:pageBlockSection>
+ 
+            <!-- initial action field value -->
+            <apex:pageBlockSection id="idInitialActionFieldBlockSection" 
+                                   title="{!$Label.apttus_approval__specifynewfieldvalue}" 
+                                   columns="1" 
+                                   collapsible="false" 
+                                   rendered="{!isFieldItemTypeSelectable}" >
+            
+                <!-- reference type -->
+                <!--<apex:pageBlockSectionItem rendered="{!fieldItemType == 'REFERENCE' && isSelectedFieldTypeUser}"
+                                           helpText="{!$Label.InitialSubmissionActionReferenceValueHelp}">
+                    <apex:outputLabel value="{!fieldItemLabel}" for="idReferenceFieldValue" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:actionRegion >
+                            <apex:inputField id="idReferenceFieldValue" 
+                                             value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Value__c}">
+                                <apex:commandLink id="idSelectReferenceFieldValue"
+                                                  action="{!doSelectReferenceFieldValue}">
+                                    <img src="/img/s.gif" class="lookupIcon"/>
+                                </apex:commandLink>
+                            </apex:inputField>
+                        </apex:actionRegion>
+                   </apex:outputPanel>
+                </apex:pageBlockSectionItem>-->
+ 
+                <!-- picklist type -->
+                <apex:pageBlockSectionItem rendered="{!fieldItemType == 'PICKLIST'}"
+                                           helpText="{!$Label.apttus_approval__initialsubmissionactionpicklistvaluehelp}">
+                    <apex:outputLabel value="{!fieldItemLabel}" for="idPicklistFieldValue" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:selectList id="idPicklistFieldValue" 
+                                         value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Value__c}" 
+                                         multiselect="false" 
+                                         required="false" 
+                                         size="1" >
+                            <apex:selectOptions value="{!fieldItemValues}"></apex:selectOptions>
+                        </apex:selectList>
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <!-- text -->
+                <!--<apex:pageBlockSectionItem rendered="{!fieldItemType != 'REFERENCE' &&
+                                                       fieldItemType != 'PICKLIST'}"
+                                           helpText="{!$Label.apttus_approval__initialsubmissionactionfieldvaluehelp}">
+                    <apex:outputLabel value="{!fieldItemLabel}" for="idTextFieldValue" />
+                    <apex:outputPanel styleClass="requiredInput" layout="block">
+                        <apex:outputPanel styleClass="requiredBlock" layout="block"/>
+                        <apex:inputText id="idTextFieldValue" size="30"
+                                        value="{!Apttus_Approval__Approval_Process__c.Apttus_Approval__Initial_Submission_Field_Value__c}" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>-->
+
+            </apex:pageBlockSection>
+            
+        </apex:pageBlock>
+                               
+        <!-- search components -->
+        <!--<apex:pageBlock id="idPageBlockSearch"
+                        title="{!$Label.EditApprovalProcessInitialAction}"
+                        rendered="{!inSearchMode}">
+
+            <c:UISearchUser id="idUserSearch" 
+                            pageControllerAttr="{!this}"
+                            contextSOAttr="{!Approval_Process__c}"
+                            contextSOFieldAttr="Initial_Submission_Field_Value__c"
+                            parentReRenderIdAttr="idApprovalProcessDefnForm"
+                            rendered="{!isSelectedFieldTypeUser}" />
+
+        </apex:pageBlock>-->
+
+    </apex:form>
+
+</apex:page>

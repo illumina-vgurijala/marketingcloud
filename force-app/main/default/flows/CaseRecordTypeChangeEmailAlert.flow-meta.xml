@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>CaseEmail</name>
+        <label>CaseEmail</label>
+        <locationX>456</locationX>
+        <locationY>371</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <faultConnector>
+            <targetReference>Assign_Current_Failure_Element</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <stringValue>sfdc_service_account@illumina.com,GIS-SFDC-ManagedServices@illumina.com</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>senderAddress</name>
+            <value>
+                <elementReference>$User.Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <elementReference>CaseEmailSubject</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>CaseEmailRecordTypeChangeBody</elementReference>
+            </value>
+        </inputParameters>
+    </actionCalls>
+    <apiVersion>60.0</apiVersion>
+    <assignments>
+        <name>Assign_Current_Failure_Element</name>
+        <label>Assign Current Failure Element</label>
+        <locationX>720</locationX>
+        <locationY>479</locationY>
+        <assignmentItems>
+            <assignToReference>CurrentElement</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <stringValue>CaseEmail</stringValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Create_Exception_Log</targetReference>
+        </connector>
+    </assignments>
+    <description>This flow will send the email notification when the case record type changes from Buisness Issue to Inquiry.</description>
+    <environments>Default</environments>
+    <formulas>
+        <name>FlowandFailureElementName</name>
+        <dataType>String</dataType>
+        <expression>&apos;Case: Record Type Change Email Alert - &apos;+{!CurrentElement}</expression>
+    </formulas>
+    <interviewLabel>CaseRecordTypeChangeEmailAlert {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Case: Record Type Change Email Alert</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>FREE_FORM_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>330</locationX>
+        <locationY>48</locationY>
+        <connector>
+            <targetReference>CaseEmail</targetReference>
+        </connector>
+        <filterFormula>AND({!$Record__Prior.RecordType.DeveloperName}=&apos;Business_Issue&apos;,{!$Record.RecordType.DeveloperName}=&apos;Inquiry&apos;)</filterFormula>
+        <object>Case</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <description>Use values from the parent flow to set the inputs for the &quot;Create Flow Exception log&quot; flow. By default, the parent flow stores all outputs. You can either reference outputs via the API name of the Subflow element or manually assign variables in the parent flow to store individual outputs from the &quot;Create Flow Exception log&quot; flow.</description>
+        <name>Create_Exception_Log</name>
+        <label>Create Exception Log</label>
+        <locationX>720</locationX>
+        <locationY>587</locationY>
+        <flowName>Create_Flow_Exception_log</flowName>
+        <inputAssignments>
+            <name>CurrentRecord</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>CurrentUser</name>
+            <value>
+                <elementReference>$User.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Message</name>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Source</name>
+            <value>
+                <elementReference>FlowandFailureElementName</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Workstream</name>
+            <value>
+                <stringValue>Service</stringValue>
+            </value>
+        </inputAssignments>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </subflows>
+    <textTemplates>
+        <name>CaseEmailRecordTypeChangeBody</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Hi Team,
+
+Case {!$Record.CaseNumber} record type is changed from {!$Record__Prior.RecordType.DeveloperName} to {!$Record.RecordType.DeveloperName}. 
+
+Regards,
+GIS Service SFDC Team</text>
+    </textTemplates>
+    <textTemplates>
+        <name>CaseEmailSubject</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>Case Record Type Conversion from Business Issue to Inquiry Alert</text>
+    </textTemplates>
+    <variables>
+        <name>CurrentElement</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>true</isOutput>
+    </variables>
+</Flow>

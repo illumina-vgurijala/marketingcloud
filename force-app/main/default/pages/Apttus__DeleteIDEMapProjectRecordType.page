@@ -1,0 +1,92 @@
+<!-- 
+    Apttus Contract Management
+    DeleteIDEMapProjectRecordType
+     
+    @2021 Apttus Inc. All rights reserved.
+ -->
+ <apex:page id="pageid" standardController="Apttus__IDEMapProjectRecordType__c" extensions="Apttus.IDEProvisionController" lightningStylesheets="true"
+ sidebar="false">
+ <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <apex:variable var="isLightning" value="{!$User.UIThemeDisplayed == 'Theme4d' || $User.UIThemeDisplayed == 'Theme4u'}" />
+
+ <body class="slds-scope">
+     <apex:form id="formId">
+
+         <style>
+             body .message {
+                 margin: 0px !important;
+             }
+         </style>
+         <apex:outputpanel id="scriptPanel">
+                <script>
+                    function showToast() {
+                        if ('{!isErroronDelete}' == 'false') {
+                            var successMessage = '{!deleteProjectFromKIRA}' == 'true' ? 'Project-Record type mapping in IDD and AI Engine is deleted successfully.' : 'Project-Record type mapping in IDD is deleted successfully.';
+                            document.getElementsByClassName('deleteModal')[0].style.display = 'none';
+                            if ((typeof sforce != 'undefined') && sforce && sforce.one) {
+                                sforce.one.showToast({
+                                    "message": successMessage,
+                                    "type": "success"
+                                });
+                            } else {
+                                alert(successMessage);
+                            }
+                            setTimeout(() => {
+                                window.open('/' + '{!$ObjectType.Apttus__IDEMapProjectRecordType__c.keyPrefix}', '_parent');
+                            }, 1000);
+                        } else if ('{!isErroronDelete}' == 'true') {
+                            if ((typeof sforce != 'undefined') && sforce && sforce.one) {
+                                sforce.one.showToast({
+                                    "message": '{!errorMessageOnDelete}',
+                                    "type": "error"
+                                });
+                            } else {
+                                alert('{!errorMessageOnDelete}');
+                            }
+                        }
+                    }
+                </script>
+            </apex:outputpanel>
+         <apex:slds />
+         <apex:outputText value="{!Apttus__IDEMapProjectRecordType__c.Apttus__ProjectId__c}" rendered="false"></apex:outputText>
+         <apex:outputText value="{!Apttus__IDEMapProjectRecordType__c.Apttus__RecordTypeName__c}" rendered="false"></apex:outputText>
+         <apex:outputpanel styleClass="deleteModal">
+         <div id="myModal" class="modal slds-scope">
+             <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_medium" aria-labelledby="modal-heading-01"
+                 aria-modal="true" aria-describedby="modal-content-id-1">
+                 <div class="slds-modal__container" style="width: 50%; max-width: 75rem; min-width: 30rem;">
+                     <header class="slds-modal__header">
+                        <apex:commandLink styleclass="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="{!$Label.apttus__close}" action="{!backToIDEProjectRecordlist}">
+                            <svg class="slds-button__icon slds-button__icon_large" aria-hidden="true">
+                              <use xlink:href="{!URLFOR($Asset.SLDS, 'assets/icons/utility-sprite/svg/symbols.svg#close')}"></use>
+                            </svg>
+                            <span class="slds-assistive-text">{!$Label.apttus__close}</span>
+                        </apex:commandLink> 
+                        <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Delete Mapping</h2>
+                     </header>
+
+                     <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                         <p style="text-align: center;font-size: 0.9125rem;padding: 10px;">{!deleteMappingConfirmationMessage}</p>
+                         <apex:outputPanel rendered="{!showDeleteOptionForKIRA}">
+                             <span class="slds-checkbox">
+                                 <apex:inputCheckbox id="deletefromKira" value="{!deleteProjectFromKIRA}"></apex:inputCheckbox>
+                                 <apex:outputLabel for="deletefromKira" styleClass="slds-checkbox__label" style="margin-right: 0;">
+                                     <span class="slds-checkbox--faux" style="border: 1px solid;"></span>
+                                     <span style="font-size: .8125rem; margin-left: 5px; margin-right: 2px;">Delete mapping from AI Engine</span>
+                                 </apex:outputLabel>
+                             </span>
+                         </apex:outputPanel>
+                     </div>
+                     <footer class="slds-modal__footer">
+                         <apex:commandButton value="{!$Label.apttus__cancel}" tabindex="1" styleClass="slds-button slds-button_neutral" action="{!backToIDEProjectRecordlist}"></apex:commandButton>
+                         <apex:commandButton value="{!$Label.apttus__delete}" tabindex="0" styleClass="slds-button slds-button_brand" action="{!deleteIDEMapProjectRecordTypeRecord}" oncomplete="showToast();" rerender="scriptPanel,deleteModal"></apex:commandButton>
+                     </footer>
+                 </div>
+             </section>
+             <div class="slds-backdrop slds-backdrop_open"></div>
+         </div>
+         </apex:outputpanel>
+     </apex:form>
+ </body>
+ </html>
+</apex:page>

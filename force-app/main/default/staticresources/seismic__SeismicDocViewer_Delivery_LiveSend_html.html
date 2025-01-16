@@ -1,0 +1,9 @@
+<div class="modal-header">
+    <h4 class="modal-title">LiveSend</h4>
+    <img class="modal-header-close-button" ng-src="{{closeIconUrl}}" ng-click="dialogClose()"/>
+</div>
+<div style="height: 600px">
+    <seismic-busy is-busy="!livesendPageReady" visible-mode="true">
+        <iframe allow="autoplay; fullscreen" style="height: 600px" class="embed-iframe" ng-src="{{livesendPageUrl}}"></iframe>
+    </seismic-busy>
+</div>

@@ -1,0 +1,201 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes" access="global" extends="c:BaseSuperComponent" controller="InterfaceLogViewerServerController">
+    
+    <!-- Attributes -->
+    <aura:attribute name="lstSyncDirections" type="List" default=""/>
+    <aura:attribute name="strSyncDirection" type="String" default=""/>
+    <aura:attribute name="lstInterfaces" type="List" default=""/>
+    <aura:attribute name="strInterface" type="String" default=""/>
+    <aura:attribute name="mapDirToInterfacesList" type="Map" default=""/>
+    <aura:attribute name="dtStartDateTimePicker" type="DateTime" default=""/>
+    <aura:attribute name="dtEndDateTimePicker" type="Date" default=""/>
+    <aura:attribute name="strSearchText" type="String" default=""/>
+    <aura:attribute name="lstColumns" type="List"/>
+    <aura:attribute name="lstSearchResults" type="List"/>
+    <aura:attribute name="blnShowJSON" type="Boolean" default="false"/>
+    <aura:attribute name="strActiveJSON" type="String" default=""/>
+    <aura:attribute name="strSortedBy" type="String" default="dtLogTimeStamp"/>
+    <aura:attribute name="strSortdDirection" type="String" default="asc"/>
+    
+    <!-- END Attributes -->
+    
+    <!-- Handlers -->
+    <aura:handler name="init" action="{!c.init}" value="{!this}"/>
+    <!-- END Handlers-->
+    
+    <!-- Component Body -->
+    <!-- Page Header -->
+    <lightning:layout class="slds-page-header slds-page-header--object-home custom-box-shadow">
+        <lightning:layoutItem class="slds-p-top_xx-small slds-p-left_xx-small">
+            <lightning:icon iconName="custom:custom34" alternativeText="Interface Logs" size="medium"/>
+        </lightning:layoutItem>
+        <lightning:layoutItem padding="horizontal-small">
+            <div class="slds-media__body">
+                <h1 class="">Interface Logs</h1>
+                <h2 class="slds-text-heading--medium interface-log-viewer-header">Interface Log Viewer</h2>
+            </div>
+        </lightning:layoutItem>
+    </lightning:layout>
+    <!-- END Page Header -->
+    
+    <!-- Search Form -->
+    <div class="search-container">
+        <lightning:layout multipleRows="true" class="search-panel-background custom-box-shadow">
+            
+            <!-- Search Section Body -->
+            <lightning:layoutItem padding="around-small" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="12" largeDeviceSize="3">
+                
+                <!-- Search Text -->
+                <lightning:layoutItem class="slds-p-horizontal_small slds-p-vertical_xx-small bld-label" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="12" largeDeviceSize="12">
+                    <lightning:input type="search" name="search" label="Search" placeholder="type search text here..." value="{!v.strSearchText}"/>
+                </lightning:layoutItem>
+                <!-- END Search Text -->
+                
+                <!-- Search and Reset Buttons -->
+                <lightning:layoutItem class="slds-p-horizontal_small slds-p-vertical_xx-small" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="12" largeDeviceSize="12">
+                    <lightning:button onclick="{!c.search}" label="Search" variant="brand" iconName="utility:search"/>
+                    <lightning:button onclick="{!c.reset}" label="Reset" variant="neutral" iconName="utility:undo"/>
+                </lightning:layoutItem>
+                <!-- END Search and Reset Buttons -->
+                
+            </lightning:layoutItem>
+            <!-- END Search Section Body -->
+            
+            <!-- Filters for the Interface Log Viewer -->
+            <lightning:layoutItem padding="around-small" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="12" largeDeviceSize="9">
+                <lightning:card>
+                    
+                    <!-- Section Title "Filters" -->
+                    <aura:set attribute="title">
+                        <lightning:icon iconName="utility:filterList" size="x-small"/>
+                        Filters
+                    </aura:set>
+                    <!-- END Section Title "Filters" -->
+                    
+                    <!-- Filters Section Body -->
+                    <lightning:layout multipleRows="true">
+                        
+                        <!-- Sync Direction -->
+                        <lightning:layoutItem class="slds-p-horizontal_small slds-p-vertical_xx-small bld-label" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="6" largeDeviceSize="3">
+                            <lightning:select aura:id="SyncDirection" name="SyncDirection" label="Sync Direction" onchange="{!c.changeSyncDirection}">
+                                <aura:iteration items="{!v.lstSyncDirections}" var="syncDirection">
+                                    <option text="{!syncDirection}" value="{!syncDirection}"/>
+                                </aura:iteration>
+                            </lightning:select>
+                        </lightning:layoutItem>
+                        <!-- END Sync Direction -->
+                        
+                        <!-- Interface -->
+                        <lightning:layoutItem class="slds-p-horizontal_small slds-p-vertical_xx-small bld-label" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="6" largeDeviceSize="3">
+                            <lightning:select aura:id="Interface" name="Interface" label="Interface" onchange="{!c.changeInterface}">
+                                <option text="Any" value=""/>
+                                <aura:iteration items="{!v.lstInterfaces}" var="interface">
+                                    <option text="{!interface}" value="{!interface}"/>
+                                </aura:iteration>
+                            </lightning:select>
+                        </lightning:layoutItem>
+                        <!-- END Interface -->
+                        
+                        <!-- Start Date/Time -->
+                        <lightning:layoutItem class="slds-p-horizontal_small slds-p-vertical_xx-small clr-label" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="6" largeDeviceSize="3">
+                            <lightning:input type="datetime" name="startDateTimePicker" label="Start Date/Time" value="{!v.dtStartDateTimePicker}" required="true"/>
+                        </lightning:layoutItem>
+                        <!-- END Start Date/Time -->
+                        
+                        <!-- End Date/Time -->
+                        <lightning:layoutItem class="slds-p-horizontal_small slds-p-vertical_xx-small clr-label" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="6" largeDeviceSize="3">
+                            <lightning:input type="datetime" name="endDateTimePicker" label="End Date/Time" value="{!v.dtEndDateTimePicker}" required="true"/>
+                        </lightning:layoutItem>
+                        <!-- END End Date/Time -->
+                        
+                    </lightning:layout>
+                    <!-- END Filters Section Body -->
+                    
+                </lightning:card>
+            </lightning:layoutItem>
+            <!-- END Filters for the Interface Log Viewer -->
+            
+        </lightning:layout>
+    </div>
+    <!-- END Search Form -->
+    
+    <!-- Search Results and Log Viewer -->
+    <div class="search-container">
+        <lightning:layout multipleRows="true" class="custom-box-shadow">
+            
+            <!-- Search Results -->
+            <lightning:layoutItem padding="around-small" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="12" largeDeviceSize="8">
+                <lightning:card>
+                    
+                    <!-- Section Title "Search Results" -->
+                    <aura:set attribute="title">
+                        <lightning:icon iconName="utility:multi_picklist" size="x-small"/>
+                        Search Results
+                        <aura:renderIf isTrue="{!v.lstSearchResults.length > 0}">
+                            ({!v.lstSearchResults.length})
+                        </aura:renderIf>
+                    </aura:set>
+                    
+                    <!-- Displays a message in the footer if the search yielded 300+ records -->
+                    <aura:set attribute="footer">
+						<aura:renderIf isTrue="{!v.lstSearchResults.length >= 300}">
+                            Maximum of 300 logs will be displayed. Use the filters to narrow down the search results.
+						</aura:renderIf>
+					</aura:set>
+                    <!-- END Displays a message in the footer if the search yielded 300+ records -->
+                    <!-- END Section Title "Search Results" -->
+                    
+                    <!-- Search Results Data Table -->
+                    <div class="results-data-table">
+                        <lightning:spinner alternativeText="Loading..." size="medium" aura:id="spinning-wheel" class="slds-hide" variant="brand"/>
+                        <lightning:datatable columns="{!v.lstColumns}"
+                                             data="{!v.lstSearchResults}"
+                                             keyField="idLog"
+                                             hideCheckboxColumn="true"
+                                             showRowNumberColumn="true"
+                                             onrowaction="{!c.handleRowAction}"
+                                             onsort="{!c.updateColumnSorting}"
+                                             sortedBy="{!v.strSortedBy}"
+                                             sortedDirection="{!v.strSortedDirection}"/>
+                    </div>
+                    <!-- END Search Results Data Table -->
+                    
+                </lightning:card>
+            </lightning:layoutItem>
+            <!-- END Search Results -->
+            
+            <!-- Log Preview -->
+            <lightning:layoutItem padding="around-small" flexibility="auto" size="12" smallDeviceSize="12" mediumDeviceSize="12" largeDeviceSize="4">
+                <aura:renderIf isTrue="{!v.blnShowJSON}">
+                    <lightning:card>
+                        
+                        <!-- Section Title "JSON Body" -->
+                        <aura:set attribute="title">
+                            <lightning:icon iconName="utility:apex" size="x-small"/>
+                            JSON Body
+                        </aura:set>
+                        <!-- END Section Title "JSON Body" -->
+                        
+                        <!-- Log Details Section -->
+                        <div class="result-json-wrapper slds-p-horizontal_small slds-p-bottom_small">
+                            <lightning:textarea variant="label-hidden" name="json-body" readonly="true" value="{!v.strActiveJSON}" aura:id="json-body-text-area-id"/>
+                        </div>
+                        <!-- END Log Details Section -->
+                        
+                    </lightning:card>
+                    <aura:set attribute="else">
+                        <div class="slds-illustration slds-illustration_large" aria-hidden="true">
+                            <img src="/projRes/ui-home-private/emptyStates/noAssistant.svg" class="slds-illustration__svg" alt="noAssistant IMAGE"/>
+                            <div class="slds-text-longform">
+                                <h3 class="slds-text-heading_small">Search and click the Show JSON action to see the JSON here.</h3>
+                            </div>
+                        </div>
+                    </aura:set>
+                </aura:renderIf>
+            </lightning:layoutItem>
+            <!-- END Log Preview -->
+            
+        </lightning:layout>
+    </div>
+    <!-- END Search Results and Log Viewere -->
+    <!-- END Component Body -->
+</aura:component>

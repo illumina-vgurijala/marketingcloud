@@ -1,0 +1,560 @@
+<!--
+        Apttus Config & Pricing
+        Cart
+        Angular JS UI for CPQ
+        @2015-2018 Apttus Inc. All rights reserved.
+ -->
+<apex:page lightningStylesheets="true"
+					 controller="Apttus_Config2.CPQProxy"
+					 docType="html-5.0"
+					 showHeader="false"
+					 sidebar="false"
+					 standardStylesheets="false">
+
+	<title>Apttus CPQ</title>
+	<apex:stylesheet value="{!URLFOR($Resource.Apttus_Config2__vendor, '/vendor.css')}"/>
+	<apex:stylesheet value="{!URLFOR(IF(IsUIOverrideMode, $Resource[NGOverrideResourceName], IF(devMode, $Resource.Apttus_Config2__cpqSM, $Resource.Apttus_Config2__ngCPQ)), '/aptCPQUI.css')}"/>
+
+	<apex:outputPanel rendered="{!NOT(ISNULL(CSSOverride))}">
+		<apex:dynamicComponent componentValue="{!CSSOverrideComponent}"/>
+	</apex:outputPanel>
+
+	<!-- USE WEBPACK OUTPUT -->
+	<apex:includeScript value="{!URLFOR($Resource.Apttus_Config2__vendor, '/vendor.js')}"/>
+
+	<script>
+		if ({!IsSessionReplayEnabled}) {
+			window['_fs_debug'] = false;
+			window['_fs_host'] = 'fullstory.com';
+			window['_fs_script'] = 'edge.fullstory.com/s/fs.js';
+			window['_fs_org'] = 'WYRVK';
+			window['_fs_namespace'] = 'FS';
+			(function(m,n,e,t,l,o,g,y){
+				if (e in m) {if(m.console && m.console.log) { m.console.log('FullStory namespace conflict. Please set window["_fs_namespace"].');} return;}
+				g=m[e]=function(a,b,s){g.q?g.q.push([a,b,s]):g._api(a,b,s);};g.q=[];
+				o=n.createElement(t);o.async=1;o.crossOrigin='anonymous';o.src='https://'+_fs_script;
+				y=n.getElementsByTagName(t)[0];y.parentNode.insertBefore(o,y);
+				g.identify=function(i,v,s){g(l,{uid:i},s);if(v)g(l,v,s)};g.setUserVars=function(v,s){g(l,v,s)};g.event=function(i,v,s){g('event',{n:i,p:v},s)};
+				g.anonymize=function(){g.identify(!!0)};
+				g.shutdown=function(){g("rec",!1)};g.restart=function(){g("rec",!0)};
+				g.log = function(a,b){g("log",[a,b])};
+				g.consent=function(a){g("consent",!arguments.length||a)};
+				g.identifyAccount=function(i,v){o='account';v=v||{};v.acctId=i;g(o,v)};
+				g.clearUserCookie=function(){};
+				g._w={};y='XMLHttpRequest';g._w[y]=m[y];y='fetch';g._w[y]=m[y];
+				if(m[y])m[y]=function(){return g._w[y].apply(this,arguments)};
+				g._v="1.2.0";
+			})(window,document,window['_fs_namespace'],'script','user');
+		}
+	</script>
+
+	<!-- Apex Error -->
+	<div id="idErrorMsg">
+		<apex:pageMessages />
+	</div>
+	<!-- Translation of Custom Label and Fields -->
+	<apex:include pageName="Apttus_Config2__Translation"/>
+
+	<!-- Section for binding visualforce template values from controller -->
+	<div id="idUserSettingsSection" style="display:none;">
+		<div id="idCurrencyTemplate">
+			<apex:outputField value="{!templateLineItem.Apttus_Config2__BasePrice__c}"/>
+		</div>
+		<div id="idCurrencyLocaleTemplate">
+			<span><apex:outputText value="{!CurrencyLocaleTemplate}"/></span>
+		</div>
+		<div id="idQuantityTemplate">
+			<apex:outputField value="{!templateLineItem.Apttus_Config2__Quantity__c}"/>
+		</div>
+		<div id="idDateTemplate">
+			<apex:outputField value="{!templateLineItem.Apttus_Config2__StartDate__c}"/>
+		</div>
+		<!-- Wrap output text in span tag to match outputField behavior  -->
+		<div id="idQuantityPrecision">
+			<span><apex:outputText value="{!SystemSettings['quantity']}"/></span>
+		</div>
+		<div id="idCurrencyPrecision">
+			<span><apex:outputText value="{!SystemSettings['currency']}"/></span>
+		</div>
+		<div id="idDefaultIconId">
+			<span><apex:outputText value="{!SystemSettings['defaultIconId']}"/></span>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		Visualforce.remoting.timeout = 120000;
+		/**
+		 * Anonymous blocks for configuring the different modules.
+		 * These config blocks need to be defined within the page to take
+		 *  advantage of visualforce binding for initializing the app with
+		 *  constant pieces of data.
+		 */
+		(function() {
+			//Create System Properties constant
+			globalConfiguration.baseUrl = "{!URLFOR(IF(IsUIOverrideMode, $Resource[NGOverrideResourceName], IF(devMode,  $Resource.cpqSM, $Resource.ngCPQ)), '/aptCPQUI')}";
+			globalConfiguration.vendorResourceUrl = "{!URLFOR($Resource.vendor, '/aptCPQUI')}";
+
+			var baseFileUrl = '';
+			//Special visualforce condition for when there is no icon id
+		<apex:outputPanel layout="none" rendered="{!SystemSettings['defaultIconId'] != 'none'}">
+			baseFileUrl = formatAttachmentUrl("{!URLFOR($Action.Attachment.Download, SystemSettings['defaultIconId'])}");
+		</apex:outputPanel>
+			//End VF conditionally rendered code.
+			globalConfiguration.systemConstants = {
+				"baseUrl": globalConfiguration.baseUrl,
+				"vendorResourceUrl": globalConfiguration.vendorResourceUrl,
+				"baseFileUrl": baseFileUrl,
+				"salesforceUrl": "{!SystemSettings['salesforceUrl']}",
+				"sitePrefix": "{!$Site.Prefix}",
+				"nsPrefix": "{!SystemSettings['namespacePrefix']}",
+				"isFieldExpressionsEnabled": "{!SystemSettings['isFieldExpressionsEnabled']}",
+				"isGlobal": true,
+				"businessObjectProfile": "{!SystemSettings['businessObjectProfile']}",
+				"msecPerDay": 86400000,
+				"sortingFieldThreshold":3,
+				"revalCategoryVersionChange" : "VersionChange",
+				"revalCategoryPricingChange" : "PricingChange",
+				exceptions: {
+					UNABLE_TO_LOCK_ROW: 'UNABLE_TO_LOCK_ROW'
+				},
+				"pageParams": JSON.parse('{!JSENCODE(pageParams)}'),
+				"customSettings": JSON.parse('{!JSENCODE(CustomSettings)}'),
+				"picklistMetadata": JSON.parse('{!JSENCODE(PicklistMetadata)}'),
+				"headerHeight": 105,
+				states: {
+					favorites: "favorites",
+					services: "services",
+					catalog: "catalog"
+				},
+				configOptionSteps: {
+					attributes: "attributes",
+					options: "options",
+					redirectAttributePage: "redirectAttributePage"
+				},
+				baseTxnNumber: parseInt('{!baseTxnNumber}'),
+				serviceAssetBasePrimaryNumber: parseInt('{!serviceAssetBasePrimaryNumber}'),
+				serviceAssetBaseTxnNumber: parseInt('{!serviceAssetBaseTxnNumber}'),
+				lineLimit: parseInt('{!lineLimit}'),
+				sessionKey: '{!$Api.Session_ID}',
+			};
+
+			//Format the attachment file url
+			function formatAttachmentUrl(sfdcString) {
+				var pos = sfdcString.indexOf('FileDownload');
+				if (pos != -1) {
+					sfdcString = sfdcString.substring(0, pos) + 'FileDownload?file=';
+				}
+				return sfdcString;
+
+			}
+
+			// Overriding the SFDC navigateToUrl for this page as we need custom action to be performed on the click of the button. ( ctrl/cmd + click - should open the link in new tab)
+			navigateToUrl = function (url) {
+				var event = window.event || navigateToUrl.caller.arguments[0]; // window.event will not be returning the event object in mozilla so getting it from the callee arguments
+				if (event.ctrlKey || event.metaKey) {
+					window.open(url, '_blank');
+				} else {
+					window.location = url;
+				}
+			}
+
+			globalConfiguration.dataConfig = function (ConfigurationDataServiceProvider) {
+				var cartId = "{!cartId}";
+				var configRequestId = "{!configRequestId}";
+				var priceListId = "{!priceListId}";
+				var pageParams = JSON.parse('{!JSENCODE(pageParams)}');
+				ConfigurationDataServiceProvider.setRequestBase(cartId, configRequestId, priceListId, pageParams);
+			};
+			globalConfiguration.dataConfig.$inject = ['ConfigurationDataServiceProvider'];
+
+			globalConfiguration.baseConfig = function(RemoteServiceProvider, i18nServiceProvider) {
+				// Extracting user locale preference from visualforce.
+				var userSettings = {};
+				try {
+					userSettings = getUserSettings();
+					// If any properties are undefined, the provider will use en_US defaults.
+					i18nServiceProvider.setDateTemplate(userSettings.dateTemplate);
+					i18nServiceProvider.setCurrencyTemplate(userSettings.currencyTemplate);
+					i18nServiceProvider.setQuantityTemplate(userSettings.quantityTemplate);
+					i18nServiceProvider.setPrecision(userSettings.precisionMap);
+					i18nServiceProvider.setLocale(userSettings.locale);
+					i18nServiceProvider.setDateFormat(userSettings.dateFormat);
+
+				} catch (ex) {
+					if (console && typeof console.info === 'function') {
+						console.info('Could not extract user locale settings. Defaulting to en_US');
+
+					}
+
+				}
+
+				/**
+				 * Resolve VF remote names and configure their behavior.
+				 * Each key in this object is used to reference a VF remote aciton.
+				 * Each can be:
+				 *  - String: the resolved name of the remote action;
+				 *  - Object with properties:
+				 *          actionName: the resolved name of the remote action,
+				 *          skipLoader: if true, action does affect progress-indicator. Default false.
+				 *
+				 */
+				const invoker = '{!$RemoteAction.CPQProxy.call}';
+				const remoteActions = {
+					addFavoriteToCart: invoker,
+					addToCart: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					applyIncentives: invoker,
+					applyRevalidation: invoker,
+					autoCreateRampLines: invoker,
+					autoDeleteRampLines: invoker,
+					autoUpdateRampLines: invoker,
+					calculateMetricsForAssets: invoker,
+					cancelCollaborationRequest: invoker,
+					cloneBundleLineItem: invoker,
+					cloneOptionLineItem: invoker,
+					compareProducts: invoker,
+					computeAssetNetPriceForMerged: invoker,
+					configureBundle: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					createAssetView: invoker,
+					createCartViewSettings: invoker,
+					createNewCollabRequest: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					createRollupSummaryGroupsForConfigCart: invoker,
+					deleteAssetView: invoker,
+					deleteAttachments: invoker,
+					deleteCartView: invoker,
+					deleteFavoriteConfiguration: invoker,
+					deleteLineItems: invoker,
+					deleteRelatedLineItems: invoker,
+					doReplaceProduct: invoker,
+					executeConstraintRules: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					finalizeSplitCart: invoker,
+					getAccountHierarchy: invoker,
+					getAllAssetViews: invoker,
+					getAllCartViews: invoker,
+					getAnalyticsRecommendedProducts: invoker,
+					getAppliedIncentiveCodesForCart: invoker,
+					getAssetFilters: invoker,
+					getAssetLineItems: invoker,
+					getAssetLineItemsForPage: invoker,
+					getAssetTerminationDate: invoker,
+					getAttributeFields: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getAttributeRules: invoker,
+					getBundleAssetLineItemIds: invoker,
+					getCart: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getCartLineItems: { actionName: invoker, skipLoader: true },
+					getCartLineNumbers:invoker,
+					getCartSummary: invoker,
+					getCategories: invoker,
+					getChildCartLineItems: { actionName: invoker, skipLoader: true },
+					getCollaborationRequest: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getCollabRequestDisplayFields: invoker,
+					getConfigCartDO: invoker,
+					getConfigStatus: invoker,
+					getConfigurationData: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getConstraintRuleProducts: { actionName: invoker, skipLoader: true },
+					getCosts: invoker,
+					getCoterminationCriteriaAssetLineItems: invoker,
+					getCustomRevalidationLineItems: invoker,
+					getDefaultLineItemRollup: { actionName: invoker, skipLoader: true },
+					getExcludedOptionIds: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getExcludedProductIds2: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getExcludedProductIds: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getFurthestAssetLine: invoker,
+					getGroupHeaders: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getGuidePageUrl: invoker,
+					getIncentivesForCart: invoker,
+					getIncentivesList: invoker,
+					getLineItemAdvancedApprovalURL: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getLineItemCount: invoker,
+					getLineItemDetails: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getLineItemFieldsMetaData: invoker,
+					getManualAdjustmentsForPriceWaterfalls: invoker,
+					getObjectForSummary: invoker,
+					getOptionFilterExcludedOptionIds: invoker,
+					getParentLineNumberItemSequence:invoker,
+					getPriceBreakups: invoker,
+					getPriceWaterfallForLineItems: invoker,
+					getPricingStatus: invoker,
+					getProductDetails: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getProductGroups: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getProductsByIds: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getPublishedPriceLists: invoker,
+					getRecommendedProducts2: invoker,
+					getRecommendedProducts: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getReferenceObjects: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getRelatedAssetLineItems: invoker,
+					getRelatedLineColumns: invoker,
+					getReplacementProducts: invoker,
+					getRevalidationLineItems: invoker,
+					getSelectedAssetsDisplayColumns: invoker,
+					getSelectedAssetsWithDisplayColumns: invoker,
+					getServiceAssetsForLine: invoker,
+					getSObjectPermissions: invoker,
+					getTemplateAdjustmentLine: invoker,
+					getTypeaheadResults: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					getUsagePriceTiers: invoker,
+					restoreCmsRuleAction: invoker,
+					ignoreRuleAction2: invoker,
+					ignoreRuleAction: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					initCart: invoker,
+					initializeCart: invoker,
+					invokePriceExtensions: invoker,
+					isAsyncOperationInProgress: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					mergeCollaborationRequest: invoker,
+					performAction2: invoker,
+					performAction: invoker,
+					performActionQuietly: { actionName: invoker, baseAction: 'performAction', skipLoader: {!IsLoaderOptimized} },
+					performAssetActions: invoker,
+					publishFavoriteConfiguration: invoker,
+					removePendingFlag: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					saveAdjustmentLineItems: invoker,
+					saveConstraintsResults: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					saveCollaborationRequest: invoker,
+					saveFavoriteConfiguration: invoker,
+					saveFilterExcludedOptionIds: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					saveRelatedLineItems: invoker,
+					saveCartTotals: invoker,
+					saveUsagePriceTiers: invoker,
+					saveViewSettings: invoker,
+					searchFavoriteConfigurations: invoker,
+					searchProducts: invoker,
+					searchServiceProducts: invoker,
+					setIncentivesForCart: invoker,
+					splitCartAsync: invoker,
+					splitRelatedLineItems: invoker,
+					toggleExpressionLock: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					updateAdHocGroup: invoker,
+					updateAdjustmentLineItems: invoker,
+					updateAssetView: invoker,
+					updateAttachmentToCollabReq: invoker,
+					updateCartLineItems: invoker,
+					updateCartLineItemsQuietly: { actionName: invoker, baseAction: 'updateCartLineItems', skipLoader: {!IsLoaderOptimized} },
+					updateCartTotals: invoker,
+					updateCartViewSettings: invoker,
+					updateCollaborationRequest: invoker,
+					updateCosts: invoker,
+					updateLineItemSequence: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					updateManualAdjustmentsForPriceWaterfall: invoker,
+					updatePrice: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					updatePriceAsync: invoker,
+					updateProductConfiguration: { actionName: invoker, skipLoader: {!IsLoaderOptimized} },
+					updateRelatedLineItems: invoker,
+					updateSplitCartLineItems: invoker,
+					updateUsagePriceTiers: invoker,
+				};
+
+				RemoteServiceProvider.setRemoteActions(remoteActions);
+				// Need retURL or other url for redirect. Default is to redirect to '/'.
+				RemoteServiceProvider.setRedirectLocation('{!JSENCODE($CurrentPage.parameters.retURL)}');
+				// Set flag true to overrides skipLoader flags of RemoteActions and show loader all remoteServiceCalls.
+				RemoteServiceProvider.setTrackAllRemoteCalls(false);
+			};
+
+			globalConfiguration.baseConfig.$inject = ['aptBase.RemoteServiceProvider', 'aptBase.i18nServiceProvider'];
+
+			/**
+			 * Extract VF-resolved date and currency formatting according to user preference
+			 * @return {Object}
+			 */
+			function getUserSettings() {
+				var userSettings = {
+					currencyTemplate: getCurrencyTemplate(),
+					quantityTemplate: getQuantityTemplate(),
+					dateTemplate: getDateTemplate(),
+					precisionMap: getPrecisionMap()
+				};
+				if (typeof UserContext !== 'undefined') {
+					userSettings.locale = UserContext.locale;
+					userSettings.dateFormat = UserContext.dateFormat;
+
+				}
+				return userSettings;
+
+				//Helper function to get text from output field by id.
+				function getOutputFieldText(fieldId) {
+					var fieldElement = document.querySelector('#' + fieldId + ' span');
+					if (fieldElement) {
+						return fieldElement.textContent;
+					}
+					return void 0;
+
+				}
+
+				function getCurrencyTemplate () {
+					var currencyTemplate = '$1,234.56';
+					var templateText = getOutputFieldText('idCurrencyTemplate');
+					var localeTemplateText = getOutputFieldText('idCurrencyLocaleTemplate');
+					if (!templateText) {
+						return currencyTemplate;
+
+					}
+					// Isolate multi-currency section: SFDC uses "USD 1.23 (OTH 4.56)" format,
+					// use regex to break that into ["USD 1.23 (OTH 4.56)", "USD 1.23", "OTH 4.56"]
+					var multiMatch = templateText.match(/([^\(]*)\(?([^\)]*)\)?/);
+					if (multiMatch && multiMatch[1]) {
+						templateText = multiMatch[1];
+
+					}
+
+					// correct the template text. Parser fails when decimal precision is zero.
+					templateText = templateText.replace(/(?=1).*/, localeTemplateText);
+
+					//Check if formatted text is a valid template
+					if (templateText.length > 2) {
+						currencyTemplate = templateText;
+
+					}
+					return currencyTemplate;
+
+				}
+
+				function getQuantityTemplate() {
+					var quantityTemplate = '1,234.56';
+					var templateText = getOutputFieldText('idQuantityTemplate');
+					if (!templateText) {
+						return quantityTemplate;
+
+					}
+					//Check if formatted text is a valid template
+					if (templateText.length > 2) {
+						quantityTemplate = templateText;
+
+					}
+					return quantityTemplate;
+
+				}
+
+				function getDateTemplate() {
+					var dateTemplate = '01/23/45';
+					var templateText = getOutputFieldText('idDateTemplate');
+					if (!templateText) {
+						return dateTemplate;
+
+					}
+					dateTemplate = templateText;
+					return dateTemplate;
+
+				}
+
+				function getPrecisionMap() {
+					var quantity = Number(getOutputFieldText('idQuantityPrecision')),
+						currency = Number(getOutputFieldText('idCurrencyPrecision'));
+					var precision = {
+						quantity: quantity,
+						currency: currency
+					};
+					return precision;
+
+				}
+
+			}
+
+		})();
+
+	</script>
+
+	<script type="text/javascript">
+		/**
+		 * remove css files added by VF page in lightning mode
+		 */
+		var vfCSSLinks = document.querySelectorAll('link[href^="/sCSS/"]');
+		for (var len = vfCSSLinks.length, i=0; i<len; ++i) {
+			var oneLink = vfCSSLinks[i];
+			oneLink.parentNode.removeChild(oneLink);
+		}
+
+		/**
+		 * recieve message from custom action dialog
+		 * WARNING: limit exposure to functions to maintain better backward compatibility.
+		 * TODO: move this to a javascript file
+		 */
+		function receiveDialogMessage(event) {
+			var origin = event.origin || event.originalEvent.origin; // For Chrome, the origin property is in the event.originalEvent object.
+			var actionDialog = document.querySelector("custom-action-dialog");
+			if (actionDialog && event.data && event.data.action) {
+				if (event.data.action == 'reloadCart') {
+					angular.element(actionDialog).injector().get('CartDataService').reloadCart();
+				}
+
+				if (event.data.action == 'closeDialog') {
+					var scope = angular.element(document.querySelector("custom-action-dialog")).scope();
+					scope.customAction.close();
+					scope.$apply();
+				}
+
+				if (event.data.action == 'reloadPage') {
+					//first close the dialog
+					var scope = angular.element(document.querySelector("custom-action-dialog")).scope();
+					scope.customAction.close();
+					//show progress bar
+					var service = angular.element(document.querySelector("custom-action-dialog")).injector().get("ActionHandlerService");
+					service.isServerActionInProgress = true;
+
+					scope.$apply();
+					window.location.reload();
+
+				}
+
+			}
+
+		}
+		window.addEventListener("message", receiveDialogMessage, false);
+
+
+	</script>
+
+	<script>
+		var ie10 = navigator.userAgent.indexOf('MSIE') !== -1 || navigator.appVersion.indexOf('Trident/') > 0,
+			ie11 = window.MSInputMethodContext && document.documentMode;
+		if (!ie10 && !ie11) {
+			window.onkeydown=function() {
+				window.focus();
+			}
+		}
+
+	</script>
+
+	<Apttus_Base2:UsageDataComponent2 ProdName="{!SystemSettings['packageName']}" ProdVersion="{!SystemSettings['packageVersion']}"></Apttus_Base2:UsageDataComponent2>
+
+	<!-- Application  -->
+
+	<!--[if lt IE 8]>
+	<p class="browsehappy">
+		You are using an <strong>outdated</strong> browser.
+		Please <a href="http://browsehappy.com/">upgrade your browser</a>
+		to improve your experience.
+	</p><![endif]-->
+	<div ng-app="aptCPQUI" class="main-ng-app-container">
+		<div class="header-global">
+			<div ui-view="globalHeader"></div>
+		</div>
+		<div class="process-trail">
+			<div ui-view="processTrail"></div>
+		</div>
+		<div id="catalog-progress" class="slds-spinner_container">
+			<div class="slds-spinner slds-spinner_brand slds-spinner_large">
+				<div class="slds-spinner__dot-a"></div>
+				<div class="slds-spinner__dot-b"></div>
+			</div>
+			<span id="catalog-spinner-text" class="lightning-spinner-text"></span>
+		</div>
+		<div class="header-gap-filler"></div>
+		<div class="system-notification">
+			<div ui-view="systemNotification"></div>
+		</div>
+		<div class="content-container">
+			<div ui-view="layout"></div>
+		</div>
+		<constraint-dialog></constraint-dialog>
+		<product-summary-dialog></product-summary-dialog>
+		<favorite-summary-dialog></favorite-summary-dialog>
+		<search-lookup-dialog></search-lookup-dialog>
+		<custom-action-dialog></custom-action-dialog>
+		<div class="display-actions">
+			<div ui-view="displayActions"></div>
+		</div>
+	</div>
+	<script src="{!URLFOR(IF(IsUIOverrideMode, $Resource[NGOverrideResourceName], IF(devMode, $Resource.cpqSM, $Resource.ngCPQ)), '/aptBase.js')}"></script>
+	<script src="{!URLFOR(IF(IsUIOverrideMode, $Resource[NGOverrideResourceName], IF(devMode, $Resource.cpqSM, $Resource.ngCPQ)), '/aptData.js')}"></script>
+	<script src="{!URLFOR(IF(IsUIOverrideMode, $Resource[NGOverrideResourceName], IF(devMode, $Resource.cpqSM, $Resource.ngCPQ)), '/aptCPQUI.js')}"></script>
+
+</apex:page>

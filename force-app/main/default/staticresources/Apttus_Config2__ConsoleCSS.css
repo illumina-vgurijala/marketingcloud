@@ -1,0 +1,119 @@
+.aptRoundedDiv {
+	padding-bottom: 5px;
+	background-color: white;
+
+	/* IE Stuff */
+	zoom: 1;
+
+}
+
+#documentDetailHeader {
+	margin-left: 0.2em;
+	font-size: 24px;
+	font-family: arial;
+	font-weight: normal !important;
+}
+
+.aptGroupHeader {
+    color: #434140;
+    height: 2.5em;
+    font-size: 13px;
+    font-family: arial;
+    vertical-align: middle;
+    line-height: 2.5em;
+}
+
+.aptConsole div.aptConsoleItem {
+	/*box-shadow: none!important; */
+	/*-moz-box-shadow: none!important; */
+	/*-webkit-box-shadow: none!important; */
+	margin: 5px 10px;
+	height: 144px;
+	width: 180px;
+	padding: 5px 0;
+	cursor: pointer;
+	display: inline-block;
+
+}
+
+.aptConsole div.aptConsoleItem div:first-child {
+	height: 85% !important;
+
+}
+.aptConsole div.aptConsoleItem:hover {
+	/*box-shadow: none!important;
+	-moz-box-shadow: none!important;
+	-webkit-box-shadow: none!important;
+	border: solid 1px #bababa;
+	border-radius: 5px!important; */
+}
+
+div.aptConsoleWrapper {
+	color: #666;
+	font-size: 13px;
+	text-align: center;
+	margin: 0 auto;
+
+}
+
+.aptConsole div.aptConsoleItemLabel {
+	color: #1797C0;
+	background: transparent;
+	padding: 0 5px;
+	font-family: arial;
+}
+.aptConsoleImage {
+	width: 122px !important;
+	height: 122px !important;
+	padding-bottom: 1em;
+}
+
+.aptConsole {
+	padding: 100px 0;
+	margin: 0 0 20px;
+	border-bottom: solid 1px;
+	border-bottom-color: #EAEAEA;
+
+}
+
+.questionHeader {
+	color: #1797C0;
+	border: none !important;
+}
+
+.questionContent {
+
+}
+
+.ui-state-active {
+	color: #1797C0 !important;
+	font-family: arial;
+	font-weight: bold !important;
+}
+
+.ui-state-default {
+	color: #1797C0 !important;
+	background: #FFFFFF !important;
+	font-family: arial;
+	font-weight: bold !important;
+}
+
+.ui-tabs-nav {
+	background: #FFFFFF !important;
+	font-family: arial;
+	border-left: none !important;
+	border-top: none !important;
+	border-right: none !important;
+}
+
+.ui-widget-content {
+	border: 0;
+}
+
+.ui-widget-header {
+	border-color: #d3d3d3 !important;
+}
+
+.ui-tabs-anchor {
+	background: #FFFFFF;
+}

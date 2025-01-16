@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CheckRMARequestedIfCostCentreIsBlank</fullName>
+    <active>true</active>
+    <description>If Part Order line, user is manually marking as non-billable and select reason as Goodwill then when moving the status to Requested then Cost Center should be required.</description>
+    <errorConditionFormula>AND( 
+    Is_Billable__c=FALSE,
+	NOT($Profile.Name ==$Label.Integration_SAP_Service), 
+NOT($User.FirstName ==$Label.Automated_Process_User),
+NOT(ISCHANGED(Bypass_Validation_Rules_for_Integration__c)), 
+NOT($Profile.Name == $Label.Integration_Service_SNAP_Profile),
+    TEXT(Reason__c) == $Label.PartsOrderLineReasonGoodwill,
+    TEXT(SVMXC__Line_Status__c) == $Label.PartsOrderLineRequested,
+	ISBLANK(SVMXC__RMA_Shipment_Order__r.SVMXC__Service_Order__r.Cost_Center__c)
+   )</errorConditionFormula>
+    <errorMessage>Goodwill Parts orders cannot be completed without a Cost Center provided on the Work Order.  Navigate to the Work Order and add a Cost Center, then return to the Parts Order to Request All Part Order Lines.</errorMessage>
+</ValidationRule>

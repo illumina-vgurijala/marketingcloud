@@ -1,0 +1,192 @@
+<!-- 
+    Apttus Contract Management
+    AuthorWebLaunch
+     
+    @2014-2015 Apttus Inc. All rights reserved.
+
+ -->
+<apex:page controller="Apttus.AuthorWebLaunchController">
+
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/assets/skins/sam/skin.css')}" />
+    
+    <apex:stylesheet value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/resize/assets/skins/sam/resize.css')}" />
+    
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/yahoo-dom-event/yahoo-dom-event.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/dragdrop/dragdrop-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/container/container-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/animation/animation-min.js')}" />
+    
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/yahoo/yahoo-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/dom/dom-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/element/element-min.js')}" />
+    <apex:includescript value="{!URLFOR($Resource.Apttus__YUILibrary, '/yui/build/resize/resize-min.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.Apttus__JQuery350Library, 'jquery-3.5.0.js')}" /> 
+            
+    <script>
+        $j = jQuery.noConflict();
+        $j(document).ready(function() {
+            $j('html').css('height', '100%');
+            $j('body').css('height', '100%');
+            $j('#contentWrapper').css('height', '85%');
+            $j('#bodyTable').css('height', '100%');
+        });
+
+      
+        // Create a namespace for our custom functions
+        YAHOO.namespace("force.com");
+        
+        // load panel
+        
+        /**
+         * Builds the load panel.
+         */
+        YAHOO.force.com.buildLoadPanel = function() {
+           
+            YAHOO.force.com.loadPanel = new YAHOO.widget.Panel(
+                "loadPanel",  // The id of our dialog container
+                { 
+                        width           :   "300px", // You can play with this until it's right
+                        visible         :   false,   // Should be invisible when rendered
+                        draggable       :   false,   // Make the dialog draggable
+                        close           :   false,   // Don't include a close title button
+                        modal           :   true,    // Make it modal
+                        fixedCenter     :   true,    // Keep centered if window is scrolled
+                        zindex          :   40,      // Make sure it's on top of everything
+                        constraintoviewport: true,
+                        
+                        // This line adds the appear/disapper fade effect
+                        effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+                                    
+                }
+            );
+            
+            // header
+            YAHOO.force.com.loadPanel.setHeader("{!JSINHTMLENCODE($Label.LoadingPage)}");
+            // set image
+            YAHOO.force.com.loadPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+            // Render the dialog to the document.body level of the DOM
+            YAHOO.force.com.loadPanel.render(document.body);
+            
+        }
+        
+        // wait panel
+        
+        /**
+         * Builds the wait panel.
+         */
+        YAHOO.force.com.buildWaitPanel = function() {
+            document.body.className = document.body.className + " yui-skin-sam";
+            YAHOO.force.com.waitPanel = new YAHOO.widget.Panel(
+                "waitPanel",  // The id of our dialog container
+                { 
+                        width           :   "300px", // You can play with this until it's right
+                        visible         :   false,   // Should be invisible when rendered
+                        draggable       :   false,   // Make the dialog draggable
+                        close           :   false,   // Don't include a close title button
+                        modal           :   true,    // Make it modal
+                        fixedCenter     :   true,    // Keep centered if window is scrolled
+                        zindex          :   40,      // Make sure it's on top of everything
+                        constraintoviewport: true,
+                        
+                        // This line adds the appear/disapper fade effect
+                        effect          :   {effect:YAHOO.widget.ContainerEffect.FADE,duration:0.25}
+                                    
+                }
+            );
+            
+            // header
+            YAHOO.force.com.waitPanel.setHeader("{!JSINHTMLENCODE($Label.LoadingDocument)}");
+            // set image
+            YAHOO.force.com.waitPanel.setBody('<center><img src="{!URLFOR($Resource.Image_LoadingPage)}" /></center>');
+            // Render the dialog to the document.body level of the DOM
+            YAHOO.force.com.waitPanel.render(document.body);
+            
+        }
+            
+        // Function called when the DOM is ready to create the dialog,
+        // render the dialog into the document body, add our dialog skin
+        // css to the body tag, and wire up the buttons on our dialog   
+        YAHOO.force.com.onDOMReady = function() {
+            
+            // build the load panel
+            YAHOO.force.com.buildLoadPanel();
+            // build the wait panel
+            YAHOO.force.com.buildWaitPanel();
+
+            
+        }
+        
+        // build the tree as soon as the DOM is in a usable state
+        YAHOO.util.Event.onDOMReady(YAHOO.force.com.onDOMReady);    
+        
+    </script>
+    
+    <script>
+    
+        
+    
+    </script>
+
+    <apex:outputPanel layout="block" id="errorMessages">
+        <apex:pageMessages />
+    </apex:outputPanel> 
+    <apex:form >
+        <apex:actionFunction name="doLoadDocument" 
+                             action="{!doLoadDocument}" 
+                             oncomplete="afterLoadDocument();" 
+                             reRender="errorMessages, authorWebPanel" /> 
+        <apex:actionFunction name="onRequestTimeout"
+                             action="{!onRequestTimeout}"
+                             reRender="errorMessages" />
+        <apex:outputPanel >
+            <script>
+               // register to invoke the function after the page load
+                window.onload = function() { 
+                    var timeoutMillis = parseInt("{!CallTimeoutMillis}");
+                    setTimeout(function() {
+                        // show modal panel
+                        YAHOO.force.com.loadPanel.show();
+                        
+                        // initiate document load
+                        doLoadDocument();
+                        
+                    }, 0);
+                    
+                    gTimeoutId = setTimeout(function() {
+                                    // hide modal panel
+                                    YAHOO.force.com.loadPanel.hide();
+                                    //add error message
+                                    onRequestTimeout();
+                                }, timeoutMillis);              
+                    
+                };
+                
+                /**
+                 * Cancel the timeout
+                 */
+                function cancelTimeout() {
+                
+                    if (gTimeoutId != null) {
+                        clearTimeout(gTimeoutId);
+                        gTimeoutId = null;
+                        
+                    }
+                    
+                }
+                
+                function afterLoadDocument() {
+                    // cancel timeout
+                    cancelTimeout();
+                    // hide modal panel
+                    YAHOO.force.com.loadPanel.hide();
+                
+                }
+               
+            </script>
+        </apex:outputPanel>              
+    </apex:form>
+    <apex:outputPanel id="authorWebPanel">
+        <apex:iframe src="{!authorWebUrl}" scrolling="true" id="theIframe" width="100%" height="100%"></apex:iframe>
+    </apex:outputPanel>
+    
+</apex:page>
