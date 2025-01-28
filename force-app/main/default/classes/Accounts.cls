@@ -20,7 +20,7 @@
 *             Enrique Reyes               17-Jun-2024            CMCM-8183 Move logic from Account: Update status after ERP Id populated workflow to onBeforeUpdate trigger.
 *             Vandana Kuncham             08-Aug-2024            CMCM-9577 Moving process builder Account: Create Market Segment Records On Converted Accounts to Apex
 *             Gerardo Garcia              07-Aug-2024            CMCM-9578 - Account's Process Builder logic moved into Trigger handler
-*             Venkat Gurijala             28-Jan-2025            to test the devops center using vscode
+*             Venkat Gurijala             28-Jan-2025            to test the devops center
 *    ------------------------------------------------------------------------------------------------------------------------------------------------
 */
 public class Accounts extends ilib_SObjectDomain {
